@@ -44,4 +44,4 @@ jobs:
           parallel: true
           flag-name: run-${{ matrix.deno }}-${{ matrix.os }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          base-path: .
+          base-path: /
