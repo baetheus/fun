@@ -28,7 +28,7 @@ declare module "./hkt.ts" {
 
 export const zero: Map<never, never> = new Map<never, never>();
 
-export const empty = <K, A>(): Map<K, A> => new Map<K, A>();
+export const empty = <K, A>(): Map<K, A> => zero;
 
 export const singleton = <K, A>(k: K, a: A): Map<K, A> => new Map([[k, a]]);
 
@@ -116,6 +116,10 @@ export const getMonoid = <K, A>(
 /*******************************************************************************
  * Pipeables
  ******************************************************************************/
+
+export const { map } = Functor;
+
+export const { mapLeft, bimap } = Bifunctor;
 
 export const size = <K, A>(d: Map<K, A>): number => d.size;
 

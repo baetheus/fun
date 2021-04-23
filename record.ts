@@ -86,7 +86,7 @@ export const IndexedTraversable: TC.IndexedTraversable<
   URI,
   string
 > = {
-  map: (fai) => (ta) => _map(fai, ta),
+  map: IndexedFunctor.map,
   reduce: IndexedFoldable.reduce,
   traverse: (A) =>
     (faui) =>

@@ -179,6 +179,8 @@ export const { bimap, mapLeft } = Bifunctor;
 
 export const { ap: apSeq } = ApplySeq;
 
+export const { alt } = Alt;
+
 export const chainLeft = <E, A>(onLeft: (e: E) => TaskEither<E, A>) =>
   T.chain(E.fold<E, A, TaskEither<E, A>>(onLeft, right));
 

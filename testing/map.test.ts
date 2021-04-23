@@ -60,12 +60,45 @@ Deno.test("Map getSetoid", () => {
 
 Deno.test("Map getMonoid", () => {
   const Monoid = M.getMonoid(setoidNumber, semigroupSum);
+  const { concat, empty } = Monoid;
 
   AS.assertMonoid(Monoid, {
     a: M.singleton(1, 1),
     b: M.singleton(2, 2),
     c: M.singleton(3, 3),
   });
+
+  assertEquals(pipe(empty(), concat(M.singleton(1, 1))), M.singleton(1, 1));
+  assertEquals(pipe(M.singleton(1, 1), concat(empty())), M.singleton(1, 1));
+  assertEquals(
+    pipe(M.singleton(1, 1), concat(M.singleton(2, 2))),
+    new Map([[1, 1], [2, 2]]),
+  );
+  assertEquals(
+    pipe(M.singleton(1, 1), concat(M.singleton(1, 1))),
+    M.singleton(1, 2),
+  );
+});
+
+Deno.test("Map map", () => {
+  assertEquals(
+    pipe(M.singleton("one", 1), M.map((n) => n + 1)),
+    M.singleton("one", 2),
+  );
+});
+
+Deno.test("Map mapLeft", () => {
+  assertEquals(
+    pipe(M.singleton(1, 1), M.mapLeft((n) => n + 1)),
+    M.singleton(2, 1),
+  );
+});
+
+Deno.test("Map bimap", () => {
+  assertEquals(
+    pipe(M.singleton(1, 1), M.bimap((n) => n + 1, (n) => n + 1)),
+    M.singleton(2, 2),
+  );
 });
 
 Deno.test("Map size", () => {
@@ -144,6 +177,14 @@ Deno.test("Map insertAt", () => {
   assertEquals(
     pipe(M.empty<number, number>(), insertAt(1, 1)),
     M.singleton(1, 1),
+  );
+  assertEquals(
+    pipe(M.singleton(1, 1), insertAt(1, 1)),
+    M.singleton(1, 1),
+  );
+  assertEquals(
+    pipe(M.singleton(1, 1), insertAt(1, 2)),
+    M.singleton(1, 2),
   );
 });
 

@@ -102,6 +102,13 @@ Deno.test("ReaderEither chainLeft", () => {
   assertEqualsRE(chainLeft(R.left(0)), R.left(0));
 });
 
+Deno.test("ReaderEither compose", () => {
+  assertEqualsRE(
+    pipe(R.ask<number>(), R.compose(R.asks((n) => n + 1))),
+    R.right(1),
+  );
+});
+
 Deno.test("ReaderEither widen", () => {
   assertEqualsRE(pipe(R.right(0), R.widen<number>()), R.right(0));
   assertEqualsRE(pipe(R.left(0), R.widen<string>()), R.left(0));

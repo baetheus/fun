@@ -59,6 +59,15 @@ Deno.test("Optional compose", () => {
   const { getOption, set } = pipe(M.id<T1>(), M.compose(o1));
   assertEquals(getOption({ one: 1 }), O.some(1));
   assertEquals(set(2)({ one: 1 }), { one: 2 });
+
+  const o2 = M.make((n: number) => n > 0 ? O.some(n) : O.none, (n) => (_) => n);
+  const o3 = pipe(o2, M.compose(M.id()));
+  assertEquals(o3.getOption(0), O.none);
+  assertEquals(o3.getOption(1), O.some(1));
+  assertEquals(o3.set(0)(0), 0);
+  assertEquals(o3.set(1)(0), 0);
+  assertEquals(o3.set(0)(1), 0);
+  assertEquals(o3.set(1)(1), 1);
 });
 
 Deno.test("Optional composeIso", () => {

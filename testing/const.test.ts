@@ -65,15 +65,6 @@ Deno.test("Const Functor", () => {
   });
 });
 
-Deno.test("Const Contravariant", () => {
-  AS.assertContravariant(C.Contravariant, {
-    ti: C.make(1) as never,
-    tj: C.make(2) as never,
-    fai: (n: number) => n + 1,
-    fij: (n: number) => n + 2,
-  });
-});
-
 Deno.test("Const Bifunctor", () => {
   AS.assertBifunctor(C.Bifunctor, {
     tab: C.make(2) as C.Const<number, number>,
@@ -82,4 +73,23 @@ Deno.test("Const Bifunctor", () => {
     fbx: (n: number) => n + 1,
     fxy: (n: number) => n + 2,
   });
+});
+
+Deno.test("Const map", () => {
+  assertEquals(pipe(C.make(0), C.map((n: number) => n + 1)), C.make(0));
+});
+
+Deno.test("Const contramap", () => {
+  assertEquals(pipe(C.make(0), C.contramap((n: number) => n + 1)), C.make(0));
+});
+
+Deno.test("Const bimap", () => {
+  assertEquals(
+    pipe(C.make(0), C.bimap((n: number) => n + 1, (n: number) => n - 1)),
+    C.make(1),
+  );
+});
+
+Deno.test("Const mapLeft", () => {
+  assertEquals(pipe(C.make(0), C.mapLeft((n: number) => n + 1)), C.make(1));
 });

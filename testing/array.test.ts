@@ -151,6 +151,7 @@ Deno.test("Array getOrd", () => {
   assertEquals(ord.lte([])([]), true);
   assertEquals(ord.lte([])([1]), true);
   assertEquals(ord.lte([1])([1, 2]), true);
+  assertEquals(ord.lte([1, 2])([2, 1]), true);
 });
 
 Deno.test("Array getSemigroup", () => {
@@ -192,10 +193,12 @@ Deno.test("Array map", () => {
 });
 
 Deno.test("Array join", () => {
+  assertEquals(A.join([]), []);
   assertEquals(pipe([[1], [2], [3]], A.join), [1, 2, 3]);
 });
 
 Deno.test("Array chain", () => {
+  assertEquals(pipe([], A.chain((n: number) => [n, n + 1])), []);
   assertEquals(pipe([1, 2, 3], A.chain((n) => [n, n + 1])), [1, 2, 2, 3, 3, 4]);
 });
 
@@ -224,6 +227,7 @@ Deno.test("Array indexedTraverse", () => {
 });
 
 Deno.test("Array filter", () => {
+  assertEquals(pipe([], A.filter((n: number) => n > 1)), []);
   assertEquals(pipe([1, 2, 3], A.filter((n) => n > 1)), [2, 3]);
 });
 

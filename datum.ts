@@ -180,10 +180,17 @@ export const getMonoid = <A>(S: TC.Semigroup<A>): TC.Monoid<Datum<A>> => ({
 
 export const getSetoid = <A>(S: TC.Setoid<A>): TC.Setoid<Datum<A>> => ({
   equals: (a) =>
-    (b) =>
-      a === b ||
-      (a.tag === b.tag &&
-        (isSome(a) && isSome(b) ? S.equals(a.value)(b.value) : true)),
+    (b) => {
+      if (a === b) {
+        return true;
+      }
+      if (a.tag === b.tag) {
+        if (isSome(a) && isSome(b)) {
+          return S.equals(a.value)(b.value);
+        }
+      }
+      return false;
+    },
 });
 
 export const getOrd = <A>(O: TC.Ord<A>): TC.Ord<Datum<A>> => {

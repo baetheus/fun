@@ -79,7 +79,7 @@ export const _concat = <A>(
 
 export const _flatten = <A>(aas: readonly (readonly A[])[]): readonly A[] => {
   if (aas.length === 0) {
-    return (aas as unknown) as readonly A[];
+    return [];
   }
 
   const result: A[] = [];
@@ -172,11 +172,6 @@ export const _unsafeDeleteAt = <A>(
   const xs = as.slice();
   xs.splice(i, 1);
   return xs;
-};
-
-export const _unsafePush = <A>(as: A[], a: A): A[] => {
-  as.push(a);
-  return as;
 };
 
 export const _append = <A>(as: readonly A[]) => (a: A) => [...as, a];
