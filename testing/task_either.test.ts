@@ -89,6 +89,13 @@ Deno.test("TaskEither apSeq", async () => {
   await assertEqualsT(pipe(T.left(1), T.apSeq(T.left(2))), T.left(1));
 });
 
+Deno.test("TaskEither alt", async () => {
+  await assertEqualsT(pipe(T.left(1), T.alt(T.left(2))), T.left(2));
+  await assertEqualsT(pipe(T.left(1), T.alt(T.right(2))), T.right(2));
+  await assertEqualsT(pipe(T.right(1), T.alt(T.left(2))), T.right(1));
+  await assertEqualsT(pipe(T.right(1), T.alt(T.right(2))), T.right(1));
+});
+
 Deno.test("TaskEither chainLeft", async () => {
   const chainLeft = T.chainLeft((n: number) =>
     n === 0 ? T.right(n) : T.left(n)

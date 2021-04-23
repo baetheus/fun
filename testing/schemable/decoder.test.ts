@@ -22,6 +22,15 @@ Deno.test("Decoder fromGuard", () => {
   assertEquals(decoder(true), D.failure(true, "number"));
 });
 
+Deno.test("Decoder extract", () => {
+  const decoder = D.literal(null);
+  assertEquals(D.extract(decoder(null)), E.right(null));
+  assertEquals(
+    D.extract(decoder(1)),
+    E.left("cannot decode 1, should be null"),
+  );
+});
+
 Deno.test("Decoder unknown", () => {
   assertEquals(D.unknown(1), D.success(1));
 });
@@ -46,6 +55,19 @@ Deno.test("Decoder literal", () => {
   const literal = D.literal(1, 2, 3);
   assertEquals(literal(1), D.success(1));
   assertEquals(literal(false), D.failure(false, "literal 1, 2, or 3"));
+
+  const l2 = D.literal(null);
+  assertEquals(l2(null), D.success(null));
+  assertEquals(l2(1), D.failure(1, "null"));
+
+  const l3 = D.literal(1, 2);
+  assertEquals(l3(1), D.success(1));
+  assertEquals(l3(2), D.success(2));
+  assertEquals(l3(null), D.failure(null, "1 or 2"));
+
+  const l4 = D.literal("one");
+  assertEquals(l4(null), D.failure(null, '"one"'));
+  assertEquals(l4("one"), D.success("one"));
 });
 
 Deno.test("Decoder nullable", () => {

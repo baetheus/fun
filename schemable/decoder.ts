@@ -103,11 +103,9 @@ export const fromGuard = <A>(
 const literalString = (literal: S.Literal) =>
   typeof literal === "string" ? `"${literal}"` : `${literal}`;
 
-const literalError = (literals: S.Literal[]): string => {
+const literalError = (literals: [S.Literal, ...S.Literal[]]): string => {
   const lits = literals.map(literalString);
   switch (lits.length) {
-    case 0:
-      return "void";
     case 1:
       return lits[0];
     case 2:
@@ -157,7 +155,7 @@ const toForest: (e: Failure) => ReadonlyArray<T.Tree<string>> = Free.fold(
 export const draw = (e: Failure): string =>
   toForest(e).map(T.drawTree).join("\n");
 
-export const extract = <A>(decoded: Decoded<A>) =>
+export const extract = <A>(decoded: Decoded<A>): E.Either<string, A> =>
   pipe(decoded, E.mapLeft(draw));
 
 /*******************************************************************************

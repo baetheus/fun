@@ -217,8 +217,15 @@ Deno.test("Option getSetoid", () => {
 
 Deno.test("Option getOrd", () => {
   const Ord = O.getOrd(ordNumber);
+  const { lte } = Ord;
   AS.assertOrd(Ord, { a: O.none, b: O.some(1) });
   AS.assertOrd(Ord, { a: O.some(2), b: O.some(1) });
+  assertEquals(lte(O.none)(O.none), true);
+  assertEquals(lte(O.none)(O.some(1)), true);
+  assertEquals(lte(O.some(1))(O.none), false);
+  assertEquals(lte(O.some(1))(O.some(1)), true);
+  assertEquals(lte(O.some(1))(O.some(2)), true);
+  assertEquals(lte(O.some(2))(O.some(1)), false);
 });
 
 Deno.test("Option getSemigroup", () => {

@@ -84,3 +84,13 @@ export const Bifunctor: TC.Bifunctor<URI> = {
   bimap: (fab, _) => (tac) => make(fab(tac)),
   mapLeft: (fef) => Bifunctor.bimap(fef, identity),
 };
+
+/*******************************************************************************
+ * Pipeables
+ ******************************************************************************/
+
+export const { map } = Functor;
+
+export const { contramap } = Contravariant;
+
+export const { bimap, mapLeft } = Bifunctor;

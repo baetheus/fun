@@ -146,25 +146,25 @@ export const assertMonoid = <T>(
  * Assert: Group
  ******************************************************************************/
 
-export const assertGroup = <T>(
-  G: TC.Group<T>,
-  { a, b, c }: Record<"a" | "b" | "c", T>,
-): void => {
-  // Right inverse: G.concat(a, G.invert(a)) ≡ G.empty()
-  assertEquals(
-    G.concat(a)(G.invert(a)),
-    G.empty(),
-  );
-
-  // Left inverse: G.concat(G.invert(a), a) ≡ G.empty()
-  assertEquals(
-    G.concat(G.invert(a))(a),
-    G.empty(),
-  );
-
-  // Assert Monoid Laws
-  assertMonoid(G, { a, b, c });
-};
+// export const assertGroup = <T>(
+//   G: TC.Group<T>,
+//   { a, b, c }: Record<"a" | "b" | "c", T>,
+// ): void => {
+//   // Right inverse: G.concat(a, G.invert(a)) ≡ G.empty()
+//   assertEquals(
+//     G.concat(a)(G.invert(a)),
+//     G.empty(),
+//   );
+//
+//   // Left inverse: G.concat(G.invert(a), a) ≡ G.empty()
+//   assertEquals(
+//     G.concat(G.invert(a))(a),
+//     G.empty(),
+//   );
+//
+//   // Assert Monoid Laws
+//   assertMonoid(G, { a, b, c });
+// };
 
 /*******************************************************************************
  * Assert: Semigroupoid
@@ -337,80 +337,80 @@ export const assertBifunctor = <
  * Assert: Contravariant
  ******************************************************************************/
 
-export const assertContravariant = <
-  URI extends URIS,
-  A = never,
-  B = never,
-  C = never,
-  D = never,
-  I = never,
-  J = never,
->(
-  C: TC.Contravariant<URI>,
-  { ti, tj, fai, fij }: {
-    ti: Kind<URI, [I, B, C, D]>;
-    tj: Kind<URI, [J, B, C, D]>;
-    fai: (a: A) => I;
-    fij: (i: I) => J;
-  },
-): void => {
-  // Identity: F.contramap(x => x, a) ≡ a
-  assertEquals(
-    // deno-lint-ignore no-explicit-any
-    pipe(ti, C.contramap((x: any) => x)),
-    ti,
-  );
-
-  // Composition: F.contramap(x => f(g(x)), a) ≡ F.contramap(g, F.contramap(f, a))
-  assertEquals(
-    pipe(tj, C.contramap(flow(fai, fij))),
-    pipe(tj, C.contramap(fij), C.contramap(fai)),
-  );
-};
+// export const assertContravariant = <
+//   URI extends URIS,
+//   A = never,
+//   B = never,
+//   C = never,
+//   D = never,
+//   I = never,
+//   J = never,
+// >(
+//   C: TC.Contravariant<URI>,
+//   { ti, tj, fai, fij }: {
+//     ti: Kind<URI, [I, B, C, D]>;
+//     tj: Kind<URI, [J, B, C, D]>;
+//     fai: (a: A) => I;
+//     fij: (i: I) => J;
+//   },
+// ): void => {
+//   // Identity: F.contramap(x => x, a) ≡ a
+//   assertEquals(
+//     // deno-lint-ignore no-explicit-any
+//     pipe(ti, C.contramap((x: any) => x)),
+//     ti,
+//   );
+//
+//   // Composition: F.contramap(x => f(g(x)), a) ≡ F.contramap(g, F.contramap(f, a))
+//   assertEquals(
+//     pipe(tj, C.contramap(flow(fai, fij))),
+//     pipe(tj, C.contramap(fij), C.contramap(fai)),
+//   );
+// };
 
 /*******************************************************************************
  * Assert: Profunctor
  ******************************************************************************/
 
-export const assertProfunctor = <
-  URI extends URIS,
-  A = never,
-  B = never,
-  C = never,
-  D = never,
-  I = never,
-  J = never,
-  X = never,
-  Y = never,
->(
-  P: TC.Profunctor<URI>,
-  { tay, fai, fij, fbx, fxy }: {
-    tay: Kind<URI, [J, B, C, D]>;
-    fai: (a: A) => I;
-    fij: (i: I) => J;
-    fbx: (b: B) => X;
-    fxy: (x: X) => Y;
-  },
-): void => {
-  // Identity: P.promap(x => x, x => x, a) ≡ a
-  assertEquals(
-    // deno-lint-ignore no-explicit-any
-    pipe(tay, P.promap((x: any) => x, (x: any) => x)),
-    tay,
-  );
-
-  // Composition: P.promap(x => f(g(x)), x => h(i(x)), a) ≡ P.promap(g, h, P.promap(f, i, a))
-  assertEquals(
-    pipe(
-      tay,
-      P.promap(
-        (a: A) => fij(fai(a)),
-        (x) => fxy(fbx(x)),
-      ),
-    ),
-    pipe(tay, P.promap(fij, fbx), P.promap(fai, fxy)),
-  );
-};
+// export const assertProfunctor = <
+//   URI extends URIS,
+//   A = never,
+//   B = never,
+//   C = never,
+//   D = never,
+//   I = never,
+//   J = never,
+//   X = never,
+//   Y = never,
+// >(
+//   P: TC.Profunctor<URI>,
+//   { tay, fai, fij, fbx, fxy }: {
+//     tay: Kind<URI, [J, B, C, D]>;
+//     fai: (a: A) => I;
+//     fij: (i: I) => J;
+//     fbx: (b: B) => X;
+//     fxy: (x: X) => Y;
+//   },
+// ): void => {
+//   // Identity: P.promap(x => x, x => x, a) ≡ a
+//   assertEquals(
+//     // deno-lint-ignore no-explicit-any
+//     pipe(tay, P.promap((x: any) => x, (x: any) => x)),
+//     tay,
+//   );
+//
+//   // Composition: P.promap(x => f(g(x)), x => h(i(x)), a) ≡ P.promap(g, h, P.promap(f, i, a))
+//   assertEquals(
+//     pipe(
+//       tay,
+//       P.promap(
+//         (a: A) => fij(fai(a)),
+//         (x) => fxy(fbx(x)),
+//       ),
+//     ),
+//     pipe(tay, P.promap(fij, fbx), P.promap(fai, fxy)),
+//   );
+// };
 
 /*******************************************************************************
  * Assert: Apply
@@ -792,39 +792,39 @@ export const assertExtend = <
  * Assert: Comonad
  ******************************************************************************/
 
-export const assertComonad = <
-  URI extends URIS,
-  A = never,
-  B = never,
-  C = never,
-  D = never,
-  I = never,
-  J = never,
->(
-  C: TC.Comonad<URI>,
-  { ta, fai, fij, ftai, ftij }: {
-    ta: Kind<URI, [A, B, C, D]>;
-    fai: (a: A) => I;
-    fij: (i: I) => J;
-    ftai: (ta: Kind<URI, [A, B, C, D]>) => I;
-    ftij: (tb: Kind<URI, [I, B, C, D]>) => J;
-  },
-): void => {
-  // Left identity: C.extend(C.extract, w) ≡ w
-  assertEquals(
-    pipe(ta, C.extend(C.extract)),
-    ta,
-  );
-
-  // Right identity: C.extract(C.extend(f, w)) ≡ f(w)
-  assertEquals(
-    C.extract(pipe(ta, C.extend(ftai))),
-    ftai(ta),
-  );
-
-  // Assert Extend
-  assertExtend(C, { ta, fai, fij, ftai, ftij });
-};
+// export const assertComonad = <
+//   URI extends URIS,
+//   A = never,
+//   B = never,
+//   C = never,
+//   D = never,
+//   I = never,
+//   J = never,
+// >(
+//   C: TC.Comonad<URI>,
+//   { ta, fai, fij, ftai, ftij }: {
+//     ta: Kind<URI, [A, B, C, D]>;
+//     fai: (a: A) => I;
+//     fij: (i: I) => J;
+//     ftai: (ta: Kind<URI, [A, B, C, D]>) => I;
+//     ftij: (tb: Kind<URI, [I, B, C, D]>) => J;
+//   },
+// ): void => {
+//   // Left identity: C.extend(C.extract, w) ≡ w
+//   assertEquals(
+//     pipe(ta, C.extend(C.extract)),
+//     ta,
+//   );
+//
+//   // Right identity: C.extract(C.extend(f, w)) ≡ f(w)
+//   assertEquals(
+//     C.extract(pipe(ta, C.extend(ftai))),
+//     ftai(ta),
+//   );
+//
+//   // Assert Extend
+//   assertExtend(C, { ta, fai, fij, ftai, ftij });
+// };
 
 /*******************************************************************************
  * Assert: Traversable

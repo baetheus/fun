@@ -101,7 +101,7 @@ export const intersect = <A, B>(a: A, b: B): A & B => {
       return Object.assign({}, a, b);
     }
   }
-  return b as A & B;
+  return (isNil(a) ? b : a) as A & B;
 };
 
 /*******************************************************************************

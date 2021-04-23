@@ -62,7 +62,7 @@ Deno.test("State evaluate", () => {
 });
 
 Deno.test("State execute", () => {
-  assertEquals(pipe(S.get<number>(), S.evaluate(0)), 0);
+  assertEquals(pipe(S.get<number>(), S.execute(0)), 0);
 });
 
 Deno.test("State Do, bind, bindTo", () => {

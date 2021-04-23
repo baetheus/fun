@@ -127,6 +127,9 @@ Deno.test("Lens filter", () => {
 Deno.test("Lens modify", () => {
   const modify = pipe(lens, L.modify((n) => n + 1));
   assertEquals(modify(test), makeTest(2, 1));
+
+  const l2 = pipe(L.id<number>(), L.modify((n) => n));
+  assertEquals(l2(0), 0);
 });
 
 Deno.test("Lens traverse", () => {

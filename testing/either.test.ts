@@ -309,6 +309,20 @@ Deno.test("Either Foldable", () => {
   });
 });
 
+Deno.test("Either reduce", () => {
+  const reduce = E.reduce((o: number, i: number) => o + i, 0);
+
+  assertEquals(reduce(E.left("adsf")), 0);
+  assertEquals(reduce(E.right(1)), 1);
+});
+
+Deno.test("Either alt", () => {
+  assertEquals(pipe(E.left(1), E.alt(E.left(2))), E.left(2));
+  assertEquals(pipe(E.left(1), E.alt(E.right(1))), E.right(1));
+  assertEquals(pipe(E.right(1), E.alt(E.left(1))), E.right(1));
+  assertEquals(pipe(E.right(1), E.alt(E.right(2))), E.right(1));
+});
+
 Deno.test("Either chainLeft", () => {
   const chainLeft = E.chainLeft((n: number) =>
     n === 0 ? E.left(n) : E.right(n)

@@ -3,6 +3,7 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 import * as P from "../../optics/prism.ts";
 import * as I from "../../optics/iso.ts";
 import * as L from "../../optics/lens.ts";
+import * as OP from "../../optics/optional.ts";
 import * as O from "../../option.ts";
 import * as E from "../../either.ts";
 import { pipe } from "../../fns.ts";
@@ -90,6 +91,13 @@ Deno.test("Prism composeLens", () => {
   assertEquals(getOption(0), O.some("0"));
   assertEquals(set("0")(0), 0);
   assertEquals(set("0")(1), 0);
+
+  const p2 = P.fromPredicate((n: number) => n > 0);
+  const p3 = pipe(p2, P.composeLens(L.id()));
+  assertEquals(p3.set(0)(0), 0);
+  assertEquals(p3.set(0)(1), 0);
+  assertEquals(p3.set(1)(0), 0);
+  assertEquals(p3.set(1)(1), 1);
 });
 
 Deno.test("Prism composeOptional", () => {
@@ -101,6 +109,13 @@ Deno.test("Prism composeOptional", () => {
   assertEquals(getOption(1), O.some(1));
   assertEquals(set(0)(0), 0);
   assertEquals(set(0)(1), 0);
+
+  const p2 = P.fromPredicate((n: number) => n > 0);
+  const p3 = pipe(p2, P.composeOptional(OP.id()));
+  assertEquals(p3.set(0)(0), 0);
+  assertEquals(p3.set(0)(1), 0);
+  assertEquals(p3.set(1)(0), 0);
+  assertEquals(p3.set(1)(1), 1);
 });
 
 Deno.test("Prism composeTraversal", () => {
@@ -163,7 +178,7 @@ Deno.test("Prism props", () => {
 });
 
 Deno.test("Prism index", () => {
-  const { getOption, set } = pipe(L.id<ReadonlyArray<number>>(), L.index(1));
+  const { getOption, set } = pipe(P.id<ReadonlyArray<number>>(), P.index(1));
   assertEquals(getOption([]), O.none);
   assertEquals(getOption([1, 2]), O.some(2));
   assertEquals(set(3)([]), []);
@@ -173,8 +188,8 @@ Deno.test("Prism index", () => {
 
 Deno.test("Prism key", () => {
   const { getOption, set } = pipe(
-    L.id<Readonly<Record<string, number>>>(),
-    L.key("one"),
+    P.id<Readonly<Record<string, number>>>(),
+    P.key("one"),
   );
   assertEquals(getOption({}), O.none);
   assertEquals(getOption({ one: 1 }), O.some(1));

@@ -77,7 +77,7 @@ Deno.test("fns typeof", () => {
   assertEquals(F.typeOf(null), "null");
 });
 
-Deno.test("fns intesrsect", () => {
+Deno.test("fns intersect", () => {
   const a = { a: 1 };
   const b = { b: 2 };
   const c = { a: 2, b: 2 };
@@ -87,6 +87,8 @@ Deno.test("fns intesrsect", () => {
   assertEquals(F.intersect(a, c), ac);
   assertEquals(F.intersect(null, b), b);
   assertEquals(F.intersect(b, null), b);
+  assertEquals(F.intersect(undefined, b), b);
+  assertEquals(F.intersect(b, undefined), b);
 });
 
 Deno.test("fns hasOwnProperty", () => {
