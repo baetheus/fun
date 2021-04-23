@@ -120,6 +120,19 @@ const literalError = (literals: S.Literal[]): string => {
   }
 };
 
+const compactRecord = <A>(
+  r: Record<string, E.Either<void, A>>,
+): Record<string, A> => {
+  const out: Record<string, A> = {};
+  for (const k in r) {
+    const rk = r[k];
+    if (E.isRight(rk)) {
+      out[k] = rk.right;
+    }
+  }
+  return out;
+};
+
 /*******************************************************************************
 * Draw
 *******************************************************************************/
@@ -257,23 +270,46 @@ export const StructSchemable: S.StructSchemable<URI> = {
 };
 
 export const PartialSchemable: S.PartialSchemable<URI> = {
-  partial: (properties) =>
+  partial: (properties) => {
+    // TODO Hoist traverseRecord function
+    const skipProperty: Decoded<E.Either<void, unknown>> = success(
+      E.left(undefined),
+    );
+    const undefinedProprty: Decoded<E.Either<void, unknown>> = success(
+      E.right(undefined),
+    );
+
     // deno-lint-ignore no-explicit-any
-    (u: unknown): any =>
-      isRecord(u)
-        ? pipe(
-          properties,
-          // deno-lint-ignore no-explicit-any
-          traverseRecord((decoder: Decoder<any>, i) =>
-            pipe(
-              u[i],
-              UndefinableSchemable.undefinable(decoder),
-              E.mapLeft((e) => make.key(i, "optional", e)),
-            )
-          ),
-          E.mapLeft((e) => make.wrap("cannot decode partial", e)),
-        )
-        : failure(u, "struct"),
+    return (u: unknown): any => {
+      if (!isRecord(u)) {
+        return failure(u, "struct");
+      }
+      return pipe(
+        properties,
+        traverseRecord(
+          (
+            // deno-lint-ignore no-explicit-any
+            decoder: Decoder<any>,
+            i,
+          ): Decoded<E.Either<void, unknown>> => {
+            const ui = u[i];
+            // Handle existing undefined but don't add missing properties
+            if (ui === undefined) {
+              return i in u ? undefinedProprty : skipProperty;
+            }
+            return pipe(
+              decoder(ui),
+              E.bimap(
+                (e) => make.key(i, "optional", e),
+                E.right,
+              ),
+            );
+          },
+        ),
+        E.bimap((e) => make.wrap("cannot decode partial", e), compactRecord),
+      );
+    };
+  },
 };
 
 export const IntersectSchemable: S.IntersectSchemable<URI> = {
