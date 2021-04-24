@@ -142,6 +142,32 @@ Deno.test("fns wait", async () => {
   );
 });
 
+Deno.test("fns resolve", async () => {
+  const ta = await F.resolve(1);
+  assertEquals(ta, 1);
+});
+
+Deno.test("fns reject", async () => {
+  const ta = await F.reject(1).catch((n) => n);
+  assertEquals(ta, 1);
+});
+
+Deno.test("fns then", async () => {
+  const ta = await F.pipe(
+    F.resolve(1),
+    F.then((n) => n + 1),
+  );
+  assertEquals(ta, 2);
+});
+
+Deno.test("fns recover", async () => {
+  const ta = await F.pipe(
+    F.reject(1),
+    F.recover((n) => n),
+  );
+  assertEquals(ta, 1);
+});
+
 Deno.test("fns pipe", () => {
   const fab = (n: number) => n + 1;
 

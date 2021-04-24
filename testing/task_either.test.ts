@@ -2,7 +2,7 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
 import * as T from "../task_either.ts";
 import * as E from "../either.ts";
-import { _, pipe } from "../fns.ts";
+import { _, pipe, then } from "../fns.ts";
 
 import * as AS from "./assert.ts";
 
@@ -37,7 +37,7 @@ Deno.test("TaskEither fromEither", async () => {
 
 Deno.test("TaskEither then", async () => {
   assertEquals(
-    await pipe(Promise.resolve(1), T.then(AS.add)),
+    await pipe(Promise.resolve(1), then(AS.add)),
     await Promise.resolve(2),
   );
 });

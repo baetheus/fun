@@ -2,79 +2,14 @@
 
 import type { Fn, Lazy, Nil, UnknownFn } from "./types.ts";
 
-/*******************************************************************************
- * isNotNil
- * 
- * Takes a value and returns true if the value is not null or undefined. Also
- * acts as a type guard.
- ******************************************************************************/
-export const isNotNil = <A>(a: A): a is NonNullable<A> =>
-  a !== null && a !== undefined;
-
-/*******************************************************************************
- * isNil
- * 
- * Takes a value and returns false if the value is not null or undefined. Also
- * acts as a type guard.
- ******************************************************************************/
-export const isNil = (a: unknown): a is Nil => a === null || a === undefined;
-
-/*******************************************************************************
- * isRecord
- * 
- * Takes a value and returns false if the value is a Record. Also
- * acts as a type guard.
- ******************************************************************************/
-export const isRecord = (
-  a: unknown,
-): a is Record<string | number | symbol, unknown> =>
-  isNotNil(a) && typeof a === "object";
-
-/*******************************************************************************
- * Identity
- * 
- * Takes a value and returns that same value
- ******************************************************************************/
-export const identity = <A>(a: A): A => a;
-
-/*******************************************************************************
- * Compose
- * 
- * Takes two functions with matching types and composes them into a new
- * function. 
- ******************************************************************************/
-export const compose = <B, C>(fbc: Fn<[B], C>) =>
-  <A>(fab: Fn<[A], B>): Fn<[A], C> => (a: A): C => fbc(fab(a));
-
-/*******************************************************************************
- * Constant
- * 
- * Creates a constant function around the value a
- ******************************************************************************/
-export const constant = <A>(a: A): Lazy<A> => () => a;
-
-/*******************************************************************************
- * Memoize
- * 
- * A naive memoization function with no cache release mechanism
- ******************************************************************************/
-export const memoize = <A, B>(f: (a: A) => B): (a: A) => B => {
-  const cache = new Map();
-  return (a) => {
-    if (cache.has(a)) {
-      return cache.get(a);
-    }
-    const b = f(a);
-    cache.set(a, b);
-    return b;
-  };
-};
-
-/*******************************************************************************
- * TypeOf
+/**
+ * typeOf
  * 
  * An extended typeOf function that returns "null" for null instead of "object"
- ******************************************************************************/
+ *
+ *      const p1 = typeOf(null); // "null"
+ *      const p2 = typeOf(1); // "number"
+ */
 export const typeOf = (
   x: unknown,
 ):
@@ -88,11 +23,78 @@ export const typeOf = (
   | "function"
   | "null" => (x === null ? "null" : typeof x);
 
-/*******************************************************************************
+/**
+ * isNotNil
+ * 
+ * Takes a value and returns true if the value is not null or undefined. Also
+ * acts as a type guard.
+ */
+export const isNotNil = <A>(a: A): a is NonNullable<A> =>
+  a !== null && a !== undefined;
+
+/**
+ * isNil
+ * 
+ * Takes a value and returns false if the value is not null or undefined. Also
+ * acts as a type guard.
+ */
+export const isNil = (a: unknown): a is Nil => a === null || a === undefined;
+
+/**
+ * isRecord
+ * 
+ * Takes a value and returns false if the value is a Record. Also
+ * acts as a type guard.
+ */
+export const isRecord = (
+  a: unknown,
+): a is Record<string | number | symbol, unknown> => typeOf(a) === "object";
+
+/**
+ * Identity
+ * 
+ * Takes a value and returns that same value
+ */
+export const identity = <A>(a: A): A => a;
+
+/**
+ * Compose
+ * 
+ * Takes two functions with matching types and composes them into a new
+ * function. 
+ */
+export const compose = <B, C>(fbc: Fn<[B], C>) =>
+  <A>(fab: Fn<[A], B>): Fn<[A], C> => (a: A): C => fbc(fab(a));
+
+/**
+ * Constant
+ * 
+ * Creates a constant function around the value a
+ */
+export const constant = <A>(a: A): Lazy<A> => () => a;
+
+/**
+ * Memoize
+ * 
+ * A naive memoization function with no cache release mechanism
+ */
+export const memoize = <A, B>(f: (a: A) => B): (a: A) => B => {
+  const cache = new Map();
+  return (a) => {
+    if (cache.has(a)) {
+      return cache.get(a);
+    }
+    const b = f(a);
+    cache.set(a, b);
+    return b;
+  };
+};
+
+/**
  * Intersect
  * 
  * Takes two types and returns their intersection (if it is possible)
- ******************************************************************************/
+ */
 export const intersect = <A, B>(a: A, b: B): A & B => {
   if (a !== undefined && b !== undefined) {
     const tx = typeOf(a);
@@ -104,62 +106,94 @@ export const intersect = <A, B>(a: A, b: B): A & B => {
   return (isNil(a) ? b : a) as A & B;
 };
 
-/*******************************************************************************
+/**
  * HasOwnProperty
  * 
  * An alias for Object.prototype.hasOwnProperty
- ******************************************************************************/
+ */
 export const hasOwnProperty = Object.prototype.hasOwnProperty;
 
-/*******************************************************************************
+/**
  * Apply
  * 
  * Takes a group of arguments and curries them so that a function can be appied
  * to them later (pipeable Function.apply)
- ******************************************************************************/
+ */
 export const apply = <AS extends unknown[], B>(...as: AS) =>
   (fn: Fn<AS, B>): B => fn(...as);
 
-/*******************************************************************************
+/**
  * Call
  * 
  * Takes a function and returns that function (pipeable Function.call)
- ******************************************************************************/
+ */
 export const call = <AS extends unknown[], B>(fn: Fn<AS, B>) =>
   (...as: AS) => fn(...as);
 
-/*******************************************************************************
+/**
  * Apply1
  * 
  * A special case of apply for functions that only take a single argument
- ******************************************************************************/
+ */
 export const apply1 = <A, B>(a: A, fn: Fn<[A], B>): B => fn(a);
 
-/*******************************************************************************
+/**
  * Absurd
  * 
  * A function that should never be called, useful for some theoretical type
  * implementations
- ******************************************************************************/
+ */
 export function absurd<A>(_: never): A {
   throw new Error("Called `absurd` function which should be uncallable");
 }
 
-/*******************************************************************************
+/**
  * Hole
  * 
  * The hole const is used for type hole based programming
- ******************************************************************************/
+ */
 export const _: <T>() => T = absurd as any;
 
-/*******************************************************************************
+/**
  * Wait
  * 
  * The wait function returns a Promise<void> that resolves after ms milliseconds
- ******************************************************************************/
+ */
 export const wait = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
-/*******************************************************************************
+/**
+ * Resolve
+ *
+ * An alias for Promise.resolve
+ */
+export const resolve = <A>(a: A): Promise<A> => Promise.resolve(a);
+
+/**
+ * Reject
+ *
+ * An alias for Promise.reject
+ */
+export const reject = <A = never, B = unknown>(b: B): Promise<A> =>
+  Promise.reject(b);
+
+/**
+ * Then
+ *
+ * A curried alias of Promise.then
+ */
+export const then = <A, B>(fab: (a: A) => B) =>
+  (ta: Promise<A>): Promise<B> => ta.then(fab);
+
+/**
+ * Recover
+ *
+ * A curried alias of Promise.catch that forces a return of the same
+ * inner type of the Promise
+ */
+export const recover = <A>(fua: (u: unknown) => A) =>
+  (ta: Promise<A>): Promise<A> => ta.catch(fua);
+
+/**
  * Pipe
  * 
  * The pipe takes a value as the first argument and composes it with subsequent
@@ -167,7 +201,7 @@ export const wait = (ms: number) => new Promise((res) => setTimeout(res, ms));
  * 
  * Original pipe function pulled from fp-ts and modified
  * https://github.com/gcanti/fp-ts/blob/master/src/pipeable.ts
- ******************************************************************************/
+ */
 export type PipeFn = {
   <A>(a: A): A;
   <A, B>(a: A, ab: (a: A) => B): B;
@@ -282,7 +316,7 @@ export type PipeFn = {
 export const pipe: PipeFn = (a: unknown, ...fns: UnknownFn[]): unknown =>
   fns.reduce(apply1, a);
 
-/*******************************************************************************
+/**
  * Flow
  * 
  * The flow function is a variadic extension of compose, where each subsequent
@@ -290,7 +324,7 @@ export const pipe: PipeFn = (a: unknown, ...fns: UnknownFn[]): unknown =>
  * 
  * Original flow function pulled from fp-ts and modified
  * https://github.com/gcanti/fp-ts/blob/master/src/functions.ts
- ******************************************************************************/
+ */
 type FlowFn = {
   <A extends ReadonlyArray<unknown>, B>(ab: (...a: A) => B): (...a: A) => B;
   <A extends ReadonlyArray<unknown>, B, C>(

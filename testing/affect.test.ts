@@ -2,17 +2,17 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
 import * as A from "../affect.ts";
 import * as E from "../either.ts";
-import { pipe } from "../fns.ts";
+import { pipe, resolve, then } from "../fns.ts";
 
 Deno.test("Affect make", async () => {
-  const a = await A.make(1);
+  const a = await resolve(1);
   assertEquals(a, 1);
 });
 
 Deno.test("Affect then", async () => {
   const t1 = await pipe(
-    A.make(1),
-    A.then((n) => n + 1),
+    resolve(1),
+    then((n) => n + 1),
   );
   assertEquals(t1, 2);
 });
@@ -28,12 +28,12 @@ Deno.test("Affect askLeft", async () => {
 });
 
 Deno.test("Affect asks", async () => {
-  const t1 = A.asks((r: number) => A.make(r + 1));
+  const t1 = A.asks((r: number) => resolve(r + 1));
   assertEquals(await t1(1), E.right(2));
 });
 
 Deno.test("Affect asksLeft", async () => {
-  const t1 = A.asksLeft((r: number) => A.make(r + 1));
+  const t1 = A.asksLeft((r: number) => resolve(r + 1));
   assertEquals(await t1(1), E.left(2));
 });
 
@@ -54,11 +54,11 @@ Deno.test("Affect of", async () => {
 
 Deno.test("Affect ap", async () => {
   const ta1 = A.ask<number>();
-  const ta2 = A.asksLeft<number, string, number>((_: number) => A.make("ta2"));
+  const ta2 = A.asksLeft<number, string, number>((_: number) => resolve("ta2"));
   const f1 = A.asks<number, string, (n: number) => number>((n: number) =>
-    A.make((m: number) => m + n)
+    resolve((m: number) => m + n)
   );
-  const f2: typeof f1 = A.asksLeft((_: number) => A.make("f2"));
+  const f2: typeof f1 = A.asksLeft((_: number) => resolve("f2"));
   const ap1 = A.ap(f1);
   const ap2 = A.ap(f2);
 
@@ -70,7 +70,7 @@ Deno.test("Affect ap", async () => {
 
 Deno.test("Affect map", async () => {
   const ta1 = A.ask<number>();
-  const ta2 = A.asksLeft<number, string, number>((_) => A.make("ta2"));
+  const ta2 = A.asksLeft<number, string, number>((_) => resolve("ta2"));
   const map = A.map((n: number) => n + 1);
 
   assertEquals(await map(ta1)(1), E.right(2));
@@ -154,7 +154,7 @@ Deno.test("Affect sequenceStruct", async () => {
 Deno.test("Affect compose", async () => {
   const ta1 = A.ask<number>();
   const ta2 = A.askLeft<number>();
-  const ta3 = A.asks<number, number, number>((n: number) => A.make(n + 1));
+  const ta3 = A.asks<number, number, number>((n: number) => resolve(n + 1));
 
   assertEquals(await pipe(ta1, A.compose(ta2))(1), E.left(1));
   assertEquals(await pipe(ta1, A.compose(ta3))(1), E.right(2));
