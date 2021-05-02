@@ -1,27 +1,42 @@
 import type * as TC from "./type_classes.ts";
 import type * as HKT from "./hkt.ts";
+import type { Reader } from "./reader.ts";
+import type { Either } from "./either.ts";
 
 import * as E from "./either.ts";
 import { createDo } from "./derivations.ts";
-import { flow, identity, pipe } from "./fns.ts";
+import { flow, identity, pipe, resolve, then } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
 /*******************************************************************************
  * Types
  ******************************************************************************/
 
-export type Affect<R, E, A> = (r: R) => Promise<E.Either<E, A>>;
+/**
+ * The Affect type can best be thought of as an asynchronous function that
+ * returns an `Either`. ie. `async (r: R) => Promise<Either<E, A>>`. This
+ * forms the basis of most Promise based asynchronous communication in
+ * TypeScript.
+ */
+export type Affect<R, E, A> = Reader<R, Promise<Either<E, A>>>;
 
 /*******************************************************************************
  * Kind Registration
  ******************************************************************************/
 
+/**
+ * URI constant for Affect
+ */
 export const URI = "Affect";
 
+/**
+ * URI constant type for Affect
+ */
 export type URI = typeof URI;
 
-export type URIS = HKT.URIS;
-
+/**
+ * Kind declaration for Affect
+ */
 declare module "./hkt.ts" {
   // deno-lint-ignore no-explicit-any
   export interface Kinds<_ extends any[]> {
@@ -30,51 +45,88 @@ declare module "./hkt.ts" {
 }
 
 /*******************************************************************************
- * Utilites
- ******************************************************************************/
-
-export const make = <A>(a: A): Promise<A> => Promise.resolve(a);
-
-export const then = <A, B>(fab: (a: A) => B) =>
-  (p: Promise<A>): Promise<B> => p.then(fab);
-
-/*******************************************************************************
  * Constructors
  ******************************************************************************/
 
-export const ask = <R, L = never>(): Affect<R, L, R> => flow(E.right, make);
+/**
+ * A thunk that takes a type level value. Like Reader.ask this function is
+ * used to set type constraints on a value without supplying a value.
+ *
+ *       const p1 = ask<number>();
+ *       const p2 = p1(1); // Promise(Right(1))
+ */
+export const ask = <R, L = never>(): Affect<R, L, R> => flow(E.right, resolve);
 
-export const askLeft = <L, R = never>(): Affect<L, L, R> => flow(E.left, make);
+/**
+ * A thunk that takes a type level value. Like Reader.ask this function is
+ * used to set type constraints on a value without supplying a value.
+ *
+ *       const p1 = ask<number>();
+ *       const p2 = p1(1); // Promise(Left(1))
+ */
+export const askLeft = <L, R = never>(): Affect<L, L, R> =>
+  flow(E.left, resolve);
 
+/**
+ * Constructs an Affect from an asynchronous computation
+ *
+ *       const p1 = asks((n: URL) => fetch(n))
+ *       const p2 = p1(1); // Promise(Right(Response))
+ */
 export const asks = <R, E = never, A = never>(
   fra: (r: R) => Promise<A>,
 ): Affect<R, E, A> => flow(fra, then(E.right));
 
+/**
+ * Constructs an Affect from an asynchronous computation
+ *
+ *       const p1 = asks((n: URL) => fetch(n))
+ *       const p2 = p1(1); // Promise(Left(Response))
+ */
 export const asksLeft = <R, E = never, A = never>(
   fre: (r: R) => Promise<E>,
 ): Affect<R, E, A> => flow(fre, then(E.left));
 
+/**
+ * Constructs an Affect from a value
+ *
+ *       const p1 = right(1) // (n: never) => Promise(Right(1))
+ */
 export const right = <R = never, E = never, A = never>(
   right: A,
-): Affect<R, E, A> => () => make(E.right(right));
+): Affect<R, E, A> => () => resolve(E.right(right));
 
+/**
+ * Constructs an Affect from a value
+ *
+ *       const p1 = left(1) // (n: never) => Promise(Left(1))
+ */
 export const left = <R = never, E = never, A = never>(
   left: E,
-): Affect<R, E, A> => () => make(E.left(left));
+): Affect<R, E, A> => () => resolve(E.left(left));
 
 /*******************************************************************************
  * Modules
  ******************************************************************************/
 
+/**
+ * The Functor module for Affect
+ */
 export const Functor: TC.Functor<URI> = {
   map: (fai) => (ta) => flow(ta, then(E.map(fai))),
 };
 
+/**
+ * The Bifunctor module for Affect
+ */
 export const Bifunctor: TC.Bifunctor<URI> = {
   bimap: (fbj, fai) => (ta) => flow(ta, then(E.bimap(fbj, fai))),
   mapLeft: (fbj) => (ta) => flow(ta, then(E.mapLeft(fbj))),
 };
 
+/**
+ * The Apply module for Affect
+ */
 export const Apply: TC.Apply<URI> = {
   ap: (tfab) =>
     (ta) =>
@@ -89,12 +141,18 @@ export const Apply: TC.Apply<URI> = {
   map: Functor.map,
 };
 
+/**
+ * The Applicative module for Affect
+ */
 export const Applicative: TC.Applicative<URI> = {
   of: right,
   ap: Apply.ap,
   map: Functor.map,
 };
 
+/**
+ * The Chain module for Affect
+ */
 export const Chain: TC.Chain<URI> = {
   ap: Apply.ap,
   map: Functor.map,
@@ -106,6 +164,9 @@ export const Chain: TC.Chain<URI> = {
       },
 };
 
+/**
+ * The Monad module for Affect
+ */
 export const Monad: TC.Monad<URI> = {
   of: Applicative.of,
   ap: Apply.ap,
@@ -114,6 +175,9 @@ export const Monad: TC.Monad<URI> = {
   chain: Chain.chain,
 };
 
+/**
+ * The MonadThrow module for Affect
+ */
 export const MonadThrow: TC.MonadThrow<URI> = {
   ...Monad,
   throwError: left,
@@ -123,7 +187,35 @@ export const MonadThrow: TC.MonadThrow<URI> = {
  * Pipeables
  ******************************************************************************/
 
-export const { of, ap, map, join, chain, throwError } = MonadThrow;
+/**
+ * An alias for `right`. Constructs an Affect from a value.
+ *
+ *      const p1 = of(1);
+ *      const p2 = p1(10); // Promise(Right(1))
+ */
+export const of = MonadThrow.of;
+
+/**
+ * The applicative function for Affect.
+ *
+ *      const p1 = ask<number, string>()
+ *      const p2 = pipe(p1, map(n => (m: number) => n + 1))
+ *      const p3 = pipe(p1, ap(p2))
+ *      const p4 = p3(1); // Promise(Right(2))
+ */
+export const ap = MonadThrow.ap;
+
+/**
+ * The functor function for Affect.
+ *
+ *      const p1 = ask<number, string>();
+ *      const p2 = map((n: number) => n + 1);
+ *      const p3 = p2(p1);
+ *      const p4 = p3(1); // Promise(Right(2))
+ */
+export const map = MonadThrow.map;
+
+export const { join, chain, throwError } = MonadThrow;
 
 export const { bimap, mapLeft } = Bifunctor;
 

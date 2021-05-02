@@ -5,7 +5,7 @@ import type { Lazy } from "./types.ts";
 import * as E from "./either.ts";
 import * as T from "./task.ts";
 import { createDo } from "./derivations.ts";
-import { constant, flow, identity, pipe, wait } from "./fns.ts";
+import { constant, flow, identity, pipe, then } from "./fns.ts";
 
 /*******************************************************************************
  * Types
@@ -56,13 +56,6 @@ export const fromFailableTask = <E, A>(onError: (e: unknown) => E) =>
 
 export const fromEither = <E, A>(ta: E.Either<E, A>): TaskEither<E, A> =>
   pipe(ta, E.fold((e) => left(e), right));
-
-/*******************************************************************************
- * Utilities
- ******************************************************************************/
-
-export const then = <A, B>(fab: (a: A) => B) =>
-  (p: Promise<A>): Promise<B> => p.then(fab);
 
 /*******************************************************************************
  * Modules (Parallel)
