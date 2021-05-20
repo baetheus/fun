@@ -231,6 +231,15 @@ Deno.test("Array filter", () => {
   assertEquals(pipe([1, 2, 3], A.filter((n) => n > 1)), [2, 3]);
 });
 
+Deno.test("Array createSequence", () => {
+  const sequence = A.createSequence(A.Applicative);
+  assertEquals(sequence([]), [[]]);
+  assertEquals(sequence([[1]]), [[1]]);
+  assertEquals(sequence([[], [1]]), []);
+  assertEquals(sequence([[1], [2], [3]]), [[1, 2, 3]]);
+  assertEquals(sequence([[1, 2], [3, 4]]), [[1, 3], [1, 4], [2, 3], [2, 4]]);
+});
+
 Deno.test("Array lookup", () => {
   assertEquals(pipe([1, 2, 3], A.lookup(1)), O.some(2));
   assertEquals(pipe([], A.lookup(1)), O.none);

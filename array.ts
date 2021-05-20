@@ -3,7 +3,7 @@ import type * as TC from "./type_classes.ts";
 import type { Fn, Predicate } from "./types.ts";
 
 import * as O from "./option.ts";
-import { pipe } from "./fns.ts";
+import { identity, pipe } from "./fns.ts";
 
 /*******************************************************************************
  * Types
@@ -307,6 +307,13 @@ export const {
 } = IndexedTraversable;
 
 export const { filter } = Filterable;
+
+export const createSequence = <U extends HKT.URIS>(A: TC.Applicative<U>) => {
+  const _sequence = pipe(A.map(identity), traverse(A));
+  return _sequence as unknown as <A, B, C, D>(
+    tas: HKT.Kind<U, [A, B, C, D]>[],
+  ) => HKT.Kind<U, [A[], B, C, D]>;
+};
 
 export const lookup = (i: number) =>
   <A>(as: readonly A[]): O.Option<A> =>
