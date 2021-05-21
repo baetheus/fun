@@ -311,8 +311,8 @@ export const { filter } = Filterable;
 export const createSequence = <U extends HKT.URIS>(A: TC.Applicative<U>) => {
   const _sequence = pipe(A.map(identity), traverse(A));
   return _sequence as unknown as <A, B, C, D>(
-    tas: HKT.Kind<U, [A, B, C, D]>[],
-  ) => HKT.Kind<U, [A[], B, C, D]>;
+    tas: readonly HKT.Kind<U, [A, B, C, D]>[],
+  ) => HKT.Kind<U, [readonly A[], B, C, D]>;
 };
 
 export const lookup = (i: number) =>
