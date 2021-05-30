@@ -55,7 +55,9 @@ declare module "./hkt.ts" {
  *       const p1 = ask<number>();
  *       const p2 = p1(1); // Promise(Right(1))
  */
-export const ask = <R, L = never>(): Affect<R, L, R> => flow(E.right, resolve);
+export function ask<R, L = never>(): Affect<R, L, R> {
+  return flow(E.right, resolve);
+}
 
 /**
  * A thunk that takes a type level value. Like Reader.ask this function is
@@ -64,8 +66,9 @@ export const ask = <R, L = never>(): Affect<R, L, R> => flow(E.right, resolve);
  *       const p1 = ask<number>();
  *       const p2 = p1(1); // Promise(Left(1))
  */
-export const askLeft = <L, R = never>(): Affect<L, L, R> =>
-  flow(E.left, resolve);
+export function askLeft<L, R = never>(): Affect<L, L, R> {
+  return flow(E.left, resolve);
+}
 
 /**
  * Constructs an Affect from an asynchronous computation
@@ -73,9 +76,11 @@ export const askLeft = <L, R = never>(): Affect<L, L, R> =>
  *       const p1 = asks((n: URL) => fetch(n))
  *       const p2 = p1(1); // Promise(Right(Response))
  */
-export const asks = <R, E = never, A = never>(
+export function asks<R, E = never, A = never>(
   fra: (r: R) => Promise<A>,
-): Affect<R, E, A> => flow(fra, then(E.right));
+): Affect<R, E, A> {
+  return flow(fra, then(E.right));
+}
 
 /**
  * Constructs an Affect from an asynchronous computation
@@ -83,161 +88,131 @@ export const asks = <R, E = never, A = never>(
  *       const p1 = asks((n: URL) => fetch(n))
  *       const p2 = p1(1); // Promise(Left(Response))
  */
-export const asksLeft = <R, E = never, A = never>(
+export function asksLeft<R, E = never, A = never>(
   fre: (r: R) => Promise<E>,
-): Affect<R, E, A> => flow(fre, then(E.left));
+): Affect<R, E, A> {
+  return flow(fre, then(E.left));
+}
 
 /**
  * Constructs an Affect from a value
  *
  *       const p1 = right(1) // (n: never) => Promise(Right(1))
  */
-export const right = <R = never, E = never, A = never>(
+export function right<R = never, E = never, A = never>(
   right: A,
-): Affect<R, E, A> => () => resolve(E.right(right));
+): Affect<R, E, A> {
+  return () => resolve(E.right(right));
+}
 
 /**
  * Constructs an Affect from a value
  *
  *       const p1 = left(1) // (n: never) => Promise(Left(1))
  */
-export const left = <R = never, E = never, A = never>(
+export function left<R = never, E = never, A = never>(
   left: E,
-): Affect<R, E, A> => () => resolve(E.left(left));
+): Affect<R, E, A> {
+  return () => resolve(E.left(left));
+}
+
+/*******************************************************************************
+ * Functions
+ ******************************************************************************/
+
+export function map<A, I>(
+  fai: (a: A) => I,
+): (<R, E>(ta: Affect<R, E, A>) => Affect<R, E, I>) {
+  return (ta) => flow(ta, then(E.map(fai)));
+}
+
+export function bimap<A, B, I, J>(
+  fbj: (b: B) => J,
+  fai: (a: A) => I,
+): (<R>(ta: Affect<R, B, A>) => Affect<R, J, I>) {
+  return (ta) => flow(ta, then(E.bimap(fbj, fai)));
+}
+
+export function mapLeft<B, J>(
+  fbj: (b: B) => J,
+): (<R, A>(ta: Affect<R, B, A>) => Affect<R, J, A>) {
+  return (ta) => flow(ta, then(E.mapLeft(fbj)));
+}
+
+export function ap<R, E, A, I>(
+  tfai: Affect<R, E, (a: A) => I>,
+): ((ta: Affect<R, E, A>) => Affect<R, E, I>) {
+  return (ta) =>
+    async (r) => {
+      const efai = await tfai(r);
+      const ea = await ta(r);
+      return pipe(ea, E.ap(efai));
+    };
+}
+
+export function chain<R, E, A, I>(
+  fati: (a: A) => Affect<R, E, I>,
+): ((ta: Affect<R, E, A>) => Affect<R, E, I>) {
+  return (ta) =>
+    async (r) => {
+      const ea = await ta(r);
+      return E.isLeft(ea) ? ea : fati(ea.right)(r);
+    };
+}
+
+export function join<R, E, A>(
+  ta: Affect<R, E, Affect<R, E, A>>,
+): Affect<R, E, A> {
+  return pipe(ta, chain(identity));
+}
+
+export function compose<E = never, A = never, B = never>(
+  aeb: Affect<A, E, B>,
+): (<R>(rea: Affect<R, E, A>) => Affect<R, E, B>) {
+  return (rea) =>
+    async (r) => {
+      const ea = await rea(r);
+      return E.isLeft(ea) ? ea : await aeb(ea.right);
+    };
+}
+
+export function recover<E, A>(
+  fea: (e: E) => A,
+): (<R>(ta: Affect<R, E, A>) => Affect<R, E, A>) {
+  return (ta) => flow(ta, then(E.fold(flow(fea, E.right), E.right)));
+}
 
 /*******************************************************************************
  * Modules
  ******************************************************************************/
 
-/**
- * The Functor module for Affect
- */
-export const Functor: TC.Functor<URI> = {
-  map: (fai) => (ta) => flow(ta, then(E.map(fai))),
-};
+export const Functor: TC.Functor<URI> = { map };
 
-/**
- * The Bifunctor module for Affect
- */
-export const Bifunctor: TC.Bifunctor<URI> = {
-  bimap: (fbj, fai) => (ta) => flow(ta, then(E.bimap(fbj, fai))),
-  mapLeft: (fbj) => (ta) => flow(ta, then(E.mapLeft(fbj))),
-};
+export const Bifunctor: TC.Bifunctor<URI> = { bimap, mapLeft };
 
-/**
- * The Apply module for Affect
- */
-export const Apply: TC.Apply<URI> = {
-  ap: (tfab) =>
-    (ta) =>
-      async (r) => {
-        const efab = await tfab(r);
-        const ea = await ta(r);
-        return pipe(
-          ea,
-          E.ap(efab),
-        );
-      },
-  map: Functor.map,
-};
+export const Apply: TC.Apply<URI> = { ap, map };
 
-/**
- * The Applicative module for Affect
- */
-export const Applicative: TC.Applicative<URI> = {
-  of: right,
-  ap: Apply.ap,
-  map: Functor.map,
-};
+export const Applicative: TC.Applicative<URI> = { of: right, ap, map };
 
-/**
- * The Chain module for Affect
- */
-export const Chain: TC.Chain<URI> = {
-  ap: Apply.ap,
-  map: Functor.map,
-  chain: (fati) =>
-    (ta) =>
-      async (r) => {
-        const ea = await ta(r);
-        return E.isLeft(ea) ? ea : fati(ea.right)(r);
-      },
-};
+export const Chain: TC.Chain<URI> = { ap, map, chain };
 
-/**
- * The Monad module for Affect
- */
-export const Monad: TC.Monad<URI> = {
-  of: Applicative.of,
-  ap: Apply.ap,
-  map: Functor.map,
-  join: Chain.chain(identity),
-  chain: Chain.chain,
-};
+export const Monad: TC.Monad<URI> = { of: right, ap, map, join, chain };
 
-/**
- * The MonadThrow module for Affect
- */
 export const MonadThrow: TC.MonadThrow<URI> = {
-  ...Monad,
+  of: right,
+  ap,
+  map,
+  join,
+  chain,
   throwError: left,
 };
 
 /*******************************************************************************
- * Pipeables
+ * Derived Functions
  ******************************************************************************/
-
-/**
- * An alias for `right`. Constructs an Affect from a value.
- *
- *      const p1 = of(1);
- *      const p2 = p1(10); // Promise(Right(1))
- */
-export const of = MonadThrow.of;
-
-/**
- * The applicative function for Affect.
- *
- *      const p1 = ask<number, string>()
- *      const p2 = pipe(p1, map(n => (m: number) => n + 1))
- *      const p3 = pipe(p1, ap(p2))
- *      const p4 = p3(1); // Promise(Right(2))
- */
-export const ap = MonadThrow.ap;
-
-/**
- * The functor function for Affect.
- *
- *      const p1 = ask<number, string>();
- *      const p2 = map((n: number) => n + 1);
- *      const p3 = p2(p1);
- *      const p4 = p3(1); // Promise(Right(2))
- */
-export const map = MonadThrow.map;
-
-export const { join, chain, throwError } = MonadThrow;
-
-export const { bimap, mapLeft } = Bifunctor;
 
 export const sequenceTuple = createSequenceTuple(Apply);
 
 export const sequenceStruct = createSequenceStruct(Apply);
-
-export const compose = <E = never, A = never, B = never>(
-  aeb: Affect<A, E, B>,
-) =>
-  <R>(rea: Affect<R, E, A>): Affect<R, E, B> =>
-    async (r) => {
-      const ea = await rea(r);
-      return E.isLeft(ea) ? ea : await aeb(ea.right);
-    };
-
-export const recover = <E, A>(fea: (e: E) => A) =>
-  <R>(ta: Affect<R, E, A>): Affect<R, E, A> =>
-    flow(ta, then(E.fold(flow(fea, E.right), E.right)));
-
-/*******************************************************************************
- * Do
- ******************************************************************************/
 
 export const { Do, bind, bindTo } = createDo(Monad);

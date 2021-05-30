@@ -185,8 +185,12 @@ export const isSome = <A>(m: Option<A>): m is Some<A> => m.tag === "Some";
  * Modules
  ******************************************************************************/
 
+export function map<A, B>(fab: (a: A) => B): ((ta: Option<A>) => Option<B>) {
+  return (ta) => isNone(ta) ? none : some(fab(ta.value));
+}
+
 export const Functor: TC.Functor<URI> = {
-  map: (fab) => (ta) => isNone(ta) ? ta : some(fab(ta.value)),
+  map,
 };
 
 export const Apply: TC.Apply<URI> = {
@@ -334,7 +338,7 @@ export const getMonoid = <A>(M: TC.Monoid<A>): TC.Monoid<Option<A>> => ({
  * Pipeables
  ******************************************************************************/
 
-export const { of, ap, map, join, chain } = Monad;
+// export const { of, ap, map, join, chain } = Monad;
 
 export const { reduce, traverse } = Traversable;
 
