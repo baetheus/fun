@@ -1,31 +1,17 @@
 import type * as HKT from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
 
-import { call, identity } from "./fns.ts";
-
 /*******************************************************************************
  * Types
  ******************************************************************************/
 
-/*******************************************************************************
- * Identity<A>
- *
- * The identity type returns exactly the type that is passed into it.
- ******************************************************************************/
 export type Identity<A> = A;
 
 /*******************************************************************************
  * Kind Registration
  ******************************************************************************/
-
-/*******************************************************************************
- * The Kinds URI for Identity
- ******************************************************************************/
 export const URI = "Identity";
 
-/*******************************************************************************
- * The Kinds URI Type for Identity
- ******************************************************************************/
 export type URI = typeof URI;
 
 declare module "./hkt.ts" {
@@ -36,46 +22,45 @@ declare module "./hkt.ts" {
 }
 
 /*******************************************************************************
+ * Functions
+ ******************************************************************************/
+
+export function of<A>(a: A): Identity<A> {
+  return a;
+}
+
+export function map<A, I>(
+  fai: (a: A) => I,
+): ((ta: Identity<A>) => Identity<I>) {
+  return fai;
+}
+
+export function ap<A, I>(
+  tfai: Identity<(a: A) => I>,
+): ((ta: Identity<A>) => Identity<I>) {
+  return tfai;
+}
+
+export function join<A>(ta: Identity<Identity<A>>): Identity<A> {
+  return ta;
+}
+
+export function chain<A, I>(
+  fati: (a: A) => Identity<I>,
+): ((ta: Identity<A>) => Identity<I>) {
+  return fati;
+}
+
+/*******************************************************************************
  * Modules
  ******************************************************************************/
 
-/*******************************************************************************
- * The standard Functor instance for Identity
- ******************************************************************************/
-export const Functor: TC.Functor<URI> = {
-  map: identity,
-};
+export const Functor: TC.Functor<URI> = { map };
 
-/*******************************************************************************
- * The standard Apply instance for Identity
- ******************************************************************************/
-export const Apply: TC.Apply<URI> = {
-  ap: call,
-  map: Functor.map,
-};
+export const Apply: TC.Apply<URI> = { ap, map };
 
-export const Applicative: TC.Applicative<URI> = {
-  of: identity,
-  ap: Apply.ap,
-  map: Functor.map,
-};
+export const Applicative: TC.Applicative<URI> = { of, ap, map };
 
-export const Chain: TC.Chain<URI> = {
-  ap: Apply.ap,
-  map: Functor.map,
-  chain: identity,
-};
+export const Chain: TC.Chain<URI> = { ap, map, chain };
 
-export const Monad: TC.Monad<URI> = {
-  of: Applicative.of,
-  ap: Apply.ap,
-  map: Functor.map,
-  join: identity,
-  chain: Chain.chain,
-};
-
-/*******************************************************************************
- * Pipeables
- ******************************************************************************/
-
-export const { of, ap, map, join, chain } = Monad;
+export const Monad: TC.Monad<URI> = { of, ap, map, join, chain };

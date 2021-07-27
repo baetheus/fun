@@ -144,10 +144,10 @@ export interface Filterable<URI extends URIS, _ extends any[] = any[]> {
  */
 export interface Foldable<URI extends URIS, _ extends any[] = any[]> {
   readonly reduce: <A, O>(
-    fovo: (o: O, a: A) => O,
+    foao: (o: O, a: A) => O,
     o: O,
   ) => <B extends _[0], C extends _[1], D extends _[2]>(
-    tb: Kind<URI, [A, B, C, D]>,
+    ta: Kind<URI, [A, B, C, D]>,
   ) => O;
 }
 
@@ -267,7 +267,7 @@ export interface Profunctor<URI extends URIS> {
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#semigroup
  */
 export interface Semigroup<T> {
-  readonly concat: (a: T) => (b: T) => T;
+  readonly concat: (b: T) => (a: T) => T;
 }
 
 /**
@@ -309,7 +309,7 @@ export interface Traversable<URI extends URIS>
   readonly traverse: <VRI extends URIS>(
     A: Applicative<VRI>,
   ) => <A, I, J, K, L>(
-    fasi: (a: A) => Kind<VRI, [I, J, K, L]>,
+    faui: (a: A) => Kind<VRI, [I, J, K, L]>,
   ) => <B, C, D>(
     ta: Kind<URI, [A, B, C, D]>,
   ) => Kind<VRI, [Kind<URI, [I, B, C, D]>, J, K, L]>;

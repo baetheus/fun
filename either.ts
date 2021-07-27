@@ -1,9 +1,10 @@
 import type * as HKT from "./hkt.ts";
+import type { Kind, URIS } from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
-import type { Fn, Lazy, Predicate, Refinement } from "./types.ts";
+import type { Fn, Predicate, Refinement } from "./types.ts";
 
 import * as O from "./option.ts";
-import { constant, identity, isNotNil, pipe } from "./fns.ts";
+import { constant, flow, identity, isNotNil, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import { createDo } from "./derivations.ts";
 
@@ -36,268 +37,317 @@ declare module "./hkt.ts" {
  * Constructors
  ******************************************************************************/
 
-export const left = <E = never, A = never>(left: E): Either<E, A> => ({
-  tag: "Left",
-  left,
-});
+export function left<E = never, A = never>(left: E): Either<E, A> {
+  return ({
+    tag: "Left",
+    left,
+  });
+}
 
-export const right = <E = never, A = never>(right: A): Either<E, A> => ({
-  tag: "Right",
-  right,
-});
+export function right<E = never, A = never>(right: A): Either<E, A> {
+  return ({
+    tag: "Right",
+    right,
+  });
+}
 
-export const fromNullable = <E>(e: Lazy<E>) =>
-  <A>(a: A): Either<E, NonNullable<A>> => (isNotNil(a) ? right(a) : left(e()));
+export function of<A = never, B = never>(a: A): Either<B, A> {
+  return right(a);
+}
 
-export const tryCatch = <E, A>(
-  f: Lazy<A>,
+export function throwError<A = never, B = never>(b: B): Either<B, A> {
+  return left(b);
+}
+
+export function fromNullable<E>(fe: () => E) {
+  return <A>(
+    a: A,
+  ): Either<E, NonNullable<A>> => (isNotNil(a) ? right(a) : left(fe()));
+}
+
+export function tryCatch<E, A>(
+  fa: () => A,
   onError: (e: unknown) => E,
-): Either<E, A> => {
+): Either<E, A> {
   try {
-    return right(f());
+    return right(fa());
   } catch (e) {
     return left(onError(e));
   }
-};
+}
 
-export const tryCatchWrap = <E, A, AS extends unknown[]>(
+export function tryCatchWrap<E, A, AS extends unknown[]>(
   fn: Fn<AS, A>,
   onError: (e: unknown) => E,
-): Fn<AS, Either<E, A>> =>
-  (...as: AS) => {
+): Fn<AS, Either<E, A>> {
+  return (...as: AS) => {
     try {
       return right(fn(...as));
     } catch (e) {
       return left(onError(e));
     }
   };
+}
 
-export const fromPredicate: {
-  <E, A, B extends A>(refinement: Refinement<A, B>, onFalse: (a: A) => E): (
-    a: A,
-  ) => Either<E, B>;
-  <E, A>(predicate: Predicate<A>, onFalse: (a: A) => E): (a: A) => Either<E, A>;
-} = <E, A>(predicate: Predicate<A>, onFalse: (a: A) => E) =>
-  (a: A) => predicate(a) ? right(a) : left(onFalse(a));
+export function fromPredicate<E, A, B extends A>(
+  refinement: Refinement<A, B>,
+  onFalse: (a: A) => E,
+): (a: A) => Either<E, B>;
+export function fromPredicate<E, A>(
+  predicate: Predicate<A>,
+  onFalse: (a: A) => E,
+): (a: A) => Either<E, A> {
+  return (a: A) => predicate(a) ? right(a) : left(onFalse(a));
+}
 
 /*******************************************************************************
  * Destructors
  ******************************************************************************/
 
-export const fold = <L, R, B>(
+export function fold<L, R, B>(
   onLeft: (left: L) => B,
   onRight: (right: R) => B,
-) => (ma: Either<L, R>): B => isLeft(ma) ? onLeft(ma.left) : onRight(ma.right);
+): (ta: Either<L, R>) => B {
+  return (ta) => isLeft(ta) ? onLeft(ta.left) : onRight(ta.right);
+}
 
-export const getOrElse = <E, A>(onLeft: (e: E) => A) =>
-  (ma: Either<E, A>): A => isLeft(ma) ? onLeft(ma.left) : ma.right;
+export function getOrElse<E, A>(onLeft: (e: E) => A) {
+  return (ma: Either<E, A>): A => isLeft(ma) ? onLeft(ma.left) : ma.right;
+}
 
-export const getRight = <E, A>(ma: Either<E, A>): O.Option<A> =>
-  pipe(ma, fold(O.constNone, O.some));
+export function getRight<E, A>(ma: Either<E, A>): O.Option<A> {
+  return pipe(ma, fold(O.constNone, O.some));
+}
 
-export const getLeft = <E, A>(ma: Either<E, A>): O.Option<E> =>
-  pipe(ma, fold(O.some, O.constNone));
+export function getLeft<E, A>(ma: Either<E, A>): O.Option<E> {
+  return pipe(ma, fold(O.some, O.constNone));
+}
 
 /*******************************************************************************
  * Guards
  ******************************************************************************/
 
-export const isLeft = <L, R>(m: Either<L, R>): m is Left<L> => m.tag === "Left";
+export function isLeft<L, R>(m: Either<L, R>): m is Left<L> {
+  return m.tag === "Left";
+}
 
-export const isRight = <L, R>(m: Either<L, R>): m is Right<R> =>
-  m.tag === "Right";
-
-/*******************************************************************************
- * Combinators
- ******************************************************************************/
-
-export const swap = <E, A>(ma: Either<E, A>): Either<A, E> =>
-  isLeft(ma) ? right(ma.left) : left(ma.right);
-
-export const stringifyJSON = <E>(
-  u: unknown,
-  onError: (reason: unknown) => E,
-): Either<E, string> => tryCatch(() => JSON.stringify(u), onError);
+export function isRight<L, R>(m: Either<L, R>): m is Right<R> {
+  return m.tag === "Right";
+}
 
 /*******************************************************************************
  * Module Getters
  ******************************************************************************/
 
-export const getShow = <E, A>(
+export function getShow<E, A>(
   SE: TC.Show<E>,
   SA: TC.Show<A>,
-): TC.Show<Either<E, A>> => ({
-  show: fold(
-    (left) => `Left(${SE.show(left)})`,
-    (right) => `Right(${SA.show(right)})`,
-  ),
-});
+): TC.Show<Either<E, A>> {
+  return ({
+    show: fold(
+      (left) => `Left(${SE.show(left)})`,
+      (right) => `Right(${SA.show(right)})`,
+    ),
+  });
+}
 
-export const getSetoid = <E, A>(
+export function getSetoid<E, A>(
   SE: TC.Setoid<E>,
   SA: TC.Setoid<A>,
-): TC.Setoid<Either<E, A>> => ({
-  equals: (x) =>
-    (y) => {
-      if (isLeft(x)) {
-        if (isLeft(y)) {
-          return SE.equals(x.left)(y.left);
+): TC.Setoid<Either<E, A>> {
+  return ({
+    equals: (x) =>
+      (y) => {
+        if (isLeft(x)) {
+          if (isLeft(y)) {
+            return SE.equals(x.left)(y.left);
+          }
+          return false;
         }
-        return false;
-      }
 
-      if (isLeft(y)) {
-        return false;
-      }
-      return SA.equals(x.right)(y.right);
-    },
-});
+        if (isLeft(y)) {
+          return false;
+        }
+        return SA.equals(x.right)(y.right);
+      },
+  });
+}
 
-export const getOrd = <E, A>(
+export function getOrd<E, A>(
   OE: TC.Ord<E>,
   OA: TC.Ord<A>,
-): TC.Ord<Either<E, A>> => ({
-  ...getSetoid(OE, OA),
-  lte: (x) => {
-    if (isLeft(x)) {
-      return fold(OE.lte(x.left), constant(true));
-    }
-    return fold(constant(false), OA.lte(x.right));
-  },
-});
+): TC.Ord<Either<E, A>> {
+  return ({
+    ...getSetoid(OE, OA),
+    lte: (x) => {
+      if (isLeft(x)) {
+        return fold(OE.lte(x.left), constant(true));
+      }
+      return fold(constant(false), OA.lte(x.right));
+    },
+  });
+}
 
-export const getLeftSemigroup = <E = never, A = never>(
+export function getLeftSemigroup<E = never, A = never>(
   SE: TC.Semigroup<E>,
-): TC.Semigroup<Either<E, A>> => ({
-  concat: (x) =>
-    (y) => isRight(x) ? x : isRight(y) ? y : left(SE.concat(x.left)(y.left)),
-});
+): TC.Semigroup<Either<E, A>> {
+  return ({
+    concat: (x) =>
+      (y) => isRight(x) ? x : isRight(y) ? y : left(SE.concat(x.left)(y.left)),
+  });
+}
 
-export const getRightSemigroup = <E = never, A = never>(
+export function getRightSemigroup<E = never, A = never>(
   SA: TC.Semigroup<A>,
-): TC.Semigroup<Either<E, A>> => ({
-  concat: (x) =>
-    (y) => isLeft(x) ? x : isLeft(y) ? y : right(SA.concat(x.right)(y.right)),
-});
+): TC.Semigroup<Either<E, A>> {
+  return ({
+    concat: (x) =>
+      (y) => isLeft(x) ? x : isLeft(y) ? y : right(SA.concat(x.right)(y.right)),
+  });
+}
 
-export const getRightMonoid = <E = never, A = never>(
+export function getRightMonoid<E = never, A = never>(
   MA: TC.Monoid<A>,
-): TC.Monoid<Either<E, A>> => ({
-  ...getRightSemigroup(MA),
-  empty: () => right(MA.empty()),
-});
+): TC.Monoid<Either<E, A>> {
+  return ({
+    ...getRightSemigroup(MA),
+    empty: () => right(MA.empty()),
+  });
+}
 
-export const getRightMonad = <E>(
+export function getRightMonad<E>(
   { concat }: TC.Semigroup<E>,
-): TC.Monad<URI, [E]> => ({
-  ...Monad,
-  ap: (tfai) =>
-    // deno-lint-ignore no-explicit-any
-    (ta): Either<any, any> =>
-      isLeft(tfai)
-        ? (isLeft(ta) ? left(concat(tfai.left)(ta.left)) : tfai)
-        : (isLeft(ta) ? ta : right(tfai.right(ta.right))),
-});
+): TC.Monad<URI, [E]> {
+  return ({
+    ...Monad,
+    ap: (tfai) =>
+      // deno-lint-ignore no-explicit-any
+      (ta): Either<any, any> =>
+        isLeft(tfai)
+          ? (isLeft(ta) ? left(concat(tfai.left)(ta.left)) : tfai)
+          : (isLeft(ta) ? ta : right(tfai.right(ta.right))),
+  });
+}
+
+/*******************************************************************************
+ * Functions
+ ******************************************************************************/
+
+export function bimap<A, B, I, J>(
+  fbj: (b: B) => J,
+  fai: (a: A) => I,
+): ((ta: Either<B, A>) => Either<J, I>) {
+  return (ta) => isLeft(ta) ? left(fbj(ta.left)) : right(fai(ta.right));
+}
+
+export function swap<E, A>(ma: Either<E, A>): Either<A, E> {
+  return isLeft(ma) ? right(ma.left) : left(ma.right);
+}
+
+export function stringifyJSON<E>(
+  u: unknown,
+  onError: (reason: unknown) => E,
+): Either<E, string> {
+  return tryCatch(() => JSON.stringify(u), onError);
+}
+
+export function widen<F>(): (<E, A>(ta: Either<E, A>) => Either<E | F, A>) {
+  return identity;
+}
+
+export function map<A, I>(
+  fai: (a: A) => I,
+): (<B>(ta: Either<B, A>) => Either<B, I>) {
+  return (ta) => isLeft(ta) ? ta : right(fai(ta.right));
+}
+
+export function chainLeft<E, A, J>(fej: (e: E) => Either<J, A>) {
+  return (ma: Either<E, A>): Either<J, A> => (isLeft(ma) ? fej(ma.left) : ma);
+}
+
+export function ap<A, I, B>(
+  tfai: Either<B, (a: A) => I>,
+): ((ta: Either<B, A>) => Either<B, I>) {
+  return (ta) =>
+    isLeft(ta) ? ta : isLeft(tfai) ? tfai : right(tfai.right(ta.right));
+}
+
+export function chain<A, I, B>(
+  fati: (a: A) => Either<B, I>,
+): ((ta: Either<B, A>) => Either<B, I>) {
+  return (ta) => isLeft(ta) ? ta : fati(ta.right);
+}
+
+export function join<A, B>(ta: Either<B, Either<B, A>>): Either<B, A> {
+  return isLeft(ta) ? ta : ta.right;
+}
+
+export function mapLeft<B, J>(
+  fbj: (b: B) => J,
+): (<A>(ta: Either<B, A>) => Either<J, A>) {
+  return (ta) => isLeft(ta) ? left(fbj(ta.left)) : ta;
+}
+
+export function alt<A, B>(
+  tb: Either<B, A>,
+): ((ta: Either<B, A>) => Either<B, A>) {
+  return (ta) => isLeft(ta) ? tb : ta;
+}
+
+export function extend<A, I, B>(
+  ftai: (ta: Either<B, A>) => I,
+): ((ta: Either<B, A>) => Either<B, I>) {
+  return (ta) => right(ftai(ta));
+}
+
+export function reduce<A, O>(
+  foao: (o: O, a: A) => O,
+  o: O,
+): (<B>(ta: Either<B, A>) => O) {
+  return (ta) => isLeft(ta) ? o : foao(o, ta.right);
+}
+
+export function traverse<VRI extends URIS>(
+  A: TC.Applicative<VRI>,
+): (<A, I, J, K, L>(
+  faui: (a: A) => Kind<VRI, [I, J, K, L]>,
+) => <B>(ta: Either<B, A>) => Kind<VRI, [Either<B, I>, J, K, L]>) {
+  return (faui) =>
+    fold((l) => A.of(left(l)), flow(faui, A.map((r) => right(r))));
+}
 
 /*******************************************************************************
  * Modules
  ******************************************************************************/
 
-export const Functor: TC.Functor<URI> = {
-  map: (fai) => (ta) => isLeft(ta) ? ta : right(fai(ta.right)),
-};
+export const Functor: TC.Functor<URI> = { map };
 
-export const Apply: TC.Apply<URI> = {
-  ap: (tfai) =>
-    (ta) => isLeft(ta) ? ta : isLeft(tfai) ? tfai : right(tfai.right(ta.right)),
-  map: Functor.map,
-};
+export const Apply: TC.Apply<URI> = { ap, map };
 
-export const Applicative: TC.Applicative<URI> = {
-  of: right,
-  ap: Apply.ap,
-  map: Functor.map,
-};
+export const Applicative: TC.Applicative<URI> = { of, ap, map };
 
-export const Chain: TC.Chain<URI> = {
-  ap: Apply.ap,
-  map: Functor.map,
-  chain: (fati) => (ta) => (isRight(ta) ? fati(ta.right) : ta),
-};
+export const Chain: TC.Chain<URI> = { ap, map, chain };
 
-export const Monad: TC.Monad<URI> = {
-  of: Applicative.of,
-  ap: Apply.ap,
-  map: Functor.map,
-  join: Chain.chain(identity),
-  chain: Chain.chain,
-};
+export const Monad: TC.Monad<URI> = { of, ap, map, join, chain };
 
-export const MonadThrow: TC.MonadThrow<URI> = ({
-  ...Monad,
-  throwError: left,
-});
+export const MonadThrow: TC.MonadThrow<URI> = { ...Monad, throwError };
 
-export const Bifunctor: TC.Bifunctor<URI> = {
-  bimap: (fbj, fai) =>
-    (ta) => isLeft(ta) ? left(fbj(ta.left)) : right(fai(ta.right)),
-  mapLeft: (fbj) => (ta) => isLeft(ta) ? left(fbj(ta.left)) : ta,
-};
+export const Bifunctor: TC.Bifunctor<URI> = { bimap, mapLeft };
 
-export const Alt: TC.Alt<URI> = {
-  map: Functor.map,
-  alt: (tb) => (ta) => isLeft(ta) ? tb : ta,
-};
+export const Alt: TC.Alt<URI> = { alt, map };
 
-export const Extend: TC.Extend<URI> = {
-  map: Functor.map,
-  extend: (ftab) => (ta) => right(ftab(ta)),
-};
+export const Extend: TC.Extend<URI> = { map, extend };
 
-export const Foldable: TC.Foldable<URI> = {
-  reduce: (fovo, v) => (tb) => (isRight(tb) ? fovo(v, tb.right) : v),
-};
+export const Foldable: TC.Foldable<URI> = { reduce };
 
-export const Traversable: TC.Traversable<URI> = {
-  map: Functor.map,
-  reduce: Foldable.reduce,
-  traverse: (A) =>
-    (fasi) =>
-      (ta) => {
-        if (isRight(ta)) {
-          return pipe(
-            fasi(ta.right),
-            // deno-lint-ignore no-explicit-any
-            A.map((i) => right<any, any>(i)),
-          );
-        }
-        // deno-lint-ignore no-explicit-any
-        return A.of(ta as Either<any, any>);
-      },
-};
+export const Traversable: TC.Traversable<URI> = { map, reduce, traverse };
 
 /*******************************************************************************
- * Pipeables
+ * Derived Functions
  ******************************************************************************/
-
-export const { of, ap, map, join, chain, throwError } = MonadThrow;
-
-export const { reduce, traverse } = Traversable;
-
-export const { bimap, mapLeft } = Bifunctor;
-
-export const { extend } = Extend;
-
-export const { alt } = Alt;
-
-export const chainLeft = <E, A, J>(fej: (e: E) => Either<J, A>) =>
-  (ma: Either<E, A>): Either<J, A> => (isLeft(ma) ? fej(ma.left) : ma);
 
 export const sequenceTuple = createSequenceTuple(Apply);
 
 export const sequenceStruct = createSequenceStruct(Apply);
 
 export const { Do, bind, bindTo } = createDo(Monad);
-
-export const widen: <F>() => <E, A>(ta: Either<E, A>) => Either<E | F, A> =
-  constant(identity);

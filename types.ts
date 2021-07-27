@@ -1,3 +1,13 @@
+export type ConstPrimitive =
+  | "string"
+  | "number"
+  | "bigint"
+  | "boolean"
+  | "symbol"
+  | "undefined"
+  | "object"
+  | "function";
+
 /*******************************************************************************
  * Fn Type
  *
@@ -18,13 +28,6 @@ export type UnknownFn = Fn<unknown[], unknown>;
  * An alias for undefined | null
  ******************************************************************************/
 export type Nil = undefined | null;
-
-/*******************************************************************************
- * Lazy<A> Type
- *
- * An alias type that turns `A` into `() => A` (aka Const)
- ******************************************************************************/
-export type Lazy<A> = () => A;
 
 /*******************************************************************************
  * Predicate<A>

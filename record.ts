@@ -1,4 +1,5 @@
 import type * as HKT from "./hkt.ts";
+import type { Kind, URIS } from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
 import type { Fn } from "./types.ts";
 
@@ -29,150 +30,141 @@ declare module "./hkt.ts" {
  * Optimizations
  ******************************************************************************/
 
-export const _map = <A, B, KS extends string>(
-  fab: (a: A, i: string) => B,
-  as: { [K in KS]: A },
-): { [K in KS]: B } => {
-  const keys = Object.keys(as) as KS[];
-  const out: Partial<{ [K in KS]: B }> = {};
-  for (let i = 0; i < keys.length; i++) {
-    const key = keys[i];
-    out[key] = fab(as[key], key);
-  }
-  return out as { [K in KS]: B };
-};
+export function map<A, I>(
+  fai: (a: A, i: string) => I,
+): <KS extends string>(ta: { [K in KS]: A }) => { [K in KS]: I } {
+  return (ta) => {
+    const out: Record<string, I> = {};
+    for (const [key, entry] of Object.entries(ta) as [keyof typeof ta, A][]) {
+      out[key] = fai(entry, key);
+    }
+    return out as { [K in keyof typeof ta]: I };
+  };
+}
 
-export const _reduce = <A, B, KS extends string>(
-  faba: (b: B, a: A, i: string) => B,
-  b: B,
-  as: { [K in KS]: A },
-): B => {
-  const keys = Object.keys(as) as KS[];
-  let out = b;
-  for (let i = 0; i < keys.length; i++) {
-    const key = keys[i];
-    out = faba(out, as[key], key);
-  }
-  return out;
-};
+export function reduce<A, O>(
+  foio: (o: O, a: A, i: string) => O,
+  o: O,
+): <KS extends string>(ta: { [K in KS]: A }) => O {
+  return (ta) => {
+    let out = o;
+    for (const [key, entry] of Object.entries(ta) as [keyof typeof ta, A][]) {
+      out = foio(out, entry, key);
+    }
+    return out;
+  };
+}
 
-export const _assign = <KS extends string>(i: KS) =>
-  <R extends { [K in KS]: unknown }>(bs: R) =>
-    (b: R[typeof i]): Partial<R> => {
+export function assign<KS extends string>(
+  i: KS,
+): <R extends { [K in KS]: unknown }>(bs: R) => (b: R[typeof i]) => Partial<R> {
+  return (bs) =>
+    (b) => {
       bs[i] = b;
       return bs;
     };
+}
 
-/*******************************************************************************
- * Modules
- ******************************************************************************/
+export function traverse<VRI extends URIS>(
+  A: TC.Applicative<VRI>,
+): <A, I, J, K, L>(
+  favi: (a: A, i: string) => Kind<VRI, [I, J, K, L]>,
+) => (ta: ReadonlyRecord<A>) => Kind<VRI, [ReadonlyRecord<I>, J, K, L]> {
+  return (favi) =>
+    reduce(
+      (as, a, index) =>
+        pipe(favi(a, index), A.ap(pipe(as, A.map(assign(index))))),
+      A.of({}),
+    );
+}
 
-export const Functor: TC.Functor<URI> = {
-  map: (fai) => (ta) => _map(fai, ta),
-};
+export function insertAt<K extends string, A>(
+  k: K,
+  a: A,
+): <KS extends K>(ta: Record<KS | K, A>) => Record<KS | K, A> {
+  return (ta) => (ta[k] === a ? ta : { ...ta, [k]: a });
+}
 
-export const IndexedFunctor: TC.IndexedFunctor<URI, string> = {
-  map: (fai) => (ta) => _map(fai, ta),
-};
-
-export const IndexedFoldable: TC.IndexedFoldable<
-  URI,
-  string
-> = {
-  reduce: (faba, a) => (tb) => _reduce(faba, a, tb),
-};
-
-export const IndexedTraversable: TC.IndexedTraversable<
-  URI,
-  string
-> = {
-  map: IndexedFunctor.map,
-  reduce: IndexedFoldable.reduce,
-  traverse: (A) =>
-    (faui) =>
-      (ta) =>
-        _reduce(
-          (ubs, a, index) =>
-            pipe(
-              faui(a, index),
-              A.ap(pipe(ubs, A.map((is) => (i) => _assign(index)(is)(i)))),
-            ),
-          A.of({}),
-          ta,
-        ),
-};
-
-export const Foldable: TC.Foldable<URI> = IndexedFoldable;
-
-export const Traversable = IndexedTraversable as TC.Traversable<URI>;
-
-/*******************************************************************************
- * Module Getters
- ******************************************************************************/
-
-export const getShow = <A>(SA: TC.Show<A>): TC.Show<Record<string, A>> => ({
-  show: (ta) =>
-    `{${
-      Object.entries(ta).map(([key, value]) => `${key}: ${SA.show(value)}`)
-        .join(", ")
-    }}`,
-});
-
-/*******************************************************************************
- * Pipeables
- ******************************************************************************/
-
-export const { traverse, reduce, map } = Traversable;
-
-export const {
-  traverse: indexedTraverse,
-  reduce: indexedReduce,
-  map: indexedMap,
-} = IndexedTraversable;
-
-export const insertAt = <K extends string, A>(k: K, a: A) =>
-  <KS extends K>(
-    r: Record<KS | K, A>,
-  ): Record<KS | K, A> => (r[k] === a ? r : { ...r, [k]: a });
-
-export const deleteAt = <K extends string>(k: K) =>
-  <KS extends string, A>(
-    r: Record<KS | K, A>,
-  ): Record<Exclude<KS, K>, A> => {
-    if (!hasOwnProperty.call(r, k)) {
-      return r;
+export function deleteAt<K extends string>(
+  k: K,
+): <KS extends string, A>(ta: Record<KS | K, A>) => Record<Exclude<KS, K>, A> {
+  return (ta) => {
+    if (!hasOwnProperty.call(ta, k)) {
+      return ta;
     }
-    const out = Object.assign({}, r);
+    const out = Object.assign({}, ta);
     delete out[k];
     return out;
   };
+}
 
-export const omit = <A, P extends keyof A>(
+export function omit<A, P extends keyof A>(
   props: [P, ...Array<P>],
   a: A,
-): { [K in keyof A]: K extends P ? never : A[K] } => {
+): { [K in keyof A]: K extends P ? never : A[K] } {
   const out: A = Object.assign({}, a);
   for (const k of props) {
     delete out[k];
   }
   return out as { [K in keyof A]: K extends P ? never : A[K] };
-};
+}
 
-export const pick = <R, K extends keyof R>(...props: [K, K, ...K[]]) =>
-  (record: R): Pick<R, K> => {
+export function pick<R, K extends keyof R>(
+  ...props: [K, K, ...K[]]
+): (ta: R) => Pick<R, K> {
+  return (ta) => {
     const output: Partial<Pick<R, K>> = {};
 
     for (const k of props) {
-      output[k] = record[k];
+      output[k] = ta[k];
     }
 
     return output as Pick<R, K>;
   };
+}
 
-export const keys = <P extends Record<string, unknown>>(p: P): keyof P[] =>
-  (Object.keys(p) as unknown) as keyof P[];
+export function keys<P extends Record<string, unknown>>(p: P): keyof P[] {
+  return (Object.keys(p) as unknown) as keyof P[];
+}
 
-export const zipFirst = <A, I>(fabi: Fn<[string, A, unknown], I>) =>
-  <KS extends string>(a: { [K in KS]: A }) =>
-    (b: Record<string, unknown>): { [K in KS]: I } =>
-      _map<A, I, KS>((a, key) => fabi(key, a, b[key]), a);
+export function zipFirst<A, I>(
+  fabi: Fn<[string, A, unknown], I>,
+): (tb: Record<string, unknown>) => <KS extends string>(
+  ta: { [K in KS]: A },
+) => { [K in KS]: I } {
+  return (tb) => map((a: A, key) => fabi(key, a, tb[key]));
+}
+
+/*******************************************************************************
+ * Modules
+ ******************************************************************************/
+
+export const Functor: TC.Functor<URI> = { map };
+
+export const IndexedFunctor: TC.IndexedFunctor<URI, string> = { map };
+
+export const IndexedFoldable: TC.IndexedFoldable<URI, string> = { reduce };
+
+export const IndexedTraversable: TC.IndexedTraversable<URI, string> = {
+  map,
+  reduce,
+  traverse,
+};
+
+export const Foldable: TC.Foldable<URI> = IndexedFoldable;
+
+export const Traversable: TC.Traversable<URI> = IndexedTraversable;
+
+/*******************************************************************************
+ * Module Getters
+ ******************************************************************************/
+
+export function getShow<A>(SA: TC.Show<A>): TC.Show<Record<string, A>> {
+  return ({
+    show: (ta) =>
+      `{${
+        Object.entries(ta).map(([key, value]) => `${key}: ${SA.show(value)}`)
+          .join(", ")
+      }}`,
+  });
+}
