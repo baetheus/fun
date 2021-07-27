@@ -6,7 +6,6 @@ import * as A from "../array.ts";
 import * as O from "../option.ts";
 import { setoidBoolean } from "../setoid.ts";
 import { ordNumber } from "../ord.ts";
-import { semigroupSum } from "../semigroup.ts";
 import { pipe } from "../fns.ts";
 
 import * as AS from "./assert.ts";
@@ -14,8 +13,6 @@ import * as AS from "./assert.ts";
 /*******************************************************************************
  * Constructors
  ******************************************************************************/
-
-Deno.test("Array zero", () => assertEquals(A.zero, []));
 
 Deno.test("Array empty", () => assertEquals(A.empty(), []));
 
@@ -188,10 +185,6 @@ Deno.test("Array ap", () => {
   );
 });
 
-Deno.test("Array map", () => {
-  assertEquals(pipe([1, 2, 3], A.map((n) => n + 1)), [2, 3, 4]);
-});
-
 Deno.test("Array join", () => {
   assertEquals(A.join([]), []);
   assertEquals(pipe([[1], [2], [3]], A.join), [1, 2, 3]);
@@ -213,15 +206,15 @@ Deno.test("Array traverse", () => {
 });
 
 Deno.test("Array indexedMap", () => {
-  assertEquals(pipe([1, 2, 3], A.indexedMap((n, i) => n + i)), [1, 3, 5]);
+  assertEquals(pipe([1, 2, 3], A.map((n, i) => n + i)), [1, 3, 5]);
 });
 
 Deno.test("Array indexedReduce", () => {
-  assertEquals(pipe([1, 2, 3], A.indexedReduce((a, b, i) => a + b + i, 0)), 9);
+  assertEquals(pipe([1, 2, 3], A.reduce((a, b, i) => a + b + i, 0)), 9);
 });
 
 Deno.test("Array indexedTraverse", () => {
-  const traverse = A.indexedTraverse(A.Applicative);
+  const traverse = A.traverse(A.Applicative);
 
   assertEquals(pipe([1, 2, 3], traverse((n, i) => [n + i])), [[1, 3, 5]]);
 });

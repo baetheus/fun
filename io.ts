@@ -1,4 +1,5 @@
 import type * as HKT from "./hkt.ts";
+import type { Kind, URIS } from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
@@ -27,52 +28,67 @@ declare module "./hkt.ts" {
 }
 
 /*******************************************************************************
+ * Functions
+ ******************************************************************************/
+
+export function of<A>(a: A): IO<A> {
+  return constant(a);
+}
+
+export function ap<A, I>(tfai: IO<(a: A) => I>): ((ta: IO<A>) => IO<I>) {
+  return (ta) => flow(ta, tfai());
+}
+
+export function map<A, I>(fai: (a: A) => I): ((ta: IO<A>) => IO<I>) {
+  return (ta) => flow(ta, fai);
+}
+
+export function join<A>(ta: IO<IO<A>>): IO<A> {
+  return () => ta()();
+}
+
+export function chain<A, I>(fati: (a: A) => IO<I>): ((ta: IO<A>) => IO<I>) {
+  return (ta) => flow(ta, fati, apply());
+}
+
+export function extend<A, I>(ftai: (ta: IO<A>) => I): ((ta: IO<A>) => IO<I>) {
+  return (ta) => () => ftai(ta);
+}
+
+export function reduce<A, O>(
+  foao: (o: O, a: A) => O,
+  o: O,
+): ((ta: IO<A>) => O) {
+  return (ta) => foao(o, ta());
+}
+
+export function traverse<VRI extends URIS>(
+  A: TC.Applicative<VRI>,
+): (<A, I, J, K, L>(
+  faui: (a: A) => Kind<VRI, [I, J, K, L]>,
+) => (ta: IO<A>) => Kind<VRI, [IO<I>, J, K, L]>) {
+  return (faui) => (ta) => pipe(faui(ta()), A.map(of));
+}
+
+/*******************************************************************************
  * Modules
  ******************************************************************************/
 
-export const Functor: TC.Functor<URI> = {
-  map: (fab) => (ta) => flow(ta, fab),
-};
+export const Functor: TC.Functor<URI> = { map };
 
-export const Apply: TC.Apply<URI> = {
-  ap: (tfab) => (ta) => () => tfab()(ta()),
-  map: Functor.map,
-};
+export const Apply: TC.Apply<URI> = { ap, map };
 
-export const Applicative: TC.Applicative<URI> = {
-  of: constant,
-  ap: Apply.ap,
-  map: Functor.map,
-};
+export const Applicative: TC.Applicative<URI> = { of, ap, map };
 
-export const Chain: TC.Chain<URI> = {
-  ap: Apply.ap,
-  map: Functor.map,
-  chain: (fatb) => (ta) => flow(ta, fatb, apply()),
-};
+export const Chain: TC.Chain<URI> = { ap, map, chain };
 
-export const Monad: TC.Monad<URI> = {
-  of: Applicative.of,
-  ap: Apply.ap,
-  map: Functor.map,
-  join: apply(),
-  chain: Chain.chain,
-};
+export const Monad: TC.Monad<URI> = { of, ap, map, join, chain };
 
-export const Extends: TC.Extend<URI> = {
-  map: Monad.map,
-  extend: (ftab) => (ta) => () => ftab(ta),
-};
+export const Extends: TC.Extend<URI> = { map, extend };
 
-export const Foldable: TC.Foldable<URI> = {
-  reduce: (faba, a) => (tb) => faba(a, tb()),
-};
+export const Foldable: TC.Foldable<URI> = { reduce };
 
-export const Traversable: TC.Traversable<URI> = {
-  map: Monad.map,
-  reduce: Foldable.reduce,
-  traverse: (A) => (faub) => (ta) => pipe(faub(ta()), A.map(of)),
-};
+export const Traversable: TC.Traversable<URI> = { map, reduce, traverse };
 
 /*******************************************************************************
  * Module Getters
@@ -86,25 +102,11 @@ export const getMonoid = <A>(M: TC.Monoid<A>): TC.Monoid<IO<A>> => ({
 });
 
 /*******************************************************************************
- * Pipeables
- ******************************************************************************/
-
-export const { of, ap, map, join, chain } = Monad;
-
-export const { reduce, traverse } = Traversable;
-
-export const { extend } = Extends;
-
-/*******************************************************************************
- * Sequenec
+ * Derived Functions
  ******************************************************************************/
 
 export const sequenceTuple = createSequenceTuple(Apply);
 
 export const sequenceStruct = createSequenceStruct(Apply);
-
-/*******************************************************************************
- * Do Notation
- ******************************************************************************/
 
 export const { Do, bind, bindTo } = createDo(Monad);

@@ -8,9 +8,8 @@
 
 import type * as HKT from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
-import type { Lazy, Predicate } from "./types.ts";
+import type { Predicate } from "./types.ts";
 
-import { identity } from "./fns.ts";
 import { createDo } from "./derivations.ts";
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
@@ -43,77 +42,116 @@ declare module "./hkt.ts" {
 
 export const nil: Nil = undefined;
 
-export const constNil = <A = never>(): Nilable<A> => nil;
+export function constNil<A = never>(): Nilable<A> {
+  return nil;
+}
 
-export const make = <A = never>(a: A): Nilable<A> => isNotNil(a) ? a : nil;
+export function make<A = never>(a: A): Nilable<A> {
+  return isNotNil(a) ? a : nil;
+}
 
-export const fromPredicate = <A>(predicate: Predicate<A>) =>
-  (ta: Nilable<A>): Nilable<A> => isNotNil(ta) && predicate(ta) ? ta : nil;
+export function fromPredicate<A>(
+  predicate: Predicate<A>,
+): ((ta: Nilable<A>) => Nilable<A>) {
+  return (ta) => isNotNil(ta) && predicate(ta) ? ta : nil;
+}
 
-export const tryCatch = <A>(f: Lazy<A>): Nilable<A> => {
+export function tryCatch<A>(fa: () => A): Nilable<A> {
   try {
-    return f();
-  } catch (e) {
+    return fa();
+  } catch (_) {
     return nil;
   }
-};
+}
 
 /*******************************************************************************
  * Destructors
  ******************************************************************************/
 
-export const fold = <A, B>(onNil: () => B, onValue: (a: A) => B) =>
-  (ta: Nilable<A>): B => (isNil(ta) ? onNil() : onValue(ta));
+export function fold<A, I>(
+  onNil: () => I,
+  onValue: (a: A) => I,
+): ((ta: Nilable<A>) => I) {
+  return (ta) => (isNil(ta) ? onNil() : onValue(ta));
+}
 
-export const getOrElse = <B>(onNil: () => B) =>
-  (ta: Nilable<B>): B => isNil(ta) ? onNil() : ta;
+export function getOrElse<A>(onNil: () => A): ((ta: Nilable<A>) => A) {
+  return (ta) => isNil(ta) ? onNil() : ta;
+}
 
-export const toNull = <A>(ma: Nilable<A>): A | null => isNil(ma) ? null : ma;
+export function toNull<A>(ta: Nilable<A>): A | null {
+  return isNil(ta) ? null : ta;
+}
 
-export const toUndefined = <A>(ma: Nilable<A>): A | undefined =>
-  isNil(ma) ? undefined : ma;
+export function toUndefined<A>(ta: Nilable<A>): A | undefined {
+  return isNil(ta) ? undefined : ta;
+}
 
 /*******************************************************************************
  * Guards
  ******************************************************************************/
 
-export const isNil = <A>(m: Nilable<A>): m is Nil =>
-  m === undefined || m === null;
+export function isNil<A>(ta: Nilable<A>): ta is Nil {
+  return ta === undefined || ta === null;
+}
 
-export const isNotNil = <A>(m: Nilable<A>): m is NonNullable<A> => !isNil(m);
+export function isNotNil<A>(ta: Nilable<A>): ta is NonNullable<A> {
+  return !isNil(ta);
+}
+
+/*******************************************************************************
+ * Functions
+ ******************************************************************************/
+
+export function of<A>(a: A): Nilable<A> {
+  return a;
+}
+
+export function throwError<A = never>(): Nilable<A> {
+  return nil;
+}
+
+export function ap<A, I>(
+  tfai: Nilable<(a: A) => I>,
+): ((ta: Nilable<A>) => Nilable<I>) {
+  return (ta) => isNil(ta) ? ta : isNil(tfai) ? tfai : tfai(ta);
+}
+
+export function map<A, I>(fai: (a: A) => I): ((ta: Nilable<A>) => Nilable<I>) {
+  return (ta) => isNil(ta) ? ta : fai(ta);
+}
+
+export function join<A>(tta: Nilable<Nilable<A>>): Nilable<A> {
+  return tta;
+}
+
+export function chain<A, I>(
+  fati: (a: A) => Nilable<I>,
+): ((ta: Nilable<A>) => Nilable<I>) {
+  return (ta) => isNil(ta) ? ta : fati(ta);
+}
+
+export function alt<A>(tb: Nilable<A>): ((ta: Nilable<A>) => Nilable<A>) {
+  return (ta) => isNil(ta) ? tb : ta;
+}
 
 /*******************************************************************************
  * Modules (Note that these modules do not follow the Type Class laws)
  ******************************************************************************/
 
-export const Functor: TC.Functor<URI> = {
-  map: (fab) => (ta) => isNil(ta) ? nil : fab(ta),
-};
+export const Functor: TC.Functor<URI> = { map };
 
-export const Apply: TC.Apply<URI> = {
-  ap: (tfab) => (ta) => isNil(ta) || isNil(tfab) ? nil : tfab(ta),
-  map: Functor.map,
-};
+export const Apply: TC.Apply<URI> = { ap, map };
 
-export const Applicative: TC.Applicative<URI> = {
-  of: identity,
-  ap: Apply.ap,
-  map: Functor.map,
-};
+export const Applicative: TC.Applicative<URI> = { of, ap, map };
 
-export const Chain: TC.Chain<URI> = {
-  ap: Apply.ap,
-  map: Functor.map,
-  chain: Functor.map,
-};
+export const Chain: TC.Chain<URI> = { ap, map, chain };
 
-export const Monad: TC.Monad<URI> = {
-  of: Applicative.of,
-  ap: Apply.ap,
-  map: Functor.map,
-  join: Chain.chain(identity),
-  chain: Chain.chain,
-};
+export const Monad: TC.Monad<URI> = { of, ap, map, join, chain };
+
+export const MonadThrow: TC.MonadThrow<URI> = { ...Monad, throwError };
+
+export const Alt: TC.Alt<URI> = { alt, map };
 
 /*******************************************************************************
  * Module Getters
@@ -124,17 +162,11 @@ export const getShow = <A>({ show }: TC.Show<A>): TC.Show<Nilable<A>> => ({
 });
 
 /*******************************************************************************
- * Pipeables
+ * Derived Functions
  ******************************************************************************/
-
-export const { of, ap, map, join, chain } = Monad;
 
 export const sequenceStruct = createSequenceStruct(Apply);
 
 export const sequenceTuple = createSequenceTuple(Apply);
-
-/*******************************************************************************
- * Do Notation
- ******************************************************************************/
 
 export const { Do, bind, bindTo } = createDo(Monad);

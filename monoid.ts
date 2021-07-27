@@ -42,9 +42,9 @@ export const monoidVoid: Monoid<void> = {
  ******************************************************************************/
 
 // deno-lint-ignore no-explicit-any
-export const getTupleMonoid = <T extends ReadonlyArray<Monoid<any>>>(
+export function getTupleMonoid<T extends ReadonlyArray<Monoid<any>>>(
   ...monoids: T
-): Monoid<{ [K in keyof T]: T[K] extends Semigroup<infer A> ? A : never }> => {
+): Monoid<{ [K in keyof T]: T[K] extends Semigroup<infer A> ? A : never }> {
   const concat = S.getTupleSemigroup(...monoids).concat;
   return (({
     concat,
@@ -52,32 +52,36 @@ export const getTupleMonoid = <T extends ReadonlyArray<Monoid<any>>>(
   }) as unknown) as Monoid<
     { [K in keyof T]: T[K] extends Semigroup<infer A> ? A : never }
   >;
-};
+}
 
-export const getDualMonoid = <A>(M: Monoid<A>): Monoid<A> => ({
-  concat: S.getDualSemigroup(M).concat,
-  empty: M.empty,
-});
+export function getDualMonoid<A>(M: Monoid<A>): Monoid<A> {
+  return ({
+    concat: S.getDualSemigroup(M).concat,
+    empty: M.empty,
+  });
+}
 
 // deno-lint-ignore no-explicit-any
-export const getStructMonoid = <O extends Record<string, any>>(
+export function getStructMonoid<O extends Record<string, any>>(
   monoids: { [K in keyof O]: Monoid<O[K]> },
-): Monoid<{ readonly [K in keyof O]: O[K] }> => {
+): Monoid<{ readonly [K in keyof O]: O[K] }> {
   const empty: Record<string, O[keyof O]> = {};
+
   for (const key of Object.keys(monoids)) {
     empty[key] = monoids[key].empty();
   }
+
   return {
     concat: S.getStructSemigroup(monoids).concat,
     empty: () => (empty as unknown) as O,
   };
-};
+}
 
 /*******************************************************************************
  * Pipeables
  ******************************************************************************/
 
-export const fold = <A>(M: Monoid<A>) => {
-  const inner_fold = S.fold(M);
-  return (as: ReadonlyArray<A>): A => pipe(as, inner_fold(M.empty()));
-};
+export function fold<A>(M: Monoid<A>): ((as: ReadonlyArray<A>) => A) {
+  const innerFold = S.fold(M);
+  return (as) => pipe(as, innerFold(M.empty()));
+}

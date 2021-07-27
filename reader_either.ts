@@ -1,11 +1,10 @@
 import type * as HKT from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
-import type { Lazy } from "./types.ts";
 
 import * as E from "./either.ts";
 import * as R from "./reader.ts";
 import { createDo } from "./derivations.ts";
-import { apply, constant, flow, identity, pipe } from "./fns.ts";
+import { flow, identity, pipe } from "./fns.ts";
 
 /*******************************************************************************
  * Types
@@ -32,118 +31,154 @@ declare module "./hkt.ts" {
  * Constructors
  ******************************************************************************/
 
-export const ask: <A, E = never>() => ReaderEither<A, E, A> = () => E.right;
+export function ask<A, B = never>(): ReaderEither<A, B, A> {
+  return E.right;
+}
 
-export const asks: <R, A, E = never>(
-  f: (r: R) => A,
-) => ReaderEither<R, E, A> = (fra) => flow(fra, E.right);
+export function asks<A, B, C>(fca: (c: C) => A): ReaderEither<C, B, A> {
+  return flow(fca, E.right);
+}
 
-export const left = <B, A = never>(
-  left: B,
-): ReaderEither<unknown, B, A> => R.of(E.left(left));
+export function left<A, B = never, C = never>(left: B): ReaderEither<C, B, A> {
+  return R.of(E.left(left));
+}
 
-export const right = <A, B = never>(
+export function right<A, B = never, C = never>(
   right: A,
-): ReaderEither<unknown, B, A> => R.of(E.right(right));
+): ReaderEither<C, B, A> {
+  return R.of(E.right(right));
+}
 
-export const tryCatch = <S, E, A>(
-  f: Lazy<A>,
-  onError: (e: unknown) => E,
-): ReaderEither<S, E, A> => {
+export function tryCatch<A, B, C = never>(
+  fa: () => A,
+  onError: (e: unknown) => B,
+): ReaderEither<C, B, A> {
   try {
-    return R.of(E.right(f()));
+    return R.of(E.right(fa()));
   } catch (e) {
     return R.of(E.left(onError(e)));
   }
-};
+}
 
-export const fromEither = <S, E, A>(
-  ta: E.Either<E, A>,
-): ReaderEither<S, E, A> => R.of(ta);
+export function fromEither<A, B, C = never>(
+  ta: E.Either<B, A>,
+): ReaderEither<C, B, A> {
+  return R.of(ta);
+}
+
+/*******************************************************************************
+ * Functions
+ ******************************************************************************/
+
+export function of<A, B = never, C = never>(a: A): ReaderEither<C, B, A> {
+  return right(a);
+}
+
+export function throwError<A = never, B = never, C = never>(
+  b: B,
+): ReaderEither<C, B, A> {
+  return left(b);
+}
+
+export function bimap<A, I, B, J>(
+  fbj: (b: B) => J,
+  fai: (a: A) => I,
+): <C = never>(ta: ReaderEither<C, B, A>) => ReaderEither<C, J, I> {
+  return (tab) => flow(tab, E.bimap(fbj, fai));
+}
+
+export function map<A, I>(
+  fai: (a: A) => I,
+): <B = never, C = never>(ta: ReaderEither<C, B, A>) => ReaderEither<C, B, I> {
+  return bimap(identity, fai);
+}
+
+export function mapLeft<B, J>(
+  fbj: (b: B) => J,
+): <A = never, C = never>(ta: ReaderEither<C, B, A>) => ReaderEither<C, J, A> {
+  return bimap(fbj, identity);
+}
+
+export function ap<A, I, B, C>(
+  tfai: ReaderEither<C, B, (a: A) => I>,
+): (ta: ReaderEither<C, B, A>) => ReaderEither<C, B, I> {
+  return (ta) =>
+    (c) => pipe(tfai(c), E.chain((fai) => pipe(ta(c), E.map(fai))));
+}
+
+export function chain<A, I, B, C>(
+  fati: (a: A) => ReaderEither<C, B, I>,
+): (ta: ReaderEither<C, B, A>) => ReaderEither<C, B, I> {
+  return (ta) =>
+    (c) => {
+      const e = ta(c);
+      return E.isLeft(e) ? e : fati(e.right)(c);
+    };
+}
+
+export function join<A, B, C>(
+  tta: ReaderEither<C, B, ReaderEither<C, B, A>>,
+): ReaderEither<C, B, A> {
+  return pipe(tta, chain(identity));
+}
+
+export function alt<A, B, C>(
+  tb: ReaderEither<C, B, A>,
+): (ta: ReaderEither<C, B, A>) => ReaderEither<C, B, A> {
+  return (ta) =>
+    (c) => {
+      const e = ta(c);
+      return E.isLeft(e) ? tb(c) : e;
+    };
+}
+
+export function chainLeft<A, B, C, J>(
+  fbtj: (b: B) => ReaderEither<C, J, A>,
+): (ta: ReaderEither<C, B, A>) => ReaderEither<C, J, A> {
+  return (ta) => pipe(ta, R.chain(E.fold(fbtj, right)));
+}
+
+export function compose<Y, Z, B>(
+  tb: ReaderEither<Y, B, Z>,
+): <X>(ta: ReaderEither<X, B, Y>) => ReaderEither<X, B, Z> {
+  return (ta) => flow(ta, E.chain(tb));
+}
+
+export function widen<F>(): <R, E, A>(
+  ta: ReaderEither<R, E, A>,
+) => ReaderEither<R, E | F, A> {
+  return identity;
+}
 
 /*******************************************************************************
  * Modules
  ******************************************************************************/
 
-export const Functor: TC.Functor<URI> = {
-  map: (fab) => (ta) => flow(ta, E.map(fab)),
-};
+export const Functor: TC.Functor<URI> = { map };
 
-export const Apply: TC.Apply<URI> = {
-  ap: (tfab) =>
-    (ta) => (r) => pipe(tfab(r), E.chain((fab) => pipe(ta(r), E.map(fab)))),
-  map: Functor.map,
-};
+export const Apply: TC.Apply<URI> = { ap, map };
 
-export const Applicative: TC.Applicative<URI> = {
-  of: flow(E.right, constant),
-  ap: Apply.ap,
-  map: Functor.map,
-};
+export const Applicative: TC.Applicative<URI> = { of, ap, map };
 
-export const Chain: TC.Chain<URI> = {
-  ap: Apply.ap,
-  map: Functor.map,
-  chain: (fatb) => R.chain(E.fold(left, fatb)),
-};
+export const Chain: TC.Chain<URI> = { ap, map, chain };
 
-export const Monad: TC.Monad<URI> = {
-  of: Applicative.of,
-  ap: Apply.ap,
-  map: Functor.map,
-  join: Chain.chain(identity),
-  chain: Chain.chain,
-};
+export const Monad: TC.Monad<URI> = { of, ap, map, join, chain };
 
-export const Bifunctor: TC.Bifunctor<URI> = {
-  bimap: (fai, fbj) => (tab) => flow(tab, E.bimap(fai, fbj)),
-  mapLeft: (fbj) => (tab) => flow(tab, E.mapLeft(fbj)),
-};
+export const Bifunctor: TC.Bifunctor<URI> = { bimap, mapLeft };
 
 export const MonadThrow: TC.MonadThrow<URI> = {
-  of: Applicative.of,
-  ap: Apply.ap,
-  map: Functor.map,
-  join: Monad.join,
-  chain: Chain.chain,
-  throwError: left,
+  of,
+  ap,
+  map,
+  join,
+  chain,
+  throwError,
 };
 
-export const Alt: TC.Alt<URI> = {
-  map: Monad.map,
-  alt: (tb) =>
-    (ta) =>
-      (r) =>
-        pipe(
-          ta(r),
-          E.fold(() => tb(r), E.right),
-        ),
-};
+export const Alt: TC.Alt<URI> = { alt, map };
 
 /*******************************************************************************
- * Pipeables
- ******************************************************************************/
-
-export const { of, ap, map, join, chain, throwError } = MonadThrow;
-
-export const { bimap, mapLeft } = Bifunctor;
-
-export const { alt } = Alt;
-
-export const chainLeft = <A, B, C, J>(fbtj: (b: B) => ReaderEither<C, J, A>) =>
-  (ma: ReaderEither<C, B, A>): ReaderEither<C, J, A> =>
-    pipe(ma, R.chain(E.fold(fbtj, right)));
-
-export const compose = <E, B, C>(rbc: ReaderEither<B, E, C>) =>
-  <A>(rab: ReaderEither<A, E, B>): ReaderEither<A, E, C> =>
-    flow(rab, E.chain(rbc));
-
-export const widen: <F>() => <R, E, A>(
-  ta: ReaderEither<R, E, A>,
-) => ReaderEither<R, E | F, A> = constant(identity);
-
-/*******************************************************************************
- * Do
+ * Derived Functions
  ******************************************************************************/
 
 export const { Do, bind, bindTo } = createDo(Monad);

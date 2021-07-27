@@ -3,6 +3,7 @@
 import type { Ord, Semigroup } from "./type_classes.ts";
 
 import { constant } from "./fns.ts";
+import { keys } from "./record.ts";
 
 /*******************************************************************************
  * Free Semigroup
@@ -76,55 +77,59 @@ export const semigroupVoid: Semigroup<void> = {
  * Module Getters
  ******************************************************************************/
 
-export const getFreeSemigroup = <A = never>(): Semigroup<Free<A>> => ({
-  concat: Free.concat,
-});
+export function getFreeSemigroup<A = never>(): Semigroup<Free<A>> {
+  return ({ concat: Free.concat });
+}
 
-export const getFirstSemigroup = <A = never>(): Semigroup<A> => ({
-  concat: constant,
-});
+export function getFirstSemigroup<A = never>(): Semigroup<A> {
+  return ({ concat: constant });
+}
 
-export const getLastSemigroup = <A = never>(): Semigroup<A> => ({
-  concat: (_) => (y) => y,
-});
+export function getLastSemigroup<A = never>(): Semigroup<A> {
+  return ({ concat: (_) => (y) => y });
+}
 
-export const getTupleSemigroup = <T extends ReadonlyArray<Semigroup<any>>>(
+export function getTupleSemigroup<T extends ReadonlyArray<Semigroup<any>>>(
   ...semigroups: T
-): Semigroup<
-  { [K in keyof T]: T[K] extends Semigroup<infer A> ? A : never }
-> => ({
-  concat: (x) => (y) => semigroups.map((s, i) => s.concat(x[i])(y[i])) as any,
-});
+): Semigroup<{ [K in keyof T]: T[K] extends Semigroup<infer A> ? A : never }> {
+  return ({
+    concat: (x) => (y) => semigroups.map((s, i) => s.concat(x[i])(y[i])) as any,
+  });
+}
 
-export const getDualSemigroup = <A>(S: Semigroup<A>): Semigroup<A> => ({
-  concat: (x) => (y) => S.concat(y)(x),
-});
+export function getDualSemigroup<A>(S: Semigroup<A>): Semigroup<A> {
+  return ({ concat: (x) => (y) => S.concat(y)(x) });
+}
 
-export const getStructSemigroup = <O extends Readonly<Record<string, any>>>(
+export function getStructSemigroup<O extends Readonly<Record<string, any>>>(
   semigroups: { [K in keyof O]: Semigroup<O[K]> },
-): Semigroup<O> => ({
-  concat: (x) =>
-    (y) => {
-      const r: any = {};
-      for (const key of Object.keys(semigroups)) {
-        r[key] = semigroups[key].concat(x[key])(y[key]);
-      }
-      return r;
-    },
-});
+): Semigroup<O> {
+  return ({
+    concat: (x) =>
+      (y) => {
+        const r = {} as Record<string, O[keyof O]>;
+        for (const key of Object.keys(semigroups)) {
+          r[key] = semigroups[key].concat(x[key])(y[key]);
+        }
+        return r as { [K in keyof O]: O[K] };
+      },
+  });
+}
 
-export const getMeetSemigroup = <A>(O: Ord<A>): Semigroup<A> => ({
-  concat: (a) => (b) => (O.lte(a)(b) ? a : b),
-});
+export function getMeetSemigroup<A>(O: Ord<A>): Semigroup<A> {
+  return ({ concat: (a) => (b) => (O.lte(a)(b) ? a : b) });
+}
 
-export const getJoinSemigroup = <A>(O: Ord<A>): Semigroup<A> => ({
-  concat: (a) => (b) => (O.lte(a)(b) ? b : a),
-});
+export function getJoinSemigroup<A>(O: Ord<A>): Semigroup<A> {
+  return ({ concat: (a) => (b) => (O.lte(a)(b) ? b : a) });
+}
 
 /*******************************************************************************
- * Pipeables
+ * Function
  ******************************************************************************/
 
-export const fold = <A>(S: Semigroup<A>) =>
-  (startWith: A) =>
-    (as: ReadonlyArray<A>): A => as.reduce((a, c) => S.concat(a)(c), startWith);
+export function fold<A>(
+  S: Semigroup<A>,
+): (startWith: A) => (as: ReadonlyArray<A>) => A {
+  return (startWith) => (as) => as.reduce((a, c) => S.concat(a)(c), startWith);
+}

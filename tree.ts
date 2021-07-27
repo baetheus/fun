@@ -1,4 +1,5 @@
 import type * as HKT from "./hkt.ts";
+import type { Kind, URIS } from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
 
 import * as A from "./array.ts";
@@ -35,9 +36,6 @@ declare module "./hkt.ts" {
  * Optimizations
  ******************************************************************************/
 
-// deno-lint-ignore no-explicit-any
-const _concat = A.getMonoid<Tree<any>>().concat;
-
 const _draw = (indentation: string, forest: Forest<string>): string => {
   let r = "";
   const len = forest.length;
@@ -55,87 +53,88 @@ const _make = <A>(value: A) =>
   (forest: Forest<A>): Tree<A> => ({ value, forest });
 
 /*******************************************************************************
- * Constructors
+ * Functions
  ******************************************************************************/
 
-export const make = <A>(value: A, forest: Forest<A> = A.empty()): Tree<A> => ({
-  value,
-  forest,
-});
+export function of<A>(value: A, forest: Forest<A> = A.empty()): Tree<A> {
+  return ({ value, forest });
+}
+
+export function map<A, I>(fai: (a: A) => I): (ta: Tree<A>) => Tree<I> {
+  const _map = map(fai);
+  return (ta) => of(fai(ta.value), ta.forest.map(_map));
+}
+
+export function chain<A, I>(fati: (a: A) => Tree<I>): (ta: Tree<A>) => Tree<I> {
+  const concat = A.getMonoid<Tree<I>>().concat;
+  return (ta) => {
+    const { value, forest } = fati(ta.value);
+    return of(value, concat(forest)(ta.forest.map(chain(fati))));
+  };
+}
+
+export function ap<A, I>(tfai: Tree<(a: A) => I>): (ta: Tree<A>) => Tree<I> {
+  return (ta) => pipe(tfai, chain(flow(map, apply(ta))));
+}
+
+export function join<A>(tta: Tree<Tree<A>>): Tree<A> {
+  return pipe(tta, chain(identity));
+}
+
+export function reduce<A, O>(
+  foao: (o: O, a: A) => O,
+  o: O,
+): (ta: Tree<A>) => O {
+  const reducer = (result: O, tree: Tree<A>) => reduce(foao, result)(tree);
+  return (ta) => A.reduce(reducer, foao(o, ta.value))(ta.forest);
+}
+
+export function traverse<VRI extends URIS>(
+  V: TC.Applicative<VRI>,
+): <A, I, J, K, L>(
+  favi: (a: A) => Kind<VRI, [I, J, K, L]>,
+) => (ta: Tree<A>) => Kind<VRI, [Tree<I>, J, K, L]> {
+  const traverseVRI = A.traverse(V);
+  return (favi) => {
+    const out = <A, I, J, K, L>(_favi: (a: A) => Kind<VRI, [I, J, K, L]>) =>
+      (ta: Tree<A>): Kind<VRI, [Tree<I>, J, K, L]> =>
+        pipe(
+          ta.forest,
+          traverseVRI(out(_favi)),
+          V.ap(pipe(_favi(ta.value), V.map(_make))),
+        );
+    return out(favi);
+  };
+}
+
+export function drawForest(forest: Forest<string>): string {
+  return _draw("\n", forest);
+}
+
+export function drawTree(tree: Tree<string>): string {
+  return tree.value + drawForest(tree.forest);
+}
+
+export function fold<A, I>(fai: (a: A, is: Array<I>) => I): (ta: Tree<A>) => I {
+  const go = (tree: Tree<A>): I => fai(tree.value, tree.forest.map(go));
+  return go;
+}
 
 /*******************************************************************************
  * Modules
  ******************************************************************************/
 
-export const Functor: TC.Functor<URI> = {
-  map: (fab) =>
-    (ta) => ({
-      value: fab(ta.value),
-      forest: ta.forest.map(Functor.map(fab)),
-    }),
-};
+export const Functor: TC.Functor<URI> = { map };
 
-export const Apply: TC.Apply<URI> = {
-  ap: (tfab) => (ta) => pipe(tfab, Monad.chain(flow(Functor.map, apply(ta)))),
-  map: Functor.map,
-};
+export const Apply: TC.Apply<URI> = { ap, map };
 
-export const Applicative: TC.Applicative<URI> = {
-  of: make,
-  ap: Apply.ap,
-  map: Functor.map,
-};
+export const Applicative: TC.Applicative<URI> = { of, ap, map };
 
-export const Chain: TC.Chain<URI> = {
-  ap: Apply.ap,
-  map: Functor.map,
-  chain: (fatb) =>
-    (ta) => {
-      const { value, forest } = fatb(ta.value);
-      return {
-        value,
-        forest: _concat(forest)(ta.forest.map(Monad.chain(fatb))),
-      };
-    },
-};
+export const Chain: TC.Chain<URI> = { ap, map, chain };
 
-export const Monad: TC.Monad<URI> = {
-  of: make,
-  ap: Apply.ap,
-  map: Functor.map,
-  join: Chain.chain(identity),
-  chain: Chain.chain,
-};
+export const Monad: TC.Monad<URI> = { of, ap, map, join, chain };
 
-export const Traversable: TC.Traversable<URI> = {
-  map: Functor.map,
-  reduce: (faba, b) =>
-    (ta) => {
-      let r = faba(b, ta.value);
-      const len = ta.forest.length;
-      for (let i = 0; i < len; i++) {
-        r = Traversable.reduce(faba, r)(ta.forest[i]);
-      }
-      return r;
-    },
-  // TODO Clean up this implementation
-  traverse: (AP) =>
-    (faub) =>
-      (ta) => {
-        const traverseF = A.traverse(AP);
-        // deno-lint-ignore no-explicit-any
-        const out = (f: any) =>
-          // deno-lint-ignore no-explicit-any
-          (ta: any): any =>
-            pipe(
-              ta.forest,
-              // deno-lint-ignore no-explicit-any
-              traverseF(out(f)) as any,
-              AP.ap(pipe(f(ta.value), AP.map(_make))),
-            );
-        return out(faub)(ta);
-      },
-};
+export const Traversable: TC.Traversable<URI> = { map, reduce, traverse };
 
 /*******************************************************************************
  * Module Getters
@@ -143,31 +142,11 @@ export const Traversable: TC.Traversable<URI> = {
 
 export const getShow = <A>(S: TC.Show<A>): TC.Show<Tree<A>> => {
   const show = (ta: Tree<A>): string =>
-    ta.forest === A.zero || ta.forest.length === 0
+    ta.forest.length === 0
       ? `Tree(${S.show(ta.value)})`
       : `Tree(${S.show(ta.value)}, [${ta.forest.map(show).join(", ")}])`;
   return ({ show });
 };
-
-/*******************************************************************************
- * Pipeables
- ******************************************************************************/
-
-export const { of, ap, map, join, chain } = Monad;
-
-export const { reduce, traverse } = Traversable;
-
-export const drawForest = (forest: Forest<string>): string =>
-  _draw("\n", forest);
-
-export const drawTree = (tree: Tree<string>): string =>
-  tree.value + drawForest(tree.forest);
-
-export const fold = <A, B>(f: (a: A, bs: Array<B>) => B) =>
-  (tree: Tree<A>): B => {
-    const go = (tree: Tree<A>): B => f(tree.value, tree.forest.map(go));
-    return go(tree);
-  };
 
 /*******************************************************************************
  * Do Notation

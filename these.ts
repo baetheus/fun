@@ -1,4 +1,5 @@
 import type * as HKT from "./hkt.ts";
+import type { Kind, URIS } from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
 
 import * as E from "./either.ts";
@@ -8,13 +9,13 @@ import { flow, identity, pipe } from "./fns.ts";
  * Types
  ******************************************************************************/
 
-export type Left<L> = E.Left<L>;
+export type Left<B> = E.Left<B>;
 
-export type Right<R> = E.Right<R>;
+export type Right<A> = E.Right<A>;
 
-export type Both<L, R> = { tag: "Both"; left: L; right: R };
+export type Both<B, A> = { tag: "Both"; left: B; right: A };
 
-export type These<L, R> = E.Either<L, R> | Both<L, R>;
+export type These<B, A> = Left<B> | Right<A> | Both<B, A>;
 
 /*******************************************************************************
  * Kind Registration
@@ -35,145 +36,162 @@ declare module "./hkt.ts" {
  * Constructors
  ******************************************************************************/
 
-export const left = E.left;
+export function left<A = never, B = never>(left: B): These<B, A> {
+  return ({ tag: "Left", left });
+}
 
-export const right = E.right;
+export function right<A = never, B = never>(right: A): These<B, A> {
+  return ({ tag: "Right", right });
+}
 
-export const both = <L, R>(left: L, right: R): Both<L, R> => ({
-  tag: "Both",
-  left,
-  right,
-});
+export function both<A, B>(left: B, right: A): These<B, A> {
+  return ({ tag: "Both", left, right });
+}
 
 /*******************************************************************************
  * Destructors
  ******************************************************************************/
 
-export const fold = <E, A, B>(
-  onLeft: (e: E) => B,
-  onRight: (a: A) => B,
-  onBoth: (e: E, a: A) => B,
-) =>
-  (fa: These<E, A>) => {
-    switch (fa.tag) {
-      case "Left":
-        return onLeft(fa.left);
-      case "Right":
-        return onRight(fa.right);
-      case "Both":
-        return onBoth(fa.left, fa.right);
-    }
-  };
+export function fold<A, B, O>(
+  onLeft: (b: B) => O,
+  onRight: (a: A) => O,
+  onBoth: (b: B, a: A) => O,
+): (ta: These<B, A>) => O {
+  const _fold = E.fold(onLeft, onRight);
+  return (ta) => ta.tag === "Both" ? onBoth(ta.left, ta.right) : _fold(ta);
+}
 
 /*******************************************************************************
  * Guards
  ******************************************************************************/
 
-export const isLeft = <L, R>(m: These<L, R>): m is E.Left<L> =>
-  m.tag === "Left";
+export function isLeft<A, B>(ta: These<B, A>): ta is Left<B> {
+  return ta.tag === "Left";
+}
 
-export const isRight = <L, R>(m: These<L, R>): m is E.Right<R> =>
-  m.tag === "Right";
+export function isRight<A, B>(ta: These<B, A>): ta is Right<A> {
+  return ta.tag === "Right";
+}
 
-export const isBoth = <L, R>(m: These<L, R>): m is Both<L, R> =>
-  m.tag === "Both";
+export function isBoth<A, B>(ta: These<B, A>): ta is Both<B, A> {
+  return ta.tag === "Both";
+}
+
+/*******************************************************************************
+ * Functions
+ ******************************************************************************/
+
+export function of<A, B = never>(a: A): These<B, A> {
+  return right(a);
+}
+
+export function throwError<A = never, B = never>(b: B): These<B, A> {
+  return left(b);
+}
+
+export function bimap<A, B, I, J>(
+  fbj: (b: B) => J,
+  fai: (a: A) => I,
+): (ta: These<B, A>) => These<J, I> {
+  return (ta) =>
+    isLeft(ta)
+      ? left(fbj(ta.left))
+      : isRight(ta)
+      ? right(fai(ta.right))
+      : both(fbj(ta.left), fai(ta.right));
+}
+
+export function map<A, I>(
+  fai: (a: A) => I,
+): <B>(ta: These<B, A>) => These<B, I> {
+  return bimap(identity, fai);
+}
+
+export function mapLeft<B, J>(
+  fbj: (b: B) => J,
+): <A>(ta: These<B, A>) => These<J, A> {
+  return bimap(fbj, identity);
+}
+
+export function reduce<A, O>(
+  foao: (o: O, a: A) => O,
+  o: O,
+): <B>(ta: These<B, A>) => O {
+  return (ta) => isLeft(ta) ? o : foao(o, ta.right);
+}
+
+export function traverse<VRI extends URIS>(
+  A: TC.Applicative<VRI>,
+): <A, I, J, K, L>(
+  favi: (a: A) => Kind<VRI, [I, J, K, L]>,
+) => <B>(ta: These<B, A>) => Kind<VRI, [These<B, I>, J, K, L]> {
+  return (favi) =>
+    fold(
+      flow(left, A.of),
+      flow(favi, A.map((i) => right(i))),
+      (b, a) => pipe(a, favi, A.map((i) => both(b, i))),
+    );
+}
+/*******************************************************************************
+ * Modules
+ ******************************************************************************/
+
+export const Bifunctor: TC.Bifunctor<URI> = { bimap, mapLeft };
+
+export const Functor: TC.Functor<URI> = { map };
+
+export const Foldable: TC.Foldable<URI> = { reduce };
+
+export const Traversable: TC.Traversable<URI> = { map, reduce, traverse };
 
 /*******************************************************************************
  * Module Getters
  ******************************************************************************/
 
-export const getShow = <E, A>(
-  SE: TC.Show<E>,
+export function getShow<A, B>(
+  SB: TC.Show<B>,
   SA: TC.Show<A>,
-): TC.Show<These<E, A>> => ({
-  show: fold(
-    (left) => `Left(${SE.show(left)})`,
-    (right) => `Right(${SA.show(right)})`,
-    (left, right) => `Both(${SE.show(left)}, ${SA.show(right)})`,
-  ),
-});
+): TC.Show<These<B, A>> {
+  return ({
+    show: fold(
+      (left) => `Left(${SB.show(left)})`,
+      (right) => `Right(${SA.show(right)})`,
+      (left, right) => `Both(${SB.show(left)}, ${SA.show(right)})`,
+    ),
+  });
+}
 
-export const getSemigroup = <E, A>(
-  SE: TC.Semigroup<E>,
+export function getSemigroup<A, B>(
+  SB: TC.Semigroup<B>,
   SA: TC.Semigroup<A>,
-): TC.Semigroup<These<E, A>> => ({
-  concat: (x) =>
-    (y) => {
-      if (isLeft(x)) {
-        if (isLeft(y)) {
-          return left(SE.concat(x.left)(y.left));
-        } else if (isRight(y)) {
-          return both(x.left, y.right);
+): TC.Semigroup<These<B, A>> {
+  return ({
+    concat: (x) =>
+      (y) => {
+        if (isLeft(x)) {
+          if (isLeft(y)) {
+            return left(SB.concat(x.left)(y.left));
+          } else if (isRight(y)) {
+            return both(x.left, y.right);
+          }
+          return both(SB.concat(x.left)(y.left), y.right);
         }
-        return both(SE.concat(x.left)(y.left), y.right);
-      }
 
-      if (isRight(x)) {
-        if (isLeft(y)) {
-          return both(y.left, x.right);
-        } else if (isRight(y)) {
-          return right(SA.concat(x.right)(y.right));
+        if (isRight(x)) {
+          if (isLeft(y)) {
+            return both(y.left, x.right);
+          } else if (isRight(y)) {
+            return right(SA.concat(x.right)(y.right));
+          }
+          return both(y.left, SA.concat(x.right)(y.right));
         }
-        return both(y.left, SA.concat(x.right)(y.right));
-      }
 
-      if (isLeft(y)) {
-        return both(SE.concat(x.left)(y.left), x.right);
-      } else if (isRight(y)) {
-        return both(x.left, SA.concat(x.right)(y.right));
-      }
-      return both(SE.concat(x.left)(y.left), SA.concat(x.right)(y.right));
-    },
-});
-
-/*******************************************************************************
- * Modules
- ******************************************************************************/
-
-export const Functor: TC.Functor<URI> = {
-  map: (fab) =>
-    (ta) =>
-      isLeft(ta)
-        ? ta
-        : isRight(ta)
-        ? right(fab(ta.right))
-        : both(ta.left, fab(ta.right)),
-};
-
-export const Bifunctor: TC.Bifunctor<URI> = {
-  bimap: (fab, fcd) =>
-    (tac) =>
-      isLeft(tac)
-        ? left(fab(tac.left))
-        : isRight(tac)
-        ? right(fcd(tac.right))
-        : both(fab(tac.left), fcd(tac.right)),
-  mapLeft: (fef) => (ta) => pipe(ta, Bifunctor.bimap(fef, identity)),
-};
-
-export const Foldable: TC.Foldable<URI> = {
-  reduce: (faba, a) =>
-    (tb) =>
-      isLeft(tb) ? a : isRight(tb) ? faba(a, tb.right) : faba(a, tb.right),
-};
-
-export const Traversable: TC.Traversable<URI> = {
-  reduce: Foldable.reduce,
-  map: Functor.map,
-  traverse: (A) =>
-    (faub) =>
-      fold(
-        flow(left, A.of),
-        flow(faub, A.map((b) => right(b))),
-        // deno-lint-ignore no-explicit-any
-        (l, r) => pipe(r, faub, A.map((b) => both(l, b))) as any,
-      ),
-};
-
-/*******************************************************************************
- * Pipeables
- ******************************************************************************/
-
-export const { bimap, mapLeft } = Bifunctor;
-
-export const { map, reduce, traverse } = Traversable;
+        if (isLeft(y)) {
+          return both(SB.concat(x.left)(y.left), x.right);
+        } else if (isRight(y)) {
+          return both(x.left, SA.concat(x.right)(y.right));
+        }
+        return both(SB.concat(x.left)(y.left), SA.concat(x.right)(y.right));
+      },
+  });
+}

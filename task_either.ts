@@ -1,11 +1,10 @@
 import type * as HKT from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
-import type { Lazy } from "./types.ts";
 
 import * as E from "./either.ts";
 import * as T from "./task.ts";
 import { createDo } from "./derivations.ts";
-import { constant, flow, identity, pipe, then } from "./fns.ts";
+import { flow, handleThrow, identity, pipe, resolve } from "./fns.ts";
 
 /*******************************************************************************
  * Types
@@ -32,154 +31,108 @@ declare module "./hkt.ts" {
  * Constructors
  ******************************************************************************/
 
-export const left = <E = never, A = never>(left: E): TaskEither<E, A> =>
-  T.of(E.left(left));
+export function left<A = never, B = never>(left: B): TaskEither<B, A> {
+  return T.of(E.left(left));
+}
 
-export const right = <E = never, A = never>(right: A): TaskEither<E, A> =>
-  T.of(E.right(right));
+export function right<A = never, B = never>(right: A): TaskEither<B, A> {
+  return T.of(E.right(right));
+}
 
-export const tryCatch = <E, A>(
-  f: Lazy<A>,
-  onError: (e: unknown) => E,
-): TaskEither<E, A> =>
-  () => {
-    try {
-      return Promise.resolve(E.right(f()));
-    } catch (e) {
-      return Promise.resolve(E.left(onError(e)));
-    }
-  };
+export function tryCatch<A, B>(
+  fa: () => A,
+  onError: (e: unknown) => B,
+): TaskEither<B, A> {
+  return () =>
+    handleThrow(
+      fa,
+      flow((a) => E.right<B, A>(a), resolve),
+      flow(onError, (b) => E.left<B, A>(b), resolve),
+    );
+}
 
-export const fromFailableTask = <E, A>(onError: (e: unknown) => E) =>
-  (ta: T.Task<A>): TaskEither<E, A> =>
-    () => ta().then(E.right).catch((e) => E.left(onError(e)));
+export function fromTask<A, B = never>(ta: T.Task<A>): TaskEither<B, A> {
+  return () => ta().then(E.right);
+}
 
-export const fromEither = <E, A>(ta: E.Either<E, A>): TaskEither<E, A> =>
-  pipe(ta, E.fold((e) => left(e), right));
+export function fromFailableTask<A, B>(
+  onError: (e: unknown) => B,
+): (ta: T.Task<A>) => TaskEither<B, A> {
+  return (ta) => () => ta().then(E.right).catch((e) => E.left(onError(e)));
+}
 
-/*******************************************************************************
- * Modules (Parallel)
- ******************************************************************************/
+export function fromEither<A, B>(ta: E.Either<B, A>): TaskEither<B, A> {
+  return pipe(ta, E.fold((e) => left(e), right));
+}
 
-export const Functor: TC.Functor<URI> = {
-  map: (fai) => (ta) => flow(ta, then(E.map(fai))),
-};
+export function of<A, B = never>(a: A): TaskEither<B, A> {
+  return right(a);
+}
 
-export const Bifunctor: TC.Bifunctor<URI> = {
-  bimap: (fab, fcd) => (tac) => () => tac().then(E.bimap(fab, fcd)),
-  mapLeft: (fef) => (ta) => pipe(ta, Bifunctor.bimap(fef, identity)),
-};
+export function throwError<A = never, B = never>(b: B): TaskEither<B, A> {
+  return left(b);
+}
 
-export const Apply: TC.Apply<URI> = {
-  ap: flow(T.map(E.ap), T.ap),
-  map: Functor.map,
-};
+export function bimap<A, B, I, J>(
+  fbj: (b: B) => J,
+  fai: (a: A) => I,
+): (ta: TaskEither<B, A>) => TaskEither<J, I> {
+  return (ta) => pipe(ta, T.map(E.bimap(fbj, fai)));
+}
 
-export const Applicative: TC.Applicative<URI> = {
-  of: right,
-  ap: Apply.ap,
-  map: Functor.map,
-};
+export function map<A, I>(
+  fai: (a: A) => I,
+): <B>(ta: TaskEither<B, A>) => TaskEither<B, I> {
+  return (ta) => pipe(ta, T.map(E.map(fai)));
+}
 
-export const Chain: TC.Chain<URI> = {
-  ap: Apply.ap,
-  map: Functor.map,
-  chain: (fatb) =>
-    (ta) =>
-      async () => {
-        const ea = await ta();
-        if (E.isLeft(ea)) {
-          return ea;
-        }
-        return await fatb(ea.right)();
-      },
-};
+export function mapLeft<B, J>(
+  fbj: (b: B) => J,
+): <A>(ta: TaskEither<B, A>) => TaskEither<J, A> {
+  return (ta) => pipe(ta, T.map(E.mapLeft(fbj)));
+}
 
-export const Monad: TC.Monad<URI> = {
-  of: Applicative.of,
-  ap: Apply.ap,
-  map: Functor.map,
-  join: Chain.chain(identity),
-  chain: Chain.chain,
-};
+export function ap<A, I, B>(
+  tfai: TaskEither<B, (a: A) => I>,
+): (ta: TaskEither<B, A>) => TaskEither<B, I> {
+  return pipe(tfai, T.map(E.ap), T.ap);
+}
 
-export const MonadThrow: TC.MonadThrow<URI> = {
-  of: Applicative.of,
-  ap: Apply.ap,
-  map: Functor.map,
-  join: Monad.join,
-  chain: Chain.chain,
-  throwError: left,
-};
+export function apSeq<A, I, B>(
+  tfai: TaskEither<B, (a: A) => I>,
+): (ta: TaskEither<B, A>) => TaskEither<B, I> {
+  return pipe(tfai, T.map(E.ap), T.apSeq);
+}
 
-export const Alt: TC.Alt<URI> = ({
-  map: Functor.map,
-  alt: (tb) => (ta) => () => ta().then((te) => E.isLeft(te) ? tb() : te),
-});
+export function chain<A, I, B>(
+  fati: (a: A) => TaskEither<B, I>,
+): (ta: TaskEither<B, A>) => TaskEither<B, I> {
+  return (ta) => pipe(ta, T.chain(E.fold<B, A, TaskEither<B, I>>(left, fati)));
+}
 
-/*******************************************************************************
- * Modules (Sequential)
- ******************************************************************************/
+export function chainLeft<A, B, J>(
+  fbtj: (b: B) => TaskEither<J, A>,
+): (ta: TaskEither<B, A>) => TaskEither<J, A> {
+  return (ta) => pipe(ta, T.chain(E.fold<B, A, TaskEither<J, A>>(fbtj, right)));
+}
 
-// TODO Refactor in terms of Task.ap (Sequential)
-export const ApplySeq: TC.Apply<URI> = {
-  ap: (tfab) =>
-    (ta) =>
-      async () => {
-        const efab = await tfab();
-        const ea = await ta();
-        return pipe(ea, E.ap(efab));
-      },
-  map: Functor.map,
-};
+export function join<A, B>(
+  tta: TaskEither<B, TaskEither<B, A>>,
+): TaskEither<B, A> {
+  return pipe(tta, chain(identity));
+}
 
-export const ApplicativeSeq: TC.Applicative<URI> = {
-  of: right,
-  ap: ApplySeq.ap,
-  map: Functor.map,
-};
+export function alt<A, B>(
+  tb: TaskEither<B, A>,
+): (ta: TaskEither<B, A>) => TaskEither<B, A> {
+  return (ta) => () => ta().then((ea) => E.isLeft(ea) ? tb() : ea);
+}
 
-export const ChainSeq: TC.Chain<URI> = {
-  ap: ApplySeq.ap,
-  map: Functor.map,
-  chain: Chain.chain,
-};
-
-export const MonadSeq: TC.Monad<URI> = {
-  of: ApplicativeSeq.of,
-  ap: ApplySeq.ap,
-  map: Functor.map,
-  join: ChainSeq.chain(identity),
-  chain: ChainSeq.chain,
-};
-
-export const MonadThrowSeq: TC.MonadThrow<URI> = {
-  of: ApplicativeSeq.of,
-  ap: ApplySeq.ap,
-  map: Functor.map,
-  join: MonadSeq.join,
-  chain: ChainSeq.chain,
-  throwError: left,
-};
-
-/*******************************************************************************
- * Pipeables
- ******************************************************************************/
-
-export const { of, ap, map, join, chain } = Monad;
-
-export const { bimap, mapLeft } = Bifunctor;
-
-export const { ap: apSeq } = ApplySeq;
-
-export const { alt } = Alt;
-
-export const chainLeft = <E, A>(onLeft: (e: E) => TaskEither<E, A>) =>
-  T.chain(E.fold<E, A, TaskEither<E, A>>(onLeft, right));
-
-export const widen: <F>() => <E, A>(
-  ta: TaskEither<E, A>,
-) => TaskEither<E | F, A> = constant(identity);
+export function widen<J>(): <A, B>(
+  ta: TaskEither<B, A>,
+) => TaskEither<B | J, A> {
+  return identity;
+}
 
 // This leaks async ops so we cut it for now.
 //export const timeout = <E, A>(ms: number, onTimeout: () => E) =>
@@ -187,7 +140,51 @@ export const widen: <F>() => <E, A>(
 //    () => Promise.race([ta(), wait(ms).then(flow(onTimeout, E.left))]);
 
 /*******************************************************************************
- * Do Notation
+ * Modules
+ ******************************************************************************/
+
+export const Functor: TC.Functor<URI> = { map };
+
+export const Bifunctor: TC.Bifunctor<URI> = { bimap, mapLeft };
+
+export const Apply: TC.Apply<URI> = { ap, map };
+
+export const Applicative: TC.Applicative<URI> = { of, ap, map };
+
+export const Chain: TC.Chain<URI> = { ap, map, chain };
+
+export const Monad: TC.Monad<URI> = { of, ap, map, join, chain };
+
+export const MonadThrow: TC.MonadThrow<URI> = {
+  of,
+  ap,
+  map,
+  join,
+  chain,
+  throwError,
+};
+
+export const Alt: TC.Alt<URI> = { alt, map };
+
+export const ApplySeq: TC.Apply<URI> = { ap: apSeq, map };
+
+export const ApplicativeSeq: TC.Applicative<URI> = { of, ap: apSeq, map };
+
+export const ChainSeq: TC.Chain<URI> = { ap: apSeq, map, chain };
+
+export const MonadSeq: TC.Monad<URI> = { of, ap: apSeq, map, join, chain };
+
+export const MonadThrowSeq: TC.MonadThrow<URI> = {
+  of,
+  ap: apSeq,
+  map,
+  join,
+  chain,
+  throwError,
+};
+
+/*******************************************************************************
+ * Derived Functions
  ******************************************************************************/
 
 export const { Do, bind, bindTo } = createDo(Monad);

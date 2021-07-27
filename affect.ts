@@ -2,6 +2,11 @@ import type * as TC from "./type_classes.ts";
 import type * as HKT from "./hkt.ts";
 import type { Reader } from "./reader.ts";
 import type { Either } from "./either.ts";
+import type { Option } from "./option.ts";
+import type { Task } from "./task.ts";
+import type { TaskEither } from "./task_either.ts";
+import type { IO } from "./io.ts";
+import type { IOEither } from "./io_either.ts";
 
 import * as E from "./either.ts";
 import { createDo } from "./derivations.ts";
@@ -114,6 +119,60 @@ export function left<R = never, E = never, A = never>(
   left: E,
 ): Affect<R, E, A> {
   return () => resolve(E.left(left));
+}
+
+/**
+ * Constructs an Affect from an Option
+ */
+export function fromOption<E = never>(
+  onNone: () => E,
+): (<R = never, A = never>(ma: Option<A>) => Affect<R, E, A>) {
+  return (ma) => ma.tag === "None" ? left(onNone()) : right(ma.value);
+}
+
+/**
+ * Constructs an Affect from an Either
+ */
+export function fromEither<R = never, E = never, A = never>(
+  ma: Either<E, A>,
+): Affect<R, E, A> {
+  return () => resolve(ma);
+}
+
+/**
+ * Constructs an Affect from a Task
+ */
+export function fromTask<R = never, E = never, A = never>(
+  ma: Task<A>,
+): Affect<R, E, A> {
+  return flow(ma, then(E.right));
+}
+
+/**
+ * Constructs an Affect from a TaskEither
+ */
+export function fromTaskEither<R = never, E = never, A = never>(
+  ma: TaskEither<E, A>,
+): Affect<R, E, A> {
+  return ma;
+}
+
+/**
+ * Constructs an Affect from an IO
+ */
+export function fromIO<R = never, E = never, A = never>(
+  ma: IO<A>,
+): Affect<R, E, A> {
+  return flow(ma, E.right, resolve);
+}
+
+/**
+ * Constructs an Affect from an IOEither
+ */
+export function fromIOEither<R = never, E = never, A = never>(
+  ma: IOEither<E, A>,
+): Affect<R, E, A> {
+  return flow(ma, resolve);
 }
 
 /*******************************************************************************

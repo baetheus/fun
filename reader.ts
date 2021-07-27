@@ -29,53 +29,64 @@ declare module "./hkt.ts" {
  * Constructors
  ******************************************************************************/
 
-export const make: <R>(r: R) => Reader<R, R> = constant;
+export function make<A>(a: A): Reader<A, A> {
+  return constant(a);
+}
 
-export const ask: <R>() => Reader<R, R> = () => identity;
+export function ask<A>(): Reader<A, A> {
+  return identity;
+}
 
-export const asks: <R, A>(f: (r: R) => A) => Reader<R, A> = identity;
+export function asks<A, I>(fai: (a: A) => I): Reader<A, I> {
+  return fai;
+}
+
+/*******************************************************************************
+ * Functions
+ ******************************************************************************/
+
+export function of<A, B = never>(a: A): Reader<B, A> {
+  return () => a;
+}
+
+export function map<A, I>(
+  fai: (a: A) => I,
+): <B>(ta: Reader<B, A>) => Reader<B, I> {
+  return (ta) => flow(ta, fai);
+}
+
+export function ap<A, I, B>(
+  tfai: Reader<B, (a: A) => I>,
+): (ta: Reader<B, A>) => Reader<B, I> {
+  return (ta) => (b) => pipe(ta(b), tfai(b));
+}
+
+export function chain<A, I, B>(
+  fati: (a: A) => Reader<B, I>,
+): (ta: Reader<B, A>) => Reader<B, I> {
+  return (ta) => (b) => fati(ta(b))(b);
+}
+
+export function join<A, B>(tta: Reader<B, Reader<B, A>>): Reader<B, A> {
+  return (b) => tta(b)(b);
+}
 
 /*******************************************************************************
  * Modules
  ******************************************************************************/
 
-export const Functor: TC.Functor<URI> = {
-  map: (fab) => (ta) => flow(ta, fab),
-};
+export const Functor: TC.Functor<URI> = { map };
 
-export const Apply: TC.Apply<URI> = {
-  ap: (tfai) => (ta) => (r) => pipe(ta(r), tfai(r)),
-  map: Functor.map,
-};
+export const Apply: TC.Apply<URI> = { ap, map };
 
-export const Applicative: TC.Applicative<URI> = {
-  of: constant,
-  ap: Apply.ap,
-  map: Functor.map,
-};
+export const Applicative: TC.Applicative<URI> = { of, ap, map };
 
-export const Chain: TC.Chain<URI> = {
-  ap: Apply.ap,
-  map: Functor.map,
-  chain: (fatb) => (ta) => (r) => fatb(ta(r))(r),
-};
+export const Chain: TC.Chain<URI> = { ap, map, chain };
 
-export const Monad: TC.Monad<URI> = {
-  of: Applicative.of,
-  ap: Apply.ap,
-  map: Functor.map,
-  join: (tta) => (r) => tta(r)(r),
-  chain: Chain.chain,
-};
+export const Monad: TC.Monad<URI> = { of, ap, map, join, chain };
 
 /*******************************************************************************
- * Pipeables
- ******************************************************************************/
-
-export const { of, ap, map, join, chain } = Monad;
-
-/*******************************************************************************
- * Do
+ * Derived Functions
  ******************************************************************************/
 
 export const { Do, bind, bindTo } = createDo(Monad);
