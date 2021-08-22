@@ -68,9 +68,9 @@ export const getShow = <K, A>(
   SA: TC.Show<A>,
 ): TC.Show<Map<K, A>> => ({
   show: (ta) => {
-    const elements = Array.from(ta).map(([k, a]) =>
-      `[${SK.show(k)}, ${SA.show(a)}]`
-    ).join(", ");
+    const elements = Array.from(ta)
+      .map(([k, a]) => `[${SK.show(k)}, ${SA.show(a)}]`)
+      .join(", ");
     return `new Map([${elements}])`;
   },
 });
@@ -198,9 +198,7 @@ export const insertAt = <K>(S: TC.Setoid<K>) => {
     };
 };
 
-export const deleteAt = <K>(
-  S: TC.Setoid<K>,
-) =>
+export const deleteAt = <K>(S: TC.Setoid<K>) =>
   (k: K) => {
     const lookupIn = lookupWithKey(S)(k);
     return <A>(m: Map<K, A>): Map<K, A> => {
@@ -214,9 +212,7 @@ export const deleteAt = <K>(
     };
   };
 
-export const updateAt = <K>(
-  S: TC.Setoid<K>,
-) =>
+export const updateAt = <K>(S: TC.Setoid<K>) =>
   <A>(k: K, a: A) => {
     const lookupIn = lookupWithKey(S)(k);
     return (m: Map<K, A>): O.Option<Map<K, A>> => {
@@ -230,13 +226,8 @@ export const updateAt = <K>(
     };
   };
 
-export const modifyAt = <K>(
-  S: TC.Setoid<K>,
-) =>
-  <A>(
-    k: K,
-    f: (a: A) => A,
-  ) => {
+export const modifyAt = <K>(S: TC.Setoid<K>) =>
+  <A>(k: K, f: (a: A) => A) => {
     const lookupIn = lookupWithKey(S)(k);
     return (m: Map<K, A>): O.Option<Map<K, A>> => {
       const found = lookupIn(m);
@@ -260,10 +251,7 @@ export const pop = <K>(S: TC.Setoid<K>) =>
       );
   };
 
-export const isSubmap = <K, A>(
-  SK: TC.Setoid<K>,
-  SA: TC.Setoid<A>,
-) =>
+export const isSubmap = <K, A>(SK: TC.Setoid<K>, SA: TC.Setoid<A>) =>
   (sub: Map<K, A>) => {
     const lookupKey = lookupWithKey(SK);
     return (sup: Map<K, A>): boolean => {

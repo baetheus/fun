@@ -37,7 +37,7 @@ const foldErrors = <O>(
 /**
  * Let's make a helper function for fetch. This one takes the same
  * inputs as fetch, but does the following:
- * 
+ *
  * * Wraps fetch in a TaskEither instance
  * * Parses the response to json
  * * Takes any errors and types them as FetchError
@@ -55,11 +55,11 @@ const fetchTaskEither = (
 
 /**
  * Next, let's combine the fetch helper function with a "Decoder"
- * 
+ *
  * A Decoder is simply a function that takes some input and makes
  * sure it has the "shape" or "properties" that we want. It's output
  * is either a tree of errors or the data you want wrapped in an Either.
- * 
+ *
  * Here, we take a decoder, then we return an extension of the
  * fetchTaskEither function where we make sure the response from
  * fetchTaskEither has the structure that we want.

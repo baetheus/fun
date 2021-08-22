@@ -45,8 +45,7 @@ export const nil: Nil = undefined;
 
 export const constNil = <A = never>(): Nilable<A> => nil;
 
-export const make = <A = never>(a: A): Nilable<A> =>
-  isNotNil(a) ? a : nil;
+export const make = <A = never>(a: A): Nilable<A> => isNotNil(a) ? a : nil;
 
 export const fromPredicate = <A>(predicate: Predicate<A>) =>
   (ta: Nilable<A>): Nilable<A> => isNotNil(ta) && predicate(ta) ? ta : nil;
