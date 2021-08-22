@@ -52,10 +52,21 @@ export const tryCatch = <E, A>(
 
 export const fromFailableTask = <E, A>(onError: (e: unknown) => E) =>
   (ta: T.Task<A>): TaskEither<E, A> =>
-    () => ta().then(E.right).catch((e) => E.left(onError(e)));
+    () =>
+      ta()
+        .then(E.right)
+        .catch((e) => E.left(onError(e)));
 
 export const fromEither = <E, A>(ta: E.Either<E, A>): TaskEither<E, A> =>
-  pipe(ta, E.fold((e) => left(e), right));
+  pipe(
+    ta,
+    E.fold((e) => left(e), right),
+  );
+
+export const fold = <L, R, B>(
+  onLeft: (left: L) => B,
+  onRight: (right: R) => B,
+) => (ma: TaskEither<L, R>): T.Task<B> => T.map(E.fold(onLeft, onRight))(ma);
 
 /*******************************************************************************
  * Modules (Parallel)
@@ -112,10 +123,10 @@ export const MonadThrow: TC.MonadThrow<URI> = {
   throwError: left,
 };
 
-export const Alt: TC.Alt<URI> = ({
+export const Alt: TC.Alt<URI> = {
   map: Functor.map,
-  alt: (tb) => (ta) => () => ta().then((te) => E.isLeft(te) ? tb() : te),
-});
+  alt: (tb) => (ta) => () => ta().then((te) => (E.isLeft(te) ? tb() : te)),
+};
 
 /*******************************************************************************
  * Modules (Sequential)
