@@ -143,5 +143,3 @@ Deno.test("DecodeError getSemigroup", () => {
     },
   );
 });
-
-

@@ -64,7 +64,7 @@ export const constNone = <A = never>(): Option<A> => none;
 /**
  * fromNullable takes a potentially null or undefined value and maps null or undefined to
  * None and non-null and non-undefined values to Some<NonNullable<A>>
- * 
+ *
  * @example
  *     const a: number | undefined = undefined;
  *     const b: number | undefined = 2;
@@ -80,7 +80,7 @@ export const fromNullable = <A>(a: A): Option<NonNullable<A>> =>
  * fromPredicate will test the value a with the predicate. If
  * the predicate evaluates to false then the function will return a None,
  * otherwise the value wrapped in Some
- * 
+ *
  * @example
  *     const fromPositiveNumber = fromPredicate((n: number) => n > 0);
  *     const a = fromPositiveNumber(-1); // None
@@ -113,7 +113,7 @@ export const tryCatch = <A>(f: Lazy<A>): Option<A> => {
  * operator over the two potential cases for an Option type. One supplies functions for
  * handling the Some case and the None case with matching return types and fold calls
  * the correct function for the given option.
- * 
+ *
  * @example
  *     const toNumber = fold((a: number) => a, () => 0);
  *     const a = toNumber(some(1)); // 1
@@ -125,7 +125,7 @@ export const fold = <A, B>(onNone: () => B, onSome: (a: A) => B) =>
 /**
  * getOrElse operates like a simplified fold. One supplies a thunk that returns a default
  * inner value of the Option for the cases where the option is None.
- * 
+ *
  * @example
  *     const toNumber = getOrElse(() => 0);
  *     const a = toNumber(some(1)); // 1
@@ -155,7 +155,7 @@ export const toUndefined = <A>(ma: Option<A>): A | undefined =>
 /**
  * mapNullable is useful for piping an option's values through functions that may return
  * null or undefined.
- * 
+ *
  * @example
  *     const a = pipe(
  *         some([1, 2, 3]),
@@ -272,7 +272,7 @@ export const Traversable: TC.Traversable<URI> = {
 
 /**
  * Generates a Show module for an option with inner type of A.
- * 
+ *
  * @example
  *     const Show = getShow({ show: (n: number) => n.toString() }); // Show<Option<number>>
  *     const a = Show.show(some(1)); // "Some(1)"
@@ -284,7 +284,7 @@ export const getShow = <A>({ show }: TC.Show<A>): TC.Show<Option<A>> => ({
 
 /**
  * Generates a Setoid module for an option with inner type of A.
- * 
+ *
  * @example
  *     const Setoid = getSetoid({ equals: (a: number, b: number) => a === b });
  *     const a = Setoid.equals(some(1), some(2)); // false
