@@ -2,7 +2,7 @@ import type * as HKT from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
 import { Lazy } from "./types.ts";
 
-import { apply, flow, wait, identity } from "./fns.ts";
+import { apply, flow, identity, wait } from "./fns.ts";
 import { createDo } from "./derivations.ts";
 
 /*******************************************************************************
