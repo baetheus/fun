@@ -210,7 +210,7 @@ export function map<A, B>(fab: (a: A) => B): ((ta: Option<A>) => Option<B>) {
  *     ); // None (Option<number>)
  */
 export function mapNullable<A, I>(f: (a: A) => I | null | undefined) {
-  return map(flow(f, fromNullable));
+  return chain(flow(f, fromNullable));
 }
 
 export function ap<A, I>(
@@ -265,8 +265,8 @@ export function traverse<VRI extends URIS>(A: TC.Applicative<VRI>) {
     favi: (a: A) => Kind<VRI, [I, J, K, L]>,
   ): ((ta: Option<A>) => Kind<VRI, [Option<I>, J, K, L]>) =>
     fold(
-      flow(constNone, A.of),
-      flow(favi, A.map(some)),
+      () => A.of(constNone()),
+      (a) => pipe(favi(a), A.map((i) => some(i))),
     );
 }
 
@@ -342,8 +342,8 @@ export function getSetoid<A>(S: TC.Setoid<A>): TC.Setoid<Option<A>> {
 export function getOrd<A>(O: TC.Ord<A>): TC.Ord<Option<A>> {
   return ({
     ...getSetoid(O),
-    lte: (a) =>
-      (b) => {
+    lte: (b) =>
+      (a) => {
         if (a === b) {
           return true;
         }
@@ -353,7 +353,7 @@ export function getOrd<A>(O: TC.Ord<A>): TC.Ord<Option<A>> {
         if (isNone(b)) {
           return false;
         }
-        return O.lte(a.value)(b.value);
+        return O.lte(b.value)(a.value);
       },
   });
 }

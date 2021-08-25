@@ -21,6 +21,7 @@ Deno.test("Ord ordBoolean", () => {
 
 Deno.test("Ord compare", () => {
   const compare = O.compare(O.ordNumber);
+  assertEquals(typeof compare, "function");
   assertEquals(compare(0, 0), 0);
   assertEquals(compare(0, 1), -1);
   assertEquals(compare(1, 0), 1);
@@ -29,29 +30,29 @@ Deno.test("Ord compare", () => {
 Deno.test("Ord lt", () => {
   const lt = O.lt(O.ordNumber);
   assertEquals(lt(0)(0), false);
-  assertEquals(lt(0)(1), true);
-  assertEquals(lt(1)(0), false);
+  assertEquals(lt(0)(1), false);
+  assertEquals(lt(1)(0), true);
 });
 
 Deno.test("Ord gt", () => {
   const gt = O.gt(O.ordNumber);
   assertEquals(gt(0)(0), false);
-  assertEquals(gt(0)(1), false);
-  assertEquals(gt(1)(0), true);
+  assertEquals(gt(0)(1), true);
+  assertEquals(gt(1)(0), false);
 });
 
 Deno.test("Ord lte", () => {
   const lte = O.lte(O.ordNumber);
   assertEquals(lte(0)(0), true);
-  assertEquals(lte(0)(1), true);
-  assertEquals(lte(1)(0), false);
+  assertEquals(lte(0)(1), false);
+  assertEquals(lte(1)(0), true);
 });
 
 Deno.test("Ord gte", () => {
   const gte = O.gte(O.ordNumber);
   assertEquals(gte(0)(0), true);
-  assertEquals(gte(0)(1), false);
-  assertEquals(gte(1)(0), true);
+  assertEquals(gte(1)(0), false);
+  assertEquals(gte(0)(1), true);
 });
 
 Deno.test("Ord eq", () => {
@@ -89,6 +90,7 @@ Deno.test("Ord between", () => {
   assertEquals(between(0, 2)(-1), false);
   assertEquals(between(0, 2)(0), false);
   assertEquals(between(0, 2)(1), true);
+  assertEquals(between(0, 10)(5), true);
   assertEquals(between(0, 2)(2), false);
   assertEquals(between(0, 2)(3), false);
 });

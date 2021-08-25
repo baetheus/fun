@@ -127,9 +127,9 @@ export function traverse<VRI extends URIS>(
 ) => <B>(ta: These<B, A>) => Kind<VRI, [These<B, I>, J, K, L]> {
   return (favi) =>
     fold(
-      flow(left, A.of),
-      flow(favi, A.map((i) => right(i))),
-      (b, a) => pipe(a, favi, A.map((i) => both(b, i))),
+      (b) => A.of(left(b)),
+      (a) => pipe(favi(a), A.map((i) => right(i))),
+      (b, a) => pipe(favi(a), A.map((i) => both(b, i))),
     );
 }
 /*******************************************************************************

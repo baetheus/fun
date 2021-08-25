@@ -61,8 +61,7 @@ export function of<A>(value: A, forest: Forest<A> = A.empty()): Tree<A> {
 }
 
 export function map<A, I>(fai: (a: A) => I): (ta: Tree<A>) => Tree<I> {
-  const _map = map(fai);
-  return (ta) => of(fai(ta.value), ta.forest.map(_map));
+  return (ta) => of(fai(ta.value), ta.forest.map(map(fai)));
 }
 
 export function chain<A, I>(fati: (a: A) => Tree<I>): (ta: Tree<A>) => Tree<I> {

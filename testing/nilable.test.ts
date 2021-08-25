@@ -3,11 +3,6 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 import type * as HKT from "../hkt.ts";
 
 import * as N from "../nilable.ts";
-import * as O from "../option.ts";
-import { setoidNumber } from "../setoid.ts";
-import { monoidSum } from "../monoid.ts";
-import { ordNumber } from "../ord.ts";
-import { semigroupSum } from "../semigroup.ts";
 import { _, pipe } from "../fns.ts";
 
 import * as AS from "./assert.ts";
@@ -142,6 +137,10 @@ Deno.test("Nilable of", () => {
   assertEquals(N.of(1), 1);
 });
 
+Deno.test("Nilable throwError", () => {
+  assertEquals(N.throwError(), N.nil);
+});
+
 Deno.test("Nilable ap", () => {
   const ap1 = N.ap(N.make(AS.add));
   const ap2 = N.ap(N.constNil<typeof AS.add>());
@@ -164,7 +163,14 @@ Deno.test("Nilable map", () => {
 Deno.test("Nilable join", () => {
   assertEquals(N.join(undefined), N.nil);
   assertEquals(N.join(null), N.nil);
-  assertEquals(N.make(1), 1);
+  assertEquals(N.of(1), 1);
+});
+
+Deno.test("Nilable alt", () => {
+  assertEquals(pipe(N.of(1), N.alt(N.of(2))), N.of(1));
+  assertEquals(pipe(N.of(1), N.alt(N.throwError())), N.of(1));
+  assertEquals(pipe(N.throwError(), N.alt(N.of(1))), N.of(1));
+  assertEquals(pipe(N.throwError(), N.alt(N.throwError())), N.throwError());
 });
 
 Deno.test("Nilable chain", () => {

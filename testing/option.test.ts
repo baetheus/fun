@@ -221,11 +221,11 @@ Deno.test("Option getOrd", () => {
   AS.assertOrd(Ord, { a: O.none, b: O.some(1) });
   AS.assertOrd(Ord, { a: O.some(2), b: O.some(1) });
   assertEquals(lte(O.none)(O.none), true);
-  assertEquals(lte(O.none)(O.some(1)), true);
-  assertEquals(lte(O.some(1))(O.none), false);
+  assertEquals(lte(O.none)(O.some(1)), false);
+  assertEquals(lte(O.some(1))(O.none), true);
   assertEquals(lte(O.some(1))(O.some(1)), true);
-  assertEquals(lte(O.some(1))(O.some(2)), true);
-  assertEquals(lte(O.some(2))(O.some(1)), false);
+  assertEquals(lte(O.some(1))(O.some(2)), false);
+  assertEquals(lte(O.some(2))(O.some(1)), true);
 });
 
 Deno.test("Option getSemigroup", () => {
@@ -250,6 +250,8 @@ Deno.test("Option ap", () => {
 });
 
 Deno.test("Option map", () => {
+  const f1 = O.map(AS.add);
+  assertEquals(typeof f1, "function");
   assertEquals(pipe(O.some(1), O.map(AS.add)), O.some(2));
   assertEquals(pipe(O.none, O.map(AS.add)), O.none);
 });
@@ -283,6 +285,14 @@ Deno.test("Option traverse", () => {
 
 Deno.test("Option zero", () => {
   assertEquals(O.zero(), O.none);
+});
+
+Deno.test("Option empty", () => {
+  assertEquals(O.empty(), O.none);
+});
+
+Deno.test("Option throwError", () => {
+  assertEquals(O.throwError(), O.none);
 });
 
 Deno.test("Option alt", () => {

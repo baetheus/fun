@@ -5,17 +5,14 @@ import * as AS from "./assert.ts";
 import * as S from "../set.ts";
 import * as O from "../option.ts";
 import { setoidNumber } from "../setoid.ts";
-import { monoidSum } from "../monoid.ts";
-import { ordNumber } from "../ord.ts";
-import { semigroupSum } from "../semigroup.ts";
 import { pipe } from "../fns.ts";
 
 Deno.test("Set zero", () => {
-  assertEquals(S.zero, new Set());
+  assertEquals(S.zero(), new Set());
 });
 
 Deno.test("Set empty", () => {
-  assertEquals(S.empty(), S.zero);
+  assertEquals(S.empty(), S.zero());
 });
 
 Deno.test("Set make", () => {
@@ -135,7 +132,7 @@ Deno.test("Set map", () => {
 
 Deno.test("Set reduce", () => {
   const reduce = S.reduce((n: number, o: number) => n + o, 0);
-  assertEquals(reduce(S.zero), 0);
+  assertEquals(reduce(S.zero()), 0);
   assertEquals(reduce(S.make(1, 2, 3)), 6);
 });
 

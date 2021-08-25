@@ -11,6 +11,7 @@ import type * as TC from "./type_classes.ts";
 import type { Predicate } from "./types.ts";
 
 import { createDo } from "./derivations.ts";
+import { identity, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
 /*******************************************************************************
@@ -114,21 +115,21 @@ export function throwError<A = never>(): Nilable<A> {
 export function ap<A, I>(
   tfai: Nilable<(a: A) => I>,
 ): ((ta: Nilable<A>) => Nilable<I>) {
-  return (ta) => isNil(ta) ? ta : isNil(tfai) ? tfai : tfai(ta);
+  return (ta) => isNil(ta) ? nil : isNil(tfai) ? nil : tfai(ta);
 }
 
 export function map<A, I>(fai: (a: A) => I): ((ta: Nilable<A>) => Nilable<I>) {
-  return (ta) => isNil(ta) ? ta : fai(ta);
+  return (ta) => isNil(ta) ? nil : fai(ta);
 }
 
 export function join<A>(tta: Nilable<Nilable<A>>): Nilable<A> {
-  return tta;
+  return pipe(tta, chain(identity));
 }
 
 export function chain<A, I>(
   fati: (a: A) => Nilable<I>,
 ): ((ta: Nilable<A>) => Nilable<I>) {
-  return (ta) => isNil(ta) ? ta : fati(ta);
+  return (ta) => isNil(ta) ? nil : fati(ta);
 }
 
 export function alt<A>(tb: Nilable<A>): ((ta: Nilable<A>) => Nilable<A>) {

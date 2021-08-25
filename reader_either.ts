@@ -35,21 +35,25 @@ export function ask<A, B = never>(): ReaderEither<A, B, A> {
   return E.right;
 }
 
-export function asks<A, B, C>(fca: (c: C) => A): ReaderEither<C, B, A> {
+export function asks<A, B = never, C = unknown>(
+  fca: (c: C) => A,
+): ReaderEither<C, B, A> {
   return flow(fca, E.right);
 }
 
-export function left<A, B = never, C = never>(left: B): ReaderEither<C, B, A> {
+export function left<A = never, B = never, C = unknown>(
+  left: B,
+): ReaderEither<C, B, A> {
   return R.of(E.left(left));
 }
 
-export function right<A, B = never, C = never>(
+export function right<A, B = never, C = unknown>(
   right: A,
 ): ReaderEither<C, B, A> {
   return R.of(E.right(right));
 }
 
-export function tryCatch<A, B, C = never>(
+export function tryCatch<A, B, C = unknown>(
   fa: () => A,
   onError: (e: unknown) => B,
 ): ReaderEither<C, B, A> {
@@ -60,7 +64,7 @@ export function tryCatch<A, B, C = never>(
   }
 }
 
-export function fromEither<A, B, C = never>(
+export function fromEither<A, B, C = unknown>(
   ta: E.Either<B, A>,
 ): ReaderEither<C, B, A> {
   return R.of(ta);
@@ -70,7 +74,7 @@ export function fromEither<A, B, C = never>(
  * Functions
  ******************************************************************************/
 
-export function of<A, B = never, C = never>(a: A): ReaderEither<C, B, A> {
+export function of<A, B = never, C = unknown>(a: A): ReaderEither<C, B, A> {
   return right(a);
 }
 
@@ -106,7 +110,7 @@ export function ap<A, I, B, C>(
     (c) => pipe(tfai(c), E.chain((fai) => pipe(ta(c), E.map(fai))));
 }
 
-export function chain<A, I, B, C>(
+export function chain<A, B, C, I>(
   fati: (a: A) => ReaderEither<C, B, I>,
 ): (ta: ReaderEither<C, B, A>) => ReaderEither<C, B, I> {
   return (ta) =>

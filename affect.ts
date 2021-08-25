@@ -10,6 +10,7 @@ import type { IOEither } from "./io_either.ts";
 
 import * as E from "./either.ts";
 import { createDo } from "./derivations.ts";
+import { isNone } from "./option.ts";
 import { flow, identity, pipe, resolve, then } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
@@ -104,9 +105,9 @@ export function asksLeft<R, E = never, A = never>(
  *
  *       const p1 = right(1) // (n: never) => Promise(Right(1))
  */
-export function right<R = never, E = never, A = never>(
+export function right<A, B = never, C = never>(
   right: A,
-): Affect<R, E, A> {
+): Affect<C, B, A> {
   return () => resolve(E.right(right));
 }
 
@@ -115,69 +116,80 @@ export function right<R = never, E = never, A = never>(
  *
  *       const p1 = left(1) // (n: never) => Promise(Left(1))
  */
-export function left<R = never, E = never, A = never>(
-  left: E,
-): Affect<R, E, A> {
+export function left<A = never, B = never, C = never>(
+  left: B,
+): Affect<C, B, A> {
   return () => resolve(E.left(left));
 }
 
 /**
  * Constructs an Affect from an Option
  */
-export function fromOption<E = never>(
-  onNone: () => E,
-): (<R = never, A = never>(ma: Option<A>) => Affect<R, E, A>) {
-  return (ma) => ma.tag === "None" ? left(onNone()) : right(ma.value);
+export function fromOption<B, C>(
+  onNone: (c: C) => B,
+): (<A>(ta: Option<A>) => Affect<C, B, A>) {
+  return <A>(ta: Option<A>) =>
+    (c) => isNone(ta) ? resolve(E.left(onNone(c))) : resolve(E.right(ta.value));
 }
 
 /**
  * Constructs an Affect from an Either
  */
-export function fromEither<R = never, E = never, A = never>(
-  ma: Either<E, A>,
-): Affect<R, E, A> {
+export function fromEither<A, B, C = never>(
+  ma: Either<B, A>,
+): Affect<C, B, A> {
   return () => resolve(ma);
 }
 
 /**
  * Constructs an Affect from a Task
  */
-export function fromTask<R = never, E = never, A = never>(
+export function fromTask<A, B = never, C = never>(
   ma: Task<A>,
-): Affect<R, E, A> {
+): Affect<C, B, A> {
   return flow(ma, then(E.right));
 }
 
 /**
  * Constructs an Affect from a TaskEither
  */
-export function fromTaskEither<R = never, E = never, A = never>(
-  ma: TaskEither<E, A>,
-): Affect<R, E, A> {
+export function fromTaskEither<A, B, C = never>(
+  ma: TaskEither<B, A>,
+): Affect<C, B, A> {
   return ma;
 }
 
 /**
  * Constructs an Affect from an IO
  */
-export function fromIO<R = never, E = never, A = never>(
+export function fromIO<A, B = never, C = never>(
   ma: IO<A>,
-): Affect<R, E, A> {
+): Affect<C, B, A> {
   return flow(ma, E.right, resolve);
 }
 
 /**
  * Constructs an Affect from an IOEither
  */
-export function fromIOEither<R = never, E = never, A = never>(
-  ma: IOEither<E, A>,
-): Affect<R, E, A> {
+export function fromIOEither<A, B, C = never>(
+  ma: IOEither<B, A>,
+): Affect<C, B, A> {
   return flow(ma, resolve);
 }
 
 /*******************************************************************************
  * Functions
  ******************************************************************************/
+
+export function of<A, B = never, C = never>(a: A): Affect<C, B, A> {
+  return right(a);
+}
+
+export function throwError<A = never, B = never, C = never>(
+  b: B,
+): Affect<C, B, A> {
+  return left(b);
+}
 
 export function map<A, I>(
   fai: (a: A) => I,
@@ -202,11 +214,8 @@ export function ap<R, E, A, I>(
   tfai: Affect<R, E, (a: A) => I>,
 ): ((ta: Affect<R, E, A>) => Affect<R, E, I>) {
   return (ta) =>
-    async (r) => {
-      const efai = await tfai(r);
-      const ea = await ta(r);
-      return pipe(ea, E.ap(efai));
-    };
+    (r) =>
+      Promise.all([tfai(r), ta(r)]).then(([efai, ea]) => pipe(ea, E.ap(efai)));
 }
 
 export function chain<R, E, A, I>(
@@ -251,19 +260,19 @@ export const Bifunctor: TC.Bifunctor<URI> = { bimap, mapLeft };
 
 export const Apply: TC.Apply<URI> = { ap, map };
 
-export const Applicative: TC.Applicative<URI> = { of: right, ap, map };
+export const Applicative: TC.Applicative<URI> = { of, ap, map };
 
 export const Chain: TC.Chain<URI> = { ap, map, chain };
 
-export const Monad: TC.Monad<URI> = { of: right, ap, map, join, chain };
+export const Monad: TC.Monad<URI> = { of, ap, map, join, chain };
 
 export const MonadThrow: TC.MonadThrow<URI> = {
-  of: right,
+  of,
   ap,
   map,
   join,
   chain,
-  throwError: left,
+  throwError,
 };
 
 /*******************************************************************************
