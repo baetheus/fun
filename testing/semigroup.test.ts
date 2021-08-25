@@ -21,41 +21,83 @@ Deno.test("Semigroup Free", () => {
 
 Deno.test("Semigroup semigroupAll", () => {
   const concat = S.semigroupAll.concat;
-  assertEquals(concat(true)(true), true);
-  assertEquals(concat(true)(false), false);
-  assertEquals(concat(false)(true), false);
-  assertEquals(concat(false)(false), false);
+  const concatTrue = concat(true);
+  const concatFalse = concat(false);
+
+  assertEquals(typeof concat, "function");
+  assertEquals(typeof concatTrue, "function");
+
+  assertEquals(typeof concatFalse, "function");
+  assertEquals(concatTrue(true), true);
+  assertEquals(concatTrue(false), false);
+  assertEquals(concatFalse(true), false);
+  assertEquals(concatFalse(false), false);
 });
 
 Deno.test("Semigroup semigroupAny", () => {
   const concat = S.semigroupAny.concat;
-  assertEquals(concat(true)(true), true);
-  assertEquals(concat(true)(false), true);
-  assertEquals(concat(false)(true), true);
-  assertEquals(concat(false)(false), false);
+  const concatTrue = concat(true);
+  const concatFalse = concat(false);
+
+  assertEquals(typeof concat, "function");
+  assertEquals(typeof concatTrue, "function");
+  assertEquals(typeof concatFalse, "function");
+
+  assertEquals(concatTrue(true), true);
+  assertEquals(concatTrue(false), true);
+  assertEquals(concatFalse(true), true);
+  assertEquals(concatFalse(false), false);
 });
 
 Deno.test("Semigroup semigroupSum", () => {
   const concat = S.semigroupSum.concat;
-  assertEquals(concat(1)(1), 2);
-  assertEquals(concat(0)(1), 1);
-  assertEquals(concat(1)(0), 1);
-  assertEquals(concat(0)(0), 0);
+  const concatZero = concat(0);
+  const concatOne = concat(1);
+
+  assertEquals(typeof concat, "function");
+  assertEquals(typeof concatZero, "function");
+  assertEquals(typeof concatOne, "function");
+
+  assertEquals(concatOne(1), 2);
+  assertEquals(concatZero(1), 1);
+  assertEquals(concatOne(0), 1);
+  assertEquals(concatZero(0), 0);
 });
 
 Deno.test("Semigroup semigroupProduct", () => {
   const concat = S.semigroupProduct.concat;
-  assertEquals(concat(2)(2), 4);
+  const concatOne = concat(1);
+  const concatTwo = concat(2);
+
+  assertEquals(typeof concat, "function");
+  assertEquals(typeof concatOne, "function");
+  assertEquals(typeof concatTwo, "function");
+
+  assertEquals(concatOne(2), 2);
+  assertEquals(concatTwo(2), 4);
 });
 
 Deno.test("Semigroup semigroupString", () => {
   const concat = S.semigroupString.concat;
-  assertEquals(concat("Hello")("World"), "HelloWorld");
+  const concatEmpty = concat("");
+  const concatHello = concat("Hello");
+
+  assertEquals(typeof concat, "function");
+  assertEquals(typeof concatEmpty, "function");
+  assertEquals(typeof concatHello, "function");
+
+  assertEquals(concatEmpty("World"), "World");
+  assertEquals(concatHello("World"), "HelloWorld");
 });
 
 Deno.test("Semigroup semigroupVoid", () => {
   const concat = S.semigroupVoid.concat;
-  assertEquals(concat(undefined)(undefined), undefined);
+  const concatUndefined = concat(undefined);
+
+  assertEquals(typeof concat, "function");
+  assertEquals(typeof concatUndefined, "function");
+
+  assertEquals(concatUndefined(undefined), undefined);
 });
 
 Deno.test("Semigroup getFreeSemigroup", () => {
@@ -115,7 +157,12 @@ Deno.test("Semigroup getJoinSemigroup", () => {
 });
 
 Deno.test("Semigroup fold", () => {
-  const fold = S.fold(S.semigroupSum)(0);
-  assertEquals(fold([]), 0);
-  assertEquals(fold([1, 2, 3]), 6);
+  const foldSum = S.fold(S.semigroupSum);
+  const foldArray = foldSum(0);
+
+  assertEquals(typeof foldSum, "function");
+  assertEquals(typeof foldArray, "function");
+
+  assertEquals(foldArray([]), 0);
+  assertEquals(foldArray([1, 2, 3]), 6);
 });

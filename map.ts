@@ -27,6 +27,10 @@ declare module "./hkt.ts" {
  * Constructors
  ******************************************************************************/
 
+export function zero(): Map<never, never> {
+  return new Map<never, never>();
+}
+
 export function empty<K, A>(): Map<K, A> {
   return new Map();
 }
@@ -99,9 +103,9 @@ export function lookupWithKey<K>(
 export function lookup<K>(
   S: TC.Setoid<K>,
 ): ((k: K) => <A>(ta: Map<K, A>) => Option<A>) {
-  const _lookupWithKet = lookupWithKey(S);
+  const _lookupWithKey = lookupWithKey(S);
   return (k) => {
-    const lookupWithKeyE = lookupWithKey(S)(k);
+    const lookupWithKeyE = _lookupWithKey(k);
     return (ta) => {
       return pipe(
         lookupWithKeyE(ta),
@@ -134,7 +138,9 @@ export function elem<A>(
   };
 }
 
-export function entries<B>(O: TC.Ord<B>): (<A>(ta: Map<B, A>) => [B, A][]) {
+export function entries<B>(
+  O: TC.Ord<B>,
+): (<A>(ta: Map<B, A>) => ReadonlyArray<[B, A]>) {
   const _compare = compare(O);
   return (ta) =>
     Array.from(ta.entries()).sort(([left], [right]) => _compare(left, right));
@@ -152,7 +158,7 @@ export function values<A>(O: TC.Ord<A>): (<K>(ta: Map<K, A>) => A[]) {
 
 export function collect<B>(
   O: TC.Ord<B>,
-): (<A, I>(fai: (b: B, a: A) => I) => (ta: Map<B, A>) => I[]) {
+): (<A, I>(fai: (b: B, a: A) => I) => (ta: Map<B, A>) => ReadonlyArray<I>) {
   const _entries = entries(O);
   return (fai) =>
     flow(

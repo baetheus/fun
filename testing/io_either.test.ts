@@ -3,10 +3,8 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 import * as AS from "./assert.ts";
 
 import * as I from "../io_either.ts";
-import * as O from "../option.ts";
+import * as IO from "../io.ts";
 import * as E from "../either.ts";
-import { semigroupSum } from "../semigroup.ts";
-import { monoidSum } from "../monoid.ts";
 import { _, constant, pipe } from "../fns.ts";
 
 // deno-lint-ignore no-explicit-any
@@ -31,14 +29,18 @@ Deno.test("IOEither fromEither", () => {
   assertEqualsIO(I.fromEither(E.left(1)), I.left(1));
 });
 
+Deno.test("IOEither fromIO", () => {
+  assertEquals(I.fromIO(IO.of(1))(), E.right(1));
+});
+
 Deno.test("IOEither of", () => {
   assertEqualsIO(I.of(1), I.of(1));
 });
 
 Deno.test("IOEither ap", () => {
   const fab = (n: number) => n + 1;
-  const ap0 = I.ap(I.right<number, typeof fab>(fab));
-  const ap1 = I.ap(I.left<number, typeof fab>(0));
+  const ap0 = I.ap(I.right<typeof fab, number>(fab));
+  const ap1 = I.ap(I.left<typeof fab, number>(0));
 
   assertEqualsIO(ap0(I.left(0)), I.left(0));
   assertEqualsIO(ap0(I.right(0)), I.right(1));

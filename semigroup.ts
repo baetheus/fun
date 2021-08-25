@@ -117,11 +117,11 @@ export function getStructSemigroup<O extends Readonly<Record<string, any>>>(
 }
 
 export function getMeetSemigroup<A>(O: Ord<A>): Semigroup<A> {
-  return ({ concat: (a) => (b) => (O.lte(a)(b) ? a : b) });
+  return ({ concat: (b) => (a) => (O.lte(b)(a) ? a : b) });
 }
 
 export function getJoinSemigroup<A>(O: Ord<A>): Semigroup<A> {
-  return ({ concat: (a) => (b) => (O.lte(a)(b) ? b : a) });
+  return ({ concat: (b) => (a) => (O.lte(b)(a) ? b : a) });
 }
 
 /*******************************************************************************

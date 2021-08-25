@@ -2,6 +2,11 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
 import * as A from "../affect.ts";
 import * as E from "../either.ts";
+import * as O from "../option.ts";
+import * as T from "../task.ts";
+import * as TE from "../task_either.ts";
+import * as IO from "../io.ts";
+import * as IOE from "../io_either.ts";
 import { pipe, resolve, then } from "../fns.ts";
 
 Deno.test("Affect make", async () => {
@@ -45,6 +50,45 @@ Deno.test("Affect right", async () => {
 Deno.test("Affect left", async () => {
   const t1 = A.left(1);
   assertEquals(await t1(1 as never), E.left(1));
+});
+
+Deno.test("Affect fromOption", async () => {
+  const fromOption = A.fromOption(() => 0);
+  const t1 = fromOption(O.some(1));
+  const t2 = fromOption(O.none);
+  assertEquals(await t1(2), E.right(1));
+  assertEquals(await t2(2), E.left(0));
+});
+
+Deno.test("Affect fromEither", async () => {
+  const t1 = A.fromEither<number, number, number>(E.right(0));
+  const t2 = A.fromEither<number, number, number>(E.left(0));
+  assertEquals(await t1(0), E.right(0));
+  assertEquals(await t2(0), E.left(0));
+});
+
+Deno.test("Affect fromTask", async () => {
+  const t1 = A.fromTask<number, number, number>(T.of(0));
+  assertEquals(await t1(1), E.right(0));
+});
+
+Deno.test("Affect fromTaskEither", async () => {
+  const t1 = A.fromTaskEither<number, number, number>(TE.of(0));
+  const t2 = A.fromTaskEither<number, number, number>(TE.left(0));
+  assertEquals(await t1(1), E.right(0));
+  assertEquals(await t2(1), E.left(0));
+});
+
+Deno.test("Affect fromIO", async () => {
+  const t1 = A.fromIO<number, number, number>(IO.of(0));
+  assertEquals(await t1(1), E.right(0));
+});
+
+Deno.test("Affect fromIOEither", async () => {
+  const t1 = A.fromIOEither<number, number, number>(IOE.of(0));
+  const t2 = A.fromIOEither<number, number, number>(IOE.left(0));
+  assertEquals(await t1(1), E.right(0));
+  assertEquals(await t2(1), E.left(0));
 });
 
 Deno.test("Affect of", async () => {
@@ -97,7 +141,7 @@ Deno.test("Affect chain", async () => {
 });
 
 Deno.test("Affect throwError", async () => {
-  assertEquals(await A.throwError(1)(1), E.left(1));
+  assertEquals(await A.throwError<number, number, number>(1)(1), E.left(1));
 });
 
 Deno.test("Affect bimap", async () => {

@@ -139,52 +139,60 @@ export function isRight<L, R>(m: Either<L, R>): m is Right<R> {
  * Module Getters
  ******************************************************************************/
 
-export function getShow<E, A>(
-  SE: TC.Show<E>,
+export function getShow<A, B>(
+  SB: TC.Show<B>,
   SA: TC.Show<A>,
-): TC.Show<Either<E, A>> {
+): TC.Show<Either<B, A>> {
   return ({
     show: fold(
-      (left) => `Left(${SE.show(left)})`,
+      (left) => `Left(${SB.show(left)})`,
       (right) => `Right(${SA.show(right)})`,
     ),
   });
 }
 
-export function getSetoid<E, A>(
-  SE: TC.Setoid<E>,
+export function getSetoid<A, B>(
+  SB: TC.Setoid<B>,
   SA: TC.Setoid<A>,
-): TC.Setoid<Either<E, A>> {
+): TC.Setoid<Either<B, A>> {
   return ({
-    equals: (x) =>
-      (y) => {
-        if (isLeft(x)) {
-          if (isLeft(y)) {
-            return SE.equals(x.left)(y.left);
+    equals: (b) =>
+      (a) => {
+        if (isLeft(a)) {
+          if (isLeft(b)) {
+            return SB.equals(b.left)(a.left);
           }
           return false;
         }
 
-        if (isLeft(y)) {
+        if (isLeft(b)) {
           return false;
         }
-        return SA.equals(x.right)(y.right);
+        return SA.equals(b.right)(a.right);
       },
   });
 }
 
-export function getOrd<E, A>(
-  OE: TC.Ord<E>,
+export function getOrd<A, B>(
+  OB: TC.Ord<B>,
   OA: TC.Ord<A>,
-): TC.Ord<Either<E, A>> {
+): TC.Ord<Either<B, A>> {
   return ({
-    ...getSetoid(OE, OA),
-    lte: (x) => {
-      if (isLeft(x)) {
-        return fold(OE.lte(x.left), constant(true));
-      }
-      return fold(constant(false), OA.lte(x.right));
-    },
+    ...getSetoid(OB, OA),
+    lte: (b) =>
+      (a) => {
+        if (isLeft(a)) {
+          if (isLeft(b)) {
+            return OB.lte(b.left)(a.left);
+          }
+          return true;
+        }
+
+        if (isLeft(b)) {
+          return false;
+        }
+        return OA.lte(b.right)(a.right);
+      },
   });
 }
 

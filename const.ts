@@ -88,7 +88,7 @@ export const getApply = <E>(
 ): TC.Apply<URI, [E]> => ({
   map: (_) => (ta) => ta,
   // deno-lint-ignore no-explicit-any
-  ap: (tfai) => (ta): Const<any, any> => make(S.concat(tfai)(ta)),
+  ap: (tfai) => (ta): Const<any, any> => make(S.concat(ta)(tfai)),
 });
 
 export const getApplicative = <E>(

@@ -81,7 +81,7 @@ const DecodedApply: TC.Apply<DecodedURI> = DecodedMonad;
 
 const DecodedApplicative: TC.Applicative<DecodedURI> = DecodedMonad;
 
-const traverseRecord = R.indexedTraverse(DecodedApplicative);
+const traverseRecord = R.traverse(DecodedApplicative);
 
 const traverseArray = A.traverse(DecodedApplicative);
 
@@ -91,10 +91,12 @@ const sequenceTuple = createSequenceTuple(DecodedApply);
 * Constructors
 *******************************************************************************/
 
-export const fromGuard = <A>(
+export function fromGuard<A>(
   guard: G.Guard<A>,
   expected: string,
-): Decoder<A> => (i: unknown) => guard(i) ? success(i) : failure(i, expected);
+): Decoder<A> {
+  return (i) => guard(i) ? success(i) : failure(i, expected);
+}
 
 /*******************************************************************************
 * Utility
@@ -137,14 +139,14 @@ const compactRecord = <A>(
 
 const toTree: (e: DecodeError<string>) => T.Tree<string> = fold({
   Leaf: (input, error) =>
-    T.make(`cannot decode ${JSON.stringify(input)}, should be ${error}`),
+    T.of(`cannot decode ${JSON.stringify(input)}, should be ${error}`),
   Key: (key, kind, errors) =>
-    T.make(`${kind} property ${JSON.stringify(key)}`, toForest(errors)),
+    T.of(`${kind} property ${JSON.stringify(key)}`, toForest(errors)),
   Index: (index, kind, errors) =>
-    T.make(`${kind} index ${index}`, toForest(errors)),
-  Lazy: (id, errors) => T.make(`lazy type ${id}`, toForest(errors)),
-  Wrap: (error, errors) => T.make(error, toForest(errors)),
-  Member: (index, errors) => T.make(`member ${index}`, toForest(errors)),
+    T.of(`${kind} index ${index}`, toForest(errors)),
+  Lazy: (id, errors) => T.of(`lazy type ${id}`, toForest(errors)),
+  Wrap: (error, errors) => T.of(error, toForest(errors)),
+  Member: (index, errors) => T.of(`member ${index}`, toForest(errors)),
 });
 
 const toForest: (e: Failure) => ReadonlyArray<T.Tree<string>> = Free.fold(

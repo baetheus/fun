@@ -5,13 +5,12 @@ import * as AS from "./assert.ts";
 import * as M from "../map.ts";
 import * as O from "../option.ts";
 import { setoidNumber } from "../setoid.ts";
-import { monoidSum } from "../monoid.ts";
 import { ordNumber } from "../ord.ts";
 import { semigroupSum } from "../semigroup.ts";
 import { pipe } from "../fns.ts";
 
 Deno.test("Map zero", () => {
-  assertEquals(M.zero, new Map());
+  assertEquals(M.zero(), new Map());
 });
 
 Deno.test("Map empty", () => {
@@ -102,7 +101,7 @@ Deno.test("Map bimap", () => {
 });
 
 Deno.test("Map size", () => {
-  assertEquals(M.size(M.zero), 0);
+  assertEquals(M.size(M.zero()), 0);
   assertEquals(M.size(M.singleton(1, 1)), 1);
 });
 
@@ -191,8 +190,8 @@ Deno.test("Map insertAt", () => {
 Deno.test("Map deleteAt", () => {
   const deleteAt = M.deleteAt(setoidNumber);
 
-  assertEquals(pipe(M.empty<number, number>(), deleteAt(1)), M.zero);
-  assertEquals(pipe(M.singleton(1, 1), deleteAt(1)), M.zero);
+  assertEquals(pipe(M.empty<number, number>(), deleteAt(1)), M.zero());
+  assertEquals(pipe(M.singleton(1, 1), deleteAt(1)), M.zero());
 });
 
 Deno.test("Map updateAt", () => {

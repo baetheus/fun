@@ -2,7 +2,7 @@ import type * as HKT from "./hkt.ts";
 import type { Kind, URIS } from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
 
-import { apply, constant, flow, identity, isNotNil, pipe } from "./fns.ts";
+import { apply, flow, identity, isNotNil, pipe } from "./fns.ts";
 import { createDo } from "./derivations.ts";
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
@@ -193,7 +193,7 @@ export function chain<A, I>(
 
 export function ap<A, I>(
   tfai: Datum<(a: A) => I>,
-): ((ta: Datum<A>) => Datum<I>) {
+): (ta: Datum<A>) => Datum<I> {
   return (ta) => pipe(tfai, chain(flow(map, apply(ta))));
 }
 
@@ -208,19 +208,21 @@ export function alt<A>(tb: Datum<A>): ((ta: Datum<A>) => Datum<A>) {
 export function reduce<A, O>(
   foao: (o: O, a: A) => O,
   o: O,
-): ((ta: Datum<A>) => O) {
+): (ta: Datum<A>) => O {
   return (ta) => isSome(ta) ? foao(o, ta.value) : o;
 }
 
-export function traverse<VRI extends URIS>(A: TC.Applicative<VRI>) {
-  return <A, I, J, K, L>(
-    favi: (a: A) => Kind<VRI, [I, J, K, L]>,
-  ): ((ta: Datum<A>) => Kind<VRI, [Datum<I>, J, K, L]>) =>
+export function traverse<VRI extends URIS>(
+  A: TC.Applicative<VRI>,
+): <A, I, J, K, L>(
+  favi: (a: A) => Kind<VRI, [I, J, K, L]>,
+) => (ta: Datum<A>) => Kind<VRI, [Datum<I>, J, K, L]> {
+  return (favi) =>
     fold(
-      flow(constInitial, A.of),
-      flow(constPending, A.of),
-      flow(favi, A.map(replete)),
-      flow(favi, A.map(refresh)),
+      () => A.of(constInitial()),
+      () => A.of(constPending()),
+      (a) => pipe(favi(a), A.map((i) => replete(i))),
+      (a) => pipe(favi(a), A.map((i) => refresh(i))),
     );
 }
 
@@ -267,31 +269,25 @@ export function getMonoid<A>(S: TC.Semigroup<A>): TC.Monoid<Datum<A>> {
 
 export function getSetoid<A>(S: TC.Setoid<A>): TC.Setoid<Datum<A>> {
   return ({
-    equals: (a) =>
-      (b) => {
-        if (a === b) {
-          return true;
-        }
-        if (a.tag === b.tag) {
-          if (isSome(a) && isSome(b)) {
-            return S.equals(a.value)(b.value);
-          }
-          return true;
-        }
-        return false;
-      },
+    equals: (b) =>
+      fold(
+        () => isInitial(b),
+        () => isPending(b),
+        (v) => isReplete(b) ? S.equals(b.value)(v) : false,
+        (v) => isRefresh(b) ? S.equals(b.value)(v) : false,
+      ),
   });
 }
 
 export function getOrd<A>(O: TC.Ord<A>): TC.Ord<Datum<A>> {
   return ({
     ...getSetoid(O),
-    lte: (ta) =>
+    lte: (tb) =>
       fold(
-        () => isInitial(ta),
-        () => isNone(ta),
-        (v) => isNone(ta) ? true : isRefresh(ta) ? false : O.lte(ta.value)(v),
-        (v) => isNone(ta) ? true : isReplete(ta) ? true : O.lte(ta.value)(v),
+        () => true,
+        () => isPending(tb) || isSome(tb),
+        (v) => isNone(tb) ? false : isRefresh(tb) ? true : O.lte(tb.value)(v),
+        (v) => isNone(tb) || isReplete(tb) ? false : O.lte(tb.value)(v),
       ),
   });
 }

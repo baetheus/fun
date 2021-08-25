@@ -9,24 +9,24 @@ const assertEqualsT = async (a: T.Task<unknown>, b: T.Task<unknown>) =>
   assertEquals(await a(), await b());
 
 Deno.test("Task make", async () => {
-  await assertEqualsT(T.make(0), T.make(0));
+  await assertEqualsT(T.of(0), T.of(0));
 });
 
 Deno.test("Task delay", async () => {
-  await assertEqualsT(pipe(T.make(0), T.delay(200)), T.make(0));
+  await assertEqualsT(pipe(T.of(0), T.delay(200)), T.of(0));
 });
 
 Deno.test("Task fromThunk", async () => {
-  await assertEqualsT(T.fromThunk(() => 0), T.make(0));
+  await assertEqualsT(T.fromThunk(() => 0), T.of(0));
 });
 
 Deno.test("Task tryCatch", async () => {
-  await assertEqualsT(T.tryCatch(_, () => 0), T.make(0));
-  await assertEqualsT(T.tryCatch(() => 1, () => 0), T.make(1));
+  await assertEqualsT(T.tryCatch(_, () => 0), T.of(0));
+  await assertEqualsT(T.tryCatch(() => 1, () => 0), T.of(1));
 });
 
 Deno.test("Task of", async () => {
-  await assertEqualsT(T.of(1), T.make(1));
+  await assertEqualsT(T.of(1), T.of(1));
 });
 
 Deno.test("Task ap", async () => {
@@ -53,17 +53,17 @@ Deno.test("Task Do, bind, bindTo", () => {
   assertEqualsT(
     pipe(
       T.Do<number, number, number>(),
-      T.bind("one", () => T.make(1)),
-      T.bind("two", ({ one }) => T.make(one + one)),
+      T.bind("one", () => T.of(1)),
+      T.bind("two", ({ one }) => T.of(one + one)),
       T.map(({ one, two }) => one + two),
     ),
-    T.make(3),
+    T.of(3),
   );
   assertEqualsT(
     pipe(
-      T.make(1),
+      T.of(1),
       T.bindTo("one"),
     ),
-    T.make({ one: 1 }),
+    T.of({ one: 1 }),
   );
 });

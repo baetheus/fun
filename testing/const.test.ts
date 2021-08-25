@@ -32,8 +32,8 @@ Deno.test("Const getOrd", () => {
   const ord = C.getOrd(ordNumber);
 
   assertEquals(ord.lte(C.make(1))(C.make(1)), true);
-  assertEquals(ord.lte(C.make(2))(C.make(1)), false);
-  assertEquals(ord.lte(C.make(0))(C.make(1)), true);
+  assertEquals(ord.lte(C.make(2))(C.make(1)), true);
+  assertEquals(ord.lte(C.make(0))(C.make(1)), false);
 });
 
 Deno.test("Const getSemigroup", () => {

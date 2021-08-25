@@ -1,5 +1,4 @@
 // deno-lint-ignore-file no-explicit-any
-
 import type { ConstPrimitive, Fn, Nil, UnknownFn } from "./types.ts";
 
 /**
@@ -127,14 +126,13 @@ export function memoize<A, B>(fab: (a: A) => B): (a: A) => B {
  * Takes two types and returns their intersection (if it is possible)
  */
 export function intersect<A, B>(a: A, b: B): A & B {
-  if (a !== undefined && b !== undefined) {
-    const tx = typeOf(a);
-    const ty = typeOf(b);
-    if (tx === "object" || ty === "object") {
-      return Object.assign({}, a, b);
-    }
+  if (isNil(a)) {
+    return b as A & B;
+  } else if (isNil(b)) {
+    return a as A & B;
+  } else {
+    return Object.assign({}, a, b);
   }
-  return (isNil(a) ? b : a) as A & B;
 }
 
 /**

@@ -164,6 +164,8 @@ export function concat<A>(
       result[index] = left[index];
     }
 
+    index--;
+
     while (++index < length) {
       result[index] = right[index - leftLength];
     }
@@ -229,10 +231,10 @@ export function traverse<VRI extends URIS>(
 ) => (ta: ReadonlyArray<A>) => Kind<VRI, [ReadonlyArray<I>, J, K, L]> {
   return (favi) =>
     reduce(
-      (fbs, a, index) =>
+      (vis, a, index) =>
         pipe(
           favi(a, index),
-          A.ap(pipe(fbs, A.map((xs) => (x) => [...xs, x]))),
+          A.ap(pipe(vis, A.map((xs) => (x): readonly unknown[] => [...xs, x]))),
         ),
       // deno-lint-ignore no-explicit-any
       A.of([] as ReadonlyArray<any>),
@@ -314,12 +316,13 @@ export function getOrd<A>(O: TC.Ord<A>): TC.Ord<ReadonlyArray<A>> {
   const { equals } = getSetoid(O);
   return ({
     equals,
-    lte: (a) =>
-      (b) => {
+    lte: (b) =>
+      (a) => {
         const length = Math.min(a.length, b.length);
-        for (let i = 0; i < length; i++) {
-          if (!O.equals(a[i])(b[i])) {
-            return O.lte(a[i])(b[i]);
+        let index = -1;
+        while (++index < length) {
+          if (!O.equals(a[index])(b[index])) {
+            return O.lte(b[index])(a[index]);
           }
         }
         return a.length <= b.length;
@@ -333,7 +336,7 @@ export function getSemigroup<A>(): TC.Semigroup<ReadonlyArray<A>> {
 
 export function getShow<A>({ show }: TC.Show<A>): TC.Show<ReadonlyArray<A>> {
   return ({
-    show: (ta) => `Array[${ta.map(show).join(", ")}]`,
+    show: (ta) => `ReadonlyArray[${ta.map(show).join(", ")}]`,
   });
 }
 

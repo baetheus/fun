@@ -10,9 +10,9 @@ import * as AS from "./assert.ts";
 
 const assertEqualsRE = (
   // deno-lint-ignore no-explicit-any
-  a: R.ReaderEither<number, any, any>,
+  a: R.ReaderEither<any, any, any>,
   // deno-lint-ignore no-explicit-any
-  b: R.ReaderEither<number, any, any>,
+  b: R.ReaderEither<any, any, any>,
 ) => assertEquals(a(0), b(0));
 
 Deno.test("ReaderEither ask", () => {
@@ -46,20 +46,29 @@ Deno.test("ReaderEither of", () => {
 });
 
 Deno.test("ReaderEither ap", () => {
-  assertEqualsRE(pipe(R.right(0), R.ap(R.of(AS.add))), R.right(1));
-  assertEqualsRE(pipe(R.right(0), R.ap(R.left(0))), R.left(0));
-  assertEqualsRE(pipe(R.left(0), R.ap(R.right(AS.add))), R.left(0));
-  assertEqualsRE(pipe(R.left(0), R.ap(R.left(1))), R.left(1));
+  const ap0 = R.ap(R.right<typeof AS.add, number, number>(AS.add));
+  const ap1 = R.ap(R.left<typeof AS.add, number, number>(0));
+
+  assertEqualsRE(pipe(R.right(1), ap0), R.right(2));
+  assertEqualsRE(pipe(R.right(0), ap1), R.left(0));
+  assertEqualsRE(pipe(R.left(1), ap0), R.left(1));
+  assertEqualsRE(pipe(R.left(1), ap1), R.left(0));
 });
 
 Deno.test("ReaderEither join", () => {
-  const tta = R.asks((n: number) => R.right(n));
+  const tta = R.asks((n: number) => R.of(n));
   assertEquals(R.join(tta)(0), E.right(0));
 });
 
 Deno.test("ReaderEither chain", () => {
+  const a = pipe(
+    R.of(0),
+    R.map((n) => n + 1),
+    R.chain((n) => n > 0 ? R.right(n) : R.left(n)),
+  );
+
   assertEqualsRE(
-    pipe(R.right(0), R.chain((n) => n === 0 ? R.left(n) : R.right(n))),
+    pipe(R.of(0), R.chain((n: number) => n === 0 ? R.left(n) : R.right(n))),
     R.left(0),
   );
   assertEqualsRE(

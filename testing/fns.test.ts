@@ -1,5 +1,6 @@
 import {
   assertEquals,
+  assertStrictEquals,
   assertThrows,
 } from "https://deno.land/std/testing/asserts.ts";
 
@@ -44,6 +45,13 @@ Deno.test("fns compose", () => {
   assertEquals(comp1(1), 3);
 });
 
+Deno.test("fns swap", () => {
+  const f1 = (a: number) => (b: number) => a - b;
+  const f2 = F.swap(f1);
+  assertEquals(f1(0)(1), -1);
+  assertEquals(f2(0)(1), 1);
+});
+
 Deno.test("fns constant", () => {
   [0, "hello", undefined, null, {}].forEach((v) => {
     const lazy = F.constant(v);
@@ -83,12 +91,13 @@ Deno.test("fns intersect", () => {
   const c = { a: 2, b: 2 };
   const ab = { a: 1, b: 2 };
   const ac = { a: 2, b: 2 };
+
   assertEquals(F.intersect(a, b), ab);
   assertEquals(F.intersect(a, c), ac);
-  assertEquals(F.intersect(null, b), b);
-  assertEquals(F.intersect(b, null), b);
-  assertEquals(F.intersect(undefined, b), b);
-  assertEquals(F.intersect(b, undefined), b);
+  assertStrictEquals(F.intersect(null, b), b);
+  assertStrictEquals(F.intersect(b, null), b);
+  assertStrictEquals(F.intersect(undefined, b), b);
+  assertStrictEquals(F.intersect(b, undefined), b);
 });
 
 Deno.test("fns hasOwnProperty", () => {
