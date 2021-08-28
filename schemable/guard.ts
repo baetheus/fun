@@ -1,6 +1,6 @@
 import type * as HKT from "../hkt.ts";
 
-import { isNil, isRecord } from "../fns.ts";
+import { isNil } from "../fns.ts";
 
 import * as S from "./schemable.ts";
 
@@ -8,9 +8,11 @@ import * as S from "./schemable.ts";
  * Types
  ******************************************************************************/
 
-export type Guard<A> = (i: unknown) => i is A;
+export type Guard<A, B extends A> = (a: A) => a is B;
 
-export type TypeOf<D> = D extends Guard<infer A> ? A : never;
+export type TypeOf<T> = T extends Guard<infer _, infer A> ? A : never;
+
+export type InputOf<T> = T extends Guard<infer B, infer _> ? B : never;
 
 /*******************************************************************************
  * Kind Registration
@@ -23,151 +25,139 @@ export type URI = typeof URI;
 declare module "../hkt.ts" {
   // deno-lint-ignore no-explicit-any
   export interface Kinds<_ extends any[]> {
-    [URI]: Guard<_[0]>;
+    [URI]: Guard<unknown, _[0]>;
   }
 }
 
 /*******************************************************************************
- * Guard Schemables
+ * Functions
  ******************************************************************************/
 
-export const UnknownSchemable: S.UnknownSchemable<URI> = {
-  unknown: () => (_: unknown): _ is unknown => true,
-};
+export function compose<A, B extends A, C extends B>(
+  gbc: Guard<B, C>,
+): (gab: Guard<A, B>) => Guard<A, C> {
+  return (gab) => (a: A): a is C => gab(a) && gbc(a);
+}
 
-export const StringSchemable: S.StringSchemable<URI> = {
-  string: () => (u: unknown): u is string => typeof u === "string",
-};
+export function unknown(_: unknown): _ is unknown {
+  return true;
+}
 
-export const NumberSchemable: S.NumberSchemable<URI> = {
-  number: () => (u: unknown): u is number => typeof u === "number",
-};
+export function string(a: unknown): a is string {
+  return typeof a === "string";
+}
 
-export const BooleanSchemable: S.BooleanSchemable<URI> = {
-  boolean: () => (u: unknown): u is boolean => typeof u === "boolean",
-};
+export function number(a: unknown): a is number {
+  return typeof a === "number";
+}
 
-export const LiteralSchemable: S.LiteralSchemable<URI> = {
-  literal: <A extends [S.Literal, ...S.Literal[]]>(...s: A) =>
-    (u: unknown): u is A[number] => s.some((l) => l === u),
-};
+export function boolean(a: unknown): a is boolean {
+  return typeof a === "boolean";
+}
 
-export const NullableSchemable: S.NullableSchemable<URI> = {
-  nullable: <A>(or: Guard<A>) =>
-    (u: unknown): u is A | null => u === null || or(u),
-};
+export function isRecord(a: unknown): a is Record<string, unknown> {
+  return typeof a === "object" && a !== null;
+}
 
-export const UndefinableSchemable: S.UndefinableSchemable<URI> = {
-  undefinable: <A>(or: Guard<A>) =>
-    (u: unknown): u is A | undefined => u === undefined || or(u),
-};
+export function isArray(a: unknown): a is Array<unknown> {
+  return Array.isArray(a);
+}
 
-export const RecordSchemable: S.RecordSchemable<URI> = {
-  record: <A>(codomain: Guard<A>) =>
-    (u: unknown): u is Record<string, A> =>
-      isRecord(u) && Object.values(u).every(codomain),
-};
+export function isArrayN(n: number): Guard<unknown, Array<unknown>> {
+  return (a): a is Array<unknown> => isArray(a) && a.length == n;
+}
 
-export const ArraySchemable: S.ArraySchemable<URI> = {
-  array: <A>(item: Guard<A>) =>
-    (u: unknown): u is ReadonlyArray<A> => Array.isArray(u) && u.every(item),
-};
+export function literal<A extends [S.Literal, ...S.Literal[]]>(
+  ...literals: A
+): Guard<unknown, A[number]> {
+  return (a): a is A[number] => literals.some((l) => l === a);
+}
 
-export const TupleSchemable: S.TupleSchemable<URI> = {
-  // deno-lint-ignore no-explicit-any
-  tuple: (<A extends any[]>(
-    ...components: { [K in keyof A]: Guard<A[K]> }
-  ): Guard<{ [K in keyof A]: A[K] }> =>
-    (u: unknown): u is { [K in keyof A]: A[K] } =>
-      (Array.isArray(u) && components.length === u.length) &&
-      u.every((v, i) => components[i](v))) as S.TupleSchemable<URI>["tuple"],
-};
+export function nullable<A, B extends A>(
+  or: Guard<A, B>,
+): Guard<A | null, B | null> {
+  return (a): a is B | null => a === null || or(a);
+}
 
-export const StructSchemable: S.StructSchemable<URI> = {
-  struct: <A>(
-    properties: { [K in keyof A]: Guard<A[K]> },
-  ): Guard<{ [K in keyof A]: A[K] }> =>
-    (u: unknown): u is { [K in keyof A]: A[K] } => (isRecord(u) &&
-      Object.keys(properties).every((key) =>
-        properties[key as keyof typeof properties](u[key])
-      )),
-};
+export function undefinable<A, B extends A>(
+  or: Guard<A, B>,
+): Guard<A | undefined, B | undefined> {
+  return (a): a is B | undefined => a === undefined || or(a);
+}
 
-export const PartialSchemable: S.PartialSchemable<URI> = {
-  partial: <A>(
-    properties: { [K in keyof A]: Guard<A[K]> },
-  ): Guard<{ [K in keyof A]?: A[K] | null }> =>
-    // deno-lint-ignore no-explicit-any
-    (u: unknown): u is any => (isRecord(u) &&
-      Object.keys(properties).every((key) =>
-        isNil(u[key]) || properties[key as keyof typeof properties](u[key])
-      )),
-};
+export function record<A>(
+  codomain: Guard<unknown, A>,
+): Guard<unknown, Record<string, A>> {
+  return (a): a is Record<string, A> =>
+    isRecord(a) && Object.values(a).every(codomain);
+}
 
-export const IntersectSchemable: S.IntersectSchemable<URI> = {
-  intersect: <I>(and: Guard<I>) =>
-    <A>(ga: Guard<A>): Guard<A & I> =>
-      (u: unknown): u is A & I => ga(u) && and(u),
-};
+export function array<A>(
+  item: Guard<unknown, A>,
+): Guard<unknown, Array<A>> {
+  return (a): a is Array<A> => Array.isArray(a) && a.every(item);
+}
 
-export const UnionSchemable: S.UnionSchemable<URI> = {
-  union: <I>(or: Guard<I>) =>
-    <A>(ga: Guard<A>): Guard<A | I> =>
-      (u: unknown): u is A | I => ga(u) || or(u),
-};
+// deno-lint-ignore no-explicit-any
+export function tuple<A extends any[]>(
+  ...items: { [K in keyof A]: Guard<unknown, A[K]> }
+): Guard<unknown, { [K in keyof A]: A[K] }> {
+  return (a): a is { [K in keyof A]: A[K] } =>
+    Array.isArray(a) && items.length === a.length &&
+    a.every((value, index) => items[index](value));
+}
 
-export const LazySchemable: S.LazySchemable<URI> = {
-  lazy: <A>(_: string, f: () => Guard<A>) => f(),
-};
+export function struct<A>(
+  items: { [K in keyof A]: Guard<unknown, A[K]> },
+): Guard<unknown, { [K in keyof A]: A[K] }> {
+  return (a): a is { [K in keyof A]: A[K] } =>
+    isRecord(a) &&
+    Object.keys(items).every((key) => items[key as keyof typeof items](a[key]));
+}
+
+export function partial<A>(
+  items: { [K in keyof A]: Guard<unknown, A[K]> },
+): Guard<unknown, { [K in keyof A]?: A[K] | null }> {
+  return (a): a is { [K in keyof A]?: A[K] | null } =>
+    isRecord(a) &&
+    Object.keys(items).every((key) =>
+      isNil(a[key]) || items[key as keyof typeof items](a[key])
+    );
+}
+
+export function intersect<B, I extends B>(
+  gi: Guard<B, I>,
+): <A extends B>(ga: Guard<B, A>) => Guard<B, A & I> {
+  return <A extends B>(ga: Guard<B, A>) => (a): a is A & I => ga(a) && gi(a);
+}
+
+export function union<B, I extends B>(
+  gi: Guard<B, I>,
+): <A extends B>(ga: Guard<B, A>) => Guard<B, A | I> {
+  return <A extends B>(ga: Guard<B, A>) => (a): a is A | I => ga(a) || gi(a);
+}
+
+export function lazy<A, B extends A>(
+  _: string,
+  fga: () => Guard<A, B>,
+): Guard<A, B> {
+  return fga();
+}
 
 export const Schemable: S.Schemable<URI> = {
-  ...UnknownSchemable,
-  ...StringSchemable,
-  ...NumberSchemable,
-  ...BooleanSchemable,
-  ...LiteralSchemable,
-  ...NullableSchemable,
-  ...UndefinableSchemable,
-  ...RecordSchemable,
-  ...ArraySchemable,
-  ...TupleSchemable,
-  ...StructSchemable,
-  ...PartialSchemable,
-  ...IntersectSchemable,
-  ...UnionSchemable,
-  ...LazySchemable,
+  unknown: () => unknown,
+  string: () => string,
+  number: () => number,
+  boolean: () => boolean,
+  literal,
+  nullable,
+  undefinable,
+  record,
+  array,
+  tuple: tuple as S.Schemable<URI>["tuple"],
+  struct,
+  partial,
+  intersect,
+  union,
+  lazy,
 };
-
-/*******************************************************************************
- * Pipeables
- ******************************************************************************/
-
-export const unknown = Schemable.unknown();
-
-export const string = Schemable.string();
-
-export const number = Schemable.number();
-
-export const boolean = Schemable.boolean();
-
-export const literal = Schemable.literal;
-
-export const nullable = Schemable.nullable;
-
-export const undefinable = Schemable.undefinable;
-
-export const record = Schemable.record;
-
-export const array = Schemable.array;
-
-export const tuple = Schemable.tuple;
-
-export const struct = Schemable.struct;
-
-export const partial = Schemable.partial;
-
-export const intersect = Schemable.intersect;
-
-export const union = Schemable.union;
-
-export const lazy = Schemable.lazy;

@@ -155,6 +155,32 @@ export function widen<F>(): <R, E, A>(
 }
 
 /*******************************************************************************
+ * Module Getters
+ ******************************************************************************/
+
+export function getRightMonad<B>(
+  { concat }: TC.Semigroup<B>,
+): TC.MonadThrow<URI, [B]> {
+  return ({
+    of,
+    ap: (tfai) =>
+      // deno-lint-ignore no-explicit-any
+      (ta): ReaderEither<any, any, any> =>
+        (c) => {
+          const efai = tfai(c);
+          const ea = ta(c);
+          return E.isLeft(efai)
+            ? (E.isLeft(ea) ? E.left(concat(efai.left)(ea.left)) : efai)
+            : (E.isLeft(ea) ? ea : E.right(efai.right(ea.right)));
+        },
+    map,
+    join,
+    chain,
+    throwError,
+  });
+}
+
+/*******************************************************************************
  * Modules
  ******************************************************************************/
 

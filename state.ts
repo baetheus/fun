@@ -2,7 +2,9 @@ import type * as HKT from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
 
 import { createDo } from "./derivations.ts";
+import { traverse } from "./array.ts";
 import { flow, identity, pipe } from "./fns.ts";
+import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 
 /*******************************************************************************
  * Types
@@ -84,6 +86,18 @@ export function join<A, B>(tta: State<B, State<B, A>>): State<B, A> {
   return pipe(tta, chain(identity));
 }
 
+export function traverseArray<A, S, I>(
+  fati: (a: A, i: number) => State<S, I>,
+): (ta: ReadonlyArray<A>) => State<S, ReadonlyArray<I>> {
+  return pipe(fati, traverse(Applicative));
+}
+
+export function sequenceArray<A, B>(
+  ta: ReadonlyArray<State<B, A>>,
+): State<B, ReadonlyArray<A>> {
+  return pipe(ta, traverseArray(identity));
+}
+
 export function evaluate<S>(s: S): <A>(ta: State<S, A>) => A {
   return (ta) => ta(s)[0];
 }
@@ -111,3 +125,7 @@ export const Monad: TC.Monad<URI> = { of, ap, map, join, chain };
  ******************************************************************************/
 
 export const { Do, bind, bindTo } = createDo(Monad);
+
+export const sequenceTuple = createSequenceTuple(Apply);
+
+export const sequenceStruct = createSequenceStruct(Apply);
