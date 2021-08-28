@@ -15,34 +15,34 @@ export type At<S, I, A> = {
  * Instance Getters
  ******************************************************************************/
 
-export const atRecord = <A = never>(): At<
+export function atRecord<A = never>(): At<
   Readonly<Record<string, A>>,
   string,
   O.Option<A>
-> => ({
-  at: (key) => ({
-    get: (r) => O.fromNullable(r[key]),
-    set: O.fold(
-      () => R.deleteAt(key),
-      (a) => R.insertAt(key, a),
-    ),
-  }),
-});
+> {
+  return ({
+    at: (key) => ({
+      get: (r) => O.fromNullable(r[key]),
+      set: O.fold(
+        () => R.deleteAt(key),
+        (a) => R.insertAt(key, a),
+      ),
+    }),
+  });
+}
 
-export const atMap = <A = never>(): At<
-  Map<string, A>,
-  string,
-  O.Option<A>
-> => ({
-  at: (key) => ({
-    get: (m) => O.fromNullable(m.get(key)),
-    set: O.fold(
-      () =>
-        (m) => {
-          m.delete(key);
-          return m;
-        },
-      (a) => (m) => m.set(key, a),
-    ),
-  }),
-});
+export function atMap<A = never>(): At<Map<string, A>, string, O.Option<A>> {
+  return ({
+    at: (key) => ({
+      get: (m) => O.fromNullable(m.get(key)),
+      set: O.fold(
+        () =>
+          (m) => {
+            m.delete(key);
+            return m;
+          },
+        (a) => (m) => m.set(key, a),
+      ),
+    }),
+  });
+}

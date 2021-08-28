@@ -12,6 +12,10 @@ type T1 = { one: number };
 
 type T2 = { one: number; two: number; three: number };
 
+function positiveGuard(n: number): n is number {
+  return n > 0;
+}
+
 Deno.test("Prism make", () => {
   const { getOption, reverseGet } = P.make(
     (n: number) => n === 0 ? O.none : O.some(n),
@@ -23,7 +27,7 @@ Deno.test("Prism make", () => {
 });
 
 Deno.test("Prism fromPredicate", () => {
-  const { getOption, reverseGet } = P.fromPredicate((n: number) => n > 0);
+  const { getOption, reverseGet } = P.fromPredicate(positiveGuard);
   assertEquals(getOption(0), O.none);
   assertEquals(getOption(1), O.some(1));
   assertEquals(reverseGet(0), 0);
@@ -31,7 +35,7 @@ Deno.test("Prism fromPredicate", () => {
 
 Deno.test("Prism asOptional", () => {
   const { getOption, set } = P.asOptional(
-    P.fromPredicate((n: number) => n > 0),
+    P.fromPredicate(positiveGuard),
   );
   assertEquals(getOption(0), O.none);
   assertEquals(getOption(1), O.some(1));
@@ -92,7 +96,7 @@ Deno.test("Prism composeLens", () => {
   assertEquals(set("0")(0), 0);
   assertEquals(set("0")(1), 0);
 
-  const p2 = P.fromPredicate((n: number) => n > 0);
+  const p2 = P.fromPredicate(positiveGuard);
   const p3 = pipe(p2, P.composeLens(L.id()));
   assertEquals(p3.set(0)(0), 0);
   assertEquals(p3.set(0)(1), 0);
@@ -103,14 +107,14 @@ Deno.test("Prism composeLens", () => {
 Deno.test("Prism composeOptional", () => {
   const { getOption, set } = pipe(
     P.id<number>(),
-    P.composeOptional(P.asOptional(P.fromPredicate((n: number) => n > 0))),
+    P.composeOptional(P.asOptional(P.fromPredicate(positiveGuard))),
   );
   assertEquals(getOption(0), O.none);
   assertEquals(getOption(1), O.some(1));
   assertEquals(set(0)(0), 0);
   assertEquals(set(0)(1), 0);
 
-  const p2 = P.fromPredicate((n: number) => n > 0);
+  const p2 = P.fromPredicate(positiveGuard);
   const p3 = pipe(p2, P.composeOptional(OP.id()));
   assertEquals(p3.set(0)(0), 0);
   assertEquals(p3.set(0)(1), 0);
@@ -121,7 +125,7 @@ Deno.test("Prism composeOptional", () => {
 Deno.test("Prism composeTraversal", () => {
   const { traverse } = pipe(
     P.id<number>(),
-    P.composeTraversal(P.asTraversal(P.fromPredicate((n: number) => n > 0))),
+    P.composeTraversal(P.asTraversal(P.fromPredicate(positiveGuard))),
   );
   const t1 = traverse(O.Applicative);
   const t2 = t1((n) => n === 0 ? O.none : O.some(n));
@@ -132,7 +136,7 @@ Deno.test("Prism composeTraversal", () => {
 Deno.test("Prism filter", () => {
   const { getOption, reverseGet } = pipe(
     P.id<number>(),
-    P.filter((n: number) => n > 0),
+    P.filter(positiveGuard),
   );
   assertEquals(getOption(0), O.none);
   assertEquals(getOption(1), O.some(1));
