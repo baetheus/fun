@@ -36,7 +36,7 @@ declare module "./hkt.ts" {
  * Optimizations
  ******************************************************************************/
 
-const _draw = (indentation: string, forest: Forest<string>): string => {
+const draw = (indentation: string, forest: Forest<string>): string => {
   let r = "";
   const len = forest.length;
   let tree: Tree<string>;
@@ -44,7 +44,7 @@ const _draw = (indentation: string, forest: Forest<string>): string => {
     tree = forest[i];
     const isLast = i === len - 1;
     r += indentation + (isLast ? "└" : "├") + "─ " + tree.value;
-    r += _draw(indentation + (len > 1 && !isLast ? "│  " : "   "), tree.forest);
+    r += draw(indentation + (len > 1 && !isLast ? "│  " : "   "), tree.forest);
   }
   return r;
 };
@@ -107,7 +107,7 @@ export function traverse<VRI extends URIS>(
 }
 
 export function drawForest(forest: Forest<string>): string {
-  return _draw("\n", forest);
+  return draw("\n", forest);
 }
 
 export function drawTree(tree: Tree<string>): string {

@@ -2,18 +2,21 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
 import * as D from "../../schemable/decoder.ts";
 import * as G from "../../schemable/guard.ts";
-import * as DE from "../../schemable/decode_error.ts";
+import * as R from "../../schemable/result.ts";
 import * as E from "../../either.ts";
-import { pipe } from "../../fns.ts";
+import { flow, pipe } from "../../fns.ts";
 
-const out = E.fold((e: D.Failure) => D.draw(e), <A>(a: A): A => a);
+const out = flow(
+  D.extract,
+  E.fold((s: string) => s, (a) => JSON.stringify(a)),
+);
 
 Deno.test("Decoder success", () => {
   assertEquals(D.success(1), E.right(1));
 });
 
 Deno.test("Decoder failure", () => {
-  assertEquals(D.failure(1, "1"), E.left(DE.make.leaf(1, "1")));
+  assertEquals(D.failure(1, "1"), E.left(R.ofLeaf(1, "1")));
 });
 
 Deno.test("Decoder fromGuard", () => {
@@ -55,7 +58,7 @@ Deno.test("Decoder boolean", () => {
 Deno.test("Decoder literal", () => {
   const literal = D.literal(1, 2, 3);
   assertEquals(literal(1), D.success(1));
-  assertEquals(literal(false), D.failure(false, "literal 1, 2, or 3"));
+  assertEquals(literal(false), D.failure(false, "1, 2, 3"));
 
   const l2 = D.literal(null);
   assertEquals(l2(null), D.success(null));
@@ -64,7 +67,7 @@ Deno.test("Decoder literal", () => {
   const l3 = D.literal(1, 2);
   assertEquals(l3(1), D.success(1));
   assertEquals(l3(2), D.success(2));
-  assertEquals(l3(null), D.failure(null, "1 or 2"));
+  assertEquals(l3(null), D.failure(null, "1, 2"));
 
   const l4 = D.literal("one");
   assertEquals(l4(null), D.failure(null, '"one"'));
@@ -77,7 +80,9 @@ Deno.test("Decoder nullable", () => {
   assertEquals(decoder(null), D.success(null));
   assertEquals(
     out(decoder(true)),
-    "cannot decode nullable\n├─ member 0\n│  └─ cannot decode true, should be null\n└─ member 1\n   └─ cannot decode true, should be number",
+    `cannot decode nullable
+├─ cannot decode true, should be number
+└─ cannot decode true, should be null`,
   );
 });
 
@@ -87,7 +92,9 @@ Deno.test("Decoder undefinable", () => {
   assertEquals(decoder(undefined), D.success(undefined));
   assertEquals(
     out(decoder(true)),
-    "cannot decode undefinable\n├─ member 0\n│  └─ cannot decode true, should be undefined\n└─ member 1\n   └─ cannot decode true, should be number",
+    `cannot decode undefinable
+├─ cannot decode true, should be number
+└─ cannot decode true, should be undefined`,
   );
 });
 
@@ -120,11 +127,13 @@ Deno.test("Decoder tuple", () => {
   assertEquals(decoder([1, "one"]), D.success([1, "one"]));
   assertEquals(
     out(decoder(null)),
-    "cannot decode null, should be tuple of length 2",
+    `cannot decode tuple
+└─ cannot decode null, should be tuple of length 2`,
   );
   assertEquals(
     out(decoder([])),
-    "cannot decode [], should be tuple of length 2",
+    `cannot decode tuple
+└─ cannot decode [], should be tuple of length 2`,
   );
   assertEquals(
     out(decoder(["one", 1])),
@@ -141,7 +150,11 @@ Deno.test("Decoder struct", () => {
     decoder({ one: 1, two: "two" }),
     D.success({ one: 1, two: "two" }),
   );
-  assertEquals(out(decoder(null)), "cannot decode null, should be struct");
+  assertEquals(
+    out(decoder(null)),
+    `cannot decode struct
+└─ cannot decode null, should be record`,
+  );
   assertEquals(
     out(decoder({})),
     'cannot decode struct\n├─ required property "one"\n│  └─ cannot decode undefined, should be number\n└─ required property "two"\n   └─ cannot decode undefined, should be string',
@@ -201,11 +214,17 @@ Deno.test("Decoder intersect", () => {
   );
   assertEquals(
     out(decoder(null)),
-    "cannot decode null, should be struct\ncannot decode null, should be struct",
+    "cannot decode intersection\n├─ cannot decode struct\n│  └─ cannot decode null, should be record\n└─ cannot decode partial\n   └─ cannot decode null, should be record",
   );
   assertEquals(
     out(decoder({ one: "one", two: 2 })),
-    'cannot decode struct\n└─ required property "one"\n   └─ cannot decode "one", should be number\ncannot decode partial\n└─ optional property "two"\n   └─ cannot decode 2, should be string',
+    `cannot decode intersection
+├─ cannot decode struct
+│  └─ required property "one"
+│     └─ cannot decode "one", should be number
+└─ cannot decode partial
+   └─ optional property "two"
+      └─ cannot decode 2, should be string`,
   );
 });
 
@@ -218,7 +237,7 @@ Deno.test("Decoder union", () => {
   assertEquals(decoder("one"), D.success("one"));
   assertEquals(
     out(decoder(null)),
-    "member 0\n└─ cannot decode null, should be number\nmember 1\n└─ cannot decode null, should be string",
+    "cannot decode union\n├─ cannot decode null, should be number\n└─ cannot decode null, should be string",
   );
 });
 

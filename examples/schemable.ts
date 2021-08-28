@@ -22,7 +22,7 @@ export const decode = Demo(D.Schemable);
 
 export const print = flow(
   decode,
-  E.mapLeft(D.draw),
+  D.extract,
   E.fold(console.error, console.log),
 );
 
