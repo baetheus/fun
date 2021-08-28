@@ -34,78 +34,83 @@ export type To<T> = T extends Prism<infer _, infer A> ? A : never;
  * Constructors
  ******************************************************************************/
 
-export const make = <S, A>(
+export function make<S, A>(
   getOption: (s: S) => O.Option<A>,
   reverseGet: (a: A) => S,
-): Prism<S, A> => ({
-  getOption,
-  reverseGet,
-});
+): Prism<S, A> {
+  return { getOption, reverseGet };
+}
 
-type FromPredicate = {
-  <S, A extends S>(refinement: Refinement<S, A>): Prism<S, A>;
-  <A>(predicate: Predicate<A>): Prism<A, A>;
-};
-
-export const fromPredicate: FromPredicate = <A>(
+export function fromPredicate<S, A extends S>(
+  refinement: Refinement<S, A>,
+): Prism<S, A>;
+export function fromPredicate<A>(
   predicate: Predicate<A>,
-): Prism<A, A> => ({
-  getOption: O.fromPredicate(predicate),
-  reverseGet: identity,
-});
+): Prism<A, A>;
+export function fromPredicate<A>(predicate: Predicate<A>): Prism<A, A> {
+  return { getOption: O.fromPredicate(predicate), reverseGet: identity };
+}
 
 /*******************************************************************************
  * Converters
  ******************************************************************************/
 
-export const asOptional = <S, A>(sa: Prism<S, A>): Optional<S, A> => ({
-  getOption: sa.getOption,
-  set: getSet(sa),
-});
+export function asOptional<S, A>(sa: Prism<S, A>): Optional<S, A> {
+  return { getOption: sa.getOption, set: getSet(sa) };
+}
 
-export const asTraversal = <S, A>(sa: Prism<S, A>): Traversal<S, A> => ({
-  traverse: (T) =>
-    (fata) =>
-      (s) =>
-        pipe(
-          sa.getOption(s),
-          O.fold(
-            () => T.of(s),
-            flow(fata, T.map(flow(getSet(sa), apply(s)))),
+export function asTraversal<S, A>(sa: Prism<S, A>): Traversal<S, A> {
+  return {
+    traverse: (T) =>
+      (fata) =>
+        (s) =>
+          pipe(
+            sa.getOption(s),
+            O.fold(
+              () => T.of(s),
+              flow(fata, T.map(flow(getSet(sa), apply(s)))),
+            ),
           ),
-        ),
-});
+  };
+}
 
-export const fromNullable = <S, A>(
-  sa: Prism<S, A>,
-): Prism<S, NonNullable<A>> => ({
-  getOption: flow(sa.getOption, O.chain(O.fromNullable)),
-  reverseGet: sa.reverseGet,
-});
+export function fromNullable<S, A>(sa: Prism<S, A>): Prism<S, NonNullable<A>> {
+  return {
+    getOption: flow(sa.getOption, O.chain(O.fromNullable)),
+    reverseGet: sa.reverseGet,
+  };
+}
 
 /*******************************************************************************
  * Pipeable Compose
  ******************************************************************************/
 
-export const id = <A>(): Prism<A, A> => ({
-  getOption: O.some,
-  reverseGet: identity,
-});
+export function id<A>(): Prism<A, A> {
+  return { getOption: O.some, reverseGet: identity };
+}
 
-export const compose = <J, K>(jk: Prism<J, K>) =>
-  <I>(ij: Prism<I, J>): Prism<I, K> => ({
+export function compose<J, K>(
+  jk: Prism<J, K>,
+): <I>(ij: Prism<I, J>) => Prism<I, K> {
+  return (ij) => ({
     getOption: flow(ij.getOption, O.chain(jk.getOption)),
     reverseGet: flow(jk.reverseGet, ij.reverseGet),
   });
+}
 
-export const composeIso = <A, B>(ab: Iso<A, B>) =>
-  <S>(sa: Prism<S, A>): Prism<S, B> => ({
+export function composeIso<A, B>(
+  ab: Iso<A, B>,
+): <S>(sa: Prism<S, A>) => Prism<S, B> {
+  return (sa) => ({
     getOption: flow(sa.getOption, O.map(ab.get)),
     reverseGet: flow(ab.reverseGet, sa.reverseGet),
   });
+}
 
-export const composeLens = <A, B>(ab: Lens<A, B>) =>
-  <S>(sa: Prism<S, A>): Optional<S, B> => ({
+export function composeLens<A, B>(
+  ab: Lens<A, B>,
+): <S>(sa: Prism<S, A>) => Optional<S, B> {
+  return (sa) => ({
     getOption: flow(sa.getOption, O.map(ab.get)),
     set: (b) =>
       (s) =>
@@ -114,9 +119,12 @@ export const composeLens = <A, B>(ab: Lens<A, B>) =>
           O.fold(() => s, flow(ab.set(b), sa.reverseGet)),
         ),
   });
+}
 
-export const composeOptional = <A, B>(ab: Optional<A, B>) =>
-  <S>(sa: Prism<S, A>): Optional<S, B> => ({
+export function composeOptional<A, B>(
+  ab: Optional<A, B>,
+): <S>(sa: Prism<S, A>) => Optional<S, B> {
+  return (sa) => ({
     getOption: flow(sa.getOption, O.chain(ab.getOption)),
     set: (b) =>
       (s) =>
@@ -125,9 +133,12 @@ export const composeOptional = <A, B>(ab: Optional<A, B>) =>
           O.fold(() => s, flow(ab.set(b), sa.reverseGet)),
         ),
   });
+}
 
-export const composeTraversal = <A, B>(ab: Traversal<A, B>) =>
-  <S>(sa: Prism<S, A>): Traversal<S, B> => ({
+export function composeTraversal<A, B>(
+  ab: Traversal<A, B>,
+): <S>(sa: Prism<S, A>) => Traversal<S, B> {
+  return (sa) => ({
     traverse: (A) =>
       (fata) =>
         (s) =>
@@ -139,38 +150,39 @@ export const composeTraversal = <A, B>(ab: Traversal<A, B>) =>
             ),
           ),
   });
+}
 
 /*******************************************************************************
  * Pipeables
  ******************************************************************************/
 
-type FilterFn = {
-  <A, B extends A>(refinement: Refinement<A, B>): <S>(
-    sa: Prism<S, A>,
-  ) => Prism<S, B>;
-  <A>(predicate: Predicate<A>): <S>(sa: Prism<S, A>) => Prism<S, A>;
-};
-
-export const filter: FilterFn = <A>(predicate: Predicate<A>) =>
-  <S>(sa: Prism<S, A>): Prism<S, A> => ({
+export function filter<A, B extends A>(
+  refinement: Refinement<A, B>,
+): <S>(sa: Prism<S, A>) => Prism<S, B>;
+export function filter<A>(
+  predicate: Predicate<A>,
+): <S>(sa: Prism<S, A>) => Prism<S, A>;
+export function filter<A>(
+  predicate: Predicate<A>,
+): <S>(sa: Prism<S, A>) => Prism<S, A> {
+  return (sa) => ({
     getOption: flow(sa.getOption, O.chain(O.fromPredicate(predicate))),
     reverseGet: sa.reverseGet,
   });
+}
 
-export const traverse = <URI extends URIS>(T: TC.Traversable<URI>) => {
+export function traverse<URI extends URIS>(
+  T: TC.Traversable<URI>,
+): <S, A, B = never, C = never, D = never>(
+  sa: Prism<S, Kind<URI, [A, B, C, D]>>,
+) => Traversal<S, A> {
   const _traversal = fromTraversable(T);
-  return <S, A, B = never, C = never, D = never>(
-    sa: Prism<S, Kind<URI, [A, B, C, D]>>,
-  ): Traversal<S, A> =>
-    pipe(
-      sa,
-      composeTraversal(_traversal<A, B, C, D>()),
-    );
-};
+  return composeTraversal(_traversal());
+}
 
-export const modify = <A>(f: (a: A) => A) =>
-  <S>(sa: Prism<S, A>) =>
-    (s: S): S =>
+export function modify<A>(f: (a: A) => A): <S>(sa: Prism<S, A>) => (s: S) => S {
+  return (sa) =>
+    (s) =>
       pipe(
         sa.getOption(s),
         O.map((a) => {
@@ -179,47 +191,59 @@ export const modify = <A>(f: (a: A) => A) =>
         }),
         O.getOrElse(() => s),
       );
+}
 
-export const getSet = <S, A>(sa: Prism<S, A>) =>
-  (a: A) => pipe(sa, modify(constant(a)));
+export function getSet<S, A>(sa: Prism<S, A>): (a: A) => (s: S) => S {
+  return (a) => pipe(sa, modify(constant(a)));
+}
 
-export const prop = <A, P extends keyof A>(
+export function prop<A, P extends keyof A>(
   prop: P,
-): (<S>(sa: Prism<S, A>) => Optional<S, A[P]>) =>
-  pipe(lensId<A>(), lensProp(prop), composeLens);
+): <S>(sa: Prism<S, A>) => Optional<S, A[P]> {
+  return pipe(lensId<A>(), lensProp(prop), composeLens);
+}
 
-export const props = <A, P extends keyof A>(
+export function props<A, P extends keyof A>(
   ...props: [P, P, ...Array<P>]
-): (<S>(sa: Prism<S, A>) => Optional<S, { [K in P]: A[K] }>) =>
-  pipe(lensId<A>(), lensProps(...props), composeLens);
+): <S>(sa: Prism<S, A>) => Optional<S, { [K in P]: A[K] }> {
+  return pipe(lensId<A>(), lensProps(...props), composeLens);
+}
 
-export const index = (i: number) =>
-  <S, A>(sa: Prism<S, ReadonlyArray<A>>): Optional<S, A> =>
-    pipe(sa, composeOptional(indexArray<A>().index(i)));
+export function index(
+  i: number,
+): <S, A>(sa: Prism<S, ReadonlyArray<A>>) => Optional<S, A> {
+  // deno-lint-ignore no-explicit-any
+  return composeOptional(indexArray<any>().index(i));
+}
 
-export const key = (key: string) =>
-  <S, A>(sa: Prism<S, Readonly<Record<string, A>>>): Optional<S, A> =>
-    pipe(sa, composeOptional(indexRecord<A>().index(key)));
+export function key(
+  key: string,
+): <S, A>(sa: Prism<S, Readonly<Record<string, A>>>) => Optional<S, A> {
+  // deno-lint-ignore no-explicit-any
+  return composeOptional(indexRecord<any>().index(key));
+}
 
-export const atKey = (key: string) =>
-  <S, A>(sa: Prism<S, Readonly<Record<string, A>>>): Optional<S, O.Option<A>> =>
-    pipe(sa, composeLens(atRecord<A>().at(key)));
+export function atKey(
+  key: string,
+): <S, A>(
+  sa: Prism<S, Readonly<Record<string, A>>>,
+) => Optional<S, O.Option<A>> {
+  // deno-lint-ignore no-explicit-any
+  return composeLens(atRecord<any>().at(key));
+}
 
 /*******************************************************************************
  * Pipeable Over ADT
  ******************************************************************************/
 
-export const some = <A>(): Prism<O.Option<A>, A> => ({
-  getOption: identity,
-  reverseGet: O.some,
-});
+export function some<A>(): Prism<O.Option<A>, A> {
+  return { getOption: identity, reverseGet: O.some };
+}
 
-export const right = <E, A>(): Prism<E.Either<E, A>, A> => ({
-  getOption: E.getRight,
-  reverseGet: E.right,
-});
+export function right<E, A>(): Prism<E.Either<E, A>, A> {
+  return { getOption: E.getRight, reverseGet: E.right };
+}
 
-export const left = <E, A>(): Prism<E.Either<E, A>, E> => ({
-  getOption: E.getLeft,
-  reverseGet: E.left,
-});
+export function left<E, A>(): Prism<E.Either<E, A>, E> {
+  return { getOption: E.getLeft, reverseGet: E.left };
+}

@@ -7,12 +7,14 @@ import { constant } from "../fns.ts";
  * Constructors
  ******************************************************************************/
 
-export const fromTraversable = <URI extends URIS>(
+export function fromTraversable<URI extends URIS>(
   T: TC.Traversable<URI>,
-): <
-  A = never,
-  B = never,
-  C = never,
-  D = never,
-> // deno-lint-ignore no-explicit-any
-() => Traversal<Kind<URI, [A, B, C, D]>, A> => constant(T) as any;
+): <A = never, B = never, C = never, D = never>() => Traversal<
+  Kind<URI, [A, B, C, D]>,
+  A
+> {
+  return constant(T) as <A, B = never, C = never, D = never>() => Traversal<
+    Kind<URI, [A, B, C, D]>,
+    A
+  >;
+}
