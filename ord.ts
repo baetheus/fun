@@ -11,7 +11,7 @@ import { flow } from "./fns.ts";
  ******************************************************************************/
 
 // lte for primimtives
-const _lte = (a: any) => (b: any): boolean => a <= b;
+const _lte = (b: any) => (a: any): boolean => a <= b;
 
 const _equals = setoidStrict.equals;
 
@@ -47,54 +47,62 @@ export const ordBoolean: Ord<boolean> = {
  ******************************************************************************/
 
 export function compare<A>(O: Ord<A>): Compare<A> {
-  return (a, b) => O.lte(a)(b) ? O.equals(a)(b) ? 0 : -1 : 1;
-}
-
-export function lt<A>(O: Ord<A>): ((a: A) => (b: A) => boolean) {
-  return (a) => {
-    const _lte = O.lte(a);
-    const _equals = O.equals(a);
-    return (b) => _lte(b) && !_equals(b);
+  return (a, b) => {
+    if (O.equals(b)(a)) {
+      return 0;
+    } else if (O.lte(b)(a)) {
+      return -1;
+    } else {
+      return 1;
+    }
   };
 }
 
-export function gt<A>(O: Ord<A>): ((a: A) => (b: A) => boolean) {
-  return (a) => {
-    const _lte = O.lte(a);
-    return (b) => !_lte(b);
+export function lt<A>(O: Ord<A>): (b: A) => (a: A) => boolean {
+  return (b) => {
+    const _lte = O.lte(b);
+    const _equals = O.equals(b);
+    return (a) => _lte(a) && !_equals(a);
   };
 }
 
-export function lte<A>(O: Ord<A>): ((a: A) => (b: A) => boolean) {
+export function gt<A>(O: Ord<A>): (b: A) => (a: A) => boolean {
+  return (b) => {
+    const _lte = O.lte(b);
+    return (a) => !_lte(a);
+  };
+}
+
+export function lte<A>(O: Ord<A>): (b: A) => (a: A) => boolean {
   return O.lte;
 }
 
-export function gte<A>(O: Ord<A>): ((a: A) => (b: A) => boolean) {
-  return (a) => {
-    const _lte = O.lte(a);
-    const _equals = O.equals(a);
-    return (b) => !_lte(b) || _equals(b);
+export function gte<A>(O: Ord<A>): (b: A) => (a: A) => boolean {
+  return (b) => {
+    const _lte = O.lte(b);
+    const _equals = O.equals(b);
+    return (a) => !_lte(a) || _equals(a);
   };
 }
 
-export function eq<A>(O: Ord<A>): (a: A) => (b: A) => boolean {
-  return (a) => {
-    const _equals = O.equals(a);
-    return (b) => _equals(b);
+export function eq<A>(O: Ord<A>): (b: A) => (a: A) => boolean {
+  return (b) => {
+    const _equals = O.equals(b);
+    return (a) => _equals(a);
   };
 }
 
-export function min<A>(O: Ord<A>): (a: A) => (b: A) => A {
-  return (a) => {
-    const _lte = O.lte(a);
-    return (b) => _lte(b) ? a : b;
+export function min<A>(O: Ord<A>): (b: A) => (a: A) => A {
+  return (b) => {
+    const _lte = O.lte(b);
+    return (a) => _lte(a) ? a : b;
   };
 }
 
-export function max<A>(O: Ord<A>): (a: A) => (b: A) => A {
-  return (a) => {
-    const _lte = O.lte(a);
-    return (b) => _lte(b) ? b : a;
+export function max<A>(O: Ord<A>): (b: A) => (a: A) => A {
+  return (b) => {
+    const _lte = O.lte(b);
+    return (a) => _lte(a) ? b : a;
   };
 }
 

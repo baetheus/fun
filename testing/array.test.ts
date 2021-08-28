@@ -1,4 +1,8 @@
-import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
+import {
+  assertEquals,
+  assertNotStrictEquals,
+  assertStrictEquals,
+} from "https://deno.land/std/testing/asserts.ts";
 
 import type * as HKT from "../hkt.ts";
 
@@ -10,15 +14,52 @@ import { pipe } from "../fns.ts";
 
 import * as AS from "./assert.ts";
 
-/*******************************************************************************
- * Constructors
- ******************************************************************************/
-
 Deno.test("Array empty", () => assertEquals(A.empty(), []));
 
-/*******************************************************************************
- * Modules
- ******************************************************************************/
+Deno.test("Array unsafeUpdateAt", () => {
+  const t1 = [1, 2, 3];
+  const r1 = A.unsafeUpdateAt(0, 1, t1);
+  assertStrictEquals(t1, r1);
+});
+
+Deno.test("Array append", () => {
+  const f1 = A.append(0);
+  const t1 = [1, 2, 3];
+  const r1 = f1(t1);
+  assertEquals(r1, [1, 2, 3, 0]);
+  assertNotStrictEquals(t1, r1);
+});
+
+Deno.test("Array prepend", () => {
+  const f1 = A.prepend(0);
+  const t1 = [1, 2, 3];
+  const r1 = f1(t1);
+  assertEquals(r1, [0, 1, 2, 3]);
+  assertNotStrictEquals(t1, r1);
+});
+
+Deno.test("Array unsafeAppend", () => {
+  const f1 = A.unsafeAppend(0);
+  const t1 = [1, 2, 3];
+  const r1 = f1(t1);
+  assertEquals(r1, [1, 2, 3, 0]);
+  assertStrictEquals(t1, r1);
+});
+
+Deno.test("Array unsafePrepend", () => {
+  const f1 = A.unsafePrepend(0);
+  const t1 = [1, 2, 3];
+  const r1 = f1(t1);
+  assertEquals(r1, [0, 1, 2, 3]);
+  assertStrictEquals(t1, r1);
+});
+
+Deno.test("Array isEmpty", () => {
+  const t1: never[] = [];
+  const t2 = [1, 2, 3];
+  assertEquals(A.isEmpty(t1), true);
+  assertEquals(A.isEmpty(t2), false);
+});
 
 Deno.test("Array Functor", () => {
   AS.assertFunctor(
@@ -121,15 +162,21 @@ Deno.test("Array IndexedFoldable", () => {
   });
 });
 
-Deno.test("Array IndexedTraversable", () => {
-  const traverseOption = A.IndexedTraversable.traverse(O.Applicative);
+Deno.test("Array traverse", () => {
+  const traverseOption = A.traverse(O.Applicative);
+
+  assertEquals(typeof traverseOption, "function");
+
   const sequence = traverseOption((a: O.Option<number>) => a);
   const add = traverseOption((a: number, i: number) => O.some(a + i));
+
+  assertEquals(typeof sequence, "function");
 
   assertEquals(sequence([O.some(1), O.some(2), O.some(3)]), O.some([1, 2, 3]));
   assertEquals(sequence([O.some(1), O.some(2), O.none]), O.none);
 
   assertEquals(add([1, 2, 3]), O.some([1, 3, 5]));
+  assertEquals(add([]), O.some([]));
 });
 
 Deno.test("Array getSetoid", () => {
@@ -146,16 +193,19 @@ Deno.test("Array getOrd", () => {
   const ord = A.getOrd(ordNumber);
 
   assertEquals(ord.lte([])([]), true);
-  assertEquals(ord.lte([])([1]), true);
-  assertEquals(ord.lte([1])([1, 2]), true);
-  assertEquals(ord.lte([1, 2])([2, 1]), true);
+  assertEquals(ord.lte([1])([]), true);
+  assertEquals(ord.lte([1, 2])([1]), true);
+  assertEquals(ord.lte([1, 2])([1, 1]), true);
+  assertEquals(ord.lte([])([1]), false);
+  assertEquals(ord.lte([1])([1, 2]), false);
+  assertEquals(ord.lte([1, 2])([2, 1]), false);
 });
 
 Deno.test("Array getSemigroup", () => {
   const semigroup = A.getSemigroup<number>();
 
   assertEquals(semigroup.concat([] as number[])([] as number[]), []);
-  assertEquals(semigroup.concat([1, 2, 3])([4, 5, 6]), [1, 2, 3, 4, 5, 6]);
+  assertEquals(semigroup.concat([4, 5, 6])([1, 2, 3]), [1, 2, 3, 4, 5, 6]);
 });
 
 Deno.test("Array getShow", () => {
@@ -169,7 +219,7 @@ Deno.test("Array getMonoid", () => {
   const monoid = A.getMonoid<number>();
 
   assertEquals(monoid.empty(), []);
-  assertEquals(monoid.concat([1, 2])([3, 4]), [1, 2, 3, 4]);
+  assertEquals(monoid.concat([3, 4])([1, 2]), [1, 2, 3, 4]);
 });
 
 Deno.test("Array of", () => {

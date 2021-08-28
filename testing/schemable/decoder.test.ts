@@ -18,6 +18,7 @@ Deno.test("Decoder failure", () => {
 
 Deno.test("Decoder fromGuard", () => {
   const decoder = D.fromGuard(G.number, "number");
+  assertEquals(typeof decoder, "function");
   assertEquals(decoder(0), D.success(0));
   assertEquals(decoder(true), D.failure(true, "number"));
 });

@@ -232,26 +232,28 @@ Deno.test("Datum getOrd", () => {
   const refresh = Ord.lte(D.refresh(1));
 
   assertEquals(initial(D.initial), true);
-  assertEquals(initial(D.pending), true);
-  assertEquals(initial(D.replete(1)), true);
-  assertEquals(initial(D.refresh(1)), true);
+  assertEquals(initial(D.pending), false);
+  assertEquals(initial(D.replete(1)), false);
+  assertEquals(initial(D.refresh(1)), false);
 
-  assertEquals(pending(D.initial), false);
+  assertEquals(pending(D.initial), true);
   assertEquals(pending(D.pending), true);
-  assertEquals(pending(D.replete(1)), true);
-  assertEquals(pending(D.refresh(1)), true);
+  assertEquals(pending(D.replete(1)), false);
+  assertEquals(pending(D.refresh(1)), false);
 
-  assertEquals(replete(D.initial), false);
-  assertEquals(replete(D.pending), false);
+  assertEquals(replete(D.initial), true);
+  assertEquals(replete(D.pending), true);
   assertEquals(replete(D.replete(1)), true);
-  assertEquals(replete(D.replete(0)), false);
-  assertEquals(replete(D.refresh(1)), true);
+  assertEquals(replete(D.replete(0)), true);
+  assertEquals(replete(D.replete(2)), false);
+  assertEquals(replete(D.refresh(1)), false);
 
-  assertEquals(refresh(D.initial), false);
-  assertEquals(refresh(D.pending), false);
-  assertEquals(refresh(D.replete(1)), false);
+  assertEquals(refresh(D.initial), true);
+  assertEquals(refresh(D.pending), true);
+  assertEquals(refresh(D.replete(1)), true);
   assertEquals(refresh(D.refresh(1)), true);
-  assertEquals(refresh(D.refresh(0)), false);
+  assertEquals(refresh(D.refresh(0)), true);
+  assertEquals(refresh(D.refresh(2)), false);
 
   AS.assertOrd(Ord, { a: D.constInitial(), b: D.constPending() });
   AS.assertOrd(Ord, { a: D.constPending(), b: D.constInitial() });

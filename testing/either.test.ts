@@ -14,6 +14,10 @@ Deno.test("Either left", () => {
   assertEquals(E.left(1), { tag: "Left", left: 1 });
 });
 
+Deno.test("Either throwError", () => {
+  assertEquals(E.throwError(1), { tag: "Left", left: 1 });
+});
+
 Deno.test("Either right", () => {
   assertEquals(E.right(1), { tag: "Right", right: 1 });
 });
@@ -144,19 +148,19 @@ Deno.test("Either getOrd", () => {
 
   AS.assertOrd(Ord, { a: E.right(1), b: E.left(1) });
 
-  assertEquals(right(E.right(1)), false);
+  assertEquals(right(E.right(1)), true);
   assertEquals(right(E.right(2)), true);
-  assertEquals(right(E.right(3)), true);
-  assertEquals(right(E.left(1)), false);
-  assertEquals(right(E.left(2)), false);
-  assertEquals(right(E.left(3)), false);
+  assertEquals(right(E.right(3)), false);
+  assertEquals(right(E.left(1)), true);
+  assertEquals(right(E.left(2)), true);
+  assertEquals(right(E.left(3)), true);
 
-  assertEquals(left(E.right(1)), true);
-  assertEquals(left(E.right(2)), true);
-  assertEquals(left(E.right(3)), true);
-  assertEquals(left(E.left(1)), false);
+  assertEquals(left(E.right(1)), false);
+  assertEquals(left(E.right(2)), false);
+  assertEquals(left(E.right(3)), false);
+  assertEquals(left(E.left(1)), true);
   assertEquals(left(E.left(2)), true);
-  assertEquals(left(E.left(3)), true);
+  assertEquals(left(E.left(3)), false);
 });
 
 Deno.test("Either getLeftSemigroup", () => {
@@ -321,6 +325,12 @@ Deno.test("Either alt", () => {
   assertEquals(pipe(E.left(1), E.alt(E.right(1))), E.right(1));
   assertEquals(pipe(E.right(1), E.alt(E.left(1))), E.right(1));
   assertEquals(pipe(E.right(1), E.alt(E.right(2))), E.right(1));
+});
+
+Deno.test("Either join", () => {
+  assertEquals(E.join(E.left(1)), E.left(1));
+  assertEquals(E.join(E.right(E.left(1))), E.left(1));
+  assertEquals(E.join(E.right(E.right(1))), E.right(1));
 });
 
 Deno.test("Either chainLeft", () => {

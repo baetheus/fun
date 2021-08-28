@@ -4,6 +4,7 @@ import type * as TC from "./type_classes.ts";
 import type { Fn } from "./types.ts";
 
 import { hasOwnProperty, pipe } from "./fns.ts";
+import { compare, ordString } from "./ord.ts";
 
 /*******************************************************************************
  * Types
@@ -27,7 +28,15 @@ declare module "./hkt.ts" {
 }
 
 /*******************************************************************************
- * Optimizations
+ * Utilities
+ ******************************************************************************/
+
+const compareStrings = compare(ordString);
+
+const sortStrings = (keys: string[]): string[] => keys.sort(compareStrings);
+
+/*******************************************************************************
+ * Functions
  ******************************************************************************/
 
 export function map<A, I>(
@@ -43,26 +52,25 @@ export function map<A, I>(
 }
 
 export function reduce<A, O>(
-  foio: (o: O, a: A, i: string) => O,
+  foao: (o: O, a: A, i: string) => O,
   o: O,
 ): <KS extends string>(ta: { [K in KS]: A }) => O {
   return (ta) => {
-    let out = o;
-    for (const [key, entry] of Object.entries(ta) as [keyof typeof ta, A][]) {
-      out = foio(out, entry, key);
-    }
-    return out;
-  };
-}
+    const keys = sortStrings(Object.keys(ta)) as (keyof typeof ta)[];
+    const length = keys.length;
+    let index = -1;
+    let result = o;
 
-export function assign<KS extends string>(
-  i: KS,
-): <R extends { [K in KS]: unknown }>(bs: R) => (b: R[typeof i]) => Partial<R> {
-  return (bs) =>
-    (b) => {
-      bs[i] = b;
-      return bs;
-    };
+    if (length === 0) {
+      return o;
+    }
+
+    while (++index < length) {
+      const key = keys[index];
+      result = foao(result, ta[key], key);
+    }
+    return result;
+  };
 }
 
 export function traverse<VRI extends URIS>(
@@ -72,9 +80,13 @@ export function traverse<VRI extends URIS>(
 ) => (ta: ReadonlyRecord<A>) => Kind<VRI, [ReadonlyRecord<I>, J, K, L]> {
   return (favi) =>
     reduce(
-      (as, a, index) =>
-        pipe(favi(a, index), A.ap(pipe(as, A.map(assign(index))))),
-      A.of({}),
+      (fbs, a, index) =>
+        pipe(
+          favi(a, index),
+          A.ap(pipe(fbs, A.map((xs) => (x) => ({ ...xs, [index]: x })))),
+        ),
+      // deno-lint-ignore no-explicit-any
+      A.of({} as Record<string, any>),
     );
 }
 
