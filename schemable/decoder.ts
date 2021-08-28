@@ -1,22 +1,13 @@
 import type * as HKT from "../hkt.ts";
 import type * as TC from "../type_classes.ts";
-import type * as RE from "../reader_either.ts";
+import type { Result } from "./result.ts";
 
+import { flow, intersect as _intersect, memoize, pipe } from "../fns.ts";
+import * as RE from "../reader_either.ts";
 import * as E from "../either.ts";
-import * as T from "../tree.ts";
-import * as A from "../array.ts";
-import * as R from "../record.ts";
-import { Free } from "../semigroup.ts";
-import { createSequenceTuple } from "../sequence.ts";
-import {
-  flow,
-  intersect as _intersect,
-  isRecord,
-  memoize,
-  pipe,
-} from "../fns.ts";
+import { createSequenceStruct, createSequenceTuple } from "../sequence.ts";
 
-import { DecodeError, fold, getSemigroup, make } from "./decode_error.ts";
+import * as R from "./result.ts";
 import * as S from "./schemable.ts";
 import * as G from "./guard.ts";
 
@@ -24,13 +15,15 @@ import * as G from "./guard.ts";
  * Types
  ******************************************************************************/
 
-export type Failure = Free<DecodeError<string>>;
+export type Decoder<B, A> = RE.ReaderEither<B, R.DecodeErrors<string>, A>;
 
-export type Decoder<A> = RE.ReaderEither<unknown, Failure, A>;
+export type TypeOf<T> = T extends Decoder<infer _, infer A> ? A : never;
 
-export type Decoded<A> = E.Either<Failure, A>;
+export type InputOf<T> = T extends Decoder<infer B, infer _> ? B : never;
 
-export type TypeOf<D> = D extends Decoder<infer A> ? A : never;
+export type Failure = R.Failure;
+
+export type Success<A> = R.Success<A>;
 
 /*******************************************************************************
  * Kind Registration
@@ -40,85 +33,30 @@ export const URI = "Decoder";
 
 export type URI = typeof URI;
 
-export const DecodedURI = "Decoded";
-
-export type DecodedURI = typeof DecodedURI;
-
 declare module "../hkt.ts" {
   // deno-lint-ignore no-explicit-any
   export interface Kinds<_ extends any[]> {
-    [URI]: Decoder<_[0]>;
-    [DecodedURI]: Decoded<_[0]>;
+    [URI]: Decoder<unknown, _[0]>;
   }
 }
-
-/*******************************************************************************
- * DecodeError
- ******************************************************************************/
-
-const DecodeErrorSemigroup = getSemigroup<string>();
-
-const { concat } = DecodeErrorSemigroup;
-
-const _append = (actual: unknown, error: string) =>
-  (e: Failure) =>
-    pipe(make.member(1, e), concat(make.member(0, make.leaf(actual, error))));
-
-export const success: <A>(a: A) => Decoded<A> = E.right;
-
-export const failure = <A = never>(
-  actual: unknown,
-  message: string,
-): Decoded<A> => E.left(make.leaf(actual, message));
-
-/*******************************************************************************
- * Decoded
- ******************************************************************************/
-
-const DecodedMonad = E.getRightMonad(DecodeErrorSemigroup);
-
-const DecodedApply: TC.Apply<DecodedURI> = DecodedMonad;
-
-const DecodedApplicative: TC.Applicative<DecodedURI> = DecodedMonad;
-
-const traverseRecord = R.traverse(DecodedApplicative);
-
-const traverseArray = A.traverse(DecodedApplicative);
-
-const sequenceTuple = createSequenceTuple(DecodedApply);
 
 /*******************************************************************************
 * Constructors
 *******************************************************************************/
 
-export function fromGuard<A>(
-  guard: G.Guard<A>,
+export function fromGuard<B, A extends B>(
+  guard: G.Guard<B, A>,
   expected: string,
-): Decoder<A> {
-  return (i) => guard(i) ? success(i) : failure(i, expected);
+): Decoder<B, A> {
+  return (b: B) => guard(b) ? R.success(b) : R.failure(R.ofLeaf(b, expected));
 }
 
 /*******************************************************************************
 * Utility
 *******************************************************************************/
 
-const literalString = (literal: S.Literal) =>
+const literalToString = (literal: S.Literal) =>
   typeof literal === "string" ? `"${literal}"` : `${literal}`;
-
-const literalError = (literals: [S.Literal, ...S.Literal[]]): string => {
-  const lits = literals.map(literalString);
-  switch (lits.length) {
-    case 1:
-      return lits[0];
-    case 2:
-      return `${lits[0]} or ${lits[1]}`;
-    default: {
-      const last = lits.slice(-1);
-      const init = lits.slice(0, lits.length - 1);
-      return `literal ${init.join(", ")}, or ${last}`;
-    }
-  }
-};
 
 const compactRecord = <A>(
   r: Record<string, E.Either<void, A>>,
@@ -133,266 +71,261 @@ const compactRecord = <A>(
   return out;
 };
 
+const _unknown = fromGuard(G.unknown, "unknown");
+
+const _string = fromGuard(G.string, "string");
+
+const _number = fromGuard(G.number, "number");
+
+const _boolean = fromGuard(G.boolean, "boolean");
+
+const _record = fromGuard(G.isRecord, "record");
+
+const _array = fromGuard(G.isArray, "array");
+
+const _arrayN = (n: number) => fromGuard(G.isArrayN(n), `tuple of length ${n}`);
+
 /*******************************************************************************
-* Draw
+* Modules
 *******************************************************************************/
 
-const toTree: (e: DecodeError<string>) => T.Tree<string> = fold({
-  Leaf: (input, error) =>
-    T.of(`cannot decode ${JSON.stringify(input)}, should be ${error}`),
-  Key: (key, kind, errors) =>
-    T.of(`${kind} property ${JSON.stringify(key)}`, toForest(errors)),
-  Index: (index, kind, errors) =>
-    T.of(`${kind} index ${index}`, toForest(errors)),
-  Lazy: (id, errors) => T.of(`lazy type ${id}`, toForest(errors)),
-  Wrap: (error, errors) => T.of(error, toForest(errors)),
-  Member: (index, errors) => T.of(`member ${index}`, toForest(errors)),
-});
+const { ap, map } = RE.getRightMonad(R.Semigroup);
 
-const toForest: (e: Failure) => ReadonlyArray<T.Tree<string>> = Free.fold(
-  (value) => [toTree(value)],
-  (left, right) => toForest(left).concat(toForest(right)),
-);
-
-export const draw = (e: Failure): string =>
-  toForest(e).map(T.drawTree).join("\n");
-
-export const extract = <A>(decoded: Decoded<A>): E.Either<string, A> =>
-  pipe(decoded, E.mapLeft(draw));
+const Apply: TC.Apply<URI> = { ap, map };
 
 /*******************************************************************************
- * Modules
+ * Derived Functions
  ******************************************************************************/
 
-export const UnknownSchemable: S.UnknownSchemable<URI> = {
-  unknown: () => fromGuard(G.unknown, "unknown"),
-};
+export const sequenceTuple = createSequenceTuple(Apply);
 
-export const StringSchemable: S.StringSchemable<URI> = {
-  string: () => fromGuard(G.string, "string"),
-};
+export const sequenceStruct = createSequenceStruct(Apply);
 
-export const NumberSchemable: S.NumberSchemable<URI> = {
-  number: () => fromGuard(G.number, "number"),
-};
+/*******************************************************************************
+ * Functions
+ ******************************************************************************/
 
-export const BooleanSchemable: S.BooleanSchemable<URI> = {
-  boolean: () => fromGuard(G.boolean, "boolean"),
-};
+export function success<A>(a: A): Result<A> {
+  return R.success(a);
+}
 
-export const LiteralSchemable: S.LiteralSchemable<URI> = {
-  literal: <A extends [S.Literal, ...S.Literal[]]>(...s: A) =>
-    fromGuard(G.literal(...s), literalError(s)),
-};
+export function failure<A = never>(actual: unknown, error: string): Result<A> {
+  return R.failure(R.ofLeaf(actual, error));
+}
 
-export const NullableSchemable: S.NullableSchemable<URI> = {
-  nullable: <A>(or: Decoder<A>): Decoder<A | null> =>
-    (u: unknown) =>
-      u === null ? success(u) : pipe(
-        or(u),
-        E.mapLeft(_append(u, "null")),
-        E.mapLeft((e) => make.wrap("cannot decode nullable", e)),
+export function extract<A>(ta: Result<A>): E.Either<string, A> {
+  return pipe(ta, E.mapLeft(R.draw));
+}
+
+export function compose<B, C>(
+  dbc: Decoder<B, C>,
+): <A>(dab: Decoder<A, B>) => Decoder<A, C> {
+  return (dab) => flow(dab, E.chain(dbc));
+}
+
+export function unknown(a: unknown): Result<unknown> {
+  return _unknown(a);
+}
+
+export function string(a: unknown): Result<string> {
+  return _string(a);
+}
+
+export function number(a: unknown): Result<number> {
+  return _number(a);
+}
+
+export function boolean(a: unknown): Result<boolean> {
+  return _boolean(a);
+}
+
+export function literal<A extends [S.Literal, ...S.Literal[]]>(
+  ...literals: A
+): Decoder<unknown, A[number]> {
+  return fromGuard(
+    G.literal(...literals),
+    literals.map(literalToString).join(", "),
+  );
+}
+
+export function nullable<A, B>(or: Decoder<B, A>): Decoder<B | null, A | null> {
+  return (b: B | null) =>
+    b === null ? R.success(b as null) : pipe(
+      or(b),
+      E.mapLeft(
+        (e) =>
+          R.ofWrap("cannot decode nullable", R.concat(e)(R.ofLeaf(b, "null"))),
       ),
-};
+    );
+}
 
-export const UndefinableSchemable: S.UndefinableSchemable<URI> = {
-  undefinable: <A>(or: Decoder<A>): Decoder<A | undefined> =>
-    (u: unknown) =>
-      u === undefined ? success(u) : pipe(
-        or(u),
-        E.mapLeft(_append(u, "undefined")),
-        E.mapLeft((e) => make.wrap("cannot decode undefinable", e)),
+export function undefinable<A, B>(
+  or: Decoder<B, A>,
+): Decoder<B | undefined, A | undefined> {
+  return (b: B | undefined) =>
+    b === undefined ? R.success(b as undefined) : pipe(
+      or(b),
+      E.mapLeft(
+        (e) =>
+          R.ofWrap(
+            "cannot decode undefinable",
+            R.concat(e)(R.ofLeaf(b, "undefined")),
+          ),
       ),
-};
+    );
+}
 
-export const RecordSchemable: S.RecordSchemable<URI> = {
-  record: <A>(codomain: Decoder<A>): Decoder<Record<string, A>> =>
-    (u: unknown): Decoded<Readonly<Record<string, A>>> =>
-      isRecord(u)
-        ? pipe(
-          u,
-          traverseRecord((uu, i) =>
-            pipe(codomain(uu), E.mapLeft((e) => make.key(i, "optional", e)))
-          ),
-          E.mapLeft((e) => make.wrap("cannot decode record", e)),
-        )
-        : failure(u, "record"),
-};
+export function record<A>(
+  items: Decoder<unknown, A>,
+): Decoder<unknown, Record<string, A>> {
+  return flow(
+    _record,
+    E.chain(flow(
+      R.traverseRecord((a, index) =>
+        pipe(items(a), E.mapLeft((e) => R.ofKey(index, e)))
+      ),
+      E.mapLeft((e) => R.ofWrap("cannot decode record", e)),
+    )),
+  );
+}
 
-export const ArraySchemable: S.ArraySchemable<URI> = {
-  array: <A>(item: Decoder<A>): Decoder<ReadonlyArray<A>> =>
-    (u) =>
-      Array.isArray(u)
-        ? pipe(
-          u,
-          traverseArray((uu, i) =>
-            pipe(item(uu), E.mapLeft((e) => make.index(i, "optional", e)))
-          ),
-          E.mapLeft((e) => make.wrap("cannot decode array", e)),
-        )
-        : failure(u, "array"),
-};
+export function array<A>(
+  items: Decoder<unknown, A>,
+): Decoder<unknown, ReadonlyArray<A>> {
+  return flow(
+    _array,
+    E.chain(flow(
+      R.traverseArray((a, index) =>
+        pipe(items(a), E.mapLeft((e) => R.ofIndex(index, e)))
+      ),
+      E.mapLeft((e) => R.ofWrap("cannot decode array", e)),
+    )),
+  );
+}
 
-export const TupleSchemable: S.TupleSchemable<URI> = {
-  tuple: (...components) =>
-    // deno-lint-ignore no-explicit-any
-    (u: unknown): any =>
-      Array.isArray(u) && u.length === components.length
-        ? pipe(
-          u,
-          traverseArray((uu, i) =>
-            pipe(
-              components[i](uu),
-              E.mapLeft((e) => make.index(i, "required", e)),
-            )
-          ),
-          E.mapLeft((e) => make.wrap("cannot decode tuple", e)),
-        )
-        : failure(u, `tuple of length ${components.length}`),
-};
-
-export const StructSchemable: S.StructSchemable<URI> = {
-  struct: (properties) =>
-    // deno-lint-ignore no-explicit-any
-    (u): any => {
-      if (isRecord(u)) {
+// deno-lint-ignore no-explicit-any
+export function tuple<A extends any[]>(
+  ...items: { [K in keyof A]: Decoder<unknown, A[K]> }
+): Decoder<unknown, { [K in keyof A]: A[K] }> {
+  return flow(
+    _arrayN(items.length),
+    E.chain(
+      R.traverseArray((a, index) => {
+        // deno-lint-ignore no-explicit-any
+        const decoder: Decoder<unknown, any> = items[index];
         return pipe(
-          properties,
-          // deno-lint-ignore no-explicit-any
-          traverseRecord((decoder: Decoder<any>, i) =>
-            pipe(decoder(u[i]), E.mapLeft((e) => make.key(i, "required", e)))
-          ),
-          E.mapLeft((e) => make.wrap("cannot decode struct", e)),
+          decoder(a),
+          E.mapLeft((e) => R.ofIndex(index, e, "required")),
         );
-      }
-      return failure(u, "struct");
-    },
-};
+      }),
+    ),
+    E.mapLeft((e) => R.ofWrap("cannot decode tuple", e)),
+  ) as Decoder<unknown, { [K in keyof A]: A[K] }>;
+}
 
-export const PartialSchemable: S.PartialSchemable<URI> = {
-  partial: (properties) => {
-    // TODO Hoist traverseRecord function
-    const skipProperty: Decoded<E.Either<void, unknown>> = success(
-      E.left(undefined),
-    );
-    const undefinedProprty: Decoded<E.Either<void, unknown>> = success(
-      E.right(undefined),
+const traverseStruct = (items: Record<string, Decoder<unknown, unknown>>) =>
+  (a: Record<string, unknown>) =>
+    pipe(
+      items,
+      R.traverseRecord((decoder, key) =>
+        pipe(decoder(a[key]), E.mapLeft((e) => R.ofKey(key, e, "required")))
+      ),
     );
 
-    // deno-lint-ignore no-explicit-any
-    return (u: unknown): any => {
-      if (!isRecord(u)) {
-        return failure(u, "struct");
-      }
-      return pipe(
-        properties,
-        traverseRecord(
-          (
-            // deno-lint-ignore no-explicit-any
-            decoder: Decoder<any>,
-            i,
-          ): Decoded<E.Either<void, unknown>> => {
-            const ui = u[i];
-            // Handle existing undefined but don't add missing properties
-            if (ui === undefined) {
-              return i in u ? undefinedProprty : skipProperty;
-            }
-            return pipe(
-              decoder(ui),
-              E.bimap(
-                (e) => make.key(i, "optional", e),
-                E.right,
-              ),
-            );
-          },
+export function struct<A>(
+  items: { [K in keyof A]: Decoder<unknown, A[K]> },
+): Decoder<unknown, { [K in keyof A]: A[K] }> {
+  return flow(
+    _record,
+    E.chain(traverseStruct(items)),
+    E.mapLeft((e) => R.ofWrap("cannot decode struct", e)),
+  ) as Decoder<unknown, { [K in keyof A]: A[K] }>;
+}
+
+const skipProperty: R.Result<E.Either<void, unknown>> = R.success(
+  E.left(undefined),
+);
+
+const undefinedProperty: R.Result<E.Either<void, unknown>> = R.success(
+  E.right(undefined),
+);
+
+const traversePartial = (items: Record<string, Decoder<unknown, unknown>>) =>
+  (a: Record<string, unknown>) =>
+    pipe(
+      items,
+      R.traverseRecord((decoder, key) => {
+        if (a[key] === undefined) {
+          return key in a ? undefinedProperty : skipProperty;
+        }
+        return pipe(
+          decoder(a[key]),
+          E.bimap((e) => R.ofKey(key, e), E.right),
+        );
+      }),
+    );
+
+export function partial<A>(
+  items: { [K in keyof A]: Decoder<unknown, A[K]> },
+): Decoder<unknown, { [K in keyof A]?: A[K] }> {
+  return flow(
+    _record,
+    E.chain(traversePartial(items)),
+    E.bimap((e) => R.ofWrap("cannot decode partial", e), compactRecord),
+  ) as Decoder<unknown, { [K in keyof A]: A[K] }>;
+}
+
+export function intersect<B, I>(
+  and: Decoder<B, I>,
+): <A>(ta: Decoder<B, A>) => Decoder<B, A & I> {
+  return (ta) =>
+    (a) =>
+      pipe(
+        R.sequenceTuple(ta(a), and(a)),
+        E.bimap(
+          (e) => R.ofWrap("cannot decode intersection", e),
+          ([left, right]) => _intersect(left, right),
         ),
-        E.bimap((e) => make.wrap("cannot decode partial", e), compactRecord),
       );
-    };
-  },
-};
+}
 
-export const IntersectSchemable: S.IntersectSchemable<URI> = {
-  intersect: <I>(and: Decoder<I>) =>
-    <A>(ta: Decoder<A>): Decoder<I & A> =>
-      (u: unknown): Decoded<I & A> =>
-        pipe(
-          sequenceTuple(ta(u), and(u)),
-          E.map(([left, right]) => _intersect(left, right)),
+export function union<B, I>(
+  or: Decoder<B, I>,
+): <A>(ta: Decoder<B, A>) => Decoder<B, A | I> {
+  return <A>(ta: Decoder<B, A>) =>
+    (a) =>
+      pipe(
+        ta(a),
+        E.chainLeft((left) =>
+          pipe(
+            or(a),
+            E.mapLeft((right) =>
+              R.ofWrap("cannot decode union", R.concat(left)(right))
+            ),
+          ) as R.Result<A | I>
         ),
-};
+      );
+}
 
-export const UnionSchemable: S.UnionSchemable<URI> = {
-  union: <I>(or: Decoder<I>) =>
-    <A>(ta: Decoder<A>): Decoder<I | A> =>
-      (u) =>
-        pipe(
-          ta(u),
-          E.chainLeft((ea) =>
-            pipe(
-              or(u),
-              E.mapLeft((ei) =>
-                pipe(make.member(1, ei), concat(make.member(0, ea)))
-              ),
-            ) as Decoded<I | A>
-          ),
-        ),
-};
-
-export const LazySchemable: S.LazySchemable<URI> = {
-  lazy: <A>(id: string, fn: () => Decoder<A>): Decoder<A> => {
-    const get = memoize<void, Decoder<A>>(fn);
-    return flow(
-      get(),
-      E.mapLeft((e) => make.lazy(id, e)),
-    );
-  },
-};
+export function lazy<A, B>(id: string, fn: () => Decoder<B, A>): Decoder<B, A> {
+  const get = memoize<void, Decoder<B, A>>(fn);
+  return flow(get(), E.mapLeft((e) => R.ofWrap(`lazy type ${id}`, e)));
+}
 
 export const Schemable: S.Schemable<URI> = {
-  ...UnknownSchemable,
-  ...StringSchemable,
-  ...NumberSchemable,
-  ...BooleanSchemable,
-  ...LiteralSchemable,
-  ...NullableSchemable,
-  ...UndefinableSchemable,
-  ...RecordSchemable,
-  ...ArraySchemable,
-  ...TupleSchemable,
-  ...StructSchemable,
-  ...PartialSchemable,
-  ...IntersectSchemable,
-  ...UnionSchemable,
-  ...LazySchemable,
+  unknown: () => unknown,
+  string: () => string,
+  number: () => number,
+  boolean: () => boolean,
+  literal,
+  nullable,
+  undefinable,
+  record,
+  array,
+  tuple: tuple as S.Schemable<URI>["tuple"],
+  struct,
+  partial,
+  intersect,
+  union,
+  lazy,
 };
-
-export const unknown = Schemable.unknown();
-
-export const string = Schemable.string();
-
-export const number = Schemable.number();
-
-export const boolean = Schemable.boolean();
-
-export const literal = Schemable.literal;
-
-export const nullable = Schemable.nullable;
-
-export const undefinable = Schemable.undefinable;
-
-export const record = Schemable.record;
-
-export const array = Schemable.array;
-
-export const tuple = Schemable.tuple;
-
-export const struct = Schemable.struct;
-
-export const partial = Schemable.partial;
-
-export const intersect = Schemable.intersect;
-
-export const union = Schemable.union;
-
-export const lazy = Schemable.lazy;
