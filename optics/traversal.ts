@@ -50,10 +50,11 @@ export { fromTraversable };
  * Pipeable Compose
  ******************************************************************************/
 
-export const compose = <J, K>(jk: Traversal<J, K>) =>
-  <I>(ij: Traversal<I, J>): Traversal<I, K> => ({
-    traverse: (F) => flow(jk.traverse(F), ij.traverse(F)),
-  });
+export function compose<J, K>(
+  jk: Traversal<J, K>,
+): <I>(ij: Traversal<I, J>) => Traversal<I, K> {
+  return (ij) => ({ traverse: (F) => flow(jk.traverse(F), ij.traverse(F)) });
+}
 
 export const composeIso = flow(isoAsTraversal, compose);
 
@@ -67,94 +68,112 @@ export const composeOptional = flow(optionalAsTraversal, compose);
  * Pipeables
  ******************************************************************************/
 
-export const id = <A>(): Traversal<A, A> => ({
-  traverse: () => identity,
-});
+export function id<A>(): Traversal<A, A> {
+  return ({ traverse: () => identity });
+}
 
-export const modify = <A>(f: (a: A) => A) =>
-  <S>(sa: Traversal<S, A>) => pipe(f, sa.traverse(I.Applicative));
+export function modify<A>(
+  f: (a: A) => A,
+): <S>(sa: Traversal<S, A>) => (s: S) => S {
+  return (sa) => pipe(f, sa.traverse(I.Applicative));
+}
 
-export const set = <A>(a: A): (<S>(sa: Traversal<S, A>) => (s: S) => S) => {
+export function set<A>(a: A): (<S>(sa: Traversal<S, A>) => (s: S) => S) {
   return modify(() => a);
-};
+}
 
-type FilterFn = {
-  <A, B extends A>(refinement: Refinement<A, B>): <S>(
-    sa: Traversal<S, A>,
-  ) => Traversal<S, B>;
-  <A>(predicate: Predicate<A>): <S>(sa: Traversal<S, A>) => Traversal<S, A>;
-};
+export function filter<A, B extends A>(refinement: Refinement<A, B>): <S>(
+  sa: Traversal<S, A>,
+) => Traversal<S, B>;
+export function filter<A>(
+  predicate: Predicate<A>,
+): <S>(sa: Traversal<S, A>) => Traversal<S, A>;
+export function filter<A>(
+  predicate: Predicate<A>,
+): <S>(sa: Traversal<S, A>) => Traversal<S, A> {
+  return pipe(fromPredicate(predicate), composePrism);
+}
 
-export const filter: FilterFn = <A>(predicate: Predicate<A>) =>
-  pipe(fromPredicate(predicate), composePrism);
-
-export const prop = <A, P extends keyof A>(
+export function prop<A, P extends keyof A>(
   prop: P,
-): (<S>(sa: Traversal<S, A>) => Traversal<S, A[P]>) =>
-  pipe(lensId<A>(), lensProp(prop), composeLens);
+): <S>(sa: Traversal<S, A>) => Traversal<S, A[P]> {
+  return pipe(lensId<A>(), lensProp(prop), composeLens);
+}
 
-export const props = <A, P extends keyof A>(
+export function props<A, P extends keyof A>(
   ...props: [P, P, ...Array<P>]
-): (<S>(sa: Traversal<S, A>) => Traversal<S, { [K in P]: A[K] }>) =>
-  pipe(lensId<A>(), lensProps(...props), composeLens);
+): <S>(sa: Traversal<S, A>) => Traversal<S, { [K in P]: A[K] }> {
+  return pipe(lensId<A>(), lensProps(...props), composeLens);
+}
 
-export const index = (i: number) =>
-  <S, A>(
-    sa: Traversal<S, ReadonlyArray<A>>,
-  ): Traversal<S, A> => pipe(sa, composeOptional(indexArray<A>().index(i)));
+export function index(
+  i: number,
+): <S, A>(sa: Traversal<S, ReadonlyArray<A>>) => Traversal<S, A> {
+  // deno-lint-ignore no-explicit-any
+  return composeOptional(indexArray<any>().index(i));
+}
 
-export const key = (key: string) =>
-  <S, A>(
-    sa: Traversal<S, Readonly<Record<string, A>>>,
-  ): Traversal<S, A> => pipe(sa, composeOptional(indexRecord<A>().index(key)));
+export function key(
+  key: string,
+): <S, A>(sa: Traversal<S, Readonly<Record<string, A>>>) => Traversal<S, A> {
+  // deno-lint-ignore no-explicit-any
+  return composeOptional(indexRecord<any>().index(key));
+}
 
-export const atKey = (key: string) =>
-  <S, A>(
-    sa: Traversal<S, Readonly<Record<string, A>>>,
-  ): Traversal<S, Option<A>> => pipe(sa, composeLens(atRecord<A>().at(key)));
+export function atKey(
+  key: string,
+): <S, A>(
+  sa: Traversal<S, Readonly<Record<string, A>>>,
+) => Traversal<S, Option<A>> {
+  // deno-lint-ignore no-explicit-any
+  return composeLens(atRecord<any>().at(key));
+}
 
-export const traverse = <URI extends URIS>(T: TC.Traversable<URI>) => {
+export function traverse<URI extends URIS>(
+  T: TC.Traversable<URI>,
+): <S, A, B = never, C = never, D = never>(
+  sa: Traversal<S, Kind<URI, [A, B, C, D]>>,
+) => Traversal<S, A> {
   const _traversal = fromTraversable(T);
-  return <S, A, B = never, C = never, D = never>(
-    sa: Traversal<S, Kind<URI, [A, B, C, D]>>,
-  ): Traversal<S, A> =>
-    pipe(
-      sa,
-      compose(_traversal<A, B, C, D>()),
-    );
-};
+  return compose(_traversal());
+}
 
-export const foldMap = <M>(M: TC.Monoid<M>) => {
-  const Applicative = C.getApplicative(M);
-  return <A>(fam: (a: A) => M) =>
-    <S>(sa: Traversal<S, A>): ((s: S) => M) =>
-      pipe(fam, sa.traverse(Applicative));
-};
+export function foldMap<M>(
+  M: TC.Monoid<M>,
+): <A>(fam: (a: A) => M) => <S>(sa: Traversal<S, A>) => (s: S) => M {
+  const _applicative = C.getApplicative(M);
+  return (fam) => (sa) => pipe(fam, sa.traverse(_applicative));
+}
 
-export const getAll = <S, A>(sa: Traversal<S, A>) =>
-  pipe((a: A) => [a], foldMap(A.getMonoid<A>()))(sa);
+export function getAll<S, A>(sa: Traversal<S, A>): (s: S) => ReadonlyArray<A> {
+  return pipe((a: A) => [a], foldMap(A.getMonoid<A>()))(sa);
+}
 
 /*******************************************************************************
  * Pipeable Over ADT
  ******************************************************************************/
 
-export const some: <S, A>(
-  soa: Traversal<S, Option<A>>,
-) => Traversal<S, A> = composePrism({
-  getOption: identity,
-  reverseGet: O.some,
-});
+export function some<S, A>(soa: Traversal<S, Option<A>>): Traversal<S, A> {
+  return pipe(
+    soa,
+    composePrism({ getOption: identity, reverseGet: O.some }),
+  );
+}
 
-export const right: <S, E, A>(
+export function right<S, E, A>(
   sea: Traversal<S, Either<E, A>>,
-) => Traversal<S, A> = composePrism({
-  getOption: E.getRight,
-  reverseGet: E.right,
-});
+): Traversal<S, A> {
+  return pipe(
+    sea,
+    composePrism({ getOption: E.getRight, reverseGet: E.right }),
+  );
+}
 
-export const left: <S, E, A>(
+export function left<S, E, A>(
   sea: Traversal<S, Either<E, A>>,
-) => Traversal<S, E> = composePrism({
-  getOption: E.getLeft,
-  reverseGet: E.left,
-});
+): Traversal<S, E> {
+  return pipe(
+    sea,
+    composePrism({ getOption: E.getLeft, reverseGet: E.left }),
+  );
+}

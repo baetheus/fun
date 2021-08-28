@@ -27,82 +27,90 @@ export type Iso<S, A> = {
  * Constructors
  ******************************************************************************/
 
-export const make = <A, B>(
+export function make<A, B>(
   get: (a: A) => B,
   reverseGet: (b: B) => A,
-): Iso<A, B> => ({
-  get,
-  reverseGet,
-});
-
-/*******************************************************************************
- * Modules
- ******************************************************************************/
+): Iso<A, B> {
+  return { get, reverseGet };
+}
 
 /*******************************************************************************
  * Converters
  ******************************************************************************/
 
-export const asLens = <S, A>(sa: Iso<S, A>): Lens<S, A> => ({
-  get: sa.get,
-  set: flow(sa.reverseGet, constant),
-});
+export function asLens<S, A>(sa: Iso<S, A>): Lens<S, A> {
+  return { get: sa.get, set: flow(sa.reverseGet, constant) };
+}
 
-export const asPrism = <S, A>(sa: Iso<S, A>): Prism<S, A> => ({
-  getOption: flow(sa.get, O.some),
-  reverseGet: sa.reverseGet,
-});
+export function asPrism<S, A>(sa: Iso<S, A>): Prism<S, A> {
+  return { getOption: flow(sa.get, O.some), reverseGet: sa.reverseGet };
+}
 
-export const asOptional = <S, A>(sa: Iso<S, A>): Optional<S, A> => ({
-  getOption: flow(sa.get, O.some),
-  set: flow(sa.reverseGet, constant),
-});
+export function asOptional<S, A>(sa: Iso<S, A>): Optional<S, A> {
+  return {
+    getOption: flow(sa.get, O.some),
+    set: flow(sa.reverseGet, constant),
+  };
+}
 
-export const asTraversal = <S, A>(sa: Iso<S, A>): Traversal<S, A> => ({
-  traverse: ({ map }) =>
-    (fata) =>
-      flow(
-        sa.get,
-        fata,
-        map(sa.reverseGet),
-      ),
-});
+export function asTraversal<S, A>(sa: Iso<S, A>): Traversal<S, A> {
+  return {
+    traverse: ({ map }) =>
+      (fata) =>
+        flow(
+          sa.get,
+          fata,
+          map(sa.reverseGet),
+        ),
+  };
+}
 
 /*******************************************************************************
- * Pipeable Compose
+ * Functions
  ******************************************************************************/
 
-export const id = <A>(): Iso<A, A> => ({
-  get: identity,
-  reverseGet: identity,
-});
+export function id<A>(): Iso<A, A> {
+  return { get: identity, reverseGet: identity };
+}
 
-export const compose = <J, K>(jk: Iso<J, K>) =>
-  <I>(ij: Iso<I, J>): Iso<I, K> => ({
+export function compose<J, K>(jk: Iso<J, K>): <I>(ij: Iso<I, J>) => Iso<I, K> {
+  return (ij) => ({
     get: flow(ij.get, jk.get),
     reverseGet: flow(jk.reverseGet, ij.reverseGet),
   });
+}
 
-export const composeLens = <A, B>(ab: Lens<A, B>) =>
-  <S>(sa: Iso<S, A>): Lens<S, B> => ({
+export function composeLens<A, B>(
+  ab: Lens<A, B>,
+): <S>(sa: Iso<S, A>) => Lens<S, B> {
+  return (sa) => ({
     get: flow(sa.get, ab.get),
     set: (b) => flow(sa.get, ab.set(b), sa.reverseGet),
   });
+}
 
-export const composePrism = <A, B>(ab: Prism<A, B>) =>
-  <S>(sa: Iso<S, A>): Prism<S, B> => ({
+export function composePrism<A, B>(
+  ab: Prism<A, B>,
+): <S>(sa: Iso<S, A>) => Prism<S, B> {
+  return (sa) => ({
     getOption: flow(sa.get, ab.getOption),
     reverseGet: flow(ab.reverseGet, sa.reverseGet),
   });
+}
 
-export const composeOptional = <A, B>(ab: Optional<A, B>) =>
-  <S>(sa: Iso<S, A>): Optional<S, B> => ({
+export function composeOptional<A, B>(
+  ab: Optional<A, B>,
+): <S>(sa: Iso<S, A>) => Optional<S, B> {
+  return (sa) => ({
     getOption: flow(sa.get, ab.getOption),
     set: (b) => flow(sa.get, ab.set(b), sa.reverseGet),
   });
+}
 
-export const composeTraversal = <A, B>(ab: Traversal<A, B>) =>
-  <S>(sa: Iso<S, A>): Traversal<S, B> => ({
+export function composeTraversal<A, B>(
+  ab: Traversal<A, B>,
+): <S>(sa: Iso<S, A>) => Traversal<S, B> {
+  return (sa) => ({
     traverse: (A) =>
       (fata) =>
         flow(
@@ -111,57 +119,50 @@ export const composeTraversal = <A, B>(ab: Traversal<A, B>) =>
           A.map(sa.reverseGet),
         ),
   });
+}
 
-/*******************************************************************************
- * Pipeables
- ******************************************************************************/
+export function modify<A>(f: (a: A) => A): <S>(sa: Iso<S, A>) => (s: S) => S {
+  return (sa) => (s) => sa.reverseGet(f(sa.get(s)));
+}
 
-export const modify = <A>(f: (a: A) => A) =>
-  <S>(sa: Iso<S, A>) => (s: S): S => sa.reverseGet(f(sa.get(s)));
-
-export const map = <A, B>(ab: (a: A) => B, ba: (b: B) => A) =>
-  <S>(sa: Iso<S, A>): Iso<S, B> => ({
+export function map<A, B>(
+  ab: (a: A) => B,
+  ba: (b: B) => A,
+): <S>(sa: Iso<S, A>) => Iso<S, B> {
+  return (sa) => ({
     get: flow(sa.get, ab),
     reverseGet: flow(ba, sa.reverseGet),
   });
+}
 
-export const reverse = <S, A>(sa: Iso<S, A>): Iso<A, S> => ({
-  get: sa.reverseGet,
-  reverseGet: sa.get,
-});
+export function reverse<S, A>(sa: Iso<S, A>): Iso<A, S> {
+  return ({ get: sa.reverseGet, reverseGet: sa.get });
+}
 
-export const traverse = <URI extends URIS>(T: TC.Traversable<URI>) => {
+export function traverse<URI extends URIS>(
+  T: TC.Traversable<URI>,
+): <S, A, B = never, C = never, D = never>(
+  sa: Iso<S, Kind<URI, [A, B, C, D]>>,
+) => Traversal<S, A> {
   const _traversal = fromTraversable(T);
-  return <S, A, B = never, C = never, D = never>(
-    sa: Iso<S, Kind<URI, [A, B, C, D]>>,
-  ): Traversal<S, A> =>
-    pipe(
-      sa,
-      composeTraversal(_traversal<A, B, C, D>()),
-    );
-};
+  return (sa) => pipe(sa, composeTraversal(_traversal()));
+}
 
 /*******************************************************************************
  * Pipeable Over ADT
  ******************************************************************************/
 
-export const some: <S, A>(soa: Iso<S, Option<A>>) => Prism<S, A> = composePrism(
-  {
-    getOption: identity,
-    reverseGet: O.some,
-  },
-);
+export function some<S, A>(soa: Iso<S, Option<A>>): Prism<S, A> {
+  return pipe(soa, composePrism({ getOption: identity, reverseGet: O.some }));
+}
 
-export const right: <S, E, A>(
-  sea: Iso<S, Either<E, A>>,
-) => Prism<S, A> = composePrism({
-  getOption: E.getRight,
-  reverseGet: E.right,
-});
+export function right<S, E, A>(sea: Iso<S, Either<E, A>>): Prism<S, A> {
+  return pipe(
+    sea,
+    composePrism({ getOption: E.getRight, reverseGet: E.right }),
+  );
+}
 
-export const left: <S, E, A>(
-  sea: Iso<S, Either<E, A>>,
-) => Prism<S, E> = composePrism({
-  getOption: E.getLeft,
-  reverseGet: E.left,
-});
+export function left<S, E, A>(sea: Iso<S, Either<E, A>>): Prism<S, E> {
+  return pipe(sea, composePrism({ getOption: E.getLeft, reverseGet: E.left }));
+}
