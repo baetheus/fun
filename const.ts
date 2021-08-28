@@ -28,7 +28,38 @@ declare module "./hkt.ts" {
  * Constructors
  ******************************************************************************/
 
-export const make = <E, A = never>(e: E): Const<E, A> => e;
+export function make<E, A = never>(e: E): Const<E, A> {
+  return e;
+}
+
+/*******************************************************************************
+ * Functions
+ ******************************************************************************/
+
+export function map<A, I>(
+  _fai: (a: A) => I,
+): (<B = never>(ta: Const<B, A>) => Const<B, I>) {
+  return identity;
+}
+
+export function contramap<A, I>(
+  _fai: (a: A) => I,
+): (<B = never>(ta: Const<B, I>) => Const<B, A>) {
+  return identity;
+}
+
+export function bimap<A, B, I, J>(
+  fbj: (b: B) => J,
+  _fai: (a: A) => I,
+): ((tab: Const<B, A>) => Const<J, I>) {
+  return (tab) => make(fbj(tab));
+}
+
+export function mapLeft<B, J>(
+  fbj: (b: B) => J,
+): (<A = never>(tab: Const<B, A>) => Const<J, A>) {
+  return bimap(fbj, identity);
+}
 
 /*******************************************************************************
  * Module Getters
@@ -72,25 +103,8 @@ export const getApplicative = <E>(
  * Modules
  ******************************************************************************/
 
-export const Functor: TC.Functor<URI> = {
-  map: (_) => (ta) => ta,
-};
+export const Functor: TC.Functor<URI> = { map };
 
-export const Contravariant: TC.Contravariant<URI> = {
-  contramap: (_) => (tb) => tb,
-};
+export const Contravariant: TC.Contravariant<URI> = { contramap };
 
-export const Bifunctor: TC.Bifunctor<URI> = {
-  bimap: (fab, _) => (tac) => make(fab(tac)),
-  mapLeft: (fef) => Bifunctor.bimap(fef, identity),
-};
-
-/*******************************************************************************
- * Pipeables
- ******************************************************************************/
-
-export const { map } = Functor;
-
-export const { contramap } = Contravariant;
-
-export const { bimap, mapLeft } = Bifunctor;
+export const Bifunctor: TC.Bifunctor<URI> = { bimap, mapLeft };

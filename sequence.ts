@@ -39,16 +39,20 @@ type SequenceTuple<URI extends URIS, R extends NonEmptyArray<Kind<URI, any[]>>> 
 /**
  * Create a sequence over tuple function from Apply
  */
-export const createSequenceTuple = <URI extends URIS>(A: Apply<URI>) =>
-  <R extends NonEmptyArray<Kind<URI, any[]>>>(
-    ...r: R
-  ): SequenceTuple<URI, R> => {
+export function createSequenceTuple<URI extends URIS>(
+  A: Apply<URI>,
+): <R extends NonEmptyArray<Kind<URI, any[]>>>(
+  ...r: R
+) => SequenceTuple<URI, R> {
+  const reducer = (acc: any, cur: any) => pipe(cur, A.ap(acc)) as any;
+  return (...r) => {
     const [head, ...tail] = r;
     return tail.reduce(
-      (acc: any, cur: any) => pipe(cur, A.ap(acc)) as any,
+      reducer,
       pipe(head, A.map(loopTuple(r.length) as any) as any),
     ) as any;
   };
+}
 
 /*******************************************************************************
  * Sequence Struct
@@ -62,16 +66,19 @@ type SequenceStruct<URI extends URIS, R extends Record<string, Kind<URI, any[]>>
   { [K in keyof R]: R[K] extends Kind<URI, [infer _, infer _, infer _, infer D]> ? D : never }[keyof R]
 ]>
 
-export const createSequenceStruct = <URI extends URIS>(A: Apply<URI>) =>
-  <R extends Record<string, Kind<URI, any[]>>>(
-    r: NonEmptyRecord<R>,
-  ): SequenceStruct<URI, R> => {
+export function createSequenceStruct<URI extends URIS>(
+  A: Apply<URI>,
+): <R extends Record<string, Kind<URI, any[]>>>(
+  r: NonEmptyRecord<R>,
+) => SequenceStruct<URI, R> {
+  return (r) => {
     // Sort included to make apply ordering explicit
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
-    const keys: ((keyof R) & string)[] = Object.keys(r).sort();
+    const keys: ((keyof typeof r) & string)[] = Object.keys(r).sort();
     const [head, ...tail] = keys;
     return tail.reduce(
-      (f: any, key: keyof R) => pipe(r[key], A.ap(f) as any),
+      (f: any, key: keyof typeof r) => pipe(r[key], A.ap(f) as any),
       pipe(r[head] as any, A.map(loopRecord(keys) as any) as any),
     ) as any;
   };
+}

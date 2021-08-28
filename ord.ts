@@ -10,13 +10,13 @@ import { flow } from "./fns.ts";
  * Internal
  ******************************************************************************/
 
-// lte for primmimtives
+// lte for primimtives
 const _lte = (a: any) => (b: any): boolean => a <= b;
 
 const _equals = setoidStrict.equals;
 
 /*******************************************************************************
- * Models
+ * Types
  ******************************************************************************/
 
 export type Ordering = -1 | 0 | 1;
@@ -43,51 +43,96 @@ export const ordBoolean: Ord<boolean> = {
 };
 
 /*******************************************************************************
- * Combinators
+ * Functions
  ******************************************************************************/
 
-export const compare = <A>(O: Ord<A>): Compare<A> =>
-  (a, b) => O.lte(a)(b) ? O.equals(a)(b) ? 0 : -1 : 1;
+export function compare<A>(O: Ord<A>): Compare<A> {
+  return (a, b) => O.lte(a)(b) ? O.equals(a)(b) ? 0 : -1 : 1;
+}
 
-export const lt = <A>(O: Ord<A>) =>
-  (a: A) => (b: A): boolean => O.lte(a)(b) && !O.equals(a)(b);
-
-export const gt = <A>(O: Ord<A>) => (a: A) => (b: A): boolean => !O.lte(a)(b);
-
-export const lte = <A>(O: Ord<A>) => O.lte;
-
-export const gte = <A>(O: Ord<A>) =>
-  (a: A) => (b: A): boolean => !O.lte(a)(b) || O.equals(a)(b);
-
-export const eq = <A>(O: Ord<A>) => (a: A) => (b: A): boolean => O.equals(a)(b);
-
-export const min = <A>(O: Ord<A>) => (a: A) => (b: A): A => O.lte(a)(b) ? a : b;
-
-export const max = <A>(O: Ord<A>) => (a: A) => (b: A): A => O.lte(a)(b) ? b : a;
-
-export const clamp = <A>(O: Ord<A>) =>
-  (low: A, high: A): ((a: A) => A) => flow(max(O)(low), min(O)(high));
-
-export const between = <A>(O: Ord<A>) =>
-  (low: A, high: A) => {
-    const higher = lt(O)(low);
-    const lower = gt(O)(high);
-
-    return (a: A): boolean => lower(a) && higher(a);
+export function lt<A>(O: Ord<A>): ((a: A) => (b: A) => boolean) {
+  return (a) => {
+    const _lte = O.lte(a);
+    const _equals = O.equals(a);
+    return (b) => _lte(b) && !_equals(b);
   };
+}
+
+export function gt<A>(O: Ord<A>): ((a: A) => (b: A) => boolean) {
+  return (a) => {
+    const _lte = O.lte(a);
+    return (b) => !_lte(b);
+  };
+}
+
+export function lte<A>(O: Ord<A>): ((a: A) => (b: A) => boolean) {
+  return O.lte;
+}
+
+export function gte<A>(O: Ord<A>): ((a: A) => (b: A) => boolean) {
+  return (a) => {
+    const _lte = O.lte(a);
+    const _equals = O.equals(a);
+    return (b) => !_lte(b) || _equals(b);
+  };
+}
+
+export function eq<A>(O: Ord<A>): (a: A) => (b: A) => boolean {
+  return (a) => {
+    const _equals = O.equals(a);
+    return (b) => _equals(b);
+  };
+}
+
+export function min<A>(O: Ord<A>): (a: A) => (b: A) => A {
+  return (a) => {
+    const _lte = O.lte(a);
+    return (b) => _lte(b) ? a : b;
+  };
+}
+
+export function max<A>(O: Ord<A>): (a: A) => (b: A) => A {
+  return (a) => {
+    const _lte = O.lte(a);
+    return (b) => _lte(b) ? b : a;
+  };
+}
+
+export function clamp<A>(O: Ord<A>): (low: A, high: A) => (a: A) => A {
+  const _max = max(O);
+  const _min = min(O);
+  return (low, high) => {
+    const _low = _max(low);
+    const _high = _min(high);
+    return flow(_low, _high);
+  };
+}
+
+export function between<A>(O: Ord<A>): (low: A, high: A) => (a: A) => boolean {
+  const _lt = lt(O);
+  const _gt = gt(O);
+  return (low, high) => {
+    const _lower = _lt(high);
+    const _higher = _gt(low);
+    return (a) => _lower(a) && _higher(a);
+  };
+}
 
 /*******************************************************************************
- * Combinator Getters
+ * Function Getters
  ******************************************************************************/
 
-export const getOrdUtilities = <A>(O: Ord<A>) => ({
-  lt: lt(O),
-  gt: gt(O),
-  lte: lte(O),
-  gte: gte(O),
-  eq: eq(O),
-  min: min(O),
-  max: max(O),
-  clamp: clamp(O),
-  compare: compare(O),
-});
+export function getOrdUtilities<A>(O: Ord<A>) {
+  return ({
+    lt: lt(O),
+    gt: gt(O),
+    lte: lte(O),
+    gte: gte(O),
+    eq: eq(O),
+    min: min(O),
+    max: max(O),
+    clamp: clamp(O),
+    between: between(O),
+    compare: compare(O),
+  });
+}

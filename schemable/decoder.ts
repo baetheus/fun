@@ -83,7 +83,7 @@ const DecodedApplicative: TC.Applicative<DecodedURI> = DecodedMonad;
 
 const traverseRecord = R.indexedTraverse(DecodedApplicative);
 
-const traverseArray = A.indexedTraverse(DecodedApplicative);
+const traverseArray = A.traverse(DecodedApplicative);
 
 const sequenceTuple = createSequenceTuple(DecodedApply);
 

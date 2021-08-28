@@ -1,6 +1,7 @@
 import type * as HKT from "./hkt.ts";
+import type { Kind, URIS } from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
-import type { Lazy, Predicate } from "./types.ts";
+import type { Predicate } from "./types.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import { flow, identity, isNotNil, pipe } from "./fns.ts";
@@ -54,12 +55,16 @@ export const none: Option<never> = { tag: "None" };
 /**
  * The some constructer takes any value and wraps it in the Some type.
  */
-export const some = <A>(value: A): Option<A> => ({ tag: "Some", value });
+export function some<A>(value: A): Option<A> {
+  return ({ tag: "Some", value });
+}
 
 /**
  * constNone is a thunk that returns the canonical none instance.
  */
-export const constNone = <A = never>(): Option<A> => none;
+export function constNone<A = never>(): Option<A> {
+  return none;
+}
 
 /**
  * fromNullable takes a potentially null or undefined value and maps null or undefined to
@@ -73,8 +78,9 @@ export const constNone = <A = never>(): Option<A> => none;
  *     const numberArray = [1, 2, 3];
  *     const optionFourthEntry = fromNullable(numberArray[3]); // None
  */
-export const fromNullable = <A>(a: A): Option<NonNullable<A>> =>
-  isNotNil(a) ? some(a) : none;
+export function fromNullable<A>(a: A): Option<NonNullable<A>> {
+  return isNotNil(a) ? some(a) : none;
+}
 
 /**
  * fromPredicate will test the value a with the predicate. If
@@ -86,23 +92,22 @@ export const fromNullable = <A>(a: A): Option<NonNullable<A>> =>
  *     const a = fromPositiveNumber(-1); // None
  *     const a = fromPositiveNumber(1); // Some<number>
  */
-export const fromPredicate = <A>(predicate: Predicate<A>) =>
-  (
-    a: A,
-  ): Option<A> => (predicate(a) ? some(a) : none);
+export function fromPredicate<A>(predicate: Predicate<A>) {
+  return (a: A): Option<A> => (predicate(a) ? some(a) : none);
+}
 
 /**
  * tryCatch takes a thunk that can potentially throw and wraps it
  * in a try/catch statement. If the thunk throws then tryCatch returns
  * None, otherwise it returns the result of the thunk wrapped in a Some.
  */
-export const tryCatch = <A>(f: Lazy<A>): Option<A> => {
+export function tryCatch<A>(fa: () => A): Option<A> {
   try {
-    return some(f());
+    return some(fa());
   } catch (e) {
     return none;
   }
-};
+}
 
 /*******************************************************************************
  * Destructors
@@ -119,8 +124,9 @@ export const tryCatch = <A>(f: Lazy<A>): Option<A> => {
  *     const a = toNumber(some(1)); // 1
  *     const b = toNumber(none); // 0
  */
-export const fold = <A, B>(onNone: () => B, onSome: (a: A) => B) =>
-  (ta: Option<A>): B => (isNone(ta) ? onNone() : onSome(ta.value));
+export function fold<A, B>(onNone: () => B, onSome: (a: A) => B) {
+  return (ta: Option<A>): B => (isNone(ta) ? onNone() : onSome(ta.value));
+}
 
 /**
  * getOrElse operates like a simplified fold. One supplies a thunk that returns a default
@@ -131,26 +137,67 @@ export const fold = <A, B>(onNone: () => B, onSome: (a: A) => B) =>
  *     const a = toNumber(some(1)); // 1
  *     const b = toNumber(none); // 0
  */
-export const getOrElse = <B>(onNone: () => B) =>
-  (ta: Option<B>): B => isNone(ta) ? onNone() : ta.value;
+export function getOrElse<B>(onNone: () => B) {
+  return (ta: Option<B>): B => isNone(ta) ? onNone() : ta.value;
+}
 
 /**
  * toNullable returns either null or the inner value of an Option. This is useful for
  * interacting with code that handles null but has no concept of the Option type.
  */
-export const toNull = <A>(ma: Option<A>): A | null =>
-  isNone(ma) ? null : ma.value;
+export function toNull<A>(ma: Option<A>): A | null {
+  return isNone(ma) ? null : ma.value;
+}
 
 /**
  * toUndefined returns either undefined or the inner value of an Option. This is useful for
  * interacting with code that handles undefined but has no concept of the Option type.
  */
-export const toUndefined = <A>(ma: Option<A>): A | undefined =>
-  isNone(ma) ? undefined : ma.value;
+export function toUndefined<A>(ma: Option<A>): A | undefined {
+  return isNone(ma) ? undefined : ma.value;
+}
 
 /*******************************************************************************
- * Combinators
+ * Guards
  ******************************************************************************/
+
+/**
+ * Tests wether an Option is None. Can be used as a predicate.
+ */
+export function isNone<A>(m: Option<A>): m is None {
+  return m.tag === "None";
+}
+
+/**
+ * Tests wether an Option is Some. Can be used as a predicate.
+ */
+export function isSome<A>(m: Option<A>): m is Some<A> {
+  return m.tag === "Some";
+}
+
+/*******************************************************************************
+ * Functions
+ ******************************************************************************/
+
+export function zero<A = never>(): Option<A> {
+  return none;
+}
+
+export function empty<A = never>(): Option<A> {
+  return none;
+}
+
+export function of<A>(a: A): Option<A> {
+  return some(a);
+}
+
+export function throwError<A = never>(): Option<A> {
+  return none;
+}
+
+export function map<A, B>(fab: (a: A) => B): ((ta: Option<A>) => Option<B>) {
+  return (ta) => isNone(ta) ? none : some(fab(ta.value));
+}
 
 /**
  * mapNullable is useful for piping an option's values through functions that may return
@@ -162,113 +209,96 @@ export const toUndefined = <A>(ma: Option<A>): A | undefined =>
  *         mapNullable(numbers => numbers[3])
  *     ); // None (Option<number>)
  */
-export const mapNullable = <A, B>(f: (a: A) => B | null | undefined) =>
-  (
-    ma: Option<A>,
-  ): Option<B> => (isNone(ma) ? none : fromNullable(f(ma.value)));
+export function mapNullable<A, I>(f: (a: A) => I | null | undefined) {
+  return map(flow(f, fromNullable));
+}
 
-/*******************************************************************************
- * Guards
- ******************************************************************************/
+export function ap<A, I>(
+  tfai: Option<(a: A) => I>,
+): ((ta: Option<A>) => Option<I>) {
+  return (ta) => isNone(tfai) || isNone(ta) ? none : some(tfai.value(ta.value));
+}
 
-/**
- * Tests wether an Option is None. Can be used as a predicate.
- */
-export const isNone = <A>(m: Option<A>): m is None => m.tag === "None";
+export function chain<A, I>(
+  fati: (a: A) => Option<I>,
+): ((ta: Option<A>) => Option<I>) {
+  return fold(
+    constNone,
+    fati,
+  );
+}
 
-/**
- * Tests wether an Option is Some. Can be used as a predicate.
- */
-export const isSome = <A>(m: Option<A>): m is Some<A> => m.tag === "Some";
+export function join<A>(taa: Option<Option<A>>): Option<A> {
+  return pipe(taa, chain(identity));
+}
+
+export function alt<A>(tb: Option<A>): ((ta: Option<A>) => Option<A>) {
+  return (ta) => isNone(ta) ? tb : ta;
+}
+
+export function extend<A, I>(
+  ftai: (ta: Option<A>) => I,
+): ((ta: Option<A>) => Option<I>) {
+  return flow(ftai, some);
+}
+
+export function exists<A>(predicate: Predicate<A>) {
+  return (ta: Option<A>): boolean => isSome(ta) && predicate(ta.value);
+}
+
+export function filter<A>(
+  predicate: Predicate<A>,
+): ((ta: Option<A>) => Option<A>) {
+  const _exists = exists(predicate);
+  return (ta) => _exists(ta) ? ta : none;
+}
+
+export function reduce<A, O>(
+  foao: (o: O, a: A) => O,
+  o: O,
+): ((ta: Option<A>) => O) {
+  return (ta) => isSome(ta) ? foao(o, ta.value) : o;
+}
+
+export function traverse<VRI extends URIS>(A: TC.Applicative<VRI>) {
+  return <A, I, J, K, L>(
+    favi: (a: A) => Kind<VRI, [I, J, K, L]>,
+  ): ((ta: Option<A>) => Kind<VRI, [Option<I>, J, K, L]>) =>
+    fold(
+      flow(constNone, A.of),
+      flow(favi, A.map(some)),
+    );
+}
 
 /*******************************************************************************
  * Modules
  ******************************************************************************/
 
-export function map<A, B>(fab: (a: A) => B): ((ta: Option<A>) => Option<B>) {
-  return (ta) => isNone(ta) ? none : some(fab(ta.value));
-}
+export const Functor: TC.Functor<URI> = { map };
 
-export const Functor: TC.Functor<URI> = {
-  map,
-};
+export const Apply: TC.Apply<URI> = { ap, map };
 
-export const Apply: TC.Apply<URI> = {
-  ap: (tfab) =>
-    (ta) => isNone(tfab) || isNone(ta) ? none : some(tfab.value(ta.value)),
-  map: Functor.map,
-};
+export const Applicative: TC.Applicative<URI> = { of, ap, map };
 
-export const Applicative: TC.Applicative<URI> = {
-  of: some,
-  ap: Apply.ap,
-  map: Functor.map,
-};
+export const Chain: TC.Chain<URI> = { ap, map, chain };
 
-export const Chain: TC.Chain<URI> = {
-  ap: Apply.ap,
-  map: Functor.map,
-  chain: (fatb) => (ta) => (isSome(ta) ? fatb(ta.value) : ta),
-};
+export const Monad: TC.Monad<URI> = { of, ap, map, join, chain };
 
-export const Monad: TC.Monad<URI> = {
-  of: Applicative.of,
-  ap: Apply.ap,
-  map: Functor.map,
-  join: Chain.chain(identity),
-  chain: Chain.chain,
-};
+export const MonadThrow: TC.MonadThrow<URI> = { ...Monad, throwError };
 
-export const MonadThrow: TC.MonadThrow<URI> = {
-  of: Applicative.of,
-  ap: Apply.ap,
-  map: Functor.map,
-  join: Chain.chain(identity),
-  chain: Chain.chain,
-  throwError: constNone,
-};
+export const Alt: TC.Alt<URI> = { map, alt };
 
-export const Alt: TC.Alt<URI> = {
-  map: Functor.map,
-  alt: (tb) => (ta) => (isNone(ta) ? tb : ta),
-};
+export const Alternative: TC.Alternative<URI> = { ...Applicative, alt, zero };
 
-export const Alternative: TC.Alternative<URI> = {
-  of: Applicative.of,
-  ap: Apply.ap,
-  map: Functor.map,
-  alt: Alt.alt,
-  zero: constNone,
-};
+export const Extends: TC.Extend<URI> = { map, extend };
 
-export const Extends: TC.Extend<URI> = {
-  map: Monad.map,
-  extend: (ftab) => flow(ftab, some),
-};
+export const Filterable: TC.Filterable<URI> = { filter };
 
-export const Filterable: TC.Filterable<URI> = {
-  filter: (predicate) =>
-    (ta) => isNone(ta) ? ta : predicate(ta.value) ? ta : none,
-};
+export const Foldable: TC.Foldable<URI> = { reduce };
 
-export const Foldable: TC.Foldable<URI> = {
-  reduce: (faba, a) => (tb) => (isSome(tb) ? faba(a, tb.value) : a),
-};
+export const Plus: TC.Plus<URI> = { alt, map, zero };
 
-export const Plus: TC.Plus<URI> = {
-  alt: Alt.alt,
-  map: Monad.map,
-  zero: constNone,
-};
-
-export const Traversable: TC.Traversable<URI> = {
-  map: Functor.map,
-  reduce: Foldable.reduce,
-  traverse: (A) =>
-    (favi) =>
-      (ta) =>
-        isNone(ta) ? A.of(constNone()) : pipe(favi(ta.value), A.map(some)),
-};
+export const Traversable: TC.Traversable<URI> = { map, reduce, traverse };
 
 /*******************************************************************************
  * Module Getters
@@ -282,9 +312,11 @@ export const Traversable: TC.Traversable<URI> = {
  *     const a = Show.show(some(1)); // "Some(1)"
  *     const b = Show.show(none); // "None"
  */
-export const getShow = <A>({ show }: TC.Show<A>): TC.Show<Option<A>> => ({
-  show: (ma) => (isNone(ma) ? "None" : `${"Some"}(${show(ma.value)})`),
-});
+export function getShow<A>({ show }: TC.Show<A>): TC.Show<Option<A>> {
+  return ({
+    show: (ma) => (isNone(ma) ? "None" : `${"Some"}(${show(ma.value)})`),
+  });
+}
 
 /**
  * Generates a Setoid module for an option with inner type of A.
@@ -296,67 +328,58 @@ export const getShow = <A>({ show }: TC.Show<A>): TC.Show<Option<A>> => ({
  *     const c = Setoid.equals(none, none); // true
  *     const d = Setoid.equals(some(1), none); // false
  */
-export const getSetoid = <A>(S: TC.Setoid<A>): TC.Setoid<Option<A>> => ({
-  equals: (a) =>
-    (b) =>
-      a === b ||
-      ((isSome(a) && isSome(b))
-        ? S.equals(a.value)(b.value)
-        : (isNone(a) && isNone(b))),
-});
+export function getSetoid<A>(S: TC.Setoid<A>): TC.Setoid<Option<A>> {
+  return ({
+    equals: (a) =>
+      (b) =>
+        a === b ||
+        ((isSome(a) && isSome(b))
+          ? S.equals(a.value)(b.value)
+          : (isNone(a) && isNone(b))),
+  });
+}
 
-export const getOrd = <A>(O: TC.Ord<A>): TC.Ord<Option<A>> => ({
-  ...getSetoid(O),
-  lte: (a) =>
-    (b) => {
-      if (a === b) {
-        return true;
-      }
-      if (isNone(a)) {
-        return true;
-      }
-      if (isNone(b)) {
-        return false;
-      }
-      return O.lte(a.value)(b.value);
-    },
-});
+export function getOrd<A>(O: TC.Ord<A>): TC.Ord<Option<A>> {
+  return ({
+    ...getSetoid(O),
+    lte: (a) =>
+      (b) => {
+        if (a === b) {
+          return true;
+        }
+        if (isNone(a)) {
+          return true;
+        }
+        if (isNone(b)) {
+          return false;
+        }
+        return O.lte(a.value)(b.value);
+      },
+  });
+}
 
-export const getSemigroup = <A>(
+export function getSemigroup<A>(
   S: TC.Semigroup<A>,
-): TC.Semigroup<Option<A>> => ({
-  concat: (x) =>
-    (y) => isNone(x) ? y : isNone(y) ? x : of(S.concat(x.value)(y.value)),
-});
+): TC.Semigroup<Option<A>> {
+  return ({
+    concat: (x) =>
+      (y) => isNone(x) ? y : isNone(y) ? x : of(S.concat(x.value)(y.value)),
+  });
+}
 
-export const getMonoid = <A>(M: TC.Monoid<A>): TC.Monoid<Option<A>> => ({
-  ...getSemigroup(M),
-  empty: constNone,
-});
+export function getMonoid<A>(M: TC.Monoid<A>): TC.Monoid<Option<A>> {
+  return ({
+    ...getSemigroup(M),
+    empty: constNone,
+  });
+}
 
 /*******************************************************************************
- * Pipeables
+ * Derived Functions
  ******************************************************************************/
-
-// export const { of, ap, map, join, chain } = Monad;
-
-export const { reduce, traverse } = Traversable;
-
-export const { zero, alt } = Alternative;
-
-export const { filter } = Filterable;
-
-export const { extend } = Extends;
 
 export const sequenceTuple = createSequenceTuple(Apply);
 
 export const sequenceStruct = createSequenceStruct(Apply);
-
-export const exists = <A>(predicate: Predicate<A>) =>
-  (ta: Option<A>): boolean => isSome(ta) && predicate(ta.value);
-
-/*******************************************************************************
- * Do
- ******************************************************************************/
 
 export const { Do, bind, bindTo } = createDo(Monad);

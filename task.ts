@@ -1,8 +1,7 @@
 import type * as HKT from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
-import { Lazy } from "./types.ts";
 
-import { apply, flow, identity, wait } from "./fns.ts";
+import { handleThrow, identity, resolve, wait } from "./fns.ts";
 import { createDo } from "./derivations.ts";
 
 /*******************************************************************************
@@ -27,87 +26,70 @@ declare module "./hkt.ts" {
 }
 
 /*******************************************************************************
- * Combinators
+ * Functions
  ******************************************************************************/
 
-export const make = <A>(a: A): Task<A> => () => Promise.resolve(a);
+export function of<A>(a: A): Task<A> {
+  return () => resolve(a);
+}
 
-export const delay = (ms: number) =>
-  <A>(ma: Task<A>): Task<A> => () => wait(ms).then(ma);
+export function delay(ms: number): <A>(ma: Task<A>) => Task<A> {
+  return (ta) => () => wait(ms).then(ta);
+}
 
-export const fromThunk = <A>(fa: Lazy<A>): Task<A> =>
-  () => Promise.resolve(fa());
+export function fromThunk<A>(fa: () => A): Task<A> {
+  return () => resolve(fa());
+}
 
-export const tryCatch = <A>(fa: Lazy<A>, onError: (e: unknown) => A): Task<A> =>
-  () => {
-    try {
-      return Promise.resolve(fa());
-    } catch (e) {
-      return Promise.resolve(onError(e));
-    }
-  };
+export function tryCatch<A>(fa: () => A, onError: (e: unknown) => A): Task<A> {
+  return () => resolve(handleThrow(fa, identity, onError));
+}
+
+export function map<A, I>(fai: (a: A) => I): (ta: Task<A>) => Task<I> {
+  return (ta) => () => ta().then(fai);
+}
+
+export function ap<A, I>(tfai: Task<(a: A) => I>): (ta: Task<A>) => Task<I> {
+  const handleThen = ([fai, a]: [(a: A) => I, A]) => fai(a);
+  return (ta) => () => Promise.all([tfai(), ta()]).then(handleThen);
+}
+
+export function apSeq<A, I>(tfai: Task<(a: A) => I>): (ta: Task<A>) => Task<I> {
+  return (ta) => async () => (await tfai())(await ta());
+}
+
+export function join<A>(tta: Task<Task<A>>): Task<A> {
+  return () => tta().then((ta) => ta());
+}
+
+export function chain<A, I>(fati: (a: A) => Task<I>): (ta: Task<A>) => Task<I> {
+  return (ta) => () => ta().then((a) => fati(a)());
+}
 
 /*******************************************************************************
  * Modules (Parallel)
  ******************************************************************************/
 
-export const Functor: TC.Functor<URI> = {
-  map: (fab) => (ta) => () => ta().then(fab),
-};
+export const Functor: TC.Functor<URI> = { map };
 
-export const Apply: TC.Apply<URI> = {
-  ap: (tfab) =>
-    (ta) => () => Promise.all([tfab(), ta()]).then(([f, a]) => f(a)),
-  map: Functor.map,
-};
+export const Apply: TC.Apply<URI> = { ap, map };
 
-export const Applicative: TC.Applicative<URI> = {
-  of: (a) => () => Promise.resolve(a),
-  ap: Apply.ap,
-  map: Functor.map,
-};
+export const Applicative: TC.Applicative<URI> = { of, ap, map };
 
-export const Chain: TC.Chain<URI> = {
-  ap: Apply.ap,
-  map: Functor.map,
-  chain: (fatb) => (ta) => () => ta().then(flow(fatb, apply())),
-};
+export const Chain: TC.Chain<URI> = { ap, map, chain };
 
-export const Monad: TC.Monad<URI> = {
-  of: Applicative.of,
-  ap: Apply.ap,
-  map: Functor.map,
-  join: Chain.chain(identity),
-  chain: Chain.chain,
-};
+export const Monad: TC.Monad<URI> = { of, ap, map, join, chain };
+
+export const ApplySeq: TC.Apply<URI> = { ap: apSeq, map };
+
+export const ApplicativeSeq: TC.Applicative<URI> = { of, ap: apSeq, map };
+
+export const ChainSeq: TC.Chain<URI> = { ap: apSeq, map, chain };
+
+export const MonadSeq: TC.Monad<URI> = { of, ap: apSeq, map, join, chain };
 
 /*******************************************************************************
- * Modules (Sequential)
- ******************************************************************************/
-
-export const ApplySeq: TC.Apply<URI> = {
-  ap: (tfab) => (ta) => async () => (await tfab())(await ta()),
-  map: Functor.map,
-};
-
-export const MonadSeq: TC.Monad<URI> = {
-  of: Applicative.of,
-  ap: ApplySeq.ap,
-  map: Functor.map,
-  join: Chain.chain(identity),
-  chain: Chain.chain,
-};
-
-/*******************************************************************************
- * Pipeables
- ******************************************************************************/
-
-export const { of, ap, map, join, chain } = Monad;
-
-export const { ap: apSeq } = ApplySeq;
-
-/*******************************************************************************
- * Do Notation
+ * Derived Functions
  ******************************************************************************/
 
 export const { Do, bind, bindTo } = createDo(Monad);
