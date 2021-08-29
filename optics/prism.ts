@@ -8,6 +8,7 @@ import type { Optional } from "./optional.ts";
 import type { Traversal } from "./traversal.ts";
 
 import { fromTraversable } from "./from_traversable.ts";
+import { optional } from "./make.ts";
 
 import * as O from "../option.ts";
 import * as E from "../either.ts";
@@ -22,6 +23,7 @@ import { id as lensId, prop as lensProp, props as lensProps } from "./lens.ts";
  ******************************************************************************/
 
 export type Prism<S, A> = {
+  readonly tag: "Prism";
   readonly getOption: (s: S) => O.Option<A>;
   readonly reverseGet: (a: A) => S;
 };
@@ -38,7 +40,7 @@ export function make<S, A>(
   getOption: (s: S) => O.Option<A>,
   reverseGet: (a: A) => S,
 ): Prism<S, A> {
-  return { getOption, reverseGet };
+  return { tag: "Prism", getOption, reverseGet };
 }
 
 export function fromPredicate<S, A extends S>(
@@ -48,7 +50,7 @@ export function fromPredicate<A>(
   predicate: Predicate<A>,
 ): Prism<A, A>;
 export function fromPredicate<A>(predicate: Predicate<A>): Prism<A, A> {
-  return { getOption: O.fromPredicate(predicate), reverseGet: identity };
+  return make(O.fromPredicate(predicate), identity);
 }
 
 /*******************************************************************************
@@ -56,11 +58,12 @@ export function fromPredicate<A>(predicate: Predicate<A>): Prism<A, A> {
  ******************************************************************************/
 
 export function asOptional<S, A>(sa: Prism<S, A>): Optional<S, A> {
-  return { getOption: sa.getOption, set: getSet(sa) };
+  return optional(sa.getOption, getSet(sa));
 }
 
 export function asTraversal<S, A>(sa: Prism<S, A>): Traversal<S, A> {
   return {
+    tag: "Traversal",
     traverse: (T) =>
       (fata) =>
         (s) =>
@@ -75,10 +78,10 @@ export function asTraversal<S, A>(sa: Prism<S, A>): Traversal<S, A> {
 }
 
 export function fromNullable<S, A>(sa: Prism<S, A>): Prism<S, NonNullable<A>> {
-  return {
-    getOption: flow(sa.getOption, O.chain(O.fromNullable)),
-    reverseGet: sa.reverseGet,
-  };
+  return make(
+    flow(sa.getOption, O.chain(O.fromNullable)),
+    sa.reverseGet,
+  );
 }
 
 /*******************************************************************************
@@ -86,59 +89,64 @@ export function fromNullable<S, A>(sa: Prism<S, A>): Prism<S, NonNullable<A>> {
  ******************************************************************************/
 
 export function id<A>(): Prism<A, A> {
-  return { getOption: O.some, reverseGet: identity };
+  return make(O.some, identity);
 }
 
 export function compose<J, K>(
   jk: Prism<J, K>,
 ): <I>(ij: Prism<I, J>) => Prism<I, K> {
-  return (ij) => ({
-    getOption: flow(ij.getOption, O.chain(jk.getOption)),
-    reverseGet: flow(jk.reverseGet, ij.reverseGet),
-  });
+  return (ij) =>
+    make(
+      flow(ij.getOption, O.chain(jk.getOption)),
+      flow(jk.reverseGet, ij.reverseGet),
+    );
 }
 
 export function composeIso<A, B>(
   ab: Iso<A, B>,
 ): <S>(sa: Prism<S, A>) => Prism<S, B> {
-  return (sa) => ({
-    getOption: flow(sa.getOption, O.map(ab.get)),
-    reverseGet: flow(ab.reverseGet, sa.reverseGet),
-  });
+  return (sa) =>
+    make(
+      flow(sa.getOption, O.map(ab.get)),
+      flow(ab.reverseGet, sa.reverseGet),
+    );
 }
 
 export function composeLens<A, B>(
   ab: Lens<A, B>,
 ): <S>(sa: Prism<S, A>) => Optional<S, B> {
-  return (sa) => ({
-    getOption: flow(sa.getOption, O.map(ab.get)),
-    set: (b) =>
-      (s) =>
-        pipe(
-          sa.getOption(s),
-          O.fold(() => s, flow(ab.set(b), sa.reverseGet)),
-        ),
-  });
+  return (sa) =>
+    optional(
+      flow(sa.getOption, O.map(ab.get)),
+      (b) =>
+        (s) =>
+          pipe(
+            sa.getOption(s),
+            O.fold(() => s, flow(ab.set(b), sa.reverseGet)),
+          ),
+    );
 }
 
 export function composeOptional<A, B>(
   ab: Optional<A, B>,
 ): <S>(sa: Prism<S, A>) => Optional<S, B> {
-  return (sa) => ({
-    getOption: flow(sa.getOption, O.chain(ab.getOption)),
-    set: (b) =>
-      (s) =>
-        pipe(
-          sa.getOption(s),
-          O.fold(() => s, flow(ab.set(b), sa.reverseGet)),
-        ),
-  });
+  return (sa) =>
+    optional(
+      flow(sa.getOption, O.chain(ab.getOption)),
+      (b) =>
+        (s) =>
+          pipe(
+            sa.getOption(s),
+            O.fold(() => s, flow(ab.set(b), sa.reverseGet)),
+          ),
+    );
 }
 
 export function composeTraversal<A, B>(
   ab: Traversal<A, B>,
 ): <S>(sa: Prism<S, A>) => Traversal<S, B> {
   return (sa) => ({
+    tag: "Traversal",
     traverse: (A) =>
       (fata) =>
         (s) =>
@@ -165,10 +173,11 @@ export function filter<A>(
 export function filter<A>(
   predicate: Predicate<A>,
 ): <S>(sa: Prism<S, A>) => Prism<S, A> {
-  return (sa) => ({
-    getOption: flow(sa.getOption, O.chain(O.fromPredicate(predicate))),
-    reverseGet: sa.reverseGet,
-  });
+  return (sa) =>
+    make(
+      flow(sa.getOption, O.chain(O.fromPredicate(predicate))),
+      sa.reverseGet,
+    );
 }
 
 export function traverse<URI extends URIS>(
@@ -237,13 +246,13 @@ export function atKey(
  ******************************************************************************/
 
 export function some<A>(): Prism<O.Option<A>, A> {
-  return { getOption: identity, reverseGet: O.some };
+  return make(identity, O.some);
 }
 
 export function right<E, A>(): Prism<E.Either<E, A>, A> {
-  return { getOption: E.getRight, reverseGet: E.right };
+  return make(E.getRight, E.right);
 }
 
 export function left<E, A>(): Prism<E.Either<E, A>, E> {
-  return { getOption: E.getLeft, reverseGet: E.left };
+  return make(E.getLeft, E.left);
 }

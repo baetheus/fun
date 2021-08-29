@@ -1,5 +1,11 @@
 // deno-lint-ignore-file no-explicit-any
-import type { ConstPrimitive, Fn, Nil, UnknownFn } from "./types.ts";
+import type {
+  CollapsePromise,
+  ConstPrimitive,
+  Fn,
+  Nil,
+  UnknownFn,
+} from "./types.ts";
 
 /**
  * handleThrow
@@ -10,12 +16,14 @@ export function handleThrow<A, I>(
   fa: () => A,
   onSuccess: (a: A) => I,
   onThrow: (e: unknown) => I,
-): I {
-  try {
-    return onSuccess(fa());
-  } catch (e) {
-    return onThrow(e);
-  }
+): () => I {
+  return () => {
+    try {
+      return onSuccess(fa());
+    } catch (e) {
+      return onThrow(e);
+    }
+  };
 }
 
 /**

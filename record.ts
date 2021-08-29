@@ -13,8 +13,8 @@ import { compare, ordString } from "./ord.ts";
 export type ReadonlyRecord<V> = Readonly<Record<string, V>>;
 
 /*******************************************************************************
-  * Kind Registration
-  ******************************************************************************/
+ * Kind Registration
+ ******************************************************************************/
 
 export const URI = "ReadonlyRecord";
 

@@ -15,7 +15,11 @@ import { fromTraversable } from "./from_traversable.ts";
 import { atRecord } from "./at.ts";
 import { indexArray, indexRecord } from "./index.ts";
 import { asTraversal as isoAsTraversal } from "./iso.ts";
-import { asTraversal as prismAsTraversal, fromPredicate } from "./prism.ts";
+import {
+  asTraversal as prismAsTraversal,
+  fromPredicate,
+  make as makePrism,
+} from "./prism.ts";
 import { asTraversal as optionalAsTraversal } from "./optional.ts";
 import {
   asTraversal as lensAsTraversal,
@@ -29,6 +33,7 @@ import {
  ******************************************************************************/
 
 export type Traversal<S, A> = {
+  readonly tag: "Traversal";
   readonly traverse: <URI extends URIS>(
     A: TC.Applicative<URI>,
   ) => <B = never, C = never, D = never>(
@@ -44,6 +49,16 @@ export type To<T> = T extends Traversal<infer _, infer A> ? A : never;
  * Constructors
  ******************************************************************************/
 
+export function make<S, A>(
+  traverse: <URI extends URIS>(
+    A: TC.Applicative<URI>,
+  ) => <B = never, C = never, D = never>(
+    fata: (a: A) => Kind<URI, [A, B, C, D]>,
+  ) => (s: S) => Kind<URI, [S, B, C, D]>,
+): Traversal<S, A> {
+  return ({ tag: "Traversal", traverse });
+}
+
 export { fromTraversable };
 
 /*******************************************************************************
@@ -53,7 +68,10 @@ export { fromTraversable };
 export function compose<J, K>(
   jk: Traversal<J, K>,
 ): <I>(ij: Traversal<I, J>) => Traversal<I, K> {
-  return (ij) => ({ traverse: (F) => flow(jk.traverse(F), ij.traverse(F)) });
+  return (ij) => ({
+    tag: "Traversal",
+    traverse: (F) => flow(jk.traverse(F), ij.traverse(F)),
+  });
 }
 
 export const composeIso = flow(isoAsTraversal, compose);
@@ -69,7 +87,7 @@ export const composeOptional = flow(optionalAsTraversal, compose);
  ******************************************************************************/
 
 export function id<A>(): Traversal<A, A> {
-  return ({ traverse: () => identity });
+  return make(() => identity);
 }
 
 export function modify<A>(
@@ -154,26 +172,17 @@ export function getAll<S, A>(sa: Traversal<S, A>): (s: S) => ReadonlyArray<A> {
  ******************************************************************************/
 
 export function some<S, A>(soa: Traversal<S, Option<A>>): Traversal<S, A> {
-  return pipe(
-    soa,
-    composePrism({ getOption: identity, reverseGet: O.some }),
-  );
+  return pipe(soa, composePrism(makePrism(identity, O.some)));
 }
 
 export function right<S, E, A>(
   sea: Traversal<S, Either<E, A>>,
 ): Traversal<S, A> {
-  return pipe(
-    sea,
-    composePrism({ getOption: E.getRight, reverseGet: E.right }),
-  );
+  return pipe(sea, composePrism(makePrism(E.getRight, E.right)));
 }
 
 export function left<S, E, A>(
   sea: Traversal<S, Either<E, A>>,
 ): Traversal<S, E> {
-  return pipe(
-    sea,
-    composePrism({ getOption: E.getLeft, reverseGet: E.left }),
-  );
+  return pipe(sea, composePrism(makePrism(E.getLeft, E.left)));
 }
