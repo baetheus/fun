@@ -20,6 +20,7 @@ export type Index<S, I, A> = {
 export function indexArray<A>(): Index<ReadonlyArray<A>, number, A> {
   return ({
     index: (i) => ({
+      tag: "Optional",
       getOption: A.lookup(i),
       set: (a) =>
         (as) =>
@@ -38,6 +39,7 @@ export function indexRecord<A>(): Index<
 > {
   return ({
     index: (k) => ({
+      tag: "Optional",
       getOption: (r) => O.fromNullable(r[k]),
       set: (a) => (r) => (r[k] === a || isNil(r[k]) ? r : R.insertAt(k, a)(r)),
     }),

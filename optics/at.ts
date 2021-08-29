@@ -22,6 +22,7 @@ export function atRecord<A = never>(): At<
 > {
   return ({
     at: (key) => ({
+      tag: "Lens",
       get: (r) => O.fromNullable(r[key]),
       set: O.fold(
         () => R.deleteAt(key),
@@ -34,6 +35,7 @@ export function atRecord<A = never>(): At<
 export function atMap<A = never>(): At<Map<string, A>, string, O.Option<A>> {
   return ({
     at: (key) => ({
+      tag: "Lens",
       get: (m) => O.fromNullable(m.get(key)),
       set: O.fold(
         () =>

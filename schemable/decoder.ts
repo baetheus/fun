@@ -41,8 +41,8 @@ declare module "../hkt.ts" {
 }
 
 /*******************************************************************************
-* Constructors
-*******************************************************************************/
+ * Constructors
+ *******************************************************************************/
 
 export function fromGuard<B, A extends B>(
   guard: G.Guard<B, A>,
@@ -52,8 +52,8 @@ export function fromGuard<B, A extends B>(
 }
 
 /*******************************************************************************
-* Utility
-*******************************************************************************/
+ * Utility
+ *******************************************************************************/
 
 const literalToString = (literal: S.Literal) =>
   typeof literal === "string" ? `"${literal}"` : `${literal}`;
@@ -86,10 +86,12 @@ const _array = fromGuard(G.isArray, "array");
 const _arrayN = (n: number) => fromGuard(G.isArrayN(n), `tuple of length ${n}`);
 
 /*******************************************************************************
-* Modules
-*******************************************************************************/
+ * Modules
+ *******************************************************************************/
 
-const { ap, map } = RE.getRightMonad(R.Semigroup);
+export const { of, ap, map, join, chain, throwError } = RE.getRightMonad(
+  R.Semigroup,
+);
 
 const Apply: TC.Apply<URI> = { ap, map };
 

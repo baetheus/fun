@@ -1,7 +1,7 @@
 import type * as HKT from "./hkt.ts";
 import type * as TC from "./type_classes.ts";
 
-import { handleThrow, identity, resolve, wait } from "./fns.ts";
+import { handleThrow, identity, wait } from "./fns.ts";
 import { createDo } from "./derivations.ts";
 
 /*******************************************************************************
@@ -26,11 +26,19 @@ declare module "./hkt.ts" {
 }
 
 /*******************************************************************************
+ * Utilities
+ ******************************************************************************/
+
+export function toPromise<A>(ta: Task<A>): Promise<A> {
+  return Promise.resolve().then(ta);
+}
+
+/*******************************************************************************
  * Functions
  ******************************************************************************/
 
 export function of<A>(a: A): Task<A> {
-  return () => resolve(a);
+  return () => Promise.resolve().then(() => a);
 }
 
 export function delay(ms: number): <A>(ma: Task<A>) => Task<A> {
@@ -38,11 +46,11 @@ export function delay(ms: number): <A>(ma: Task<A>) => Task<A> {
 }
 
 export function fromThunk<A>(fa: () => A): Task<A> {
-  return () => resolve(fa());
+  return () => Promise.resolve().then(fa);
 }
 
 export function tryCatch<A>(fa: () => A, onError: (e: unknown) => A): Task<A> {
-  return () => resolve(handleThrow(fa, identity, onError));
+  return () => Promise.resolve().then(handleThrow(fa, identity, onError));
 }
 
 export function map<A, I>(fai: (a: A) => I): (ta: Task<A>) => Task<I> {
@@ -51,7 +59,8 @@ export function map<A, I>(fai: (a: A) => I): (ta: Task<A>) => Task<I> {
 
 export function ap<A, I>(tfai: Task<(a: A) => I>): (ta: Task<A>) => Task<I> {
   const handleThen = ([fai, a]: [(a: A) => I, A]) => fai(a);
-  return (ta) => () => Promise.all([tfai(), ta()]).then(handleThen);
+  return (ta) =>
+    () => Promise.all([toPromise(tfai), toPromise(ta)]).then(handleThen);
 }
 
 export function apSeq<A, I>(tfai: Task<(a: A) => I>): (ta: Task<A>) => Task<I> {
@@ -59,11 +68,11 @@ export function apSeq<A, I>(tfai: Task<(a: A) => I>): (ta: Task<A>) => Task<I> {
 }
 
 export function join<A>(tta: Task<Task<A>>): Task<A> {
-  return () => tta().then((ta) => ta());
+  return () => toPromise(tta).then((ta) => ta());
 }
 
 export function chain<A, I>(fati: (a: A) => Task<I>): (ta: Task<A>) => Task<I> {
-  return (ta) => () => ta().then((a) => fati(a)());
+  return (ta) => () => toPromise(ta).then((a) => toPromise(fati(a)));
 }
 
 /*******************************************************************************

@@ -4,7 +4,7 @@ import type * as TC from "./type_classes.ts";
 import type { Fn, Predicate, Refinement } from "./types.ts";
 
 import * as O from "./option.ts";
-import { constant, flow, identity, isNotNil, pipe } from "./fns.ts";
+import { flow, identity, isNotNil, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
 import { createDo } from "./derivations.ts";
 
