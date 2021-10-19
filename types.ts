@@ -88,3 +88,4 @@ export type Args<T> = T extends (...as: infer AS) => any ? AS : never;
  * Replaces a type A with B if B doesn't extend never;
  ******************************************************************************/
 export type Or<A, B> = B extends never ? A : B;
+

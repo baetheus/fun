@@ -96,9 +96,7 @@ Deno.test("Tree join", () => {
 });
 
 Deno.test("Tree chain", () => {
-  const chain = T.chain((n: number) =>
-    n === 0 ? T.of(0) : T.of(n, [T.of(1)])
-  );
+  const chain = T.chain((n: number) => n === 0 ? T.of(0) : T.of(n, [T.of(1)]));
   assertEquals(chain(T.of(2)), T.of(2, [T.of(1)]));
   assertEquals(chain(T.of(0)), T.of(0));
 });

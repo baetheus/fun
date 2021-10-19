@@ -50,7 +50,7 @@ export type LiteralSchemable<URI extends URIS> = {
     ...s: A
   ) => Kind<URI, [A[number], B, C, D]>;
 };
-  
+
 export type NullableSchemable<URI extends URIS> = {
   readonly nullable: <A, B = never, C = never, D = never>(
     or: Kind<URI, [A, B, C, D]>,

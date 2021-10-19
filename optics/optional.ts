@@ -24,6 +24,7 @@ import { id as lensId, prop as lensProp, props as lensProps } from "./lens.ts";
  ******************************************************************************/
 
 export type Optional<S, A> = {
+  readonly tag: "Optional";
   readonly getOption: (s: S) => Option<A>;
   readonly set: (a: A) => (s: S) => S;
 };
@@ -40,7 +41,7 @@ export function make<S, A>(
   getOption: (s: S) => Option<A>,
   set: (a: A) => (s: S) => S,
 ): Optional<S, A> {
-  return { getOption, set };
+  return { tag: "Optional", getOption, set };
 }
 
 /*******************************************************************************
@@ -49,6 +50,7 @@ export function make<S, A>(
 
 export function asTraversal<S, A>(sa: Optional<S, A>): Traversal<S, A> {
   return {
+    tag: "Traversal",
     traverse: (F) =>
       (fata) =>
         (s) =>
@@ -65,10 +67,10 @@ export function asTraversal<S, A>(sa: Optional<S, A>): Traversal<S, A> {
 export function fromNullable<S, A>(
   sa: Optional<S, A>,
 ): Optional<S, NonNullable<A>> {
-  return {
-    getOption: flow(sa.getOption, O.chain(O.fromNullable)),
-    set: sa.set,
-  };
+  return make(
+    flow(sa.getOption, O.chain(O.fromNullable)),
+    sa.set,
+  );
 }
 
 /*******************************************************************************
@@ -76,61 +78,66 @@ export function fromNullable<S, A>(
  ******************************************************************************/
 
 export function id<A>(): Optional<A, A> {
-  return { getOption: O.some, set: constant };
+  return make(O.some, constant);
 }
 
 export function compose<J, K>(
   jk: Optional<J, K>,
 ): <I>(ij: Optional<I, J>) => Optional<I, K> {
-  return (ij) => ({
-    getOption: flow(ij.getOption, O.chain(jk.getOption)),
-    set: (b) =>
-      (s) =>
-        pipe(
-          ij.getOption(s),
-          O.map(jk.set(b)),
-          O.fold(() => identity, ij.set),
-        )(s),
-  });
+  return (ij) =>
+    make(
+      flow(ij.getOption, O.chain(jk.getOption)),
+      (b) =>
+        (s) =>
+          pipe(
+            ij.getOption(s),
+            O.map(jk.set(b)),
+            O.fold(() => identity, ij.set),
+          )(s),
+    );
 }
 
 export function composeIso<A, B>(
   ab: Iso<A, B>,
 ): <S>(sa: Optional<S, A>) => Optional<S, B> {
-  return (sa) => ({
-    getOption: flow(sa.getOption, O.map(ab.get)),
-    set: flow(ab.reverseGet, sa.set),
-  });
+  return (sa) =>
+    make(
+      flow(sa.getOption, O.map(ab.get)),
+      flow(ab.reverseGet, sa.set),
+    );
 }
 
 export function composeLens<A, B>(
   ab: Lens<A, B>,
 ): <S>(sa: Optional<S, A>) => Optional<S, B> {
-  return (sa) => ({
-    getOption: flow(sa.getOption, O.map(ab.get)),
-    set: (b) =>
-      (s) =>
-        pipe(
-          sa.getOption(s),
-          O.map(ab.set(b)),
-          O.fold(constant(s), flow(sa.set, apply(s))),
-        ),
-  });
+  return (sa) =>
+    make(
+      flow(sa.getOption, O.map(ab.get)),
+      (b) =>
+        (s) =>
+          pipe(
+            sa.getOption(s),
+            O.map(ab.set(b)),
+            O.fold(constant(s), flow(sa.set, apply(s))),
+          ),
+    );
 }
 
 export function composePrism<A, B>(
   ab: Prism<A, B>,
 ): <S>(sa: Optional<S, A>) => Optional<S, B> {
-  return (sa) => ({
-    getOption: flow(sa.getOption, O.chain(ab.getOption)),
-    set: flow(ab.reverseGet, sa.set),
-  });
+  return (sa) =>
+    make(
+      flow(sa.getOption, O.chain(ab.getOption)),
+      flow(ab.reverseGet, sa.set),
+    );
 }
 
 export function composeTraversal<A, B>(
   ab: Traversal<A, B>,
 ): <S>(sa: Optional<S, A>) => Traversal<S, B> {
   return (sa) => ({
+    tag: "Traversal",
     traverse: (T) =>
       (fata) =>
         (s) =>
@@ -157,10 +164,11 @@ export function filter<A>(
 export function filter<A>(
   predicate: Predicate<A>,
 ): <S>(sa: Optional<S, A>) => Optional<S, A> {
-  return (sa) => ({
-    getOption: flow(sa.getOption, O.chain(O.fromPredicate(predicate))),
-    set: sa.set,
-  });
+  return (sa) =>
+    make(
+      flow(sa.getOption, O.chain(O.fromPredicate(predicate))),
+      sa.set,
+    );
 }
 
 export function modify<A>(
@@ -224,22 +232,13 @@ export function atKey(
  ******************************************************************************/
 
 export function some<S, A>(soa: Optional<S, Option<A>>): Optional<S, A> {
-  return pipe(
-    soa,
-    compose({ getOption: identity, set: flow(O.some, constant) }),
-  );
+  return pipe(soa, compose(make(identity, flow(O.some, constant))));
 }
 
 export function right<S, E, A>(sea: Optional<S, Either<E, A>>): Optional<S, A> {
-  return pipe(
-    sea,
-    compose({ getOption: E.getRight, set: flow(E.right, constant) }),
-  );
+  return pipe(sea, compose(make(E.getRight, flow(E.right, constant))));
 }
 
 export function left<S, E, A>(sea: Optional<S, Either<E, A>>): Optional<S, E> {
-  return pipe(
-    sea,
-    compose({ getOption: E.getLeft, set: flow(E.left, constant) }),
-  );
+  return pipe(sea, compose(make(E.getLeft, flow(E.left, constant))));
 }

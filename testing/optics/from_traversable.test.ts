@@ -7,5 +7,5 @@ Deno.test("FromTraversable fromTraversable", () => {
   const createTraversal = F.fromTraversable(O.Traversable);
   const traversal = createTraversal<number>();
 
-  assertEquals(O.Traversable, traversal);
+  assertEquals(O.Traversable.traverse, traversal.traverse);
 });

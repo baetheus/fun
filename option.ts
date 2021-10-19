@@ -104,7 +104,7 @@ export function fromPredicate<A>(predicate: Predicate<A>) {
 export function tryCatch<A>(fa: () => A): Option<A> {
   try {
     return some(fa());
-  } catch (e) {
+  } catch (_e) {
     return none;
   }
 }
@@ -268,6 +268,14 @@ export function traverse<VRI extends URIS>(A: TC.Applicative<VRI>) {
       () => A.of(constNone()),
       (a) => pipe(favi(a), A.map((i) => some(i))),
     );
+}
+
+export function tap<A>(fa: (a: A) => void): (ta: Option<A>) => void {
+  return (ta) => {
+    if (isSome(ta)) {
+      fa(ta.value);
+    }
+  };
 }
 
 /*******************************************************************************

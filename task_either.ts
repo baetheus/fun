@@ -43,12 +43,11 @@ export function tryCatch<A, B>(
   fa: () => A,
   onError: (e: unknown) => B,
 ): TaskEither<B, A> {
-  return () =>
-    handleThrow(
-      fa,
-      flow((a) => E.right<B, A>(a), resolve),
-      flow(onError, (b) => E.left<B, A>(b), resolve),
-    );
+  return handleThrow(
+    fa,
+    flow((a) => E.right<B, A>(a), resolve),
+    flow(onError, (b) => E.left<B, A>(b), resolve),
+  );
 }
 
 export function fromTask<A, B = never>(ta: T.Task<A>): TaskEither<B, A> {
