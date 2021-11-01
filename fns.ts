@@ -1,10 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
-import type {
-  ConstPrimitive,
-  Fn,
-  Nil,
-  UnknownFn,
-} from "./types.ts";
+import type { ConstPrimitive, Fn, Nil, UnknownFn } from "./types.ts";
 
 /**
  * handleThrow
@@ -248,6 +243,16 @@ export function recover<A>(
   fua: (u: unknown) => A,
 ): (ta: Promise<A>) => Promise<A> {
   return (ta) => ta.catch(fua);
+}
+
+/**
+ * Unsafe Coerce
+ *
+ * This utility function subverts the typescript type system by forcing
+ * conversion between two types.
+ */
+export function unsafeCoerce<A, B>(a: A): B {
+  return a as any;
 }
 
 /**
