@@ -1,7 +1,5 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
-import type * as HKT from "../hkt.ts";
-
 import * as N from "../nilable.ts";
 import { _, pipe } from "../fns.ts";
 

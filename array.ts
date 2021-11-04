@@ -1,37 +1,24 @@
-import type * as HKT from "./hkt.ts";
-import { Kind, URIS } from "./hkt.ts";
-import type * as TC from "./type_classes.ts";
+import { Kind, URIS } from "./kind.ts";
+import type * as T from "./types.ts";
 import type { Predicate } from "./types.ts";
 
 import * as O from "./option.ts";
 import { createDo } from "./derivations.ts";
-import { apply, flow, identity, pipe, swap } from "./fns.ts";
-import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
-
-/*******************************************************************************
- * Types
- ******************************************************************************/
+import { apply, flow, identity, pipe } from "./fns.ts";
+import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
 export type TypeOf<T> = T extends ReadonlyArray<infer A> ? A : never;
-
-/*******************************************************************************
- * Kind Registration
- ******************************************************************************/
 
 export const URI = "Array";
 
 export type URI = typeof URI;
 
-declare module "./hkt.ts" {
+declare module "./kind.ts" {
   // deno-lint-ignore no-explicit-any
   export interface Kinds<_ extends any[]> {
     [URI]: ReadonlyArray<_[0]>;
   }
 }
-
-/*******************************************************************************
- * Constructors
- ******************************************************************************/
 
 export function empty<A = never>(): ReadonlyArray<A> {
   return [];
@@ -40,10 +27,6 @@ export function empty<A = never>(): ReadonlyArray<A> {
 export function of<A>(a: A): ReadonlyArray<A> {
   return [a];
 }
-
-/*******************************************************************************
- * Unsafe Functions
- ******************************************************************************/
 
 export function isOutOfBounds<A>(index: number, ta: ReadonlyArray<A>): boolean {
   return index < 0 || index >= ta.length;
@@ -99,10 +82,6 @@ export function unsafePrepend<A>(
     return ta;
   };
 }
-
-/*******************************************************************************
- * Functions
- ******************************************************************************/
 
 export function isEmpty<A>(ta: ReadonlyArray<A>): boolean {
   return ta.length === 0;
@@ -225,7 +204,7 @@ export function filter<A>(
 }
 
 export function traverse<VRI extends URIS>(
-  A: TC.Applicative<VRI>,
+  A: T.Applicative<VRI>,
 ): <A, I, J, K, L>(
   favi: (a: A, i: number) => Kind<VRI, [I, J, K, L]>,
 ) => (ta: ReadonlyArray<A>) => Kind<VRI, [ReadonlyArray<I>, J, K, L]> {
@@ -269,41 +248,33 @@ export const deleteAt = (i: number) =>
   <A>(as: ReadonlyArray<A>): O.Option<ReadonlyArray<A>> =>
     isOutOfBounds(i, as) ? O.none : O.some(unsafeDeleteAt(i, as));
 
-/*******************************************************************************
- * Modules
- ******************************************************************************/
+export const Functor: T.Functor<URI> = { map };
 
-export const Functor: TC.Functor<URI> = { map };
+export const Apply: T.Apply<URI> = { ap, map };
 
-export const Apply: TC.Apply<URI> = { ap, map };
+export const Applicative: T.Applicative<URI> = { of, ap, map };
 
-export const Applicative: TC.Applicative<URI> = { of, ap, map };
+export const Chain: T.Chain<URI> = { ap, map, chain };
 
-export const Chain: TC.Chain<URI> = { ap, map, chain };
+export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
 
-export const Monad: TC.Monad<URI> = { of, ap, map, join, chain };
+export const Alt: T.Alt<URI> = { alt, map };
 
-export const Alt: TC.Alt<URI> = { alt, map };
+export const Filterable: T.Filterable<URI> = { filter };
 
-export const Filterable: TC.Filterable<URI> = { filter };
+export const IndexedFoldable: T.IndexedFoldable<URI> = { reduce };
 
-export const IndexedFoldable: TC.IndexedFoldable<URI> = { reduce };
-
-export const IndexedTraversable: TC.IndexedTraversable<URI> = {
+export const IndexedTraversable: T.IndexedTraversable<URI> = {
   map,
   reduce,
   traverse,
 };
 
-export const Foldable: TC.Foldable<URI> = IndexedFoldable;
+export const Foldable: T.Foldable<URI> = IndexedFoldable;
 
-export const Traversable: TC.Traversable<URI> = IndexedTraversable;
+export const Traversable: T.Traversable<URI> = IndexedTraversable;
 
-/*******************************************************************************
- * Module Getters
- ******************************************************************************/
-
-export function getSetoid<A>(S: TC.Setoid<A>): TC.Setoid<ReadonlyArray<A>> {
+export function getSetoid<A>(S: T.Setoid<A>): T.Setoid<ReadonlyArray<A>> {
   return ({
     equals: (a) =>
       (b) =>
@@ -312,7 +283,7 @@ export function getSetoid<A>(S: TC.Setoid<A>): TC.Setoid<ReadonlyArray<A>> {
   });
 }
 
-export function getOrd<A>(O: TC.Ord<A>): TC.Ord<ReadonlyArray<A>> {
+export function getOrd<A>(O: T.Ord<A>): T.Ord<ReadonlyArray<A>> {
   const { equals } = getSetoid(O);
   return ({
     equals,
@@ -330,39 +301,31 @@ export function getOrd<A>(O: TC.Ord<A>): TC.Ord<ReadonlyArray<A>> {
   });
 }
 
-export function getSemigroup<A>(): TC.Semigroup<ReadonlyArray<A>> {
+export function getSemigroup<A>(): T.Semigroup<ReadonlyArray<A>> {
   return ({ concat });
 }
 
-export function getShow<A>({ show }: TC.Show<A>): TC.Show<ReadonlyArray<A>> {
+export function getShow<A>({ show }: T.Show<A>): T.Show<ReadonlyArray<A>> {
   return ({
     show: (ta) => `ReadonlyArray[${ta.map(show).join(", ")}]`,
   });
 }
 
-export function getMonoid<A = never>(): TC.Monoid<ReadonlyArray<A>> {
+export function getMonoid<A = never>(): T.Monoid<ReadonlyArray<A>> {
   return ({
     empty,
     concat,
   });
 }
 
-/*******************************************************************************
- * Pipeables
- ******************************************************************************/
-
 export const createSequence = <VRI extends URIS>(
-  A: TC.Applicative<VRI>,
+  A: T.Applicative<VRI>,
 ): (<A, B, C, D>(
   ta: Kind<VRI, [A, B, C, D]>[],
 ) => Kind<VRI, [ReadonlyArray<A>, B, C, D]>) => {
   // deno-lint-ignore no-explicit-any
   return pipe(A.map(identity), traverse(A)) as any;
 };
-
-/*******************************************************************************
- * Derived Functions
- ******************************************************************************/
 
 export const sequenceTuple = createSequenceTuple(Apply);
 

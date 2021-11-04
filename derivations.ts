@@ -1,19 +1,15 @@
-import type * as TC from "./type_classes.ts";
-import type { Kind, URIS } from "./hkt.ts";
+import type * as T from "./types.ts";
+import type { Kind, URIS } from "./kind.ts";
 
 import { identity, pipe } from "./fns.ts";
-
-/*******************************************************************************
- * Module Derivations
- ******************************************************************************/
 
 /**
  * Derive Monad module from of and chain
  */
 export function createMonad<URI extends URIS>(
-  { of, chain }: Pick<TC.Monad<URI>, "of" | "chain">,
-): TC.Monad<URI> {
-  const Monad: TC.Monad<URI> = {
+  { of, chain }: Pick<T.Monad<URI>, "of" | "chain">,
+): T.Monad<URI> {
+  const Monad: T.Monad<URI> = {
     of,
     ap: (tfai) => (ta) => pipe(tfai, chain((fab) => pipe(ta, Monad.map(fab)))),
     map: (fai) => (ta) => pipe(ta, chain((a) => of(fai(a)))),
@@ -23,12 +19,8 @@ export function createMonad<URI extends URIS>(
   return Monad;
 }
 
-/*******************************************************************************
- * Do notation Derivation
- ******************************************************************************/
-
 export function createDo<URI extends URIS>(
-  M: TC.Monad<URI>,
+  M: T.Monad<URI>,
 ) {
   return ({
     // deno-lint-ignore ban-types
@@ -59,14 +51,10 @@ export function createDo<URI extends URIS>(
   });
 }
 
-/*******************************************************************************
- * Derive getSemigroup from Apply
- ******************************************************************************/
-
-export function createApplySemigroup<URI extends URIS>(A: TC.Apply<URI>) {
+export function createApplySemigroup<URI extends URIS>(A: T.Apply<URI>) {
   return <A, B = never, C = never, D = never>(
-    S: TC.Semigroup<A>,
-  ): TC.Semigroup<Kind<URI, [A, B, C, D]>> => ({
+    S: T.Semigroup<A>,
+  ): T.Semigroup<Kind<URI, [A, B, C, D]>> => ({
     concat: (a) => A.ap(pipe(a, A.map(S.concat))),
   });
 }

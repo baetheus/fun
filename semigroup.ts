@@ -1,14 +1,23 @@
 // deno-lint-ignore-file no-explicit-any
 
-import type { Ord, Semigroup } from "./type_classes.ts";
+import type { Ord } from "./ord.ts";
 
 import { constant } from "./fns.ts";
-import { keys } from "./record.ts";
 
-/*******************************************************************************
+/**
+ * Semigroup
+ * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#semigroup
+ */
+export interface Semigroup<T> {
+  readonly concat: (b: T) => (a: T) => T;
+}
+
+/** *****************************************************************************
  * Free Semigroup
  * @from https://raw.githubusercontent.com/gcanti/io-ts/master/src/FreeSemigroup.ts
- ******************************************************************************/
+ *
+ * TODO(baetheus): Move to free.ts ??
+ * **************************************************************************** */
 
 export type Of<A> = {
   readonly tag: "Of";
@@ -45,10 +54,6 @@ export const Free = {
     },
 };
 
-/*******************************************************************************
- * Module Instances
- ******************************************************************************/
-
 export const semigroupAll: Semigroup<boolean> = {
   concat: (x) => (y) => x && y,
 };
@@ -72,10 +77,6 @@ export const semigroupString: Semigroup<string> = {
 export const semigroupVoid: Semigroup<void> = {
   concat: () => () => undefined,
 };
-
-/*******************************************************************************
- * Module Getters
- ******************************************************************************/
 
 export function getFreeSemigroup<A = never>(): Semigroup<Free<A>> {
   return ({ concat: Free.concat });
@@ -123,10 +124,6 @@ export function getMeetSemigroup<A>(O: Ord<A>): Semigroup<A> {
 export function getJoinSemigroup<A>(O: Ord<A>): Semigroup<A> {
   return ({ concat: (b) => (a) => (O.lte(b)(a) ? b : a) });
 }
-
-/*******************************************************************************
- * Function
- ******************************************************************************/
 
 export function fold<A>(
   S: Semigroup<A>,

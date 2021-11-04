@@ -1,7 +1,5 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
-import type * as HKT from "../hkt.ts";
-
 import * as R from "../reader_either.ts";
 import * as E from "../either.ts";
 import { _, pipe } from "../fns.ts";
@@ -61,12 +59,6 @@ Deno.test("ReaderEither join", () => {
 });
 
 Deno.test("ReaderEither chain", () => {
-  const a = pipe(
-    R.of(0),
-    R.map((n) => n + 1),
-    R.chain((n) => n > 0 ? R.right(n) : R.left(n)),
-  );
-
   assertEqualsRE(
     pipe(R.of(0), R.chain((n: number) => n === 0 ? R.left(n) : R.right(n))),
     R.left(0),

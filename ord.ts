@@ -1,50 +1,34 @@
-// deno-lint-ignore-file no-explicit-any
-
-import type { Ord } from "./type_classes.ts";
+import type { Setoid } from "./setoid.ts";
 import type { Fn } from "./types.ts";
 
-import { setoidStrict } from "./setoid.ts";
-import { flow } from "./fns.ts";
+import { flow, lessThanOrEqual, strictEquals } from "./fns.ts";
 
-/*******************************************************************************
- * Internal
- ******************************************************************************/
-
-// lte for primimtives
-const _lte = (b: any) => (a: any): boolean => a <= b;
-
-const _equals = setoidStrict.equals;
-
-/*******************************************************************************
- * Types
- ******************************************************************************/
+/**
+ * Ord
+ * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#ord
+ */
+export interface Ord<T> extends Setoid<T> {
+  readonly lte: (a: T) => (b: T) => boolean;
+}
 
 export type Ordering = -1 | 0 | 1;
 
 export type Compare<A> = Fn<[A, A], Ordering>;
 
-/*******************************************************************************
- * Module Instances
- ******************************************************************************/
-
 export const ordString: Ord<string> = {
-  equals: _equals,
-  lte: _lte,
+  equals: strictEquals,
+  lte: lessThanOrEqual,
 };
 
 export const ordNumber: Ord<number> = {
-  equals: _equals,
-  lte: _lte,
+  equals: strictEquals,
+  lte: lessThanOrEqual,
 };
 
 export const ordBoolean: Ord<boolean> = {
-  equals: _equals,
-  lte: _lte,
+  equals: strictEquals,
+  lte: lessThanOrEqual,
 };
-
-/*******************************************************************************
- * Functions
- ******************************************************************************/
 
 export function compare<A>(O: Ord<A>): Compare<A> {
   return (a, b) => {
@@ -125,10 +109,6 @@ export function between<A>(O: Ord<A>): (low: A, high: A) => (a: A) => boolean {
     return (a) => _lower(a) && _higher(a);
   };
 }
-
-/*******************************************************************************
- * Function Getters
- ******************************************************************************/
 
 export function getOrdUtilities<A>(O: Ord<A>) {
   return ({

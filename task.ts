@@ -1,41 +1,25 @@
-import type * as HKT from "./hkt.ts";
-import type * as TC from "./type_classes.ts";
+import type { Kind } from "./kind.ts";
+import type * as T from "./types.ts";
 
 import { handleThrow, identity, wait } from "./fns.ts";
 import { createDo } from "./derivations.ts";
 
-/*******************************************************************************
- * Types
- ******************************************************************************/
-
 export type Task<A> = () => Promise<A>;
-
-/*******************************************************************************
- * Kind Registration
- ******************************************************************************/
 
 export const URI = "Task";
 
 export type URI = typeof URI;
 
-declare module "./hkt.ts" {
+declare module "./kind.ts" {
   // deno-lint-ignore no-explicit-any
   export interface Kinds<_ extends any[]> {
     [URI]: Task<_[0]>;
   }
 }
 
-/*******************************************************************************
- * Utilities
- ******************************************************************************/
-
 export function toPromise<A>(ta: Task<A>): Promise<A> {
   return Promise.resolve().then(ta);
 }
-
-/*******************************************************************************
- * Functions
- ******************************************************************************/
 
 export function of<A>(a: A): Task<A> {
   return () => Promise.resolve().then(() => a);
@@ -75,30 +59,22 @@ export function chain<A, I>(fati: (a: A) => Task<I>): (ta: Task<A>) => Task<I> {
   return (ta) => () => toPromise(ta).then((a) => toPromise(fati(a)));
 }
 
-/*******************************************************************************
- * Modules (Parallel)
- ******************************************************************************/
+export const Functor: T.Functor<URI> = { map };
 
-export const Functor: TC.Functor<URI> = { map };
+export const Apply: T.Apply<URI> = { ap, map };
 
-export const Apply: TC.Apply<URI> = { ap, map };
+export const Applicative: T.Applicative<URI> = { of, ap, map };
 
-export const Applicative: TC.Applicative<URI> = { of, ap, map };
+export const Chain: T.Chain<URI> = { ap, map, chain };
 
-export const Chain: TC.Chain<URI> = { ap, map, chain };
+export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
 
-export const Monad: TC.Monad<URI> = { of, ap, map, join, chain };
+export const ApplySeq: T.Apply<URI> = { ap: apSeq, map };
 
-export const ApplySeq: TC.Apply<URI> = { ap: apSeq, map };
+export const ApplicativeSeq: T.Applicative<URI> = { of, ap: apSeq, map };
 
-export const ApplicativeSeq: TC.Applicative<URI> = { of, ap: apSeq, map };
+export const ChainSeq: T.Chain<URI> = { ap: apSeq, map, chain };
 
-export const ChainSeq: TC.Chain<URI> = { ap: apSeq, map, chain };
-
-export const MonadSeq: TC.Monad<URI> = { of, ap: apSeq, map, join, chain };
-
-/*******************************************************************************
- * Derived Functions
- ******************************************************************************/
+export const MonadSeq: T.Monad<URI> = { of, ap: apSeq, map, join, chain };
 
 export const { Do, bind, bindTo } = createDo(Monad);

@@ -1,29 +1,20 @@
-import type * as HKT from "./hkt.ts";
-import type { Kind, URIS } from "./hkt.ts";
+import type { Kind, URIS } from "./kind.ts";
 import type { Predicate } from "./types.ts";
-import type * as TC from "./type_classes.ts";
+import type * as T from "./types.ts";
 
 import { flow, pipe } from "./fns.ts";
 import { fromEquals } from "./setoid.ts";
-
-/*******************************************************************************
- * Kind Registration
- ******************************************************************************/
 
 export const URI = "Set";
 
 export type URI = typeof URI;
 
-declare module "./hkt.ts" {
+declare module "./kind.ts" {
   // deno-lint-ignore no-explicit-any
   export interface Kinds<_ extends any[]> {
     [URI]: Set<_[0]>;
   }
 }
-
-/*******************************************************************************
- * Constructors
- ******************************************************************************/
 
 export function zero(): Set<never> {
   return new Set();
@@ -41,19 +32,11 @@ export function copy<A>(ta: Set<A>): Set<A> {
   return new Set(ta);
 }
 
-/*******************************************************************************
- * Utility Functions
- ******************************************************************************/
-
 const unsafeAdd = <A>(ta: Set<A>) =>
   (a: A): Set<A> => {
     ta.add(a);
     return ta;
   };
-
-/*******************************************************************************
- * Functions
- ******************************************************************************/
 
 export function some<A>(predicate: Predicate<A>): (ta: Set<A>) => boolean {
   return (ta) => {
@@ -77,22 +60,22 @@ export function every<A>(predicate: Predicate<A>): (ta: Set<A>) => boolean {
   };
 }
 
-export function elem<A>(S: TC.Setoid<A>): (a: A) => (ta: Set<A>) => boolean {
+export function elem<A>(S: T.Setoid<A>): (a: A) => (ta: Set<A>) => boolean {
   return (a) => some(S.equals(a));
 }
 
-export function elemOf<A>(S: TC.Setoid<A>): (ta: Set<A>) => (a: A) => boolean {
+export function elemOf<A>(S: T.Setoid<A>): (ta: Set<A>) => (a: A) => boolean {
   return (ta) => (a) => elem(S)(a)(ta);
 }
 
 export function isSubset<A>(
-  S: TC.Setoid<A>,
+  S: T.Setoid<A>,
 ): (tb: Set<A>) => (ta: Set<A>) => boolean {
   return flow(elemOf(S), every);
 }
 
 export function union<A>(
-  S: TC.Setoid<A>,
+  S: T.Setoid<A>,
 ): (tb: Set<A>) => (ta: Set<A>) => Set<A> {
   return (tb) =>
     (ta) => {
@@ -108,7 +91,7 @@ export function union<A>(
 }
 
 export function intersection<A>(
-  S: TC.Setoid<A>,
+  S: T.Setoid<A>,
 ): (ta: Set<A>) => (tb: Set<A>) => Set<A> {
   return (ta) => {
     const isIn = elemOf(S)(ta);
@@ -124,7 +107,7 @@ export function intersection<A>(
   };
 }
 
-export function compact<A>(S: TC.Setoid<A>): (ta: Set<A>) => Set<A> {
+export function compact<A>(S: T.Setoid<A>): (ta: Set<A>) => Set<A> {
   return (ta) => {
     const out = new Set<A>();
     const isIn = elemOf(S)(out);
@@ -205,7 +188,7 @@ export function reduce<A, O>(foao: (o: O, a: A) => O, o: O): (ta: Set<A>) => O {
 }
 
 export function traverse<VRI extends URIS>(
-  A: TC.Applicative<VRI>,
+  A: T.Applicative<VRI>,
 ): <A, I, J, K, L>(
   favi: (a: A) => Kind<VRI, [I, J, K, L]>,
 ) => (ta: Set<A>) => Kind<VRI, [Set<I>, J, K, L]> {
@@ -223,35 +206,27 @@ export function traverse<VRI extends URIS>(
     );
 }
 
-/*******************************************************************************
- * Module Getters
- ******************************************************************************/
-
-export function getShow<A>(S: TC.Show<A>): TC.Show<Set<A>> {
+export function getShow<A>(S: T.Show<A>): T.Show<Set<A>> {
   return ({
     show: (s) => `Set([${Array.from(s.values()).map(S.show).join(", ")}])`,
   });
 }
 
-export function getSetoid<A>(S: TC.Setoid<A>): TC.Setoid<Set<A>> {
+export function getSetoid<A>(S: T.Setoid<A>): T.Setoid<Set<A>> {
   const subset = isSubset(S);
   return fromEquals((x) => (y) => subset(x)(y) && subset(y)(x));
 }
 
-export function getUnionMonoid<A>(S: TC.Setoid<A>): TC.Monoid<Set<A>> {
+export function getUnionMonoid<A>(S: T.Setoid<A>): T.Monoid<Set<A>> {
   return ({ concat: union(S), empty });
 }
 
-/*******************************************************************************
- * Modules
- ******************************************************************************/
+export const Functor: T.Functor<URI> = { map };
 
-export const Functor: TC.Functor<URI> = { map };
+export const Apply: T.Apply<URI> = { ap, map };
 
-export const Apply: TC.Apply<URI> = { ap, map };
+export const Filterable: T.Filterable<URI> = { filter };
 
-export const Filterable: TC.Filterable<URI> = { filter };
+export const Foldable: T.Foldable<URI> = { reduce };
 
-export const Foldable: TC.Foldable<URI> = { reduce };
-
-export const Traversable: TC.Traversable<URI> = { map, reduce, traverse };
+export const Traversable: T.Traversable<URI> = { map, reduce, traverse };

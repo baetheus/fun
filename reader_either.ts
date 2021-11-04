@@ -1,35 +1,23 @@
-import type * as HKT from "./hkt.ts";
-import type * as TC from "./type_classes.ts";
+import type { Kind } from "./kind.ts";
+import type * as T from "./types.ts";
 
 import * as E from "./either.ts";
 import * as R from "./reader.ts";
 import { createDo } from "./derivations.ts";
 import { flow, identity, pipe } from "./fns.ts";
 
-/*******************************************************************************
- * Types
- ******************************************************************************/
-
 export type ReaderEither<S, L, R> = R.Reader<S, E.Either<L, R>>;
-
-/*******************************************************************************
- * Kind Registration
- ******************************************************************************/
 
 export const URI = "ReaderEither";
 
 export type URI = typeof URI;
 
-declare module "./hkt.ts" {
+declare module "./kind.ts" {
   // deno-lint-ignore no-explicit-any
   export interface Kinds<_ extends any[]> {
     [URI]: ReaderEither<_[2], _[1], _[0]>;
   }
 }
-
-/*******************************************************************************
- * Constructors
- ******************************************************************************/
 
 export function ask<A, B = never>(): ReaderEither<A, B, A> {
   return E.right;
@@ -69,10 +57,6 @@ export function fromEither<A, B, C = unknown>(
 ): ReaderEither<C, B, A> {
   return R.of(ta);
 }
-
-/*******************************************************************************
- * Functions
- ******************************************************************************/
 
 export function of<A, B = never, C = unknown>(a: A): ReaderEither<C, B, A> {
   return right(a);
@@ -154,13 +138,9 @@ export function widen<F>(): <R, E, A>(
   return identity;
 }
 
-/*******************************************************************************
- * Module Getters
- ******************************************************************************/
-
 export function getRightMonad<B>(
-  { concat }: TC.Semigroup<B>,
-): TC.MonadThrow<URI, [B]> {
+  { concat }: T.Semigroup<B>,
+): T.MonadThrow<URI, [B]> {
   return ({
     of,
     ap: (tfai) =>
@@ -180,23 +160,19 @@ export function getRightMonad<B>(
   });
 }
 
-/*******************************************************************************
- * Modules
- ******************************************************************************/
+export const Functor: T.Functor<URI> = { map };
 
-export const Functor: TC.Functor<URI> = { map };
+export const Apply: T.Apply<URI> = { ap, map };
 
-export const Apply: TC.Apply<URI> = { ap, map };
+export const Applicative: T.Applicative<URI> = { of, ap, map };
 
-export const Applicative: TC.Applicative<URI> = { of, ap, map };
+export const Chain: T.Chain<URI> = { ap, map, chain };
 
-export const Chain: TC.Chain<URI> = { ap, map, chain };
+export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
 
-export const Monad: TC.Monad<URI> = { of, ap, map, join, chain };
+export const Bifunctor: T.Bifunctor<URI> = { bimap, mapLeft };
 
-export const Bifunctor: TC.Bifunctor<URI> = { bimap, mapLeft };
-
-export const MonadThrow: TC.MonadThrow<URI> = {
+export const MonadThrow: T.MonadThrow<URI> = {
   of,
   ap,
   map,
@@ -205,10 +181,6 @@ export const MonadThrow: TC.MonadThrow<URI> = {
   throwError,
 };
 
-export const Alt: TC.Alt<URI> = { alt, map };
-
-/*******************************************************************************
- * Derived Functions
- ******************************************************************************/
+export const Alt: T.Alt<URI> = { alt, map };
 
 export const { Do, bind, bindTo } = createDo(Monad);

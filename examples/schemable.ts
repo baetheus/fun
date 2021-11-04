@@ -1,12 +1,13 @@
-import * as S from "../schemable/schemable.ts";
-import * as D from "../schemable/decoder.ts";
+import * as S from "../schemable.ts";
+import * as D from "../decoder.ts";
 import * as E from "../either.ts";
 import { flow } from "../fns.ts";
 
-export const Thing = S.make((s) => s.array(s.literal("shit")));
+export const Thing = S.schema((s) => s.array(s.literal("stuff")));
+
 export type Thing = S.TypeOf<typeof Thing>;
 
-export const Demo = S.make((s) =>
+export const Demo = S.schema((s) =>
   s.struct({
     one: s.string(),
     two: s.partial({
@@ -18,6 +19,7 @@ export const Demo = S.make((s) =>
     maybeNull: s.nullable(s.string()),
   })
 );
+
 export type Demo = S.TypeOf<typeof Demo>;
 
 export const decode = Demo(D.Schemable);
@@ -30,5 +32,5 @@ export const print = flow(
 
 [null, undefined, {}, [], { one: "one", two: {}, things: [] }, {
   one: "one",
-  things: ["shit", "poop"],
+  things: ["stuff", "things"],
 }].forEach(print);

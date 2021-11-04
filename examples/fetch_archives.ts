@@ -1,10 +1,12 @@
 import * as A from "../array.ts";
-import * as D from "../schemable/decoder.ts";
+import * as D from "../decoder.ts";
+import * as R from "../result.ts";
 import * as E from "../either.ts";
-import * as S from "../schemable/schemable.ts";
+import * as S from "../schemable.ts";
 import * as TE from "../task_either.ts";
-import * as L from "../optics/lens.ts";
-import * as T from "../optics/traversal.ts";
+import * as L from "../lens.ts";
+import * as T from "../traversal.ts";
+import * as J from "../json.ts";
 import { flow, pipe } from "../fns.ts";
 
 // Let's start by defining some error types and making some constructors
@@ -65,7 +67,7 @@ const fetchTaskEither = (
  * fetchTaskEither function where we make sure the response from
  * fetchTaskEither has the structure that we want.
  */
-const fromDecode = <A>(decoder: D.Decoder<A>) =>
+const fromDecode = <A>(decoder: D.Decoder<unknown, A>) =>
   // Flow is a helper function like pipe, but instead of the
   // first argument being a value, it is a function.
   flow(
@@ -74,7 +76,7 @@ const fromDecode = <A>(decoder: D.Decoder<A>) =>
       flow(
         // Then take any "good" results and pass them to..
         decoder, // The decoder
-        E.mapLeft((e) => decodeError(D.draw(e))), // Take any decoder errors and wrap them up
+        E.mapLeft((e) => decodeError(R.draw(e))), // Take any decoder errors and wrap them up
         TE.fromEither, // Since a decoder returns a plain "Either" we wrap it in a Task to make a TaskEither
         TE.widen<FetchError>(), // This is necessary so we can have different error types in the flow
       ),
@@ -86,7 +88,7 @@ const fromDecode = <A>(decoder: D.Decoder<A>) =>
  * for "merging" two decoders together. In this case type contains the required
  * properties on a Document and partial contains the optional ones.
  */
-const Document = S.make((d) =>
+const Document = S.schema((d) =>
   pipe(
     d.struct({
       title: d.string(),
@@ -118,7 +120,7 @@ type Document = D.TypeOf<typeof Document>;
 
 // A response from archive contains many documents and
 // some metadata
-const Response = S.make((s) =>
+const Response = S.schema((s) =>
   s.struct({
     numFound: s.number(),
     start: s.number(),
@@ -128,7 +130,7 @@ const Response = S.make((s) =>
 type Response = S.TypeOf<typeof Response>;
 
 // The happy path response from archive gives this response
-const QueryResponse = S.make((s) =>
+const QueryResponse = S.schema((s) =>
   s.struct({
     response: Response(s), // Notice that Decoders are composable even when you make your own
   })
@@ -177,6 +179,16 @@ pipe(
     console.log,
   ),
 );
+
+// While we're at it let's print out the JsonSchema for the response!
+console.log(
+  "Following is the JsonSchema for the QueryResponse form archive.org",
+);
+
+const jsonSchemaTemplate = QueryResponse(J.Schemable); // Create a JsonSchema template
+const jsonSchema = J.print(jsonSchemaTemplate); // JsonSchema objects
+
+console.log(JSON.stringify(jsonSchema, null, 2)); // Print it to console!
 
 /**
  * Summary
