@@ -1,43 +1,26 @@
-import type * as HKT from "./hkt.ts";
-import type { Kind, URIS } from "./hkt.ts";
-import type * as TC from "./type_classes.ts";
+import type { Kind, URIS } from "./kind.ts";
+import type * as T from "./types.ts";
 import type { Fn } from "./types.ts";
 
 import { hasOwnProperty, pipe } from "./fns.ts";
 import { compare, ordString } from "./ord.ts";
 
-/*******************************************************************************
- * Types
- ******************************************************************************/
-
 export type ReadonlyRecord<V> = Readonly<Record<string, V>>;
-
-/*******************************************************************************
- * Kind Registration
- ******************************************************************************/
 
 export const URI = "ReadonlyRecord";
 
 export type URI = typeof URI;
 
-declare module "./hkt.ts" {
+declare module "./kind.ts" {
   // deno-lint-ignore no-explicit-any
   export interface Kinds<_ extends any[]> {
     [URI]: ReadonlyRecord<_[0]>;
   }
 }
 
-/*******************************************************************************
- * Utilities
- ******************************************************************************/
-
 const compareStrings = compare(ordString);
 
 const sortStrings = (keys: string[]): string[] => keys.sort(compareStrings);
-
-/*******************************************************************************
- * Functions
- ******************************************************************************/
 
 export function map<A, I>(
   fai: (a: A, i: string) => I,
@@ -74,7 +57,7 @@ export function reduce<A, O>(
 }
 
 export function traverse<VRI extends URIS>(
-  A: TC.Applicative<VRI>,
+  A: T.Applicative<VRI>,
 ): <A, I, J, K, L>(
   favi: (a: A, i: string) => Kind<VRI, [I, J, K, L]>,
 ) => (ta: ReadonlyRecord<A>) => Kind<VRI, [ReadonlyRecord<I>, J, K, L]> {
@@ -147,31 +130,23 @@ export function zipFirst<A, I>(
   return (tb) => map((a: A, key) => fabi(key, a, tb[key]));
 }
 
-/*******************************************************************************
- * Modules
- ******************************************************************************/
+export const Functor: T.Functor<URI> = { map };
 
-export const Functor: TC.Functor<URI> = { map };
+export const IndexedFunctor: T.IndexedFunctor<URI, string> = { map };
 
-export const IndexedFunctor: TC.IndexedFunctor<URI, string> = { map };
+export const IndexedFoldable: T.IndexedFoldable<URI, string> = { reduce };
 
-export const IndexedFoldable: TC.IndexedFoldable<URI, string> = { reduce };
-
-export const IndexedTraversable: TC.IndexedTraversable<URI, string> = {
+export const IndexedTraversable: T.IndexedTraversable<URI, string> = {
   map,
   reduce,
   traverse,
 };
 
-export const Foldable: TC.Foldable<URI> = IndexedFoldable;
+export const Foldable: T.Foldable<URI> = IndexedFoldable;
 
-export const Traversable: TC.Traversable<URI> = IndexedTraversable;
+export const Traversable: T.Traversable<URI> = IndexedTraversable;
 
-/*******************************************************************************
- * Module Getters
- ******************************************************************************/
-
-export function getShow<A>(SA: TC.Show<A>): TC.Show<Record<string, A>> {
+export function getShow<A>(SA: T.Show<A>): T.Show<Record<string, A>> {
   return ({
     show: (ta) =>
       `{${

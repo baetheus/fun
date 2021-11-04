@@ -1,14 +1,9 @@
-import type * as HKT from "./hkt.ts";
-import type { Kind, URIS } from "./hkt.ts";
-import type * as TC from "./type_classes.ts";
+import type { Kind, URIS } from "./kind.ts";
+import type * as T from "./types.ts";
 
 import { apply, flow, identity, isNotNil, pipe } from "./fns.ts";
 import { createDo } from "./derivations.ts";
-import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
-
-/*******************************************************************************
- * Types
- ******************************************************************************/
+import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
 export type Initial = {
   readonly tag: "Initial";
@@ -36,24 +31,16 @@ export type Some<A> = Refresh<A> | Replete<A>;
 
 export type Loading<A> = Pending | Refresh<A>;
 
-/*******************************************************************************
- * Kind Registration
- ******************************************************************************/
-
 export const URI = "Datum";
 
 export type URI = typeof URI;
 
-declare module "./hkt.ts" {
+declare module "./kind.ts" {
   // deno-lint-ignore no-explicit-any
   export interface Kinds<_ extends any[]> {
     [URI]: Datum<_[0]>;
   }
 }
-
-/*******************************************************************************
- * Constructors
- ******************************************************************************/
 
 export const initial: Initial = { tag: "Initial" };
 
@@ -87,10 +74,6 @@ export function tryCatch<A>(fa: () => A): Datum<A> {
   }
 }
 
-/*******************************************************************************
- * Combinators
- ******************************************************************************/
-
 export function toLoading<A>(ta: Datum<A>): Datum<A> {
   return pipe(
     ta,
@@ -102,10 +85,6 @@ export function toLoading<A>(ta: Datum<A>): Datum<A> {
     ),
   );
 }
-
-/*******************************************************************************
- * Guards
- ******************************************************************************/
 
 export function isInitial<A>(ta: Datum<A>): ta is Initial {
   return ta.tag === "Initial";
@@ -135,10 +114,6 @@ export function isLoading<A>(ta: Datum<A>): ta is Loading<A> {
   return isPending(ta) || isRefresh(ta);
 }
 
-/*******************************************************************************
- * Destructors
- ******************************************************************************/
-
 export function fold<A, B>(
   onInitial: () => B,
   onPending: () => B,
@@ -162,10 +137,6 @@ export function fold<A, B>(
 export function getOrElse<A>(onNone: () => A) {
   return fold<A, A>(onNone, onNone, identity, identity);
 }
-
-/*******************************************************************************
- * Functions
- ******************************************************************************/
 
 export function of<A>(a: A): Datum<A> {
   return replete(a);
@@ -213,7 +184,7 @@ export function reduce<A, O>(
 }
 
 export function traverse<VRI extends URIS>(
-  A: TC.Applicative<VRI>,
+  A: T.Applicative<VRI>,
 ): <A, I, J, K, L>(
   favi: (a: A) => Kind<VRI, [I, J, K, L]>,
 ) => (ta: Datum<A>) => Kind<VRI, [Datum<I>, J, K, L]> {
@@ -226,11 +197,7 @@ export function traverse<VRI extends URIS>(
     );
 }
 
-/*******************************************************************************
- * Module Getters
- ******************************************************************************/
-
-export function getShow<A>({ show }: TC.Show<A>): TC.Show<Datum<A>> {
+export function getShow<A>({ show }: T.Show<A>): T.Show<Datum<A>> {
   return ({
     show: fold(
       () => `Initial`,
@@ -242,8 +209,8 @@ export function getShow<A>({ show }: TC.Show<A>): TC.Show<Datum<A>> {
 }
 
 export function getSemigroup<A>(
-  S: TC.Semigroup<A>,
-): TC.Semigroup<Datum<A>> {
+  S: T.Semigroup<A>,
+): T.Semigroup<Datum<A>> {
   return ({
     concat: (mx) =>
       fold(
@@ -260,14 +227,14 @@ export function getSemigroup<A>(
   });
 }
 
-export function getMonoid<A>(S: TC.Semigroup<A>): TC.Monoid<Datum<A>> {
+export function getMonoid<A>(S: T.Semigroup<A>): T.Monoid<Datum<A>> {
   return ({
     ...getSemigroup(S),
     empty: constInitial,
   });
 }
 
-export function getSetoid<A>(S: TC.Setoid<A>): TC.Setoid<Datum<A>> {
+export function getSetoid<A>(S: T.Setoid<A>): T.Setoid<Datum<A>> {
   return ({
     equals: (b) =>
       fold(
@@ -279,7 +246,7 @@ export function getSetoid<A>(S: TC.Setoid<A>): TC.Setoid<Datum<A>> {
   });
 }
 
-export function getOrd<A>(O: TC.Ord<A>): TC.Ord<Datum<A>> {
+export function getOrd<A>(O: T.Ord<A>): T.Ord<Datum<A>> {
   return ({
     ...getSetoid(O),
     lte: (tb) =>
@@ -292,21 +259,17 @@ export function getOrd<A>(O: TC.Ord<A>): TC.Ord<Datum<A>> {
   });
 }
 
-/*******************************************************************************
- * Modules
- ******************************************************************************/
+export const Functor: T.Functor<URI> = { map };
 
-export const Functor: TC.Functor<URI> = { map };
+export const Apply: T.Apply<URI> = { ap, map };
 
-export const Apply: TC.Apply<URI> = { ap, map };
+export const Applicative: T.Applicative<URI> = { of, ap, map };
 
-export const Applicative: TC.Applicative<URI> = { of, ap, map };
+export const Chain: T.Chain<URI> = { ap, map, chain };
 
-export const Chain: TC.Chain<URI> = { ap, map, chain };
+export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
 
-export const Monad: TC.Monad<URI> = { of, ap, map, join, chain };
-
-export const Alternative: TC.Alternative<URI> = {
+export const Alternative: T.Alternative<URI> = {
   of,
   ap,
   map,
@@ -314,13 +277,9 @@ export const Alternative: TC.Alternative<URI> = {
   alt,
 };
 
-export const Foldable: TC.Foldable<URI> = { reduce };
+export const Foldable: T.Foldable<URI> = { reduce };
 
-export const Traversable: TC.Traversable<URI> = { map, reduce, traverse };
-
-/*******************************************************************************
- * Derived Functions
- ******************************************************************************/
+export const Traversable: T.Traversable<URI> = { map, reduce, traverse };
 
 export const sequenceTuple = createSequenceTuple(Apply);
 

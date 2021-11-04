@@ -1,16 +1,11 @@
-import type * as HKT from "./hkt.ts";
-import type { Kind, URIS } from "./hkt.ts";
-import type * as TC from "./type_classes.ts";
+import type { Kind, URIS } from "./kind.ts";
+import type * as T from "./types.ts";
 import type { Fn, Predicate, Refinement } from "./types.ts";
 
 import * as O from "./option.ts";
 import { flow, identity, isNotNil, pipe } from "./fns.ts";
-import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
+import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 import { createDo } from "./derivations.ts";
-
-/*******************************************************************************
- * Types
- ******************************************************************************/
 
 export type Left<L> = { tag: "Left"; left: L };
 
@@ -18,24 +13,16 @@ export type Right<R> = { tag: "Right"; right: R };
 
 export type Either<L, R> = Left<L> | Right<R>;
 
-/*******************************************************************************
- * Kind Registration
- ******************************************************************************/
-
 export const URI = "Either";
 
 export type URI = typeof URI;
 
-declare module "./hkt.ts" {
+declare module "./kind.ts" {
   // deno-lint-ignore no-explicit-any
   export interface Kinds<_ extends any[]> {
     [URI]: Either<_[1], _[0]>;
   }
 }
-
-/*******************************************************************************
- * Constructors
- ******************************************************************************/
 
 export function left<E = never, A = never>(left: E): Either<E, A> {
   return ({
@@ -100,10 +87,6 @@ export function fromPredicate<E, A>(
   return (a: A) => predicate(a) ? right(a) : left(onFalse(a));
 }
 
-/*******************************************************************************
- * Destructors
- ******************************************************************************/
-
 export function fold<L, R, B>(
   onLeft: (left: L) => B,
   onRight: (right: R) => B,
@@ -123,10 +106,6 @@ export function getLeft<E, A>(ma: Either<E, A>): O.Option<E> {
   return pipe(ma, fold(O.some, O.constNone));
 }
 
-/*******************************************************************************
- * Guards
- ******************************************************************************/
-
 export function isLeft<L, R>(m: Either<L, R>): m is Left<L> {
   return m.tag === "Left";
 }
@@ -135,14 +114,10 @@ export function isRight<L, R>(m: Either<L, R>): m is Right<R> {
   return m.tag === "Right";
 }
 
-/*******************************************************************************
- * Module Getters
- ******************************************************************************/
-
 export function getShow<A, B>(
-  SB: TC.Show<B>,
-  SA: TC.Show<A>,
-): TC.Show<Either<B, A>> {
+  SB: T.Show<B>,
+  SA: T.Show<A>,
+): T.Show<Either<B, A>> {
   return ({
     show: fold(
       (left) => `Left(${SB.show(left)})`,
@@ -152,9 +127,9 @@ export function getShow<A, B>(
 }
 
 export function getSetoid<A, B>(
-  SB: TC.Setoid<B>,
-  SA: TC.Setoid<A>,
-): TC.Setoid<Either<B, A>> {
+  SB: T.Setoid<B>,
+  SA: T.Setoid<A>,
+): T.Setoid<Either<B, A>> {
   return ({
     equals: (b) =>
       (a) => {
@@ -174,9 +149,9 @@ export function getSetoid<A, B>(
 }
 
 export function getOrd<A, B>(
-  OB: TC.Ord<B>,
-  OA: TC.Ord<A>,
-): TC.Ord<Either<B, A>> {
+  OB: T.Ord<B>,
+  OA: T.Ord<A>,
+): T.Ord<Either<B, A>> {
   return ({
     ...getSetoid(OB, OA),
     lte: (b) =>
@@ -197,8 +172,8 @@ export function getOrd<A, B>(
 }
 
 export function getLeftSemigroup<E = never, A = never>(
-  SE: TC.Semigroup<E>,
-): TC.Semigroup<Either<E, A>> {
+  SE: T.Semigroup<E>,
+): T.Semigroup<Either<E, A>> {
   return ({
     concat: (x) =>
       (y) => isRight(x) ? x : isRight(y) ? y : left(SE.concat(x.left)(y.left)),
@@ -206,8 +181,8 @@ export function getLeftSemigroup<E = never, A = never>(
 }
 
 export function getRightSemigroup<E = never, A = never>(
-  SA: TC.Semigroup<A>,
-): TC.Semigroup<Either<E, A>> {
+  SA: T.Semigroup<A>,
+): T.Semigroup<Either<E, A>> {
   return ({
     concat: (x) =>
       (y) => isLeft(x) ? x : isLeft(y) ? y : right(SA.concat(x.right)(y.right)),
@@ -215,8 +190,8 @@ export function getRightSemigroup<E = never, A = never>(
 }
 
 export function getRightMonoid<E = never, A = never>(
-  MA: TC.Monoid<A>,
-): TC.Monoid<Either<E, A>> {
+  MA: T.Monoid<A>,
+): T.Monoid<Either<E, A>> {
   return ({
     ...getRightSemigroup(MA),
     empty: () => right(MA.empty()),
@@ -224,8 +199,8 @@ export function getRightMonoid<E = never, A = never>(
 }
 
 export function getRightMonad<E>(
-  { concat }: TC.Semigroup<E>,
-): TC.Monad<URI, [E]> {
+  { concat }: T.Semigroup<E>,
+): T.Monad<URI, [E]> {
   return ({
     ...Monad,
     ap: (tfai) =>
@@ -236,10 +211,6 @@ export function getRightMonad<E>(
           : (isLeft(ta) ? ta : right(tfai.right(ta.right))),
   });
 }
-
-/*******************************************************************************
- * Functions
- ******************************************************************************/
 
 export function bimap<A, B, I, J>(
   fbj: (b: B) => J,
@@ -316,7 +287,7 @@ export function reduce<A, O>(
 }
 
 export function traverse<VRI extends URIS>(
-  A: TC.Applicative<VRI>,
+  A: T.Applicative<VRI>,
 ): (<A, I, J, K, L>(
   faui: (a: A) => Kind<VRI, [I, J, K, L]>,
 ) => <B>(ta: Either<B, A>) => Kind<VRI, [Either<B, I>, J, K, L]>) {
@@ -324,35 +295,27 @@ export function traverse<VRI extends URIS>(
     fold((l) => A.of(left(l)), flow(faui, A.map((r) => right(r))));
 }
 
-/*******************************************************************************
- * Modules
- ******************************************************************************/
+export const Functor: T.Functor<URI> = { map };
 
-export const Functor: TC.Functor<URI> = { map };
+export const Apply: T.Apply<URI> = { ap, map };
 
-export const Apply: TC.Apply<URI> = { ap, map };
+export const Applicative: T.Applicative<URI> = { of, ap, map };
 
-export const Applicative: TC.Applicative<URI> = { of, ap, map };
+export const Chain: T.Chain<URI> = { ap, map, chain };
 
-export const Chain: TC.Chain<URI> = { ap, map, chain };
+export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
 
-export const Monad: TC.Monad<URI> = { of, ap, map, join, chain };
+export const MonadThrow: T.MonadThrow<URI> = { ...Monad, throwError };
 
-export const MonadThrow: TC.MonadThrow<URI> = { ...Monad, throwError };
+export const Bifunctor: T.Bifunctor<URI> = { bimap, mapLeft };
 
-export const Bifunctor: TC.Bifunctor<URI> = { bimap, mapLeft };
+export const Alt: T.Alt<URI> = { alt, map };
 
-export const Alt: TC.Alt<URI> = { alt, map };
+export const Extend: T.Extend<URI> = { map, extend };
 
-export const Extend: TC.Extend<URI> = { map, extend };
+export const Foldable: T.Foldable<URI> = { reduce };
 
-export const Foldable: TC.Foldable<URI> = { reduce };
-
-export const Traversable: TC.Traversable<URI> = { map, reduce, traverse };
-
-/*******************************************************************************
- * Derived Functions
- ******************************************************************************/
+export const Traversable: T.Traversable<URI> = { map, reduce, traverse };
 
 export const sequenceTuple = createSequenceTuple(Apply);
 

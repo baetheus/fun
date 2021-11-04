@@ -1,14 +1,9 @@
-import type * as HKT from "./hkt.ts";
-import type { Kind, URIS } from "./hkt.ts";
-import type * as TC from "./type_classes.ts";
+import type { Kind, URIS } from "./kind.ts";
+import type * as T from "./types.ts";
 
 import * as A from "./array.ts";
 import { createDo } from "./derivations.ts";
 import { apply, flow, identity, pipe } from "./fns.ts";
-
-/*******************************************************************************
- * Types
- ******************************************************************************/
 
 export type Forest<A> = ReadonlyArray<Tree<A>>;
 
@@ -17,26 +12,18 @@ export type Tree<A> = {
   readonly forest: Forest<A>;
 };
 
-/*******************************************************************************
- * Kind Registration
- ******************************************************************************/
-
 export const URI = "Tree";
 
 export type URI = typeof URI;
 
-declare module "./hkt.ts" {
+declare module "./kind.ts" {
   // deno-lint-ignore no-explicit-any
   export interface Kinds<_ extends any[]> {
     [URI]: Tree<_[0]>;
   }
 }
 
-/*******************************************************************************
- * Optimizations
- ******************************************************************************/
-
-const draw = (indentation: string, forest: Forest<string>): string => {
+function draw(indentation: string, forest: Forest<string>): string {
   let r = "";
   const len = forest.length;
   let tree: Tree<string>;
@@ -47,14 +34,11 @@ const draw = (indentation: string, forest: Forest<string>): string => {
     r += draw(indentation + (len > 1 && !isLast ? "│  " : "   "), tree.forest);
   }
   return r;
-};
+}
 
-const _make = <A>(value: A) =>
-  (forest: Forest<A>): Tree<A> => ({ value, forest });
-
-/*******************************************************************************
- * Functions
- ******************************************************************************/
+function _make<A>(value: A): (forest: Forest<A>) => Tree<A> {
+  return (forest) => ({ value, forest });
+}
 
 export function of<A>(value: A, forest: Forest<A> = A.empty()): Tree<A> {
   return ({ value, forest });
@@ -89,7 +73,7 @@ export function reduce<A, O>(
 }
 
 export function traverse<VRI extends URIS>(
-  V: TC.Applicative<VRI>,
+  V: T.Applicative<VRI>,
 ): <A, I, J, K, L>(
   favi: (a: A) => Kind<VRI, [I, J, K, L]>,
 ) => (ta: Tree<A>) => Kind<VRI, [Tree<I>, J, K, L]> {
@@ -119,36 +103,24 @@ export function fold<A, I>(fai: (a: A, is: Array<I>) => I): (ta: Tree<A>) => I {
   return go;
 }
 
-/*******************************************************************************
- * Modules
- ******************************************************************************/
+export const Functor: T.Functor<URI> = { map };
 
-export const Functor: TC.Functor<URI> = { map };
+export const Apply: T.Apply<URI> = { ap, map };
 
-export const Apply: TC.Apply<URI> = { ap, map };
+export const Applicative: T.Applicative<URI> = { of, ap, map };
 
-export const Applicative: TC.Applicative<URI> = { of, ap, map };
+export const Chain: T.Chain<URI> = { ap, map, chain };
 
-export const Chain: TC.Chain<URI> = { ap, map, chain };
+export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
 
-export const Monad: TC.Monad<URI> = { of, ap, map, join, chain };
+export const Traversable: T.Traversable<URI> = { map, reduce, traverse };
 
-export const Traversable: TC.Traversable<URI> = { map, reduce, traverse };
-
-/*******************************************************************************
- * Module Getters
- ******************************************************************************/
-
-export const getShow = <A>(S: TC.Show<A>): TC.Show<Tree<A>> => {
+export const getShow = <A>(S: T.Show<A>): T.Show<Tree<A>> => {
   const show = (ta: Tree<A>): string =>
     ta.forest.length === 0
       ? `Tree(${S.show(ta.value)})`
       : `Tree(${S.show(ta.value)}, [${ta.forest.map(show).join(", ")}])`;
   return ({ show });
 };
-
-/*******************************************************************************
- * Do Notation
- ******************************************************************************/
 
 export const { Do, bind, bindTo } = createDo(Monad);

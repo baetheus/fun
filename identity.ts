@@ -1,29 +1,18 @@
-import type * as HKT from "./hkt.ts";
-import type * as TC from "./type_classes.ts";
-
-/*******************************************************************************
- * Types
- ******************************************************************************/
+import type { Kind } from "./kind.ts";
+import type * as T from "./types.ts";
 
 export type Identity<A> = A;
 
-/*******************************************************************************
- * Kind Registration
- ******************************************************************************/
 export const URI = "Identity";
 
 export type URI = typeof URI;
 
-declare module "./hkt.ts" {
+declare module "./kind.ts" {
   // deno-lint-ignore no-explicit-any
   export interface Kinds<_ extends any[]> {
     [URI]: Identity<_[0]>;
   }
 }
-
-/*******************************************************************************
- * Functions
- ******************************************************************************/
 
 export function of<A>(a: A): Identity<A> {
   return a;
@@ -51,16 +40,12 @@ export function chain<A, I>(
   return fati;
 }
 
-/*******************************************************************************
- * Modules
- ******************************************************************************/
+export const Functor: T.Functor<URI> = { map };
 
-export const Functor: TC.Functor<URI> = { map };
+export const Apply: T.Apply<URI> = { ap, map };
 
-export const Apply: TC.Apply<URI> = { ap, map };
+export const Applicative: T.Applicative<URI> = { of, ap, map };
 
-export const Applicative: TC.Applicative<URI> = { of, ap, map };
+export const Chain: T.Chain<URI> = { ap, map, chain };
 
-export const Chain: TC.Chain<URI> = { ap, map, chain };
-
-export const Monad: TC.Monad<URI> = { of, ap, map, join, chain };
+export const Monad: T.Monad<URI> = { of, ap, map, join, chain };

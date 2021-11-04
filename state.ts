@@ -1,35 +1,23 @@
-import type * as HKT from "./hkt.ts";
-import type * as TC from "./type_classes.ts";
+import type { Kind } from "./kind.ts";
+import type * as T from "./types.ts";
 
 import { createDo } from "./derivations.ts";
 import { traverse } from "./array.ts";
 import { flow, identity, pipe } from "./fns.ts";
-import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
-
-/*******************************************************************************
- * Types
- ******************************************************************************/
+import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
 export type State<S, A> = (s: S) => [A, S];
-
-/*******************************************************************************
- * Kind Registration
- ******************************************************************************/
 
 export const URI = "State";
 
 export type URI = typeof URI;
 
-declare module "./hkt.ts" {
+declare module "./kind.ts" {
   // deno-lint-ignore no-explicit-any
   export interface Kinds<_ extends any[]> {
     [URI]: State<_[1], _[0]>;
   }
 }
-
-/*******************************************************************************
- * Constructors
- ******************************************************************************/
 
 export function get<S>(): State<S, S> {
   return (s: S) => [s, s];
@@ -50,10 +38,6 @@ export function modify<S>(fss: (s: S) => S): State<S, void> {
 export function make<S, A>(a: A, s: S): State<S, A> {
   return () => [a, s];
 }
-
-/*******************************************************************************
- * Functions
- ******************************************************************************/
 
 export function of<A, B = never>(a: A): State<B, A> {
   return (b) => [a, b];
@@ -106,23 +90,15 @@ export function execute<S>(s: S): <A>(ta: State<S, A>) => S {
   return (ta) => ta(s)[1];
 }
 
-/*******************************************************************************
- * Modules
- ******************************************************************************/
+export const Functor: T.Functor<URI> = { map };
 
-export const Functor: TC.Functor<URI> = { map };
+export const Apply: T.Apply<URI> = { ap, map };
 
-export const Apply: TC.Apply<URI> = { ap, map };
+export const Applicative: T.Applicative<URI> = { of, ap, map };
 
-export const Applicative: TC.Applicative<URI> = { of, ap, map };
+export const Chain: T.Chain<URI> = { ap, map, chain };
 
-export const Chain: TC.Chain<URI> = { ap, map, chain };
-
-export const Monad: TC.Monad<URI> = { of, ap, map, join, chain };
-
-/*******************************************************************************
- * Derived Functions
- ******************************************************************************/
+export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
 
 export const { Do, bind, bindTo } = createDo(Monad);
 

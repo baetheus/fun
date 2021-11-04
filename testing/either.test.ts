@@ -4,7 +4,7 @@ import * as E from "../either.ts";
 import * as O from "../option.ts";
 import { ordNumber } from "../ord.ts";
 import { monoidSum } from "../monoid.ts";
-import { setoidNumber } from "../setoid.ts";
+import { Setoid as setoidNumber } from "../number.ts";
 import { semigroupSum } from "../semigroup.ts";
 import { pipe } from "../fns.ts";
 

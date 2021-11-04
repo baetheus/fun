@@ -1,45 +1,33 @@
-/*******************************************************************************
+/** *****************************************************************************
  * Nilable
  * Note: The Nilable Functor is not a true Functor as it does not satisfy the functor laws.
  * However, it is still fairly useful.
  *
  * Nilable is a type like Maybe/Option that uses undefined/null in lieu of tagged unions.
- ******************************************************************************/
+ * **************************************************************************** */
 
-import type * as HKT from "./hkt.ts";
-import type * as TC from "./type_classes.ts";
+import type { Kind } from "./kind.ts";
 import type { Predicate } from "./types.ts";
+import type * as T from "./types.ts";
 
 import { createDo } from "./derivations.ts";
 import { identity, pipe } from "./fns.ts";
-import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
-
-/*******************************************************************************
- * Types
- ******************************************************************************/
+import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
 export type Nil = undefined | null;
 
 export type Nilable<A> = Nil | A;
 
-/*******************************************************************************
- * Kind Registration
- ******************************************************************************/
-
 export const URI = "Nilable";
 
 export type URI = typeof URI;
 
-declare module "./hkt.ts" {
+declare module "./kind.ts" {
   // deno-lint-ignore no-explicit-any
   export interface Kinds<_ extends any[]> {
     [URI]: Nilable<_[0]>;
   }
 }
-
-/*******************************************************************************
- * Constructors
- ******************************************************************************/
 
 export const nil: Nil = undefined;
 
@@ -65,10 +53,6 @@ export function tryCatch<A>(fa: () => A): Nilable<A> {
   }
 }
 
-/*******************************************************************************
- * Destructors
- ******************************************************************************/
-
 export function fold<A, I>(
   onNil: () => I,
   onValue: (a: A) => I,
@@ -88,10 +72,6 @@ export function toUndefined<A>(ta: Nilable<A>): A | undefined {
   return isNil(ta) ? undefined : ta;
 }
 
-/*******************************************************************************
- * Guards
- ******************************************************************************/
-
 export function isNil<A>(ta: Nilable<A>): ta is Nil {
   return ta === undefined || ta === null;
 }
@@ -99,10 +79,6 @@ export function isNil<A>(ta: Nilable<A>): ta is Nil {
 export function isNotNil<A>(ta: Nilable<A>): ta is NonNullable<A> {
   return !isNil(ta);
 }
-
-/*******************************************************************************
- * Functions
- ******************************************************************************/
 
 export function of<A>(a: A): Nilable<A> {
   return a;
@@ -136,35 +112,23 @@ export function alt<A>(tb: Nilable<A>): ((ta: Nilable<A>) => Nilable<A>) {
   return (ta) => isNil(ta) ? tb : ta;
 }
 
-/*******************************************************************************
- * Modules (Note that these modules do not follow the Type Class laws)
- ******************************************************************************/
+export const Functor: T.Functor<URI> = { map };
 
-export const Functor: TC.Functor<URI> = { map };
+export const Apply: T.Apply<URI> = { ap, map };
 
-export const Apply: TC.Apply<URI> = { ap, map };
+export const Applicative: T.Applicative<URI> = { of, ap, map };
 
-export const Applicative: TC.Applicative<URI> = { of, ap, map };
+export const Chain: T.Chain<URI> = { ap, map, chain };
 
-export const Chain: TC.Chain<URI> = { ap, map, chain };
+export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
 
-export const Monad: TC.Monad<URI> = { of, ap, map, join, chain };
+export const MonadThrow: T.MonadThrow<URI> = { ...Monad, throwError };
 
-export const MonadThrow: TC.MonadThrow<URI> = { ...Monad, throwError };
+export const Alt: T.Alt<URI> = { alt, map };
 
-export const Alt: TC.Alt<URI> = { alt, map };
-
-/*******************************************************************************
- * Module Getters
- ******************************************************************************/
-
-export const getShow = <A>({ show }: TC.Show<A>): TC.Show<Nilable<A>> => ({
+export const getShow = <A>({ show }: T.Show<A>): T.Show<Nilable<A>> => ({
   show: (ma) => (isNil(ma) ? "nil" : show(ma)),
 });
-
-/*******************************************************************************
- * Derived Functions
- ******************************************************************************/
 
 export const sequenceStruct = createSequenceStruct(Apply);
 

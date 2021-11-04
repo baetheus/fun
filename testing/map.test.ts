@@ -4,7 +4,7 @@ import * as AS from "./assert.ts";
 
 import * as M from "../map.ts";
 import * as O from "../option.ts";
-import { setoidNumber } from "../setoid.ts";
+import { Setoid as setoidNumber } from "../number.ts";
 import { ordNumber } from "../ord.ts";
 import { semigroupSum } from "../semigroup.ts";
 import { pipe } from "../fns.ts";

@@ -1,35 +1,22 @@
-import type * as HKT from "./hkt.ts";
-import type { Kind, URIS } from "./hkt.ts";
-import type * as TC from "./type_classes.ts";
+import type { Kind, URIS } from "./kind.ts";
+import type * as T from "./types.ts";
 
-import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
+import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 import { apply, constant, flow, pipe } from "./fns.ts";
 import { createApplySemigroup, createDo } from "./derivations.ts";
 
-/*******************************************************************************
- * Types
- ******************************************************************************/
-
 export type IO<A> = () => A;
-
-/*******************************************************************************
- * Kind Registration
- ******************************************************************************/
 
 export const URI = "IO";
 
 export type URI = typeof URI;
 
-declare module "./hkt.ts" {
+declare module "./kind.ts" {
   // deno-lint-ignore no-explicit-any
   export interface Kinds<_ extends any[]> {
     [URI]: IO<_[0]>;
   }
 }
-
-/*******************************************************************************
- * Functions
- ******************************************************************************/
 
 export function of<A>(a: A): IO<A> {
   return constant(a);
@@ -63,47 +50,35 @@ export function reduce<A, O>(
 }
 
 export function traverse<VRI extends URIS>(
-  A: TC.Applicative<VRI>,
+  A: T.Applicative<VRI>,
 ): (<A, I, J, K, L>(
   faui: (a: A) => Kind<VRI, [I, J, K, L]>,
 ) => (ta: IO<A>) => Kind<VRI, [IO<I>, J, K, L]>) {
   return (faui) => (ta) => pipe(faui(ta()), A.map(of));
 }
 
-/*******************************************************************************
- * Modules
- ******************************************************************************/
+export const Functor: T.Functor<URI> = { map };
 
-export const Functor: TC.Functor<URI> = { map };
+export const Apply: T.Apply<URI> = { ap, map };
 
-export const Apply: TC.Apply<URI> = { ap, map };
+export const Applicative: T.Applicative<URI> = { of, ap, map };
 
-export const Applicative: TC.Applicative<URI> = { of, ap, map };
+export const Chain: T.Chain<URI> = { ap, map, chain };
 
-export const Chain: TC.Chain<URI> = { ap, map, chain };
+export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
 
-export const Monad: TC.Monad<URI> = { of, ap, map, join, chain };
+export const Extends: T.Extend<URI> = { map, extend };
 
-export const Extends: TC.Extend<URI> = { map, extend };
+export const Foldable: T.Foldable<URI> = { reduce };
 
-export const Foldable: TC.Foldable<URI> = { reduce };
-
-export const Traversable: TC.Traversable<URI> = { map, reduce, traverse };
-
-/*******************************************************************************
- * Module Getters
- ******************************************************************************/
+export const Traversable: T.Traversable<URI> = { map, reduce, traverse };
 
 export const getSemigroup = createApplySemigroup(Apply);
 
-export const getMonoid = <A>(M: TC.Monoid<A>): TC.Monoid<IO<A>> => ({
+export const getMonoid = <A>(M: T.Monoid<A>): T.Monoid<IO<A>> => ({
   ...getSemigroup(M),
   empty: constant(M.empty),
 });
-
-/*******************************************************************************
- * Derived Functions
- ******************************************************************************/
 
 export const sequenceTuple = createSequenceTuple(Apply);
 

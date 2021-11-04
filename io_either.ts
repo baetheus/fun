@@ -1,36 +1,24 @@
-import type * as HKT from "./hkt.ts";
-import type * as TC from "./type_classes.ts";
+import type { Kind } from "./kind.ts";
+import type * as T from "./types.ts";
 
 import * as E from "./either.ts";
 import * as I from "./io.ts";
-import * as S from "./sequence.ts";
+import * as S from "./apply.ts";
 import { createDo } from "./derivations.ts";
 import { apply, constant, flow, identity, pipe } from "./fns.ts";
 
-/*******************************************************************************
- * Types
- ******************************************************************************/
-
 export type IOEither<L, R> = I.IO<E.Either<L, R>>;
-
-/*******************************************************************************
- * Kind Registration
- ******************************************************************************/
 
 export const URI = "IOEither";
 
 export type URI = typeof URI;
 
-declare module "./hkt.ts" {
+declare module "./kind.ts" {
   // deno-lint-ignore no-explicit-any
   export interface Kinds<_ extends any[]> {
     [URI]: IOEither<_[1], _[0]>;
   }
 }
-
-/*******************************************************************************
- * Constructors
- ******************************************************************************/
 
 export function left<A = never, B = never>(left: B): IOEither<B, A> {
   return I.of(E.left(left));
@@ -60,10 +48,6 @@ export function fromEither<A = never, B = never>(
 export function fromIO<A = never, B = never>(ta: I.IO<A>): IOEither<B, A> {
   return flow(ta, E.right);
 }
-
-/*******************************************************************************
- * Functions
- ******************************************************************************/
 
 export function of<A = never, B = never>(a: A): IOEither<B, A> {
   return right(a);
@@ -137,33 +121,25 @@ export function widen<J>(): (<A, B>(ta: IOEither<B, A>) => IOEither<B | J, A>) {
   return identity;
 }
 
-/*******************************************************************************
- * Modules
- ******************************************************************************/
+export const Functor: T.Functor<URI> = { map };
 
-export const Functor: TC.Functor<URI> = { map };
+export const Apply: T.Apply<URI> = { ap, map };
 
-export const Apply: TC.Apply<URI> = { ap, map };
+export const Applicative: T.Applicative<URI> = { of, ap, map };
 
-export const Applicative: TC.Applicative<URI> = { of, ap, map };
+export const Chain: T.Chain<URI> = { ap, map, chain };
 
-export const Chain: TC.Chain<URI> = { ap, map, chain };
+export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
 
-export const Monad: TC.Monad<URI> = { of, ap, map, join, chain };
+export const Bifunctor: T.Bifunctor<URI> = { bimap, mapLeft };
 
-export const Bifunctor: TC.Bifunctor<URI> = { bimap, mapLeft };
+export const MonadThrow: T.MonadThrow<URI> = { ...Monad, throwError };
 
-export const MonadThrow: TC.MonadThrow<URI> = { ...Monad, throwError };
+export const Alt: T.Alt<URI> = { alt, map };
 
-export const Alt: TC.Alt<URI> = { alt, map };
+export const Extends: T.Extend<URI> = { map, extend };
 
-export const Extends: TC.Extend<URI> = { map, extend };
-
-export const Foldable: TC.Foldable<URI> = { reduce };
-
-/*******************************************************************************
- * Derived Functions
- ******************************************************************************/
+export const Foldable: T.Foldable<URI> = { reduce };
 
 export const sequenceTuple = S.createSequenceTuple(Apply);
 

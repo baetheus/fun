@@ -2,7 +2,7 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
 import * as T from "../these.ts";
 import * as O from "../option.ts";
-import { _, pipe } from "../fns.ts";
+import { _ } from "../fns.ts";
 import { semigroupSum } from "../semigroup.ts";
 
 import * as AS from "./assert.ts";
