@@ -2,15 +2,15 @@ import type { Kind, URIS } from "../hkt.ts";
 
 import { memoize } from "../fns.ts";
 
-/*******************************************************************************
+/** *****************************************************************************
  * Types
- ******************************************************************************/
+ * **************************************************************************** */
 
 export type Literal = string | number | boolean | null;
 
-/*******************************************************************************
+/** *****************************************************************************
  * Schemable Type Class
- ******************************************************************************/
+ * **************************************************************************** */
 
 export type UnknownSchemable<URI extends URIS> = {
   readonly unknown: <B = never, C = never, D = never>() => Kind<
@@ -54,7 +54,7 @@ export type LiteralSchemable<URI extends URIS> = {
 export type NullableSchemable<URI extends URIS> = {
   readonly nullable: <A, B = never, C = never, D = never>(
     or: Kind<URI, [A, B, C, D]>,
-  ) => Kind<URI, [A | null, B | null, C, D]>;
+  ) => Kind<URI, [A | null, B, C, D]>;
 };
 
 export type UndefinableSchemable<URI extends URIS> = {
@@ -138,9 +138,9 @@ export type Schema<A, B = never, C = never, D = never> = <URI extends URIS>(
 
 export type TypeOf<T> = T extends Schema<infer A> ? A : never;
 
-/*******************************************************************************
+/** *****************************************************************************
  * Utilities
- ******************************************************************************/
+ * **************************************************************************** */
 
 export const make = <A, B = never, C = never, D = never>(
   f: (s: Schemable<URIS>) => Kind<URIS, [A, B, C, D]>,
