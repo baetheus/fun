@@ -12,8 +12,10 @@ export const Demo = S.make((s) =>
     two: s.partial({
       three: s.string(),
       four: s.literal(1, 2),
+      five: s.nullable(s.string()),
     }),
     things: Thing(s),
+    maybeNull: s.nullable(s.string()),
   })
 );
 export type Demo = S.TypeOf<typeof Demo>;
