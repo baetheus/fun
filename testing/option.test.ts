@@ -2,10 +2,8 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
 import * as AS from "./assert.ts";
 
-import type * as HKT from "../hkt.ts";
-
 import * as O from "../option.ts";
-import { setoidNumber } from "../setoid.ts";
+import { Setoid as setoidNumber } from "../number.ts";
 import { monoidSum } from "../monoid.ts";
 import { ordNumber } from "../ord.ts";
 import { semigroupSum } from "../semigroup.ts";

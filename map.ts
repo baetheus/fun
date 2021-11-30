@@ -1,6 +1,6 @@
-import type * as HKT from "./hkt.ts";
-import type * as TC from "./type_classes.ts";
+import type { Kind } from "./kind.ts";
 import type { Option } from "./option.ts";
+import type * as T from "./types.ts";
 
 import * as O from "./option.ts";
 import * as A from "./array.ts";
@@ -8,24 +8,16 @@ import { compare } from "./ord.ts";
 import { fromEquals } from "./setoid.ts";
 import { flow, pipe } from "./fns.ts";
 
-/*******************************************************************************
- * Kind Registration
- ******************************************************************************/
-
 export const URI = "Map";
 
 export type URI = typeof URI;
 
-declare module "./hkt.ts" {
+declare module "./kind.ts" {
   // deno-lint-ignore no-explicit-any
   export interface Kinds<_ extends any[]> {
     [URI]: Map<_[1], _[0]>;
   }
 }
-
-/*******************************************************************************
- * Constructors
- ******************************************************************************/
 
 export function zero(): Map<never, never> {
   return new Map<never, never>();
@@ -38,10 +30,6 @@ export function empty<K, A>(): Map<K, A> {
 export function singleton<K, A>(k: K, a: A): Map<K, A> {
   return new Map([[k, a]]);
 }
-
-/*******************************************************************************
- * Functions
- ******************************************************************************/
 
 export function isEmpty<A, B>(ta: Map<B, A>): boolean {
   return ta.size === 0;
@@ -87,7 +75,7 @@ export function size<K, A>(d: Map<K, A>): number {
 }
 
 export function lookupWithKey<K>(
-  S: TC.Setoid<K>,
+  S: T.Setoid<K>,
 ): ((k: K) => <A>(ta: Map<K, A>) => Option<[K, A]>) {
   return (k) =>
     (ta) => {
@@ -101,7 +89,7 @@ export function lookupWithKey<K>(
 }
 
 export function lookup<K>(
-  S: TC.Setoid<K>,
+  S: T.Setoid<K>,
 ): ((k: K) => <A>(ta: Map<K, A>) => Option<A>) {
   const _lookupWithKey = lookupWithKey(S);
   return (k) => {
@@ -116,14 +104,14 @@ export function lookup<K>(
 }
 
 export function member<K>(
-  S: TC.Setoid<K>,
+  S: T.Setoid<K>,
 ): ((k: K) => <A>(ta: Map<K, A>) => boolean) {
   const lookupKey = lookup(S);
   return (k) => (m) => pipe(lookupKey(k)(m), O.isSome);
 }
 
 export function elem<A>(
-  S: TC.Setoid<A>,
+  S: T.Setoid<A>,
 ): ((a: A) => <K>(m: Map<K, A>) => boolean) {
   return (a) => {
     const eq = S.equals(a);
@@ -139,25 +127,25 @@ export function elem<A>(
 }
 
 export function entries<B>(
-  O: TC.Ord<B>,
+  O: T.Ord<B>,
 ): (<A>(ta: Map<B, A>) => ReadonlyArray<[B, A]>) {
   const _compare = compare(O);
   return (ta) =>
     Array.from(ta.entries()).sort(([left], [right]) => _compare(left, right));
 }
 
-export function keys<K>(O: TC.Ord<K>): (<A>(ta: Map<K, A>) => K[]) {
+export function keys<K>(O: T.Ord<K>): (<A>(ta: Map<K, A>) => K[]) {
   const _compare = compare(O);
   return (ta) => Array.from(ta.keys()).sort(_compare);
 }
 
-export function values<A>(O: TC.Ord<A>): (<K>(ta: Map<K, A>) => A[]) {
+export function values<A>(O: T.Ord<A>): (<K>(ta: Map<K, A>) => A[]) {
   const _compare = compare(O);
   return (ta) => Array.from(ta.values()).sort(_compare);
 }
 
 export function collect<B>(
-  O: TC.Ord<B>,
+  O: T.Ord<B>,
 ): (<A, I>(fai: (b: B, a: A) => I) => (ta: Map<B, A>) => ReadonlyArray<I>) {
   const _entries = entries(O);
   return (fai) =>
@@ -168,7 +156,7 @@ export function collect<B>(
 }
 
 export function insertAt<B>(
-  S: TC.Setoid<B>,
+  S: T.Setoid<B>,
 ): (<A>(b: B, a: A) => (ta: Map<B, A>) => Map<B, A>) {
   const _lookupWithKey = lookupWithKey(S);
   return (b, a) => {
@@ -190,7 +178,7 @@ export function insertAt<B>(
 }
 
 export function deleteAt<B>(
-  S: TC.Setoid<B>,
+  S: T.Setoid<B>,
 ): ((b: B) => <A>(ta: Map<B, A>) => Map<B, A>) {
   const _lookupWithKey = lookupWithKey(S);
   return (b) => {
@@ -208,7 +196,7 @@ export function deleteAt<B>(
 }
 
 export function updateAt<B>(
-  S: TC.Setoid<B>,
+  S: T.Setoid<B>,
 ): (<A>(b: B, a: A) => (ta: Map<B, A>) => Option<Map<B, A>>) {
   const _lookupWithKey = lookupWithKey(S);
   return (b, a) => {
@@ -226,7 +214,7 @@ export function updateAt<B>(
 }
 
 export function modifyAt<B>(
-  S: TC.Setoid<B>,
+  S: T.Setoid<B>,
 ): (<A>(b: B, faa: (a: A) => A) => (ta: Map<B, A>) => Option<Map<B, A>>) {
   const _lookupWithKey = lookupWithKey(S);
   return (b, faa) => {
@@ -244,7 +232,7 @@ export function modifyAt<B>(
 }
 
 export function pop<B>(
-  S: TC.Setoid<B>,
+  S: T.Setoid<B>,
 ): ((b: B) => <A>(ta: Map<B, A>) => Option<[A, Map<B, A>]>) {
   const _lookup = lookup(S);
   const _deleteAt = deleteAt(S);
@@ -260,8 +248,8 @@ export function pop<B>(
 }
 
 export function isSubmap<K, A>(
-  SK: TC.Setoid<K>,
-  SA: TC.Setoid<A>,
+  SK: T.Setoid<K>,
+  SA: T.Setoid<A>,
 ): ((sub: Map<K, A>) => (sup: Map<K, A>) => boolean) {
   const _lookupWithKey = lookupWithKey(SK);
   return (sub) => {
@@ -280,22 +268,14 @@ export function isSubmap<K, A>(
   };
 }
 
-/*******************************************************************************
- * Modules
- ******************************************************************************/
+export const Functor: T.Functor<URI> = { map };
 
-export const Functor: TC.Functor<URI> = { map };
-
-export const Bifunctor: TC.Bifunctor<URI> = { bimap, mapLeft };
-
-/*******************************************************************************
- * Module Getters
- ******************************************************************************/
+export const Bifunctor: T.Bifunctor<URI> = { bimap, mapLeft };
 
 export function getShow<K, A>(
-  SK: TC.Show<K>,
-  SA: TC.Show<A>,
-): TC.Show<Map<K, A>> {
+  SK: T.Show<K>,
+  SA: T.Show<A>,
+): T.Show<Map<K, A>> {
   return ({
     show: (ta) => {
       const elements = Array.from(ta).map(([k, a]) =>
@@ -307,17 +287,17 @@ export function getShow<K, A>(
 }
 
 export function getSetoid<K, A>(
-  SK: TC.Setoid<K>,
-  SA: TC.Setoid<A>,
-): TC.Setoid<Map<K, A>> {
+  SK: T.Setoid<K>,
+  SA: T.Setoid<A>,
+): T.Setoid<Map<K, A>> {
   const submap = isSubmap(SK, SA);
   return fromEquals((x) => (y) => submap(x)(y) && submap(y)(x));
 }
 
 export function getMonoid<K, A>(
-  SK: TC.Setoid<K>,
-  SA: TC.Semigroup<A>,
-): TC.Monoid<Map<K, A>> {
+  SK: T.Setoid<K>,
+  SA: T.Semigroup<A>,
+): T.Monoid<Map<K, A>> {
   const lookupKey = lookupWithKey(SK);
   return {
     concat: (a) =>

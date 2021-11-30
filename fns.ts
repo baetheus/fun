@@ -65,6 +65,20 @@ export function isRecord(
 }
 
 /**
+ * strictEquals
+ */
+export function strictEquals<A>(second: A): (first: A) => boolean {
+  return (first) => first === second;
+}
+
+/**
+ * lessThanOrEqual
+ */
+export function lessThanOrEqual<A>(second: A): (first: A) => boolean {
+  return (first) => first <= second;
+}
+
+/**
  * Identity
  *
  * Takes a value and returns that same value

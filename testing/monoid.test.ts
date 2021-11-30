@@ -3,7 +3,6 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 import * as AS from "./assert.ts";
 
 import * as M from "../monoid.ts";
-import * as O from "../option.ts";
 
 Deno.test("Monoid monoidAll", () => {
   AS.assertMonoid(M.monoidAll, { a: true, b: true, c: true });

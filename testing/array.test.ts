@@ -4,11 +4,9 @@ import {
   assertStrictEquals,
 } from "https://deno.land/std/testing/asserts.ts";
 
-import type * as HKT from "../hkt.ts";
-
 import * as A from "../array.ts";
 import * as O from "../option.ts";
-import { setoidBoolean } from "../setoid.ts";
+import { Setoid as setoidBoolean } from "../boolean.ts";
 import { ordNumber } from "../ord.ts";
 import { pipe } from "../fns.ts";
 

@@ -1,11 +1,15 @@
-import type { Monoid, Semigroup } from "./type_classes.ts";
+import type { Semigroup } from "./semigroup.ts";
 
 import { constant, pipe } from "./fns.ts";
 import * as S from "./semigroup.ts";
 
-/*******************************************************************************
- * Module Instances
- ******************************************************************************/
+/**
+ * Monoid
+ * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#monoid
+ */
+export interface Monoid<T> extends Semigroup<T> {
+  readonly empty: () => T;
+}
 
 export const monoidAll: Monoid<boolean> = {
   concat: S.semigroupAll.concat,
@@ -36,10 +40,6 @@ export const monoidVoid: Monoid<void> = {
   concat: S.semigroupVoid.concat,
   empty: constant(undefined),
 };
-
-/*******************************************************************************
- * Module Getters
- ******************************************************************************/
 
 // deno-lint-ignore no-explicit-any
 export function getTupleMonoid<T extends ReadonlyArray<Monoid<any>>>(
@@ -76,10 +76,6 @@ export function getStructMonoid<O extends Record<string, any>>(
     empty: () => (empty as unknown) as O,
   };
 }
-
-/*******************************************************************************
- * Pipeables
- ******************************************************************************/
 
 export function fold<A>(M: Monoid<A>): ((as: ReadonlyArray<A>) => A) {
   const innerFold = S.fold(M);

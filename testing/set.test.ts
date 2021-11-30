@@ -4,7 +4,7 @@ import * as AS from "./assert.ts";
 
 import * as S from "../set.ts";
 import * as O from "../option.ts";
-import { setoidNumber } from "../setoid.ts";
+import { Setoid as setoidNumber } from "../number.ts";
 import { pipe } from "../fns.ts";
 
 Deno.test("Set zero", () => {

@@ -1,29 +1,21 @@
-import type * as HKT from "./hkt.ts";
-import type * as TC from "./type_classes.ts";
+import type { Kind } from "./kind.ts";
+import type * as T from "./types.ts";
 import type { Predicate } from "./types.ts";
 
 import { createDo } from "./derivations.ts";
-import { createSequenceStruct, createSequenceTuple } from "./sequence.ts";
+import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 import { wait } from "./fns.ts";
-
-/******************************************************************************
- * Kind Registration
- ****************************************************************************/
 
 export const URI = "AsyncIterable";
 
 export type URI = typeof URI;
 
-declare module "./hkt.ts" {
+declare module "./kind.ts" {
   // deno-lint-ignore no-explicit-any
   export interface Kinds<_ extends any[]> {
     [URI]: AsyncIterable<_[0]>;
   }
 }
-
-/******************************************************************************
- * Functions
- ****************************************************************************/
 
 const isAsyncIterator = <A>(
   o: (() => AsyncIterator<A>) | AsyncGenerator<A>,
@@ -248,25 +240,17 @@ export function take(n: number): <A>(ta: AsyncIterable<A>) => AsyncIterable<A> {
     });
 }
 
-/******************************************************************************
- * Modules
- ****************************************************************************/
+export const Functor: T.Functor<URI> = { map };
 
-export const Functor: TC.Functor<URI> = { map };
+export const Apply: T.Apply<URI> = { ap, map };
 
-export const Apply: TC.Apply<URI> = { ap, map };
+export const Applicative: T.Applicative<URI> = { of, ap, map };
 
-export const Applicative: TC.Applicative<URI> = { of, ap, map };
+export const Chain: T.Chain<URI> = { ap, map, chain };
 
-export const Chain: TC.Chain<URI> = { ap, map, chain };
+export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
 
-export const Monad: TC.Monad<URI> = { of, ap, map, join, chain };
-
-export const Filterable: TC.Filterable<URI> = { filter };
-
-/******************************************************************************
- * Derived Functions
- ****************************************************************************/
+export const Filterable: T.Filterable<URI> = { filter };
 
 export const { Do, bind, bindTo } = createDo(Monad);
 

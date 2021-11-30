@@ -1,7 +1,5 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
-import * as AS from "./assert.ts";
-
 import * as S from "../semigroup.ts";
 import { ordNumber } from "../ord.ts";
 

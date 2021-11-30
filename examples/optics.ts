@@ -1,4 +1,4 @@
-import * as L from "../optics/lens.ts";
+import * as L from "../lens.ts";
 import { pipe } from "../fns.ts";
 
 type T1 = {

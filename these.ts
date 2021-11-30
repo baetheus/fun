@@ -1,13 +1,8 @@
-import type * as HKT from "./hkt.ts";
-import type { Kind, URIS } from "./hkt.ts";
-import type * as TC from "./type_classes.ts";
+import type { Kind, URIS } from "./kind.ts";
+import type * as T from "./types.ts";
 
 import * as E from "./either.ts";
-import { flow, identity, pipe } from "./fns.ts";
-
-/*******************************************************************************
- * Types
- ******************************************************************************/
+import { identity, pipe } from "./fns.ts";
 
 export type Left<B> = E.Left<B>;
 
@@ -17,24 +12,16 @@ export type Both<B, A> = { tag: "Both"; left: B; right: A };
 
 export type These<B, A> = Left<B> | Right<A> | Both<B, A>;
 
-/*******************************************************************************
- * Kind Registration
- ******************************************************************************/
-
 export const URI = "These";
 
 export type URI = typeof URI;
 
-declare module "./hkt.ts" {
+declare module "./kind.ts" {
   // deno-lint-ignore no-explicit-any
   export interface Kinds<_ extends any[]> {
     [URI]: These<_[1], _[0]>;
   }
 }
-
-/*******************************************************************************
- * Constructors
- ******************************************************************************/
 
 export function left<A = never, B = never>(left: B): These<B, A> {
   return ({ tag: "Left", left });
@@ -48,10 +35,6 @@ export function both<A, B>(left: B, right: A): These<B, A> {
   return ({ tag: "Both", left, right });
 }
 
-/*******************************************************************************
- * Destructors
- ******************************************************************************/
-
 export function fold<A, B, O>(
   onLeft: (b: B) => O,
   onRight: (a: A) => O,
@@ -60,10 +43,6 @@ export function fold<A, B, O>(
   const _fold = E.fold(onLeft, onRight);
   return (ta) => ta.tag === "Both" ? onBoth(ta.left, ta.right) : _fold(ta);
 }
-
-/*******************************************************************************
- * Guards
- ******************************************************************************/
 
 export function isLeft<A, B>(ta: These<B, A>): ta is Left<B> {
   return ta.tag === "Left";
@@ -76,10 +55,6 @@ export function isRight<A, B>(ta: These<B, A>): ta is Right<A> {
 export function isBoth<A, B>(ta: These<B, A>): ta is Both<B, A> {
   return ta.tag === "Both";
 }
-
-/*******************************************************************************
- * Functions
- ******************************************************************************/
 
 export function of<A, B = never>(a: A): These<B, A> {
   return right(a);
@@ -121,7 +96,7 @@ export function reduce<A, O>(
 }
 
 export function traverse<VRI extends URIS>(
-  A: TC.Applicative<VRI>,
+  A: T.Applicative<VRI>,
 ): <A, I, J, K, L>(
   favi: (a: A) => Kind<VRI, [I, J, K, L]>,
 ) => <B>(ta: These<B, A>) => Kind<VRI, [These<B, I>, J, K, L]> {
@@ -132,26 +107,19 @@ export function traverse<VRI extends URIS>(
       (b, a) => pipe(favi(a), A.map((i) => both(b, i))),
     );
 }
-/*******************************************************************************
- * Modules
- ******************************************************************************/
 
-export const Bifunctor: TC.Bifunctor<URI> = { bimap, mapLeft };
+export const Bifunctor: T.Bifunctor<URI> = { bimap, mapLeft };
 
-export const Functor: TC.Functor<URI> = { map };
+export const Functor: T.Functor<URI> = { map };
 
-export const Foldable: TC.Foldable<URI> = { reduce };
+export const Foldable: T.Foldable<URI> = { reduce };
 
-export const Traversable: TC.Traversable<URI> = { map, reduce, traverse };
-
-/*******************************************************************************
- * Module Getters
- ******************************************************************************/
+export const Traversable: T.Traversable<URI> = { map, reduce, traverse };
 
 export function getShow<A, B>(
-  SB: TC.Show<B>,
-  SA: TC.Show<A>,
-): TC.Show<These<B, A>> {
+  SB: T.Show<B>,
+  SA: T.Show<A>,
+): T.Show<These<B, A>> {
   return ({
     show: fold(
       (left) => `Left(${SB.show(left)})`,
@@ -162,9 +130,9 @@ export function getShow<A, B>(
 }
 
 export function getSemigroup<A, B>(
-  SB: TC.Semigroup<B>,
-  SA: TC.Semigroup<A>,
-): TC.Semigroup<These<B, A>> {
+  SB: T.Semigroup<B>,
+  SA: T.Semigroup<A>,
+): T.Semigroup<These<B, A>> {
   return ({
     concat: (x) =>
       (y) => {

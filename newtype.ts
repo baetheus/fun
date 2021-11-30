@@ -1,15 +1,10 @@
-import type { Monoid, Ord, Semigroup, Setoid } from "./type_classes.ts";
-import type { Predicate } from "./types.ts";
-import type { Iso } from "./optics/iso.ts";
-import type { Prism } from "./optics/prism.ts";
+import type { Monoid, Ord, Predicate, Semigroup, Setoid } from "./types.ts";
+import type { Iso } from "./iso.ts";
+import type { Prism } from "./prism.ts";
 
-import { make as makeIso } from "./optics/iso.ts";
-import { fromPredicate } from "./optics/prism.ts";
+import { iso } from "./iso.ts";
+import { fromPredicate as prismFromPredicate } from "./prism.ts";
 import { unsafeCoerce } from "./fns.ts";
-
-/**
- * Types
- */
 
 export type Newtype<URI, A> = {
   readonly URI: URI;
@@ -22,10 +17,6 @@ export type AnyNewtype = Newtype<any, any>;
 export type URIOf<N extends AnyNewtype> = N["URI"];
 
 export type CarrierOf<N extends AnyNewtype> = N["A"];
-
-/**
- * Module Getters
- */
 
 export function getSetoid<S extends AnyNewtype>(
   S: Setoid<CarrierOf<S>>,
@@ -46,14 +37,14 @@ export const getMonoid = <S extends AnyNewtype>(
 ): Monoid<S> => M;
 
 // deno-lint-ignore no-explicit-any
-const anyIso = makeIso<any, any>(unsafeCoerce, unsafeCoerce);
+const anyIso = iso<any, any>(unsafeCoerce, unsafeCoerce);
 
-export function iso<S extends AnyNewtype>(): Iso<S, CarrierOf<S>> {
+export function toIso<S extends AnyNewtype>(): Iso<S, CarrierOf<S>> {
   return anyIso;
 }
 
-export function prism<S extends AnyNewtype>(
+export function fromPredicate<S extends AnyNewtype>(
   predicate: Predicate<CarrierOf<S>>,
 ): Prism<CarrierOf<S>, S> {
-  return fromPredicate(predicate);
+  return prismFromPredicate(predicate);
 }

@@ -1,9 +1,7 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
-import type * as HKT from "../hkt.ts";
-
 import * as C from "../const.ts";
-import { setoidBoolean } from "../setoid.ts";
+import { Setoid as setoidBoolean } from "../boolean.ts";
 import { ordNumber } from "../ord.ts";
 import { semigroupSum } from "../semigroup.ts";
 import { monoidSum } from "../monoid.ts";
