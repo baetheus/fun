@@ -21,7 +21,7 @@ import {
   of as taskOf,
 } from "./task.ts";
 import { createDo } from "./derivations.ts";
-import { flow, handleThrow, identity, pipe, resolve } from "./fns.ts";
+import { flow, handleThrow, identity, pipe, resolve, then } from "./fns.ts";
 
 export type TaskEither<L, R> = Task<Either<L, R>>;
 
@@ -45,12 +45,12 @@ export function right<A = never, B = never>(right: A): TaskEither<B, A> {
 }
 
 export function tryCatch<A, B>(
-  fa: () => A,
+  fa: Task<A>,
   onError: (e: unknown) => B,
 ): TaskEither<B, A> {
   return handleThrow(
     fa,
-    flow((a) => eitherRight<B, A>(a), resolve),
+    then(eitherRight),
     flow(onError, (b) => eitherLeft<B, A>(b), resolve),
   );
 }
