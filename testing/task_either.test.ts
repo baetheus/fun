@@ -1,5 +1,6 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
+import { of as taskOf } from "../task.ts";
 import * as T from "../task_either.ts";
 import * as E from "../either.ts";
 import { _, pipe, resolve, then } from "../fns.ts";
@@ -19,9 +20,30 @@ Deno.test("TaskEither right", async () => {
   await assertEqualsT(T.right(1), T.right(1));
 });
 
-Deno.test("TaskEither tryCatch", async () => {
-  await assertEqualsT(T.tryCatch(_, () => "Bad"), T.left("Bad"));
-  await assertEqualsT(T.tryCatch(() => resolve(1), String), T.right(1));
+Deno.test("TaskEither tryCatch", async (t) => {
+  await t.step("Sync", async () => {
+    await assertEqualsT(T.tryCatch(_, () => "Bad"), T.left("Bad"));
+    await assertEqualsT(T.tryCatch(() => { throw new Error('Boom') }, () => "Bad"), T.left("Bad"));
+    await assertEqualsT(T.tryCatch(() => resolve(1), String), T.right(1));
+    await assertEqualsT(T.tryCatch(taskOf(1), String), T.right(1));
+  });
+  await t.step("Async", async () => {
+    await assertEqualsT(T.tryCatch(async () => await 1, String), T.right(1));
+    await assertEqualsT(T.tryCatch(async () => await resolve(1), String), T.right(1));
+    await assertEqualsT(
+      T.tryCatch(() => {
+        throw new Error("boom");
+      }, () => "Bad"),
+      T.left("Bad"),
+    );
+    await assertEqualsT(
+      T.tryCatch(async () => {
+        await "work";
+        throw new Error("boom");
+      }, () => "Bad"),
+      T.left("Bad"),
+    );
+  });
 });
 
 Deno.test("TaskEither fromFailableTask", async () => {
