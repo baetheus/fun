@@ -303,3 +303,16 @@ Deno.test("Array deleteAt", () => {
   assertEquals(pipe([1, 2, 3], A.deleteAt(2)), O.some([1, 2]));
   assertEquals(pipe([1, 2, 3], A.deleteAt(5)), O.none);
 });
+
+Deno.test("Array zipWith", () => {
+  assertEquals(A.zipWith([1, 2, 3], ['a', 'b', 'c', 'd'], (n, s) => s + n), ['a1', 'b2', 'c3'])
+})
+
+Deno.test("Array zip", () => {
+  assertEquals(pipe([1, 2, 3], A.zip(['a', 'b', 'c', 'd'])), [[1, 'a'], [2, 'b'], [3, 'c']])
+})
+
+Deno.test("Array unzip", () => {
+  assertEquals(A.unzip([[1, 'a'], [2, 'b'], [3, 'c']]), [[1, 2, 3], ['a', 'b', 'c']])
+})
+
