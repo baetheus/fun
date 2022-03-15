@@ -304,6 +304,18 @@ Deno.test("Array deleteAt", () => {
   assertEquals(pipe([1, 2, 3], A.deleteAt(5)), O.none);
 });
 
+Deno.test("Array range", () => {
+  assertEquals(A.range(0, 0), []);
+  assertEquals(A.range(0, 1), [0, 1]);
+  assertEquals(A.range(1, 5), [1, 2, 3, 4, 5]);
+  assertEquals(A.range(10, 15), [10, 11, 12, 13, 14, 15]);
+  assertEquals(A.range(-1, 0), [-1, 0]);
+  assertEquals(A.range(-5, -1), [-5, -4, -3, -2, -1]);
+  // out of bound
+  assertEquals(A.range(2, 1), []);
+  assertEquals(A.range(-1, -2), []);
+})
+
 Deno.test("Array zipWith", () => {
   assertEquals(pipe([1, 2, 3], A.zipWith(['a', 'b', 'c', 'd'], (n, s) => s + n)), ['a1', 'b2', 'c3'])
 })
