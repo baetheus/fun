@@ -248,6 +248,18 @@ export const deleteAt = (i: number) =>
   <A>(as: ReadonlyArray<A>): O.Option<ReadonlyArray<A>> =>
     isOutOfBounds(i, as) ? O.none : O.some(unsafeDeleteAt(i, as));
 
+export const range = (
+  start: number,
+  end: number,
+): ReadonlyArray<number> => {
+  const result: Array<number> = [];
+  if (start >= end) return result;
+  for (let i = start; i <= end; i++) {
+    result.push(i);
+  }
+  return result;
+};
+
 export const zipWith = <B, A, C>(fb: ReadonlyArray<B>, f: (a: A, b: B) => C) =>
   (
     fa: ReadonlyArray<A>,
