@@ -248,39 +248,26 @@ export const deleteAt = (i: number) =>
   <A>(as: ReadonlyArray<A>): O.Option<ReadonlyArray<A>> =>
     isOutOfBounds(i, as) ? O.none : O.some(unsafeDeleteAt(i, as));
 
-export const zipWith = <A, B, C>(
-  fa: ReadonlyArray<A>,
-  fb: ReadonlyArray<B>,
-  f: (a: A, b: B) => C,
-): ReadonlyArray<C> => {
-  const fc: Array<C> = [];
-  const len = Math.min(fa.length, fb.length);
-  for (let i = 0; i < len; i++) {
-    fc[i] = f(fa[i], fb[i]);
-  }
-  return fc;
-};
+export const zipWith = <B, A, C>(fb: ReadonlyArray<B>, f: (a: A, b: B) => C) =>
+  (
+    fa: ReadonlyArray<A>,
+  ): ReadonlyArray<C> => {
+    const fc: Array<C> = [];
+    const len = Math.min(fa.length, fb.length);
+    for (let i = 0; i < len; i++) {
+      fc[i] = f(fa[i], fb[i]);
+    }
+    return fc;
+  };
 
-export function zip<B>(
+export const zip: <B>(
   bs: ReadonlyArray<B>,
-): <A>(as: ReadonlyArray<A>) => ReadonlyArray<[A, B]>;
-export function zip<A, B>(
-  as: ReadonlyArray<A>,
-  bs: ReadonlyArray<B>,
-): ReadonlyArray<[A, B]>;
-export function zip<A, B>(
-  as: ReadonlyArray<A>,
-  bs?: ReadonlyArray<B>,
-): ReadonlyArray<[A, B]> | ((bs: ReadonlyArray<B>) => ReadonlyArray<[B, A]>) {
-  if (bs === undefined) {
-    return (bs) => zip(bs, as);
-  }
-  return zipWith(as, bs, (a, b) => [a, b]);
-}
+) => <A>(as: ReadonlyArray<A>) => ReadonlyArray<[A, B]> = (bs) =>
+  zipWith(bs, (a, b) => [a, b]);
 
 export const unzip = <A, B>(
   as: ReadonlyArray<[A, B]>,
-): [ReadonlyArray<A>, ReadonlyArray<B>] => {
+): readonly [ReadonlyArray<A>, ReadonlyArray<B>] => {
   const fa: Array<A> = [];
   const fb: Array<B> = [];
   for (let i = 0; i < as.length; i++) {
