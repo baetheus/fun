@@ -311,7 +311,7 @@ export const zipWith = <B, A, C>(fb: ReadonlyArray<B>, f: (a: A, b: B) => C) =>
  * longer `ReadonlyArray` are discarded.
  *
  * @example
- * import { zipWith } from 'https://deno.land/x/fun/array.ts'
+ * import { zip } from 'https://deno.land/x/fun/array.ts'
  * import { pipe } from 'https://deno.land/x/fun/fns.ts'
  *
  * pipe([1, 2, 3], zip(['a', 'b', 'c', 'd'])))
