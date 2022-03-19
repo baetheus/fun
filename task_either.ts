@@ -21,7 +21,7 @@ import {
   of as taskOf,
 } from "./task.ts";
 import { createDo } from "./derivations.ts";
-import { flow, handleThrow, identity, pipe, resolve } from "./fns.ts";
+import { flow, handleThrow, identity, pipe, resolve, then } from "./fns.ts";
 
 /**
  * The TaskEither type can best be thought of as an asynchronous function that
@@ -309,6 +309,13 @@ export function widen<J>(): <A, B>(
   ta: TaskEither<B, A>,
 ) => TaskEither<B | J, A> {
   return identity;
+}
+
+export function fold<L, R, B>(
+  onLeft: (left: L) => B,
+  onRight: (right: R) => B,
+): (ta: TaskEither<L, R>) => Task<B> {
+  return (ta) => () => ta().then(eitherFold<L, R, B>(onLeft, onRight));
 }
 
 // This leaks async ops so we cut it for now.
