@@ -139,6 +139,13 @@ Deno.test("TaskEither widen", async () => {
   await assertEqualsT(pipe(T.right(1), T.widen<number>()), T.right(1));
 });
 
+Deno.test("TaskEither fold", async () => {
+  const fold = T.fold((l: string) => l, String);
+
+  assertEquals(await fold(T.right(1))(), "1");
+  assertEquals(await fold(T.left("asdf"))(), "asdf");
+});
+
 Deno.test("TaskEither Do, bind, bindTo", () => {
   assertEqualsT(
     pipe(
