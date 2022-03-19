@@ -23,12 +23,27 @@ import {
 import { createDo } from "./derivations.ts";
 import { flow, handleThrow, identity, pipe, resolve } from "./fns.ts";
 
+/**
+ * The TaskEither type can best be thought of as an asynchronous function that
+ * returns an `Either`. ie. `async () => Promise<Either<B, A>>`. This
+ * forms the basis of most Promise based asynchronous communication in
+ * TypeScript.
+ */
 export type TaskEither<L, R> = Task<Either<L, R>>;
 
+/**
+ * URI constant for the TaskEither ADT
+ */
 export const URI = "TaskEither";
 
+/**
+ * URI constant type for the TaskEither ADT
+ */
 export type URI = typeof URI;
 
+/**
+ * Kind declaration for TaskEither
+ */
 declare module "./kind.ts" {
   // deno-lint-ignore no-explicit-any
   export interface Kinds<_ extends any[]> {
@@ -36,14 +51,60 @@ declare module "./kind.ts" {
   }
 }
 
+/**
+ * Constructs a TaskEither from a value and wraps it in an inner *Left*.
+ * Traditionally signaling a failure
+ *
+ * ```ts
+ * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
+ * import * as TE from "./task_either.ts";
+ * import * as E from "./either.ts";
+ *
+ * const computation = TE.left<number, number>(1);
+ * const result = await computation();
+ *
+ * assertEquals(result, E.left(1));
+ * ```
+ */
 export function left<A = never, B = never>(left: B): TaskEither<B, A> {
   return taskOf(eitherLeft(left));
 }
 
+/**
+ * Constructs a TaskEither from a value and wraps it in an inner *Right*.
+ * Traditionally signaling a successful computation
+ *
+ * ```ts
+ * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
+ * import * as TE from "./task_either.ts";
+ * import * as E from "./either.ts";
+ *
+ * const computation = TE.right<number, number>(1);
+ * const result = await computation();
+ *
+ * assertEquals(result, E.right(1));
+ * ```
+ */
 export function right<A = never, B = never>(right: A): TaskEither<B, A> {
   return taskOf(eitherRight(right));
 }
 
+/**
+ * Wraps a Task of A in a try-catch block which upon failure returns B instead.
+ * Upon success returns a *Right<A>* and *Left<B>* for a failure.
+ *
+ * ```ts
+ * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
+ * import * as TE from "./task_either.ts";
+ * import * as E from "./either.ts";
+ *
+ * const succ = TE.tryCatch(() => Promise.resolve(1), String);
+ * const fail = TE.tryCatch(() => Promise.reject(0), String);
+ *
+ * assertEquals(await succ, E.right(1));
+ * assertEquals(await fail, E.left(0));
+ * ```
+ */
 export function tryCatch<A, B>(
   fa: Task<A>,
   onError: (e: unknown) => B,
@@ -55,10 +116,16 @@ export function tryCatch<A, B>(
   );
 }
 
+/**
+ * Lift an always succeeding async computation (Task) into a TaskEither
+ */
 export function fromTask<A, B = never>(ta: Task<A>): TaskEither<B, A> {
   return () => ta().then(eitherRight);
 }
 
+/**
+ * @deprecated tryCatch is more idiomatic.
+ */
 export function fromFailableTask<A, B>(
   onError: (e: unknown) => B,
 ): (ta: Task<A>) => TaskEither<B, A> {
@@ -66,18 +133,31 @@ export function fromFailableTask<A, B>(
     () => ta().then(eitherRight).catch((e) => eitherLeft(onError(e)));
 }
 
+/**
+ * Lifts an Either<B,A> into a TaskEither<B,A>
+ */
 export function fromEither<A, B>(ta: Either<B, A>): TaskEither<B, A> {
   return pipe(ta, eitherFold((e) => left(e), right));
 }
 
+/**
+ * Pointed constructor of(A) => TaskEither<B,A>
+ */
 export function of<A, B = never>(a: A): TaskEither<B, A> {
   return right(a);
 }
 
+/**
+ * Pointed constructor throwError(B) => TaskEither<B, never>
+ */
 export function throwError<A = never, B = never>(b: B): TaskEither<B, A> {
   return left(b);
 }
 
+/**
+ * A dual map function that maps over both *Left* and *Right* side of
+ * a TaskEither.
+ */
 export function bimap<A, B, I, J>(
   fbj: (b: B) => J,
   fai: (a: A) => I,
@@ -85,30 +165,60 @@ export function bimap<A, B, I, J>(
   return (ta) => pipe(ta, taskMap(eitherBimap(fbj, fai)));
 }
 
+/**
+ * Map a function over the *Right* side of a TaskEither
+ */
 export function map<A, I>(
   fai: (a: A) => I,
 ): <B>(ta: TaskEither<B, A>) => TaskEither<B, I> {
   return (ta) => pipe(ta, taskMap(eitherMap(fai)));
 }
 
+/**
+ * Map a function over the *Left* side of a TaskEither
+ */
 export function mapLeft<B, J>(
   fbj: (b: B) => J,
 ): <A>(ta: TaskEither<B, A>) => TaskEither<J, A> {
   return (ta) => pipe(ta, taskMap(eitherMapLeft(fbj)));
 }
 
+/**
+ * Apply an argument to a function under the *Right* side.
+ */
 export function ap<A, I, B>(
   tfai: TaskEither<B, (a: A) => I>,
 ): (ta: TaskEither<B, A>) => TaskEither<B, I> {
   return pipe(tfai, taskMap(eitherAp), taskAp);
 }
 
+/**
+ * Sequentially apply arguments
+ */
 export function apSeq<A, I, B>(
   tfai: TaskEither<B, (a: A) => I>,
 ): (ta: TaskEither<B, A>) => TaskEither<B, I> {
   return pipe(tfai, taskMap(eitherAp), taskApSeq);
 }
 
+/**
+ * Chain TaskEither based computations together in a pipeline
+ *
+ * ```ts
+ * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
+ * import * as TE from "./task_either.ts";
+ * import * as E from "./either.ts";
+ * import { pipe } from "./fns.ts";
+ *
+ * const ta = pipe(
+ *   TE.of(1),
+ *   TE.chain(n => TE.of(n*2)),
+ *   TE.chain(n => TE.of(n**2))
+ * )
+ *
+ * assertEquals(await ta(), E.right(4))
+ * ```
+ */
 export function chain<A, I, B>(
   fati: (a: A) => TaskEither<B, I>,
 ): (ta: TaskEither<B, A>) => TaskEither<B, I> {
@@ -116,6 +226,25 @@ export function chain<A, I, B>(
     pipe(ta, taskChain(eitherFold<B, A, TaskEither<B, I>>(left, fati)));
 }
 
+/**
+ * Chain TaskEither based failures, *Left* sides, useful for recovering
+ * from error conditions.
+ *
+ * ```ts
+ * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
+ * import * as TE from "./task_either.ts";
+ * import * as E from "./either.ts";
+ * import { pipe } from "./fns.ts";
+ *
+ * const ta = pipe(
+ *   TE.throwError(1),
+ *   TE.chainLeft(n => TE.of(n*2)),
+ *   TE.chain(n => TE.of(n**2))
+ * )
+ *
+ * assertEquals(await ta(), E.right(4))
+ * ```
+ */
 export function chainLeft<A, B, J>(
   fbtj: (b: B) => TaskEither<J, A>,
 ): (ta: TaskEither<B, A>) => TaskEither<J, A> {
@@ -123,18 +252,59 @@ export function chainLeft<A, B, J>(
     pipe(ta, taskChain(eitherFold<B, A, TaskEither<J, A>>(fbtj, right)));
 }
 
+/**
+ * Flatten a TaskEither wrapped in a TaskEither
+ *
+ * ```ts
+ * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
+ * import * as TE from "./task_either.ts";
+ * import * as E from "./either.ts";
+ * import { pipe } from "./fns.ts";
+ *
+ * const ta = pipe(
+ *   TE.of(1),
+ *   TE.map(n => TE.of(n*2)),
+ *   TE.join,
+ *   TE.chain(n => TE.of(n**2))
+ * )
+ *
+ * assertEquals(await ta(), E.right(4))
+ * ```
+ */
 export function join<A, B>(
   tta: TaskEither<B, TaskEither<B, A>>,
 ): TaskEither<B, A> {
   return pipe(tta, chain(identity));
 }
 
+/**
+ * Provide an alternative for a failed computation.
+ * Useful for implementing defaults.
+ *
+ * ```ts
+ * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
+ * import * as TE from "./task_either.ts";
+ * import * as E from "./either.ts";
+ * import { pipe } from "./fns.ts";
+ *
+ * const ta = pipe(
+ *   TE.throwError(1),
+ *   TE.alt(TE.of(2)),
+ * )
+ *
+ * assertEquals(await ta(), E.right(2))
+ * ```
+ */
 export function alt<A, B>(
   tb: TaskEither<B, A>,
 ): (ta: TaskEither<B, A>) => TaskEither<B, A> {
   return (ta) => () => ta().then((ea) => isLeft(ea) ? tb() : ea);
 }
 
+/**
+ * Widens the *Left* side of the computation.
+ * @deprecated Will be removed in v2?
+ */
 export function widen<J>(): <A, B>(
   ta: TaskEither<B, A>,
 ) => TaskEither<B | J, A> {

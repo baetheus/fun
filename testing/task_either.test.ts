@@ -23,13 +23,21 @@ Deno.test("TaskEither right", async () => {
 Deno.test("TaskEither tryCatch", async (t) => {
   await t.step("Sync", async () => {
     await assertEqualsT(T.tryCatch(_, () => "Bad"), T.left("Bad"));
-    await assertEqualsT(T.tryCatch(() => { throw new Error('Boom') }, () => "Bad"), T.left("Bad"));
+    await assertEqualsT(
+      T.tryCatch(() => {
+        throw new Error("Boom");
+      }, () => "Bad"),
+      T.left("Bad"),
+    );
     await assertEqualsT(T.tryCatch(() => resolve(1), String), T.right(1));
     await assertEqualsT(T.tryCatch(taskOf(1), String), T.right(1));
   });
   await t.step("Async", async () => {
     await assertEqualsT(T.tryCatch(async () => await 1, String), T.right(1));
-    await assertEqualsT(T.tryCatch(async () => await resolve(1), String), T.right(1));
+    await assertEqualsT(
+      T.tryCatch(async () => await resolve(1), String),
+      T.right(1),
+    );
     await assertEqualsT(
       T.tryCatch(() => {
         throw new Error("boom");
