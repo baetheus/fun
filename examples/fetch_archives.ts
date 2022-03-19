@@ -173,12 +173,11 @@ pipe(
   TE.map(getData), // Take any "good" response and extract an array of titles, dates, and descriptions
   // This line actually runs our program and outputs the results
   // to either stderr or stdout depending on the result
-)().then(
-  E.fold(
+  TE.fold(
     foldErrors((e) => console.error("FetchError", e), console.error),
     console.log,
   ),
-);
+)();
 
 // While we're at it let's print out the JsonSchema for the response!
 console.log(
