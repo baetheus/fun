@@ -28,6 +28,18 @@ import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
  * returns an `Either`. ie. `async (c: C) => Promise<Either<B, A>>`. This
  * forms the basis of most Promise based asynchronous communication in
  * TypeScript.
+ *
+ * Notice how there is a generic type `C` injected here.
+ * This enables us to pass `c` context around which can be thought of
+ * as dependency injection.
+ *
+ * This is the crystalized version of the pattern:
+ * `Reader<Task<Either<L,R>>>` that is commonly known as ReaderTaskEither
+ * or `RTE` for short in the fp-ts community.
+ *
+ * The difference being, the resulting Promise is not wrapped in a thunk.
+ * `RTE = (c: C) => () => Promise<Either<B,A>>`
+ * `Aff = (c: C) => Promise<Either<B,A>>`
  */
 export type Affect<C, B, A> = Reader<C, Promise<Either<B, A>>>;
 
@@ -246,8 +258,8 @@ export function chain<A, I, B, C>(
  *
  * const computation = pipe(
  *   A.ask<number>(), // construct an affect taking a number
- *   A.compose(A.asks(n => reesolve(n.toString())), // compose with toString
- * );
+ *   A.compose(A.asks(n => resolve(n.toString())), // compose with toString
+ * ));
  * const result = await computation(1);
  *
  * assertEquals(result, E.right("1"));
@@ -345,15 +357,11 @@ export function fromIOEither<A, B, C = never>(
  * import * as A from "./affect.ts";
  * import * as E from "./either.ts";
  * import * as O from "./option.ts";
- * import { pipe } from "./fns.ts";
  *
- * const ta = pipe(
- *   A.fromOption(O.some(1)),
- *   A.widen<number, string, string>(),
- * );
- * const result = await ta("");
+ * const ta = A.fromOption(() => O.some(1));
  *
- * assertEquals(result, E.right(1));
+ * assertEquals(await ta(O.none), E.right(1));
+ * assertEquals(await ta(O.some(2)), E.right(2));
  * ```
  */
 export function fromOption<B, C>(
@@ -449,8 +457,8 @@ export function join<A, B, C>(
  * import * as A from "./affect.ts";
  * import * as E from "./either.ts";
  *
- * const computation = A.left<number, number, number>();
- * const result = await computation(1);
+ * const computation = A.left<number, number, {}>(1);
+ * const result = await computation({});
  *
  * assertEquals(result, E.left(1));
  * ```
@@ -471,7 +479,7 @@ export function left<A = never, B = never, C = never>(
  * import { pipe } from "./fns.ts";
  *
  * const computation = pipe(
- *   A.right<string, string, string>(),
+ *   A.ask<string>(),
  *   A.map(s => s.length),
  * );
  * const result = await computation("hello");
@@ -517,8 +525,8 @@ export function fold<C, L, R, B>(
  * import * as A from "./affect.ts";
  * import * as E from "./either.ts";
  *
- * const computation = A.right<number, number, number>();
- * const result = await computation(1);
+ * const computation = A.right<number, number, number>(1);
+ * const result = await computation(0);
  *
  * assertEquals(result, E.right(1));
  * ```
