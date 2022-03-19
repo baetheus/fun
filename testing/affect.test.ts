@@ -52,6 +52,13 @@ Deno.test("Affect left", async () => {
   assertEquals(await t1(1 as never), E.left(1));
 });
 
+Deno.test("Affect fold", async () => {
+  const fold = A.fold((l: string) => l, String);
+
+  assertEquals(await fold(A.right(1))(void 0), "1");
+  assertEquals(await fold(A.left("asdf"))(void 0), "asdf");
+});
+
 Deno.test("Affect fromOption", async () => {
   const fromOption = A.fromOption(() => 0);
   const t1 = fromOption(O.some(1));
