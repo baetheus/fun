@@ -502,6 +502,13 @@ export function recover<E, A>(
     flow(ta, then(eitherFold(flow(fea, eitherRight), eitherRight)));
 }
 
+export function fold<C, L, R, B>(
+  onLeft: (left: L) => B,
+  onRight: (right: R) => B,
+): (ta: Affect<C, L, R>) => Reader<C, Promise<B>> {
+  return (ta) => (c) => ta(c).then(eitherFold(onLeft, onRight));
+}
+
 /**
  * Constructs an Affect from a value and wraps it in an inner *Right*.
  *
