@@ -21,7 +21,7 @@ import {
   of as taskOf,
 } from "./task.ts";
 import { createDo } from "./derivations.ts";
-import { flow, handleThrow, identity, pipe, resolve } from "./fns.ts";
+import { flow, handleThrow, identity, pipe, resolve, then } from "./fns.ts";
 
 /**
  * The TaskEither type can best be thought of as an asynchronous function that
@@ -309,6 +309,33 @@ export function widen<J>(): <A, B>(
   ta: TaskEither<B, A>,
 ) => TaskEither<B | J, A> {
   return identity;
+}
+
+/**
+ * Fold away the inner Either from the `TaskEither` leaving us with the
+ * result of our computation in the form of a `Task`
+ *
+ * ```ts
+ * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
+ * import * as TE from "./task_either.ts";
+ * import * as E from "./either.ts";
+ * import * as T from "./task.ts";
+ * import { pipe, identity } from "./fns.ts";
+ *
+ * const hello = pipe(
+ *  TE.fold(() => 'World', identity),
+ *  T.map(name => `Hello ${name}!`)
+ * );
+ *
+ * assertEquals(await hello(TE.right('Functional!'))(), E.right("Hello Functional!!"));
+ * assertEquals(await hello(TE.left(Error))(), E.right("Hello World!"));
+ * ```
+ */
+export function fold<L, R, B>(
+  onLeft: (left: L) => B,
+  onRight: (right: R) => B,
+): (ta: TaskEither<L, R>) => Task<B> {
+  return (ta) => () => ta().then(eitherFold<L, R, B>(onLeft, onRight));
 }
 
 // This leaks async ops so we cut it for now.
