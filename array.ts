@@ -248,8 +248,6 @@ export const deleteAt = (i: number) =>
   <A>(as: ReadonlyArray<A>): O.Option<ReadonlyArray<A>> =>
     isOutOfBounds(i, as) ? O.none : O.some(unsafeDeleteAt(i, as));
 
-
-
 /**
  * Create a `ReadonlyArray` containing a range of integers,
  * including both endpoints.
@@ -276,8 +274,8 @@ export const range = (
 
 /**
  * `zipWith` take a function to specify how to combine elements of two
- * `ReadonlyArray`s 
- * 
+ * `ReadonlyArray`s
+ *
  * If one input `ReadonlyArray` is short, excess elements of the
  * longer `ReadonlyArray` are discarded.
  *
@@ -306,7 +304,7 @@ export const zipWith = <B, A, C>(fb: ReadonlyArray<B>, f: (a: A, b: B) => C) =>
  * `zip` function creates an `ReadonlyArray` of pairs elements, the first of
  * which contains the first elements of the given `ReadonlyArray`s, the second
  * of which contains the second elements of the given arrays, and so on.
- * 
+ *
  * If one input `ReadonlyArray` is short, excess elements of the
  * longer `ReadonlyArray` are discarded.
  *
@@ -323,7 +321,6 @@ export const zip: <B>(
   bs: ReadonlyArray<B>,
 ) => <A>(as: ReadonlyArray<A>) => ReadonlyArray<[A, B]> = (bs) =>
   zipWith(bs, (a, b) => [a, b]);
-
 
 /**
  * `unzip` function is reverse of `zip`. Takes an array of pairs and return two corresponding arrays
