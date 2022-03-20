@@ -32,6 +32,12 @@ jobs:
         with:
           deno-version: ${{ matrix.deno }}
 
+      - name: Run Deno Check Formatting
+        run: deno fmt --check
+
+      - name: Run Deno Doc Tests
+        run: deno test --doc
+
       - name: Run Deno Tests
         run: deno test -A --unstable --coverage=coverage
 
