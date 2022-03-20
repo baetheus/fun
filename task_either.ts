@@ -320,11 +320,11 @@ export function widen<J>(): <A, B>(
  * import * as TE from "./task_either.ts";
  * import * as E from "./either.ts";
  * import * as T from "./task.ts";
- * import { pipe, identity } from "./fns.ts";
+ * import { flow, identity } from "./fns.ts";
  *
- * const hello = pipe(
+ * const hello = flow(
  *  TE.fold(() => 'World', identity),
- *  T.map(name => `Hello ${name}!`)
+ *  T.map(name => `Hello ${name}!`),
  * );
  *
  * assertEquals(await hello(TE.right('Functional!'))(), E.right("Hello Functional!!"));
