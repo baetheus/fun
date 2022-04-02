@@ -37,6 +37,10 @@ Deno.test("TaskEither tryCatch", async (t) => {
     T.right(expectedRight),
   );
   await assertEqualsT(
+    T.tryCatch(taskOf(2), String)(),
+    T.right(expectedRight),
+  );
+  await assertEqualsT(
     T.tryCatch(
       (..._args: [string, ...string[]]) => throws(),
       (_err, ...args) => args.join(" "),
