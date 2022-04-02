@@ -90,7 +90,8 @@ export function right<A = never, B = never>(right: A): TaskEither<B, A> {
 }
 
 /**
- * Wraps a Task of A in a try-catch block which upon failure returns B instead.
+ * Wraps a variadic argument length computation of (...as: AS) => A
+ * in a try-catch block which upon failure returns B instead.
  * Upon success returns a *Right<A>* and *Left<B>* for a failure.
  *
  * ```ts
@@ -98,22 +99,34 @@ export function right<A = never, B = never>(right: A): TaskEither<B, A> {
  * import * as TE from "./task_either.ts";
  * import * as E from "./either.ts";
  *
- * const succ = TE.tryCatch(() => Promise.resolve(1), String);
- * const fail = TE.tryCatch(() => Promise.reject(0), String);
+ * const computation = (n: number) => n * 2
+ * const asynComputation = async (n: number) => await Promise.resolve(n).then(n => n * 2)
+ * const throws = (..._as: any[]) => { throw new Error("Boom") }
+ * const onThrow = (e: unknown, ...args: any[]) => [String(e), ...args.map(String)].join('-')
  *
- * assertEquals(await succ, E.right(1));
- * assertEquals(await fail, E.left(0));
+ * const succ = TE.tryCatch(computation, onThrow)(1);
+ * const asyncSucc = TE.tryCatch(asynComputation, onThrow)(1)
+ * const fail = TE.tryCatch(throws, onThrow)();
+ * const failWithArgs = TE.tryCatch(throws, onThrow)(1, 2, 3);
+ *
+ * assertEquals(await succ(), E.right(2));
+ * assertEquals(await asyncSucc(), E.right(2));
+ * assertEquals(await fail(), E.left("Error: Boom"));
+ * assertEquals(await failWithArgs(), E.left("Error: Boom-1-2-3"));
  * ```
  */
-export function tryCatch<A, B>(
-  fa: Task<A>,
-  onError: (e: unknown) => B,
-): TaskEither<B, A> {
-  return handleThrow(
-    fa,
-    flow((a) => a.then(eitherRight).catch(flow(onError, eitherLeft))),
-    flow(onError, (b) => eitherLeft<B, A>(b), resolve),
-  );
+export function tryCatch<AS extends unknown[], A, B>(
+  fasr: (...as: AS) => A | PromiseLike<A>,
+  onThrow: (e: unknown, ...as: AS) => B,
+): (...as: AS) => TaskEither<B, A> {
+  return (...as) => {
+    const _onThrow = (e: unknown) => eitherLeft(onThrow(e, ...as));
+    return handleThrow(
+      () => fasr(...as),
+      (r) => Promise.resolve(r).then(eitherRight).catch(_onThrow),
+      (e) => Promise.resolve(_onThrow(e)),
+    );
+  };
 }
 
 /**

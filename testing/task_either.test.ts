@@ -21,37 +21,45 @@ Deno.test("TaskEither right", async () => {
 });
 
 Deno.test("TaskEither tryCatch", async (t) => {
-  await t.step("Sync", async () => {
-    await assertEqualsT(T.tryCatch(_, () => "Bad"), T.left("Bad"));
-    await assertEqualsT(
-      T.tryCatch(() => {
-        throw new Error("Boom");
-      }, () => "Bad"),
-      T.left("Bad"),
-    );
-    await assertEqualsT(T.tryCatch(() => resolve(1), String), T.right(1));
-    await assertEqualsT(T.tryCatch(taskOf(1), String), T.right(1));
-  });
-  await t.step("Async", async () => {
-    await assertEqualsT(T.tryCatch(async () => await 1, String), T.right(1));
-    await assertEqualsT(
-      T.tryCatch(async () => await resolve(1), String),
-      T.right(1),
-    );
-    await assertEqualsT(
-      T.tryCatch(() => {
-        throw new Error("boom");
-      }, () => "Bad"),
-      T.left("Bad"),
-    );
-    await assertEqualsT(
-      T.tryCatch(async () => {
-        await "work";
-        throw new Error("boom");
-      }, () => "Bad"),
-      T.left("Bad"),
-    );
-  });
+  const expectedRight = 2;
+  const expectedLeft = "Bad";
+  const throws = () => {
+    throw new Error("Boom");
+  };
+
+  // Sync computations
+  await assertEqualsT(
+    T.tryCatch(throws, () => expectedLeft)(),
+    T.left(expectedLeft),
+  );
+  await assertEqualsT(
+    T.tryCatch((n: number) => n * 2, String)(1),
+    T.right(expectedRight),
+  );
+  await assertEqualsT(
+    T.tryCatch(
+      (..._args: [string, ...string[]]) => throws(),
+      (_err, ...args) => args.join(" "),
+    )("Pass", "all", "them", "args"),
+    T.left("Pass all them args"),
+  );
+
+  // Async Computations
+  await assertEqualsT(
+    T.tryCatch(async () => await throws(), () => expectedLeft)(),
+    T.left(expectedLeft),
+  );
+  await assertEqualsT(
+    T.tryCatch(async (n: number) => await resolve(n * 2), String)(1),
+    T.right(expectedRight),
+  );
+  await assertEqualsT(
+    T.tryCatch(
+      async (..._args: [string, ...string[]]) => await throws(),
+      (_, ...args) => args.join(" "),
+    )("Pass", "all", "them", "args"),
+    T.left("Pass all them args"),
+  );
 });
 
 Deno.test("TaskEither fromFailableTask", async () => {
