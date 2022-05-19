@@ -7,8 +7,8 @@ import {
 import * as A from "../array.ts";
 import * as O from "../option.ts";
 import { Setoid as setoidBoolean } from "../boolean.ts";
-import { ordNumber } from "../ord.ts";
-import { pipe } from "../fns.ts";
+import { type Ord, ordNumber } from "../ord.ts";
+import { lessThanOrEqual, pipe, strictEquals } from "../fns.ts";
 
 import * as AS from "./assert.ts";
 
@@ -346,4 +346,30 @@ Deno.test("Array unzip", () => {
     A.unzip([[1, "a"], [2, "b"], [3, "c"]]),
     [[1, 2, 3], ["a", "b", "c"]],
   );
+});
+
+Deno.test("Array sort", () => {
+  const ordNever: Ord<never> = {
+    equals: strictEquals,
+    lte: lessThanOrEqual,
+  };
+  const t1 = [] as const;
+  const r1 = pipe(t1, A.sort(ordNever));
+  assertEquals(r1, t1);
+  assertNotStrictEquals(r1, t1);
+
+  const t2 = [1];
+  const r2 = pipe(t2, A.sort(ordNumber));
+  assertEquals(r2, t2);
+  assertNotStrictEquals(r2, t2);
+
+  const t3 = [3, 1, 2];
+  const r3 = pipe(t3, A.sort(ordNumber));
+  assertEquals(r3, [1, 2, 3]);
+  assertEquals(t3, [3, 1, 2]);
+
+  const t4 = A.range(0, 1_000);
+  const r4 = pipe(t4, A.sort(ordNumber));
+  assertEquals(r4, t4);
+  assertNotStrictEquals(r4, t4);
 });
