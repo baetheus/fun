@@ -6,6 +6,7 @@ import * as O from "./option.ts";
 import { createDo } from "./derivations.ts";
 import { apply, flow, identity, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
+import { compare, Ord } from "./ord.ts";
 
 export type TypeOf<T> = T extends ReadonlyArray<infer A> ? A : never;
 
@@ -344,6 +345,26 @@ export const unzip = <A, B>(
   }
   return [fa, fb];
 };
+
+/**
+ * Returns a new array containing elements of `as` sorted in ascending order
+ * according to the sort order defined by `O`.
+ *
+ * @example
+ * import { ordNumber } from "./ord.ts";
+ * import { sort } from './array.ts'
+ *
+ * sort(ordNumber)([3, 1, 2])
+ * // [1, 2, 3]
+ *
+ * @category combinators
+ */
+export function sort<B>(
+  O: Ord<B>,
+): <A extends B>(as: ReadonlyArray<A>) => ReadonlyArray<B> {
+  const _compare = compare(O);
+  return (as) => as.slice().sort(_compare);
+}
 
 export const Functor: T.Functor<URI> = { map };
 
