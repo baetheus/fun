@@ -2,7 +2,6 @@ import type { Kind, URIS } from "./kind.ts";
 import type * as T from "./types.ts";
 
 import * as A from "./array.ts";
-import { createDo } from "./derivations.ts";
 import { apply, flow, identity, pipe } from "./fns.ts";
 
 export type Forest<A> = ReadonlyArray<Tree<A>>;
@@ -123,5 +122,3 @@ export const getShow = <A>(S: T.Show<A>): T.Show<Tree<A>> => {
       : `Tree(${S.show(ta.value)}, [${ta.forest.map(show).join(", ")}])`;
   return ({ show });
 };
-
-export const { Do, bind, bindTo } = createDo(Monad);

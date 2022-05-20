@@ -2,7 +2,6 @@ import type { Kind } from "./kind.ts";
 import type * as T from "./types.ts";
 import type { Predicate } from "./types.ts";
 
-import { createDo } from "./derivations.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 import { wait } from "./fns.ts";
 
@@ -251,8 +250,6 @@ export const Chain: T.Chain<URI> = { ap, map, chain };
 export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
 
 export const Filterable: T.Filterable<URI> = { filter };
-
-export const { Do, bind, bindTo } = createDo(Monad);
 
 export const sequenceTuple = createSequenceTuple(Apply);
 

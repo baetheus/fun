@@ -1,7 +1,5 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
-import * as AS from "./assert.ts";
-
 import * as I from "../io_either.ts";
 import * as IO from "../io.ts";
 import * as E from "../either.ts";
@@ -143,25 +141,21 @@ Deno.test("IOEither sequenceStruct", () => {
   assertEqualsIO(I.sequenceStruct({ a: I.left(0), b: I.left(1) }), I.left(1));
 });
 
-Deno.test("Datum Do, bind, bindTo", () => {
-  assertEqualsIO(
-    pipe(
-      I.Do(),
-      I.bind("one", () => I.right(1)),
-      I.bind("two", ({ one }) => I.right(one + one)),
-      I.map(({ one, two }) => one + two),
-    ),
-    I.right(3),
-  );
-  assertEqualsIO(
-    pipe(
-      I.right(1),
-      I.bindTo("one"),
-    ),
-    I.right({ one: 1 }),
-  );
-});
-
-Deno.test("Either widen", () => {
-  assertEqualsIO(pipe(I.right(1), I.widen<number>()), I.right(1));
-});
+// Deno.test("Datum Do, bind, bindTo", () => {
+//   assertEqualsIO(
+//     pipe(
+//       I.Do(),
+//       I.bind("one", () => I.right(1)),
+//       I.bind("two", ({ one }) => I.right(one + one)),
+//       I.map(({ one, two }) => one + two),
+//     ),
+//     I.right(3),
+//   );
+//   assertEqualsIO(
+//     pipe(
+//       I.right(1),
+//       I.bindTo("one"),
+//     ),
+//     I.right({ one: 1 }),
+//   );
+// });

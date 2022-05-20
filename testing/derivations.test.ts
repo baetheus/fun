@@ -26,29 +26,29 @@ Deno.test("Derivations createMonad", () => {
   assertEquals(M.join(O.some(O.some(1))), O.some(1));
 });
 
-Deno.test("Derivations createDo", () => {
-  const M = D.createMonad<O.URI>({ of: O.of, chain: O.chain });
-  const { Do, bindTo, bind } = D.createDo(M);
+// Deno.test("Derivations createDo", () => {
+//   const M = D.createMonad<O.URI>({ of: O.of, chain: O.chain });
+//   const { Do, bindTo, bind } = D.createDo(M);
 
-  // Do
-  assertEquals(Do(), O.some({}));
+//   // Do
+//   assertEquals(Do(), O.some({}));
 
-  // bindTo
-  assertEquals(pipe(O.some(1), bindTo("one")), O.some({ one: 1 }));
+//   // bindTo
+//   assertEquals(pipe(O.some(1), bindTo("one")), O.some({ one: 1 }));
 
-  // bind
-  assertEquals(
-    pipe(O.some(1), bindTo("one"), bind("two", ({ one }) => O.some(one + 1))),
-    O.some({ one: 1, two: 2 }),
-  );
-});
+//   // bind
+//   assertEquals(
+//     pipe(O.some(1), bindTo("one"), bind("two", ({ one }) => O.some(one + 1))),
+//     O.some({ one: 1, two: 2 }),
+//   );
+// });
 
-Deno.test("Derivations createApplySemigroup", () => {
-  const getSemigroup = D.createApplySemigroup(O.Apply);
-  const { concat } = getSemigroup(semigroupSum);
+// Deno.test("Derivations createApplySemigroup", () => {
+//   const getSemigroup = D.createApplySemigroup(O.Apply);
+//   const { concat } = getSemigroup(semigroupSum);
 
-  assertEquals(pipe(O.some(1), concat(O.some(1))), O.some(2));
-  assertEquals(pipe(O.some(1), concat(O.none)), O.none);
-  assertEquals(pipe(O.none, concat(O.some(1))), O.none);
-  assertEquals(pipe(O.none, concat(O.none)), O.none);
-});
+//   assertEquals(pipe(O.some(1), concat(O.some(1))), O.some(2));
+//   assertEquals(pipe(O.some(1), concat(O.none)), O.none);
+//   assertEquals(pipe(O.none, concat(O.some(1))), O.none);
+//   assertEquals(pipe(O.none, concat(O.none)), O.none);
+// });

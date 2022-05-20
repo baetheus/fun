@@ -1,5 +1,7 @@
 /**
  * TODO: Think of a new name for this ADT
+ * This entire ADT can be reimplemented as
+ * an extention of Tree.
  */
 
 import type { Kind } from "./kind.ts";

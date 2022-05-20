@@ -10,7 +10,6 @@ import type { Kind } from "./kind.ts";
 import type { Predicate } from "./types.ts";
 import type * as T from "./types.ts";
 
-import { createDo } from "./derivations.ts";
 import { identity, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
@@ -133,5 +132,3 @@ export const getShow = <A>({ show }: T.Show<A>): T.Show<Nilable<A>> => ({
 export const sequenceStruct = createSequenceStruct(Apply);
 
 export const sequenceTuple = createSequenceTuple(Apply);
-
-export const { Do, bind, bindTo } = createDo(Monad);

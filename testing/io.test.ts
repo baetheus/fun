@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
+import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
 import * as AS from "./assert.ts";
 
@@ -79,21 +79,21 @@ Deno.test("IO sequenceStruct", () => {
   assertEqualsIO(r1, I.of({ a: 1, b: "Hello World" }));
 });
 
-Deno.test("IO Do, bind, bindTo", () => {
-  assertEqualsIO(
-    pipe(
-      I.Do(),
-      I.bind("one", () => I.of(1)),
-      I.bind("two", ({ one }) => I.of(one + one)),
-      I.map(({ one, two }) => one + two),
-    ),
-    I.of(3),
-  );
-  assertEqualsIO(
-    pipe(
-      I.of(1),
-      I.bindTo("one"),
-    ),
-    I.of({ one: 1 }),
-  );
-});
+// Deno.test("IO Do, bind, bindTo", () => {
+//   assertEqualsIO(
+//     pipe(
+//       I.Do(),
+//       I.bind("one", () => I.of(1)),
+//       I.bind("two", ({ one }) => I.of(one + one)),
+//       I.map(({ one, two }) => one + two),
+//     ),
+//     I.of(3),
+//   );
+//   assertEqualsIO(
+//     pipe(
+//       I.of(1),
+//       I.bindTo("one"),
+//     ),
+//     I.of({ one: 1 }),
+//   );
+// });

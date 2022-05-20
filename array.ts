@@ -3,7 +3,6 @@ import type * as T from "./types.ts";
 import type { Predicate } from "./types.ts";
 
 import * as O from "./option.ts";
-import { createDo } from "./derivations.ts";
 import { apply, flow, identity, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 import { Ord, toCompare } from "./ord.ts";
@@ -446,5 +445,3 @@ export const createSequence = <VRI extends URIS>(
 export const sequenceTuple = createSequenceTuple(Apply);
 
 export const sequenceStruct = createSequenceStruct(Apply);
-
-export const { Do, bind, bindTo } = createDo(Monad);

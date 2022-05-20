@@ -4,7 +4,6 @@ import type * as T from "./types.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 import { flow, identity, isNotNil, pipe } from "./fns.ts";
-import { createDo } from "./derivations.ts";
 
 /**
  * The None type represents the non-existence of a value.
@@ -350,5 +349,3 @@ export function getMonoid<A>(M: T.Monoid<A>): T.Monoid<Option<A>> {
 export const sequenceTuple = createSequenceTuple(Apply);
 
 export const sequenceStruct = createSequenceStruct(Apply);
-
-export const { Do, bind, bindTo } = createDo(Monad);

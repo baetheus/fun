@@ -81,7 +81,7 @@ Deno.test("Prism compose", () => {
 
 Deno.test("Prism composeIso", () => {
   const iso = I.iso((n: number) => n + 1, (n: number) => n - 1);
-  const { getOption, reverseGet } = pipe(P.id<number>(), P.composeIso(iso));
+  const { getOption, reverseGet } = P.composeIso(P.id<number>(), iso);
   assertEquals(getOption(0), O.some(1));
   assertEquals(reverseGet(0), -1);
 });
@@ -91,13 +91,13 @@ Deno.test("Prism composeLens", () => {
     (n: number) => n.toString(),
     (s: string) => (_: number) => parseFloat(s),
   );
-  const { getOption, set } = pipe(P.id<number>(), P.composeLens(lens));
+  const { getOption, set } = P.composeLens(P.id<number>(), lens);
   assertEquals(getOption(0), O.some("0"));
   assertEquals(set("0")(0), 0);
   assertEquals(set("0")(1), 0);
 
   const p2 = P.fromPredicate(positiveGuard);
-  const p3 = pipe(p2, P.composeLens(L.id()));
+  const p3 = P.composeLens(p2, L.id());
   assertEquals(p3.set(0)(0), 0);
   assertEquals(p3.set(0)(1), 0);
   assertEquals(p3.set(1)(0), 0);
@@ -105,9 +105,9 @@ Deno.test("Prism composeLens", () => {
 });
 
 Deno.test("Prism composeOptional", () => {
-  const { getOption, set } = pipe(
+  const { getOption, set } = P.composeOptional(
     P.id<number>(),
-    P.composeOptional(P.asOptional(P.fromPredicate(positiveGuard))),
+    P.asOptional(P.fromPredicate(positiveGuard)),
   );
   assertEquals(getOption(0), O.none);
   assertEquals(getOption(1), O.some(1));
@@ -115,7 +115,7 @@ Deno.test("Prism composeOptional", () => {
   assertEquals(set(0)(1), 0);
 
   const p2 = P.fromPredicate(positiveGuard);
-  const p3 = pipe(p2, P.composeOptional(OP.id()));
+  const p3 = P.composeOptional(p2, OP.id());
   assertEquals(p3.set(0)(0), 0);
   assertEquals(p3.set(0)(1), 0);
   assertEquals(p3.set(1)(0), 0);
@@ -123,9 +123,9 @@ Deno.test("Prism composeOptional", () => {
 });
 
 Deno.test("Prism composeTraversal", () => {
-  const { traverse } = pipe(
+  const { traverse } = P.composeTraversal(
     P.id<number>(),
-    P.composeTraversal(P.asTraversal(P.fromPredicate(positiveGuard))),
+    P.asTraversal(P.fromPredicate(positiveGuard)),
   );
   const t1 = traverse(O.Applicative);
   const t2 = t1((n) => n === 0 ? O.none : O.some(n));
