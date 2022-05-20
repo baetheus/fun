@@ -195,21 +195,21 @@ Deno.test("Nilable sequenceTuple", () => {
   assertEquals(N.sequenceTuple(N.nil, N.nil), N.nil);
 });
 
-Deno.test("Nilable Do, bind, bindTo", () => {
-  assertEquals(
-    pipe(
-      N.Do(),
-      N.bind("one", () => N.make(1)),
-      N.bind("two", ({ one }) => N.make(one + one)),
-      N.map(({ one, two }) => one + two),
-    ),
-    N.make(3),
-  );
-  assertEquals(
-    pipe(
-      N.make(1),
-      N.bindTo("one"),
-    ),
-    N.make({ one: 1 }),
-  );
-});
+// Deno.test("Nilable Do, bind, bindTo", () => {
+//   assertEquals(
+//     pipe(
+//       N.Do(),
+//       N.bind("one", () => N.make(1)),
+//       N.bind("two", ({ one }) => N.make(one + one)),
+//       N.map(({ one, two }) => one + two),
+//     ),
+//     N.make(3),
+//   );
+//   assertEquals(
+//     pipe(
+//       N.make(1),
+//       N.bindTo("one"),
+//     ),
+//     N.make({ one: 1 }),
+//   );
+// });

@@ -5,6 +5,8 @@ import * as I from "../iso.ts";
 import * as P from "../prism.ts";
 import * as O from "../option.ts";
 import * as E from "../either.ts";
+import * as A from "../array.ts";
+import * as T from "../traversal.ts";
 import { pipe } from "../fns.ts";
 
 type Test = {
@@ -82,23 +84,23 @@ Deno.test("Lens compose", () => {
 });
 
 Deno.test("Lens composeIso", () => {
-  const { get, set } = pipe(lens, L.composeIso(I.id<number>()));
+  const { get, set } = L.composeIso(lens, I.id<number>());
 
   assertEquals(get(test), 1);
   assertEquals(set(2)(test), makeTest(2, 1));
 });
 
 Deno.test("Lens composePrism", () => {
-  const { getOption, set } = pipe(lens, L.composePrism(P.id<number>()));
+  const { getOption, set } = L.composePrism(lens, P.id<number>());
 
   assertEquals(getOption(test), O.some(1));
   assertEquals(set(2)(test), makeTest(2, 1));
 });
 
 Deno.test("Lens composeOptional", () => {
-  const { getOption, set } = pipe(
+  const { getOption, set } = L.composeOptional(
     L.id<Test>(),
-    L.composeOptional(L.asOptional(lens)),
+    L.asOptional(lens),
   );
 
   assertEquals(getOption(test), O.some(1));
@@ -106,10 +108,8 @@ Deno.test("Lens composeOptional", () => {
 });
 
 Deno.test("Lens composeTraversal", () => {
-  const { traverse } = pipe(
-    L.id<Test>(),
-    L.composeTraversal(L.asTraversal(lens)),
-  );
+  const { traverse } = L.composeTraversal(L.id<Test>(), L.asTraversal(lens));
+
   const t1 = traverse(O.Applicative);
   const t2 = t1((n) => n === 0 ? O.none : O.some(n));
 
@@ -134,20 +134,18 @@ Deno.test("Lens modify", () => {
 
 Deno.test("Lens traverse", () => {
   const l0 = pipe(
-    L.id<Test>(),
-    L.prop("two"),
-    L.prop("two"),
-    L.composeIso(I.iso(O.fromNullable, O.getOrElse(() => 0))),
+    L.id<{ foo: ReadonlyArray<number> }>(),
+    L.prop("foo"),
+    L.traverse(A.Traversable),
   );
-  const l1 = pipe(l0, L.traverse(O.Traversable));
-  const l2 = l1.traverse(O.Applicative)((n) => n === 0 ? O.none : O.some(n));
+  const modify = pipe(
+    l0,
+    T.modify((n) => n + 1),
+  );
+  const getAll = T.getAll(l0);
 
-  assertEquals(l2(makeTest(0)), O.some(makeTest(0, 0)));
-  assertEquals(l2(makeTest(1)), O.some(makeTest(1, 0)));
-  assertEquals(l2(makeTest(0, 0)), O.none);
-  assertEquals(l2(makeTest(0, 1)), O.some(makeTest(0, 1)));
-  assertEquals(l2(makeTest(1, 0)), O.none);
-  assertEquals(l2(makeTest(1, 1)), O.some(makeTest(1, 1)));
+  assertEquals(modify({ foo: [1, 2, 3] }), { foo: [2, 3, 4] });
+  assertEquals(getAll({ foo: [1, 2, 3] }), [1, 2, 3]);
 });
 
 Deno.test("Lens prop", () => {

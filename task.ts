@@ -1,8 +1,7 @@
-import type { Kind } from "./kind.ts";
+import "./kind.ts";
 import type * as T from "./types.ts";
 
-import { handleThrow, identity, wait } from "./fns.ts";
-import { createDo } from "./derivations.ts";
+import { handleThrow, resolve, wait } from "./fns.ts";
 
 export type Task<A> = () => Promise<A>;
 
@@ -17,12 +16,8 @@ declare module "./kind.ts" {
   }
 }
 
-export function toPromise<A>(ta: Task<A>): Promise<A> {
-  return Promise.resolve().then(ta);
-}
-
 export function of<A>(a: A): Task<A> {
-  return () => Promise.resolve().then(() => a);
+  return () => resolve(a);
 }
 
 export function delay(ms: number): <A>(ma: Task<A>) => Task<A> {
@@ -30,11 +25,21 @@ export function delay(ms: number): <A>(ma: Task<A>) => Task<A> {
 }
 
 export function fromThunk<A>(fa: () => A): Task<A> {
-  return () => Promise.resolve().then(fa);
+  return () => resolve(fa());
 }
 
-export function tryCatch<A>(fa: () => A, onError: (e: unknown) => A): Task<A> {
-  return () => Promise.resolve().then(handleThrow(fa, identity, onError));
+export function tryCatch<AS extends unknown[], A>(
+  fasr: (...as: AS) => A | PromiseLike<A>,
+  onThrow: (e: unknown, as: AS) => A,
+): (...as: AS) => Task<A> {
+  return (...as) => {
+    const _onThrow = (e: unknown) => onThrow(e, as);
+    return handleThrow(
+      () => fasr(...as),
+      (a) => resolve(a).catch(_onThrow),
+      (e) => resolve(_onThrow(e)),
+    );
+  };
 }
 
 export function map<A, I>(fai: (a: A) => I): (ta: Task<A>) => Task<I> {
@@ -42,9 +47,7 @@ export function map<A, I>(fai: (a: A) => I): (ta: Task<A>) => Task<I> {
 }
 
 export function ap<A, I>(tfai: Task<(a: A) => I>): (ta: Task<A>) => Task<I> {
-  const handleThen = ([fai, a]: [(a: A) => I, A]) => fai(a);
-  return (ta) => () =>
-    Promise.all([toPromise(tfai), toPromise(ta)]).then(handleThen);
+  return (ta) => () => Promise.all([tfai(), ta()]).then(([fai, a]) => fai(a));
 }
 
 export function apSeq<A, I>(tfai: Task<(a: A) => I>): (ta: Task<A>) => Task<I> {
@@ -52,11 +55,11 @@ export function apSeq<A, I>(tfai: Task<(a: A) => I>): (ta: Task<A>) => Task<I> {
 }
 
 export function join<A>(tta: Task<Task<A>>): Task<A> {
-  return () => toPromise(tta).then((ta) => ta());
+  return () => tta().then((ta) => ta());
 }
 
 export function chain<A, I>(fati: (a: A) => Task<I>): (ta: Task<A>) => Task<I> {
-  return (ta) => () => toPromise(ta).then((a) => toPromise(fati(a)));
+  return (ta) => () => ta().then((a) => fati(a)());
 }
 
 export const Functor: T.Functor<URI> = { map };
@@ -76,5 +79,3 @@ export const ApplicativeSeq: T.Applicative<URI> = { of, ap: apSeq, map };
 export const ChainSeq: T.Chain<URI> = { ap: apSeq, map, chain };
 
 export const MonadSeq: T.Monad<URI> = { of, ap: apSeq, map, join, chain };
-
-export const { Do, bind, bindTo } = createDo(Monad);

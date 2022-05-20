@@ -19,40 +19,62 @@ export function createMonad<URI extends URIS>(
   return Monad;
 }
 
-export function createDo<URI extends URIS>(
-  M: T.Monad<URI>,
-) {
-  return ({
-    // deno-lint-ignore ban-types
-    Do: <B = never, C = never, D = never>() => M.of<{}, B, C, D>({}),
-    bindTo: <N extends string>(
-      name: N,
-    ): <A, B, C, D>(
-      ta: Kind<URI, [A, B, C, D]>,
-    ) => Kind<URI, [{ [K in N]: A }, B, C, D]> =>
-      // deno-lint-ignore no-explicit-any
-      M.map((a: any): any => ({ [name]: a })),
-    bind: <N extends string, A, I, B, C, D>(
-      name: Exclude<N, keyof A>,
-      fati: (a: A) => Kind<URI, [I, B, C, D]>,
-    ): (
-      ma: Kind<URI, [A, B, C, D]>,
-    ) => Kind<
-      URI,
-      [{ readonly [K in keyof A | N]: K extends keyof A ? A[K] : I }, B, C, D]
-    > =>
-      // deno-lint-ignore no-explicit-any
-      M.chain((a: any): any =>
-        // deno-lint-ignore no-explicit-any
-        pipe(a, fati, M.map((b: any): any => ({ ...a, [name]: b })))
-      ),
-  });
-}
+// export type Do<URI extends URIS> = <B = never, C = never, D = never>() => Kind<
+//   URI,
+//   // deno-lint-ignore ban-types
+//   [{}, B, C, D]
+// >;
 
-export function createApplySemigroup<URI extends URIS>(A: T.Apply<URI>) {
-  return <A, B = never, C = never, D = never>(
-    S: T.Semigroup<A>,
-  ): T.Semigroup<Kind<URI, [A, B, C, D]>> => ({
-    concat: (a) => A.ap(pipe(a, A.map(S.concat))),
-  });
-}
+// export type Bind<URI extends URIS> = <
+//   N extends string,
+//   A,
+//   I,
+//   B = never,
+//   C = never,
+//   D = never,
+// >(
+//   name: Exclude<N, keyof A>,
+//   fati: (a: A) => Kind<URI, [I, B, C, D]>,
+// ) => (ta: Kind<URI, [A, B, C, D]>) => Kind<
+//   URI,
+//   [
+//     { readonly [K in keyof A | N]: K extends keyof A ? A[K] : I },
+//     B,
+//     C,
+//     D,
+//   ]
+// >;
+
+// export type BindTo<URI extends URIS> = <N extends string>(
+//   name: N,
+// ) => <A, B = never, C = never, D = never>(
+//   ta: Kind<URI, [A, B, C, D]>,
+// ) => Kind<URI, [{ [K in N]: A }, B, C, D]>;
+
+// function makeDo<URI extends URIS>(M: T.Monad<URI>): Do<URI> {
+//   return () => M.of({});
+// }
+
+// function makeBind<URI extends URIS>(M: T.Monad<URI>): Bind<URI> {
+//   return (name, fati) =>
+//     M.chain((a) => {
+//       const ti = fati(a);
+//       // deno-lint-ignore no-explicit-any
+//       return pipe(ti, M.map((i) => Object.assign({}, a, { [name]: i }))) as any;
+//     });
+// }
+
+// function makeBindTo<URI extends URIS>(M: T.Monad<URI>): BindTo<URI> {
+//   // deno-lint-ignore no-explicit-any
+//   return (name) => M.map((a) => ({ [name]: a })) as any;
+// }
+
+// export function createDo<URI extends URIS>(
+//   M: T.Monad<URI>,
+// ) {
+//   return {
+//     Do: makeDo(M),
+//     bind: makeBind(M),
+//     bindTo: makeBindTo(M),
+//   };
+// }

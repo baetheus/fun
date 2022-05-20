@@ -4,3 +4,7 @@ draft
 *.swp
 coverage
 out
+result
+build
+.envrc
+.direnv

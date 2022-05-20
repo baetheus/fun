@@ -1,7 +1,7 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 import * as A from "../affect.ts";
 import * as E from "../either.ts";
-import { pipe, resolve } from "../fns.ts";
+import { pipe } from "../fns.ts";
 
 const addOne = (n: number) => n + 1;
 const toUpper = (s: string) => s.toUpperCase();
@@ -39,18 +39,8 @@ const rd = await ca(-1);
 
 console.log({ rc, rd });
 
-const tc = pipe(
-  A.ask<number>(),
-  A.compose(A.asks((n) => resolve(n.toString()))),
-);
+const td = A.fromEither(E.right("hello"));
 
-console.log(await tc(1));
-
-const td = pipe(
-  A.fromEither(E.right<string, string>("hello")),
-  A.widen<string, string, string>(),
-);
-
-const re = await td("this never gets used");
+const re = await td();
 
 console.log({ re });

@@ -3,9 +3,8 @@ import type * as T from "./types.ts";
 import type { Fn, Predicate, Refinement } from "./types.ts";
 
 import * as O from "./option.ts";
-import { flow, identity, isNotNil, pipe } from "./fns.ts";
+import { flow, isNotNil, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
-import { createDo } from "./derivations.ts";
 
 export type Left<L> = { tag: "Left"; left: L };
 
@@ -228,18 +227,16 @@ export function stringifyJSON<E>(
   return tryCatch(() => JSON.stringify(u), onError);
 }
 
-export function widen<F>(): <E, A>(ta: Either<E, A>) => Either<E | F, A> {
-  return identity;
-}
-
 export function map<A, I>(
   fai: (a: A) => I,
 ): <B>(ta: Either<B, A>) => Either<B, I> {
   return (ta) => isLeft(ta) ? ta : right(fai(ta.right));
 }
 
-export function chainLeft<E, A, J>(fej: (e: E) => Either<J, A>) {
-  return (ma: Either<E, A>): Either<J, A> => (isLeft(ma) ? fej(ma.left) : ma);
+export function chainLeft<B, I, J>(
+  fbj: (b: B) => Either<J, I>,
+): <A>(ta: Either<B, A>) => Either<J, A | I> {
+  return (tab) => (isLeft(tab) ? fbj(tab.left) : tab);
 }
 
 export function ap<A, I, B>(
@@ -249,9 +246,9 @@ export function ap<A, I, B>(
     isLeft(ta) ? ta : isLeft(tfai) ? tfai : right(tfai.right(ta.right));
 }
 
-export function chain<A, I, B>(
-  fati: (a: A) => Either<B, I>,
-): (ta: Either<B, A>) => Either<B, I> {
+export function chain<A, I, J>(
+  fati: (a: A) => Either<J, I>,
+): <B>(ta: Either<B, A>) => Either<B | J, I> {
   return (ta) => isLeft(ta) ? ta : fati(ta.right);
 }
 
@@ -265,9 +262,9 @@ export function mapLeft<B, J>(
   return (ta) => isLeft(ta) ? left(fbj(ta.left)) : ta;
 }
 
-export function alt<A, B>(
-  tb: Either<B, A>,
-): (ta: Either<B, A>) => Either<B, A> {
+export function alt<A, J>(
+  tb: Either<J, A>,
+): <B>(ta: Either<B, A>) => Either<B | J, A> {
   return (ta) => isLeft(ta) ? tb : ta;
 }
 
@@ -318,5 +315,3 @@ export const Traversable: T.Traversable<URI> = { map, reduce, traverse };
 export const sequenceTuple = createSequenceTuple(Apply);
 
 export const sequenceStruct = createSequenceStruct(Apply);
-
-export const { Do, bind, bindTo } = createDo(Monad);

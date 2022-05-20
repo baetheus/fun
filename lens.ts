@@ -2,6 +2,8 @@ import type * as T from "./types.ts";
 import type { Kind, URIS } from "./kind.ts";
 import type { Predicate, Refinement } from "./types.ts";
 import type { Either } from "./either.ts";
+
+import type { Optic } from "./optic.ts";
 import type { Iso } from "./iso.ts";
 import type { Prism } from "./prism.ts";
 import type { Traversal } from "./traversal.ts";
@@ -58,51 +60,93 @@ export function id<A>(): Lens<A, A> {
   return lens(identity, constant);
 }
 
-export function compose<J, K>(
-  jk: Lens<J, K>,
-): <I>(ij: Lens<I, J>) => Lens<I, K> {
-  return (ij) =>
-    lens(
-      flow(ij.get, jk.get),
-      (b) => (s) => ij.set(jk.set(b)(ij.get(s)))(s),
-    );
+export function composeIso<A, B, C>(
+  left: Lens<A, B>,
+  right: Iso<B, C>,
+): Lens<A, C> {
+  return lens(
+    flow(left.get, right.get),
+    flow(right.reverseGet, left.set),
+  );
 }
 
-export function composeIso<A, B>(
-  ab: Iso<A, B>,
-): <S>(sa: Lens<S, A>) => Lens<S, B> {
-  return (sa) =>
-    lens(
-      flow(sa.get, ab.get),
-      flow(ab.reverseGet, sa.set),
-    );
+export function composeLens<A, B, C>(
+  left: Lens<A, B>,
+  right: Lens<B, C>,
+): Lens<A, C> {
+  return lens(
+    flow(left.get, right.get),
+    (b) => (s) => left.set(right.set(b)(left.get(s)))(s),
+  );
 }
 
-export function composePrism<A, B>(
-  ab: Prism<A, B>,
-): <S>(sa: Lens<S, A>) => Optional<S, B> {
-  return (sa) =>
-    optional(flow(sa.get, ab.getOption), flow(ab.reverseGet, sa.set));
+export function composePrism<A, B, C>(
+  left: Lens<A, B>,
+  right: Prism<B, C>,
+): Optional<A, C> {
+  return optional(
+    flow(left.get, right.getOption),
+    flow(right.reverseGet, left.set),
+  );
 }
 
-export function composeOptional<A, B>(
-  ab: Optional<A, B>,
-): <S>(sa: Lens<S, A>) => Optional<S, B> {
-  return (sa) =>
-    optional(
-      flow(sa.get, ab.getOption),
-      (b) => (s) => pipe(sa.get(s), ab.set(b), sa.set)(s),
-    );
+export function composeOptional<A, B, C>(
+  left: Lens<A, B>,
+  right: Optional<B, C>,
+): Optional<A, C> {
+  return optional(
+    flow(left.get, right.getOption),
+    (b) => (s) => pipe(left.get(s), right.set(b), left.set)(s),
+  );
 }
 
-export function composeTraversal<A, B>(
-  ab: Traversal<A, B>,
-): <S>(sa: Lens<S, A>) => Traversal<S, B> {
-  return (sa) => ({
+export function composeTraversal<A, B, C>(
+  left: Lens<A, B>,
+  right: Traversal<B, C>,
+): Traversal<A, C> {
+  return ({
     tag: "Traversal",
     traverse: (A) => (fata) => (s) =>
-      pipe(ab.traverse(A)(fata)(sa.get(s)), A.map((a: A) => sa.set(a)(s))),
+      pipe(
+        right.traverse(A)(fata)(left.get(s)),
+        A.map((a: B) => left.set(a)(s)),
+      ),
   });
+}
+
+// deno-fmt-ignore
+export type Compose<Left, Right> =
+  Left extends Lens<infer A, infer B> ?
+    Right extends Iso<B, infer C> ? Lens<A, C>
+    : Right extends Lens<B, infer C> ? Lens<A, C>
+    : Right extends Prism<B, infer C> ? Optional<A, C>
+    : Right extends Optional<B, infer C> ? Optional<A, C>
+    : Right extends Traversal<B, infer C> ? Traversal<A, C>
+    : never
+  : never;
+
+// deno-lint-ignore no-explicit-any
+type NarrowCompose<R> = R extends Optic<infer B, infer _> ? Lens<any, B>
+  : never;
+
+// deno-lint-ignore no-explicit-any
+export function compose<R extends Optic<any, any>>(
+  right: R,
+): <L extends NarrowCompose<R>>(left: L) => Compose<L, R> {
+  return <L extends NarrowCompose<R>>(left: L): Compose<L, R> => {
+    switch (right.tag) {
+      case "Iso":
+        return composeIso(left, right) as Compose<L, R>;
+      case "Lens":
+        return composeLens(left, right) as Compose<L, R>;
+      case "Prism":
+        return composePrism(left, right) as Compose<L, R>;
+      case "Optional":
+        return composeOptional(left, right) as Compose<L, R>;
+      case "Traversal":
+        return composeTraversal(left, right) as Compose<L, R>;
+    }
+  };
 }
 
 export function filter<A, B extends A>(
@@ -125,13 +169,20 @@ export function modify<A>(f: (a: A) => A): <S>(sa: Lens<S, A>) => (s: S) => S {
   };
 }
 
+export function map<A, B>(
+  ab: (a: A) => B,
+  ba: (b: B) => A,
+): <S>(sa: Lens<S, A>) => Lens<S, B> {
+  return (sa) => lens(flow(sa.get, ab), flow(ba, sa.set));
+}
+
 export function traverse<URI extends URIS>(
   T: T.Traversable<URI>,
 ): <S, A, B = never, C = never, D = never>(
   sa: Lens<S, Kind<URI, [A, B, C, D]>>,
 ) => Traversal<S, A> {
   const _traversal = fromTraversable(T);
-  return (sa) => pipe(sa, composeTraversal(_traversal()));
+  return (sa) => composeTraversal(sa, _traversal());
 }
 
 export function prop<A, P extends keyof A>(
@@ -158,14 +209,14 @@ export function index(
   i: number,
 ): <S, A>(sa: Lens<S, ReadonlyArray<A>>) => Optional<S, A> {
   // deno-lint-ignore no-explicit-any
-  return composeOptional(indexArray<any>().index(i));
+  return (sa) => composeOptional(sa, indexArray<any>().index(i));
 }
 
 export function key(
   key: string,
 ): <S, A>(sa: Lens<S, Readonly<Record<string, A>>>) => Optional<S, A> {
   // deno-lint-ignore no-explicit-any
-  return composeOptional(indexRecord<any>().index(key));
+  return compose(indexRecord<any>().index(key));
 }
 
 export function atKey(
@@ -176,13 +227,13 @@ export function atKey(
 }
 
 export function some<S, A>(soa: Lens<S, O.Option<A>>): Optional<S, A> {
-  return pipe(soa, composePrism(prism(identity, O.some)));
+  return composePrism(soa, prism(identity, O.some));
 }
 
 export function right<S, E, A>(sea: Lens<S, Either<E, A>>): Optional<S, A> {
-  return pipe(sea, composePrism(prism(E.getRight, E.right)));
+  return composePrism(sea, prism(E.getRight, E.right));
 }
 
 export function left<S, E, A>(sea: Lens<S, Either<E, A>>): Optional<S, E> {
-  return pipe(sea, composePrism(prism(E.getLeft, E.left)));
+  return composePrism(sea, prism(E.getLeft, E.left));
 }

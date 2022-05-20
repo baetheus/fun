@@ -11,7 +11,7 @@ import * as R from "./result.ts";
 import * as S from "./schemable.ts";
 import * as G from "./guard.ts";
 
-export type Decoder<B, A> = RE.ReaderEither<B, R.DecodeErrors<string>, A>;
+export type Decoder<B, A> = (b: B) => Result<A>;
 
 export type TypeOf<T> = T extends Decoder<infer _, infer A> ? A : never;
 
@@ -104,6 +104,20 @@ export function compose<B, C>(
   return (dab) => flow(dab, E.chain(dbc));
 }
 
+export function json<A>(decoder: Decoder<unknown, A>): Decoder<unknown, A> {
+  return pipe(
+    string,
+    compose((s) => {
+      try {
+        return success(JSON.parse(s));
+      } catch {
+        return failure(s, "json");
+      }
+    }),
+    compose(decoder),
+  );
+}
+
 export function unknown(a: unknown): Result<unknown> {
   return _unknown(a);
 }
@@ -143,8 +157,11 @@ export function nullable<A, B>(or: Decoder<B, A>): Decoder<B | null, A | null> {
 export function undefinable<A, B>(
   or: Decoder<B, A>,
 ): Decoder<B | undefined, A | undefined> {
-  return (b: B | undefined) =>
-    b === undefined ? R.success(b as undefined) : pipe(
+  return (b: B | undefined): Result<A | undefined> => {
+    if (b === undefined) {
+      return R.success(b as undefined);
+    }
+    return pipe(
       or(b),
       E.mapLeft(
         (e) =>
@@ -154,6 +171,7 @@ export function undefinable<A, B>(
           ),
       ),
     );
+  };
 }
 
 export function record<A>(

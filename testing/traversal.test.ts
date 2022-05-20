@@ -11,8 +11,6 @@ import * as A from "../array.ts";
 import { monoidSum } from "../monoid.ts";
 import { pipe } from "../fns.ts";
 
-const positive = O.fromPredicate((n: number) => n > 0);
-
 const iso = I.iso((n: number) => n.toString(), (s: string) => parseFloat(s));
 
 type T1 = { one: number };
@@ -25,7 +23,7 @@ Deno.test("Traversal compose", () => {
 });
 
 Deno.test("Traversal composeIso", () => {
-  const getAll = pipe(T.id<number>(), T.composeIso(iso), T.getAll);
+  const getAll = pipe(T.composeIso(T.id<number>(), iso), T.getAll);
   assertEquals(getAll(1), ["1"]);
 });
 
@@ -34,14 +32,13 @@ Deno.test("Traversal composeLens", () => {
     (n: number) => n.toString(),
     (a: string) => (_) => parseFloat(a),
   );
-  const getAll = pipe(T.id<number>(), T.composeLens(lens), T.getAll);
+  const getAll = pipe(T.composeLens(T.id<number>(), lens), T.getAll);
   assertEquals(getAll(0), ["0"]);
 });
 
 Deno.test("Traversal composePrism", () => {
   const getAll = pipe(
-    T.id<O.Option<number>>(),
-    T.composePrism(P.some()),
+    T.composePrism(T.id<O.Option<number>>(), P.some()),
     T.getAll,
   );
   assertEquals(getAll(O.none), []);
@@ -50,7 +47,7 @@ Deno.test("Traversal composePrism", () => {
 
 Deno.test("Traversal composeOptional", () => {
   const optional = M.id<number>();
-  const getAll = pipe(T.id<number>(), T.composeOptional(optional), T.getAll);
+  const getAll = pipe(T.composeOptional(T.id<number>(), optional), T.getAll);
   assertEquals(getAll(0), [0]);
 });
 

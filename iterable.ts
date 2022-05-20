@@ -1,7 +1,6 @@
 import type { Kind } from "./kind.ts";
 import type * as T from "./types.ts";
 
-import { createDo } from "./derivations.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
 export const URI = "Iterable";
@@ -116,8 +115,6 @@ export const Applicative: T.Applicative<URI> = { of, ap, map };
 export const Chain: T.Chain<URI> = { ap, map, chain };
 
 export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
-
-export const { Do, bind, bindTo } = createDo(Monad);
 
 export const sequenceTuple = createSequenceTuple(Apply);
 
