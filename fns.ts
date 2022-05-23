@@ -95,8 +95,8 @@ export function identity<A>(a: A): A {
  */
 export function compose<B, C>(
   fbc: Fn<[B], C>,
-): <A>(fab: Fn<[A], B>) => Fn<[A], C> {
-  return (fab) => (a) => fbc(fab(a));
+): <A extends unknown[]>(fab: Fn<A, B>) => Fn<A, C> {
+  return (fab) => (...args) => fbc(fab(...args));
 }
 
 /**
