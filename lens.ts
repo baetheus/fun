@@ -152,7 +152,7 @@ export function props<A, P extends keyof A>(
 ): <S>(sa: Lens<S, A>) => Lens<S, { [K in P]: A[K] }> {
   return (sa) =>
     lens(
-      flow(sa.get, R.pick(...props)),
+      flow(sa.get, R.pick(props)),
       (a) => (s) => sa.set({ ...sa.get(s), ...a })(s),
     );
 }

@@ -104,17 +104,31 @@ export function omit<A, P extends keyof A>(
   return out as { [K in keyof A]: K extends P ? never : A[K] };
 }
 
-export function pick<R, K extends keyof R>(
-  ...props: [K, K, ...K[]]
-): (ta: R) => Pick<R, K> {
-  return (ta) => {
-    const output: Partial<Pick<R, K>> = {};
-
-    for (const k of props) {
-      output[k] = ta[k];
+/**
+ * Picks specified `keys` from a `record`. Value-space implementation of the
+ * [`Pick`](https://www.typescriptlang.org/docs/handbook/utility-types.html#picktype-keys)
+ * utility type.
+ *
+ * @example
+ * import { pipe } from "./fns.ts";
+ * import { pick } from "./record.ts";
+ *
+ * pipe({ a: 1, b: 2, c: 3 }, pick(["a", "b"]))
+ * // { a: 1, b: 2 }
+ *
+ * @category combinators
+ */
+export function pick<T, K extends keyof T>(
+  keys: readonly K[],
+): (record: T) => Pick<T, K> {
+  return (record) => {
+    const output = {} as Pick<T, K>;
+    for (const key of keys) {
+      if (key in record) {
+        output[key] = record[key];
+      }
     }
-
-    return output as Pick<R, K>;
+    return output;
   };
 }
 
