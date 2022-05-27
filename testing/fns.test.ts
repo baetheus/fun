@@ -5,6 +5,7 @@ import {
 } from "https://deno.land/std/testing/asserts.ts";
 
 import * as F from "../fns.ts";
+import { zip } from "../array.ts";
 
 Deno.test("fns isNotNil", () => {
   assertEquals(F.isNotNil(undefined), false);
@@ -43,6 +44,22 @@ Deno.test("fns compose", () => {
   const comp0 = F.compose(fab);
   const comp1 = comp0(fab);
   assertEquals(comp1(1), 3);
+
+  const comp2 = comp0(parseInt);
+  assertEquals(comp2("ff", 16), 256);
+
+  const template = (add: number) =>
+    (
+      [start, ...segments]: TemplateStringsArray,
+      ...numbers: number[]
+    ): string =>
+      [
+        start,
+        ...zip(segments)(numbers)
+          .map(([number, segment]) => `${number + add}${segment}`),
+      ].join("");
+  const repeated = F.flow(template, F.compose((a) => [a, a]));
+  assertEquals(repeated(1)`a${2}b${3}`, ["a3b4", "a3b4"]);
 });
 
 Deno.test("fns swap", () => {
