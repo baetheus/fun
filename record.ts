@@ -76,7 +76,7 @@ export function traverse<VRI extends URIS>(
 export function insertAt<K extends string, A>(
   k: K,
   a: A,
-): <KS extends K>(ta: Record<KS | K, A>) => Record<KS | K, A> {
+): <KS extends string>(ta: Record<KS | K, A>) => Record<KS | K, A> {
   return (ta) => (ta[k] === a ? ta : { ...ta, [k]: a });
 }
 
@@ -96,7 +96,7 @@ export function deleteAt<K extends string>(
 export function omit<A, P extends keyof A>(
   props: [P, ...Array<P>],
   a: A,
-): { [K in keyof A]: K extends P ? never : A[K] } {
+): Omit<A, P> {
   const out: A = Object.assign({}, a);
   for (const k of props) {
     delete out[k];
@@ -132,8 +132,8 @@ export function pick<T, K extends keyof T>(
   };
 }
 
-export function keys<P extends Record<string, unknown>>(p: P): keyof P[] {
-  return (Object.keys(p) as unknown) as keyof P[];
+export function keys<P extends Record<string, unknown>>(p: P): (keyof P)[] {
+  return (Object.keys(p) as unknown) as (keyof P)[];
 }
 
 export function zipFirst<A, I>(
