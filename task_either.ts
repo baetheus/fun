@@ -101,8 +101,8 @@ export function right<A = never, B = never>(right: A): TaskEither<B, A> {
  * const succ = TE.tryCatch(() => Promise.resolve(1), String);
  * const fail = TE.tryCatch(() => Promise.reject(0), String);
  *
- * assertEquals(await succ, E.right(1));
- * assertEquals(await fail, E.left(0));
+ * assertEquals(await succ(), E.right(1));
+ * assertEquals(await fail(), E.left("0"));
  * ```
  */
 export function tryCatch<A, B>(
