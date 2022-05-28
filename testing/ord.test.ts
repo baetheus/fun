@@ -19,8 +19,8 @@ Deno.test("Ord ordBoolean", () => {
   AS.assertOrd(O.ordBoolean, { a: true, b: false });
 });
 
-Deno.test("Ord compare", () => {
-  const compare = O.compare(O.ordNumber);
+Deno.test("Ord toCompare", () => {
+  const compare = O.toCompare(O.ordNumber);
   assertEquals(typeof compare, "function");
   assertEquals(compare(0, 0), 0);
   assertEquals(compare(0, 1), -1);
@@ -97,4 +97,38 @@ Deno.test("Ord between", () => {
 
 Deno.test("Ord getOrdUtilities", () => {
   assertExists(O.getOrdUtilities(O.ordNumber));
+});
+
+Deno.test("Ord fromCompare", () => {
+  const compareFoo: O.Compare<{ foo: string }> = (a, b) =>
+    O.toCompare(O.ordString)(a.foo, b.foo);
+  const a = { foo: "bar" };
+  const b = { foo: "bar" };
+  const c = { foo: "baz" };
+
+  const ordFoo = O.fromCompare(compareFoo);
+
+  assertEquals(ordFoo.equals(a)(a), true);
+  assertEquals(ordFoo.equals(a)(b), true);
+  assertEquals(ordFoo.equals(a)(c), false);
+  assertEquals(ordFoo.lte(c)(b), true);
+  assertEquals(ordFoo.lte(b)(c), false);
+});
+
+Deno.test("Ord createOrdTuple", () => {
+  const ordTuple = O.createOrdTuple(O.ordString, O.ordNumber);
+
+  assertEquals(O.toCompare(ordTuple)(["y", 1], ["z", 1]), -1);
+  assertEquals(O.toCompare(ordTuple)(["y", 1], ["y", 2]), -1);
+  assertEquals(O.toCompare(ordTuple)(["y", 1], ["y", 1]), 0);
+  assertEquals(O.toCompare(ordTuple)(["y", 1], ["y", 0]), 1);
+  assertEquals(O.toCompare(ordTuple)(["y", 1], ["x", 1]), 1);
+});
+
+Deno.test("Ord contramap", () => {
+  const ordFoo = O.contramap((foo: { foo: number }) => foo.foo)(O.ordNumber);
+
+  assertEquals(O.toCompare(ordFoo)({ foo: 1 }, { foo: 0 }), 1);
+  assertEquals(O.toCompare(ordFoo)({ foo: 1 }, { foo: 1 }), 0);
+  assertEquals(O.toCompare(ordFoo)({ foo: 1 }, { foo: 2 }), -1);
 });
