@@ -6,7 +6,7 @@ import * as O from "./option.ts";
 import { createDo } from "./derivations.ts";
 import { apply, flow, identity, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
-import { compare, Ord } from "./ord.ts";
+import { Ord, toCompare } from "./ord.ts";
 
 export type TypeOf<T> = T extends ReadonlyArray<infer A> ? A : never;
 
@@ -362,7 +362,7 @@ export const unzip = <A, B>(
 export function sort<B>(
   O: Ord<B>,
 ): <A extends B>(as: ReadonlyArray<A>) => ReadonlyArray<B> {
-  const _compare = compare(O);
+  const _compare = toCompare(O);
   return (as) => as.slice().sort(_compare);
 }
 

@@ -3,7 +3,7 @@ import type * as T from "./types.ts";
 import type { Fn } from "./types.ts";
 
 import { hasOwnProperty, pipe } from "./fns.ts";
-import { compare, ordString } from "./ord.ts";
+import { ordString, toCompare } from "./ord.ts";
 
 export type ReadonlyRecord<V> = Readonly<Record<string, V>>;
 
@@ -18,7 +18,7 @@ declare module "./kind.ts" {
   }
 }
 
-const compareStrings = compare(ordString);
+const compareStrings = toCompare(ordString);
 
 const sortStrings = (keys: string[]): string[] => keys.sort(compareStrings);
 
