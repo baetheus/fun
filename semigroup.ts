@@ -17,7 +17,7 @@ export interface Semigroup<T> {
  * @from https://raw.githubusercontent.com/gcanti/io-ts/master/src/FreeSemigroup.ts
  *
  * TODO(baetheus): Move to free.ts ??
- * **************************************************************************** */
+ * *****************************************************************************/
 
 export type Of<A> = {
   readonly tag: "Of";

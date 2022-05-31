@@ -76,7 +76,7 @@ export function traverse<VRI extends URIS>(
 export function insertAt<K extends string, A>(
   k: K,
   a: A,
-): <KS extends K>(ta: Record<KS | K, A>) => Record<KS | K, A> {
+): <KS extends string>(ta: Record<KS | K, A>) => Record<KS | K, A> {
   return (ta) => (ta[k] === a ? ta : { ...ta, [k]: a });
 }
 
@@ -96,7 +96,7 @@ export function deleteAt<K extends string>(
 export function omit<A, P extends keyof A>(
   props: [P, ...Array<P>],
   a: A,
-): { [K in keyof A]: K extends P ? never : A[K] } {
+): Omit<A, P> {
   const out: A = Object.assign({}, a);
   for (const k of props) {
     delete out[k];
@@ -104,22 +104,36 @@ export function omit<A, P extends keyof A>(
   return out as { [K in keyof A]: K extends P ? never : A[K] };
 }
 
-export function pick<R, K extends keyof R>(
-  ...props: [K, K, ...K[]]
-): (ta: R) => Pick<R, K> {
-  return (ta) => {
-    const output: Partial<Pick<R, K>> = {};
-
-    for (const k of props) {
-      output[k] = ta[k];
+/**
+ * Picks specified `keys` from a `record`. Value-space implementation of the
+ * [`Pick`](https://www.typescriptlang.org/docs/handbook/utility-types.html#picktype-keys)
+ * utility type.
+ *
+ * @example
+ * import { pipe } from "./fns.ts";
+ * import { pick } from "./record.ts";
+ *
+ * pipe({ a: 1, b: 2, c: 3 }, pick(["a", "b"]))
+ * // { a: 1, b: 2 }
+ *
+ * @category combinators
+ */
+export function pick<T, K extends keyof T>(
+  keys: readonly K[],
+): (record: T) => Pick<T, K> {
+  return (record) => {
+    const output = {} as Pick<T, K>;
+    for (const key of keys) {
+      if (key in record) {
+        output[key] = record[key];
+      }
     }
-
-    return output as Pick<R, K>;
+    return output;
   };
 }
 
-export function keys<P extends Record<string, unknown>>(p: P): keyof P[] {
-  return (Object.keys(p) as unknown) as keyof P[];
+export function keys<P extends Record<string, unknown>>(p: P): (keyof P)[] {
+  return (Object.keys(p) as unknown) as (keyof P)[];
 }
 
 export function zipFirst<A, I>(

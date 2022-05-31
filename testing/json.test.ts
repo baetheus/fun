@@ -279,8 +279,7 @@ Deno.test({
         },
       },
       $ref: "#/definitions/Person",
-    };
-
+    } as J.Type;
     assertEquals(actual, expected);
   },
 });
@@ -327,7 +326,7 @@ Deno.test({
           type: "object",
         },
       },
-    };
+    } as J.Type;
 
     assertEquals(actual, expected);
   },

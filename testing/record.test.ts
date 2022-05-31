@@ -116,7 +116,11 @@ Deno.test("Record omit", () => {
 });
 
 Deno.test("Record pick", () => {
-  assertEquals(pipe({ a: 1, b: 2, c: 3 }, R.pick("a", "b")), { a: 1, b: 2 });
+  assertEquals(pipe({ a: 1, b: 2, c: 3 }, R.pick(["a", "b"])), { a: 1, b: 2 });
+  const r: { a: number; b?: number; c?: number } = { a: 1, b: 2 };
+  assertEquals(pipe(r, R.pick([] as const)), {});
+  assertEquals(pipe(r, R.pick(["a", "b"])), { a: 1, b: 2 });
+  assertEquals(pipe(r, R.pick(["a", "c"])), { a: 1 });
 });
 
 Deno.test("Record keys", () => {
