@@ -30,7 +30,7 @@ export const ordBoolean: Ord<boolean> = {
   lte: lessThanOrEqual,
 };
 
-export function compare<A>(O: Ord<A>): Compare<A> {
+export function toCompare<A>(O: Ord<A>): Compare<A> {
   return (a, b) => {
     if (O.equals(b)(a)) {
       return 0;
@@ -121,6 +121,88 @@ export function getOrdUtilities<A>(O: Ord<A>) {
     max: max(O),
     clamp: clamp(O),
     between: between(O),
-    compare: compare(O),
+    compare: toCompare(O),
   });
+}
+
+/**
+ * Derives an `Ord` instance from a `compare` function for the same type.
+ *
+ * @example
+ * ```ts
+ * import { type Compare, fromCompare, ordString, toCompare } from "./ord.ts";
+ * const compareFoo: Compare<{ foo: string }> = (a, b) =>
+ *   toCompare(ordString)(a.foo, b.foo);
+ * const a = { foo: "bar" };
+ * const b = { foo: "bar" };
+ * const c = { foo: "baz" };
+ *
+ * const ordFoo = fromCompare(compareFoo);
+ *
+ * ordFoo.equals(a)(a); // true
+ * ordFoo.equals(a)(b); // true
+ * ordFoo.equals(a)(c); // false
+ * ordFoo.lte(c)(b); // true
+ * ordFoo.lte(b)(c); // false
+ * ```
+ *
+ * @category constructors
+ */
+export function fromCompare<A>(compare: Compare<A>): Ord<A> {
+  return {
+    equals: (b) => (a) => a === b || compare(a, b) === 0,
+    lte: (b) => (a) => compare(a, b) <= 0,
+  };
+}
+
+/**
+ * Derives an `Ord` instance for tuple type using a tuple of `Ord` instances.
+ *
+ * @example
+ * ```ts
+ * import { createOrdTuple, ordNumber, ordString, toCompare } from "./ord.ts";
+ *
+ * const ordTuple = createOrdTuple(ordString, ordNumber);
+ * // Ord<readonly [string, number, boolean]>
+ *
+ * toCompare(ordTuple)(["y", 1], ["z", 1]); // -1
+ * toCompare(ordTuple)(["y", 1], ["y", 2]); // -1
+ * toCompare(ordTuple)(["y", 1], ["y", 1]); // 0
+ * toCompare(ordTuple)(["y", 1], ["y", 0]); // 1
+ * toCompare(ordTuple)(["y", 1], ["x", 1]); // 1
+ * ```
+ *
+ * @category combinators
+ */
+export function createOrdTuple<T extends ReadonlyArray<unknown>>(
+  ...ords: { [K in keyof T]: Ord<T[K]> }
+): Ord<Readonly<T>> {
+  const compares = ords.map(toCompare);
+  return fromCompare((a, b) => {
+    for (let i = 0; i < ords.length; i++) {
+      const ordering = compares[i](a[i], b[i]);
+      if (ordering) return ordering;
+    }
+    return 0;
+  });
+}
+
+/**
+ * Derives an instance of `Ord<A>` using a function from `A` to `B` and an
+ * instance of `Ord<B>`.
+ *
+ * @example
+ * ```ts
+ * import { contramap, ordNumber, toCompare } from "./ord.ts";
+ * const ordFoo = contramap((foo: { foo: number }) => foo.foo)(ordNumber);
+ *
+ * toCompare(ordFoo)({ foo: 1 }, { foo: 0 }); // 1
+ * toCompare(ordFoo)({ foo: 1 }, { foo: 1 }); // 0
+ * toCompare(ordFoo)({ foo: 1 }, { foo: 2 }); // -1
+ * ```
+ *
+ * @category contravariant
+ */
+export function contramap<A, B>(fab: (a: A) => B): (ordB: Ord<B>) => Ord<A> {
+  return (ordB) => fromCompare((a1, a2) => toCompare(ordB)(fab(a1), fab(a2)));
 }

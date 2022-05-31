@@ -4,7 +4,7 @@ import type * as T from "./types.ts";
 
 import * as O from "./option.ts";
 import * as A from "./array.ts";
-import { compare } from "./ord.ts";
+import { toCompare } from "./ord.ts";
 import { fromEquals } from "./setoid.ts";
 import { flow, pipe } from "./fns.ts";
 
@@ -129,18 +129,18 @@ export function elem<A>(
 export function entries<B>(
   O: T.Ord<B>,
 ): (<A>(ta: Map<B, A>) => ReadonlyArray<[B, A]>) {
-  const _compare = compare(O);
+  const _compare = toCompare(O);
   return (ta) =>
     Array.from(ta.entries()).sort(([left], [right]) => _compare(left, right));
 }
 
 export function keys<K>(O: T.Ord<K>): (<A>(ta: Map<K, A>) => K[]) {
-  const _compare = compare(O);
+  const _compare = toCompare(O);
   return (ta) => Array.from(ta.keys()).sort(_compare);
 }
 
 export function values<A>(O: T.Ord<A>): (<K>(ta: Map<K, A>) => A[]) {
-  const _compare = compare(O);
+  const _compare = toCompare(O);
   return (ta) => Array.from(ta.values()).sort(_compare);
 }
 
