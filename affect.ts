@@ -358,10 +358,12 @@ export function fromIOEither<A, B, C = never>(
  * import * as E from "./either.ts";
  * import * as O from "./option.ts";
  *
- * const ta = A.fromOption(() => O.some(1));
+ * const fromOption = A.fromOption(() => 0);
  *
- * assertEquals(await ta(O.none), E.right(1));
- * assertEquals(await ta(O.some(2)), E.right(2));
+ * const t1 = fromOption(O.some(1));
+ * const t2 = fromOption(O.none);
+ * assertEquals(await t1(2), E.right(1));
+ * assertEquals(await t2(2), E.left(0));
  * ```
  */
 export function fromOption<B, C>(

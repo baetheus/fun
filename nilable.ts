@@ -4,7 +4,7 @@
  * However, it is still fairly useful.
  *
  * Nilable is a type like Maybe/Option that uses undefined/null in lieu of tagged unions.
- * **************************************************************************** */
+ * *****************************************************************************/
 
 import type { Kind } from "./kind.ts";
 import type { Predicate } from "./types.ts";
