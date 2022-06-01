@@ -93,15 +93,31 @@ export function deleteAt<K extends string>(
   };
 }
 
-export function omit<A, P extends keyof A>(
-  props: [P, ...Array<P>],
-  a: A,
-): Omit<A, P> {
-  const out: A = Object.assign({}, a);
-  for (const k of props) {
-    delete out[k];
-  }
-  return out as { [K in keyof A]: K extends P ? never : A[K] };
+/**
+ * Omit specified `keys` from a `record`. Value-space implementation of the
+ * [`Omit`](https://www.typescriptlang.org/docs/handbook/utility-types.html#omittype-keys)
+ * utility type.
+ *
+ * @example
+ * ```ts
+ * import { omit } from "./record.ts";
+ * omit(["a", "c"])({ a: 1, b: 2 }) // { b: 2 }
+ * ```
+ *
+ * @category combinators
+ */
+// deno-lint-ignore no-explicit-any
+export function omit<T, K extends keyof any>(
+  keys: readonly K[],
+): (record: T) => Omit<T, K> {
+  return (record: T) => {
+    const output = Object.assign({}, record);
+    for (const key of keys) {
+      // deno-lint-ignore no-explicit-any
+      delete (output as any)[key];
+    }
+    return output;
+  };
 }
 
 /**
