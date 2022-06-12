@@ -361,7 +361,7 @@ export const unzip = <A, B>(
  */
 export function sort<B>(
   O: Ord<B>,
-): <A extends B>(as: ReadonlyArray<A>) => ReadonlyArray<B> {
+): <A extends B>(as: ReadonlyArray<A>) => ReadonlyArray<A> {
   const _compare = toCompare(O);
   return (as) => as.slice().sort(_compare);
 }
