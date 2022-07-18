@@ -368,7 +368,7 @@ export function fromIOEither<A, B, C = never>(
  */
 export function fromOption<B, C>(
   onNone: (c: C) => B,
-): (<A>(ta: Option<A>) => Affect<C, B, A>) {
+): <A>(ta: Option<A>) => Affect<C, B, A> {
   return <A>(ta: Option<A>) =>
     (c) =>
       isNone(ta)
@@ -491,13 +491,13 @@ export function left<A = never, B = never, C = never>(
  */
 export function map<A, I>(
   fai: (a: A) => I,
-): (<R, E>(ta: Affect<R, E, A>) => Affect<R, E, I>) {
+): <R, E>(ta: Affect<R, E, A>) => Affect<R, E, I> {
   return (ta) => flow(ta, then(eitherMap(fai)));
 }
 
 export function mapLeft<B, J>(
   fbj: (b: B) => J,
-): (<R, A>(ta: Affect<R, B, A>) => Affect<R, J, A>) {
+): <R, A>(ta: Affect<R, B, A>) => Affect<R, J, A> {
   return (ta) => flow(ta, then(eitherMapLeft(fbj)));
 }
 
@@ -507,7 +507,7 @@ export function of<A, B = never, C = never>(a: A): Affect<C, B, A> {
 
 export function recover<E, A>(
   fea: (e: E) => A,
-): (<R>(ta: Affect<R, E, A>) => Affect<R, E, A>) {
+): <R>(ta: Affect<R, E, A>) => Affect<R, E, A> {
   return (ta) =>
     flow(ta, then(eitherFold(flow(fea, eitherRight), eitherRight)));
 }

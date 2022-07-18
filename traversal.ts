@@ -80,7 +80,7 @@ export function modify<A>(
   return (sa) => pipe(f, sa.traverse(I.Applicative));
 }
 
-export function set<A>(a: A): (<S>(sa: Traversal<S, A>) => (s: S) => S) {
+export function set<A>(a: A): <S>(sa: Traversal<S, A>) => (s: S) => S {
   return modify(() => a);
 }
 

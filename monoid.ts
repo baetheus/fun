@@ -77,7 +77,7 @@ export function getStructMonoid<O extends Record<string, any>>(
   };
 }
 
-export function fold<A>(M: Monoid<A>): ((as: ReadonlyArray<A>) => A) {
+export function fold<A>(M: Monoid<A>): (as: ReadonlyArray<A>) => A {
   const innerFold = S.fold(M);
   return (as) => pipe(as, innerFold(M.empty()));
 }

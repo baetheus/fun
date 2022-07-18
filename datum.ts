@@ -142,7 +142,7 @@ export function of<A>(a: A): Datum<A> {
   return replete(a);
 }
 
-export function map<A, I>(fai: (a: A) => I): ((ta: Datum<A>) => Datum<I>) {
+export function map<A, I>(fai: (a: A) => I): (ta: Datum<A>) => Datum<I> {
   return fold(
     constInitial,
     constPending,
@@ -153,7 +153,7 @@ export function map<A, I>(fai: (a: A) => I): ((ta: Datum<A>) => Datum<I>) {
 
 export function chain<A, I>(
   fati: (a: A) => Datum<I>,
-): ((ta: Datum<A>) => Datum<I>) {
+): (ta: Datum<A>) => Datum<I> {
   return fold(
     constInitial,
     constPending,
@@ -172,7 +172,7 @@ export function join<A>(taa: Datum<Datum<A>>): Datum<A> {
   return pipe(taa, chain(identity));
 }
 
-export function alt<A>(tb: Datum<A>): ((ta: Datum<A>) => Datum<A>) {
+export function alt<A>(tb: Datum<A>): (ta: Datum<A>) => Datum<A> {
   return (ta) => isSome(ta) ? ta : tb;
 }
 
