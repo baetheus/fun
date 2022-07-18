@@ -26,7 +26,6 @@ const sortStrings = (keys: string[]): string[] => keys.sort(compareStrings);
  * Creates a new object with the same keys of `ta`. Values are transformed
  * using `fai`.
  *
- * @example
  * ```ts
  * import { map } from "./record.ts"
  * map((n: number) => n + 1)({ a: 1 }); // { a: 2 }
