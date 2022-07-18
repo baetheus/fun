@@ -59,13 +59,13 @@ export function throwError<A = never, B = never>(b: B): IOEither<B, A> {
 
 export function ap<A, I, B>(
   tfai: IOEither<B, (a: A) => I>,
-): ((ta: IOEither<B, A>) => IOEither<B, I>) {
+): (ta: IOEither<B, A>) => IOEither<B, I> {
   return I.ap(pipe(tfai, I.map(E.ap)));
 }
 
 export function map<A, I>(
   fai: (a: A) => I,
-): (<B>(ta: IOEither<B, A>) => IOEither<B, I>) {
+): <B>(ta: IOEither<B, A>) => IOEither<B, I> {
   return I.map(E.map(fai));
 }
 
@@ -75,49 +75,49 @@ export function join<A, B>(ta: IOEither<B, IOEither<B, A>>): IOEither<B, A> {
 
 export function chain<A, I, B>(
   fati: (a: A) => IOEither<B, I>,
-): ((ta: IOEither<B, A>) => IOEither<B, I>) {
+): (ta: IOEither<B, A>) => IOEither<B, I> {
   return (ta) => flow(ta, E.fold(E.left, (a) => fati(a)()));
 }
 
 export function chainLeft<A, B, J>(
   fbtj: (b: B) => IOEither<J, A>,
-): ((ta: IOEither<B, A>) => IOEither<J, A>) {
+): (ta: IOEither<B, A>) => IOEither<J, A> {
   return I.chain((e: E.Either<B, A>) => E.isLeft(e) ? fbtj(e.left) : I.of(e));
 }
 
 export function bimap<A, B, I, J>(
   fbj: (b: B) => J,
   fai: (a: A) => I,
-): ((ta: IOEither<B, A>) => IOEither<J, I>) {
+): (ta: IOEither<B, A>) => IOEither<J, I> {
   return I.map(E.bimap(fbj, fai));
 }
 
 export function mapLeft<B, J>(
   fbj: (b: B) => J,
-): (<A>(ta: IOEither<B, A>) => IOEither<J, A>) {
+): <A>(ta: IOEither<B, A>) => IOEither<J, A> {
   return I.map(E.mapLeft(fbj));
 }
 
 export function alt<A = never, B = never>(
   tb: IOEither<B, A>,
-): ((ta: IOEither<B, A>) => IOEither<B, A>) {
+): (ta: IOEither<B, A>) => IOEither<B, A> {
   return (ta) => flow(ta, E.fold(tb, E.right));
 }
 
 export function extend<A, I, B>(
   ftai: (ta: IOEither<B, A>) => I,
-): ((ta: IOEither<B, A>) => IOEither<B, I>) {
+): (ta: IOEither<B, A>) => IOEither<B, I> {
   return flow(ftai, right);
 }
 
 export function reduce<A, O>(
   foao: (o: O, a: A) => O,
   o: O,
-): (<B>(ta: IOEither<B, A>) => O) {
+): <B>(ta: IOEither<B, A>) => O {
   return (ta) => pipe(ta(), E.fold(() => o, (a) => foao(o, a)));
 }
 
-export function widen<J>(): (<A, B>(ta: IOEither<B, A>) => IOEither<B | J, A>) {
+export function widen<J>(): <A, B>(ta: IOEither<B, A>) => IOEither<B | J, A> {
   return identity;
 }
 

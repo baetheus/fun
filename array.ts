@@ -68,7 +68,7 @@ export function unsafeDeleteAt<A>(
 
 export function unsafeAppend<A>(
   last: A,
-): ((ta: Array<A>) => Array<A>) {
+): (ta: Array<A>) => Array<A> {
   return (ta) => {
     ta.push(last);
     return ta;
@@ -77,7 +77,7 @@ export function unsafeAppend<A>(
 
 export function unsafePrepend<A>(
   head: A,
-): ((ta: Array<A>) => Array<A>) {
+): (ta: Array<A>) => Array<A> {
   return (ta) => {
     ta.unshift(head);
     return ta;
@@ -90,13 +90,13 @@ export function isEmpty<A>(ta: ReadonlyArray<A>): boolean {
 
 export function alt<A>(
   tb: ReadonlyArray<A>,
-): ((ta: ReadonlyArray<A>) => ReadonlyArray<A>) {
+): (ta: ReadonlyArray<A>) => ReadonlyArray<A> {
   return (ta) => ta.length === 0 ? tb : ta;
 }
 
 export function map<A, I>(
   fai: (a: A, i: number) => I,
-): ((ta: ReadonlyArray<A>) => ReadonlyArray<I>) {
+): (ta: ReadonlyArray<A>) => ReadonlyArray<I> {
   return (ta) => {
     let index = -1;
     const length = ta.length;
@@ -113,7 +113,7 @@ export function map<A, I>(
 export function reduce<A, O>(
   foao: (o: O, a: A, i: number) => O,
   o: O,
-): ((ta: ReadonlyArray<A>) => O) {
+): (ta: ReadonlyArray<A>) => O {
   return (ta) => {
     let result = o;
     let index = -1;
@@ -129,7 +129,7 @@ export function reduce<A, O>(
 
 export function concat<A>(
   right: ReadonlyArray<A>,
-): ((left: ReadonlyArray<A>) => ReadonlyArray<A>) {
+): (left: ReadonlyArray<A>) => ReadonlyArray<A> {
   if (right.length === 0) {
     return identity;
   }
@@ -175,19 +175,19 @@ export function join<A>(
 
 export function chain<A, I>(
   fati: (a: A) => ReadonlyArray<I>,
-): ((ta: ReadonlyArray<A>) => ReadonlyArray<I>) {
+): (ta: ReadonlyArray<A>) => ReadonlyArray<I> {
   return flow(map(fati), join);
 }
 
 export function ap<A, I>(
   tfai: ReadonlyArray<(a: A) => I>,
-): ((ta: ReadonlyArray<A>) => ReadonlyArray<I>) {
+): (ta: ReadonlyArray<A>) => ReadonlyArray<I> {
   return (ta) => pipe(tfai, chain(flow(map, apply(ta))));
 }
 
 export function filter<A>(
   predicate: Predicate<A>,
-): ((ta: ReadonlyArray<A>) => ReadonlyArray<A>) {
+): (ta: ReadonlyArray<A>) => ReadonlyArray<A> {
   return (ta) => {
     let index = -1;
     let resultIndex = 0;
@@ -223,13 +223,13 @@ export function traverse<VRI extends URIS>(
 
 export function append<A>(
   last: A,
-): ((ta: ReadonlyArray<A>) => ReadonlyArray<A>) {
+): (ta: ReadonlyArray<A>) => ReadonlyArray<A> {
   return (ma) => [...ma, last];
 }
 
 export function prepend<A>(
   head: A,
-): ((ta: ReadonlyArray<A>) => ReadonlyArray<A>) {
+): (ta: ReadonlyArray<A>) => ReadonlyArray<A> {
   return (ma) => [head, ...ma];
 }
 
@@ -438,9 +438,9 @@ export function getMonoid<A = never>(): T.Monoid<ReadonlyArray<A>> {
 
 export const createSequence = <VRI extends URIS>(
   A: T.Applicative<VRI>,
-): (<A, B, C, D>(
+): <A, B, C, D>(
   ta: Kind<VRI, [A, B, C, D]>[],
-) => Kind<VRI, [ReadonlyArray<A>, B, C, D]>) => {
+) => Kind<VRI, [ReadonlyArray<A>, B, C, D]> => {
   // deno-lint-ignore no-explicit-any
   return pipe(A.map(identity), traverse(A)) as any;
 };

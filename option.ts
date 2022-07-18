@@ -170,7 +170,7 @@ export function throwError<A = never>(): Option<A> {
   return none;
 }
 
-export function map<A, B>(fab: (a: A) => B): ((ta: Option<A>) => Option<B>) {
+export function map<A, B>(fab: (a: A) => B): (ta: Option<A>) => Option<B> {
   return (ta) => isNone(ta) ? none : some(fab(ta.value));
 }
 
@@ -190,13 +190,13 @@ export function mapNullable<A, I>(f: (a: A) => I | null | undefined) {
 
 export function ap<A, I>(
   tfai: Option<(a: A) => I>,
-): ((ta: Option<A>) => Option<I>) {
+): (ta: Option<A>) => Option<I> {
   return (ta) => isNone(tfai) || isNone(ta) ? none : some(tfai.value(ta.value));
 }
 
 export function chain<A, I>(
   fati: (a: A) => Option<I>,
-): ((ta: Option<A>) => Option<I>) {
+): (ta: Option<A>) => Option<I> {
   return fold(
     constNone,
     fati,
@@ -207,13 +207,13 @@ export function join<A>(taa: Option<Option<A>>): Option<A> {
   return pipe(taa, chain(identity));
 }
 
-export function alt<A>(tb: Option<A>): ((ta: Option<A>) => Option<A>) {
+export function alt<A>(tb: Option<A>): (ta: Option<A>) => Option<A> {
   return (ta) => isNone(ta) ? tb : ta;
 }
 
 export function extend<A, I>(
   ftai: (ta: Option<A>) => I,
-): ((ta: Option<A>) => Option<I>) {
+): (ta: Option<A>) => Option<I> {
   return flow(ftai, some);
 }
 
@@ -223,7 +223,7 @@ export function exists<A>(predicate: Predicate<A>) {
 
 export function filter<A>(
   predicate: Predicate<A>,
-): ((ta: Option<A>) => Option<A>) {
+): (ta: Option<A>) => Option<A> {
   const _exists = exists(predicate);
   return (ta) => _exists(ta) ? ta : none;
 }
@@ -231,14 +231,14 @@ export function filter<A>(
 export function reduce<A, O>(
   foao: (o: O, a: A) => O,
   o: O,
-): ((ta: Option<A>) => O) {
+): (ta: Option<A>) => O {
   return (ta) => isSome(ta) ? foao(o, ta.value) : o;
 }
 
 export function traverse<VRI extends URIS>(A: T.Applicative<VRI>) {
   return <A, I, J, K, L>(
     favi: (a: A) => Kind<VRI, [I, J, K, L]>,
-  ): ((ta: Option<A>) => Kind<VRI, [Option<I>, J, K, L]>) =>
+  ): (ta: Option<A>) => Kind<VRI, [Option<I>, J, K, L]> =>
     fold(
       () => A.of(constNone()),
       (a) => pipe(favi(a), A.map((i) => some(i))),

@@ -106,7 +106,7 @@ export function compose<B, C>(
  */
 export function swap<A, B, C>(
   fabc: (a: A) => (b: B) => C,
-): ((b: B) => (a: A) => C) {
+): (b: B) => (a: A) => C {
   return (b: B) => (a: A): C => fabc(a)(b);
 }
 
@@ -242,7 +242,7 @@ export function reject<A = never, B = unknown>(b: B): Promise<A> {
  * A curried alias of Promise.then
  */
 export function then<A, B>(
-  fab: (a: A) => (B | Promise<B>),
+  fab: (a: A) => B | Promise<B>,
 ): (ta: Promise<A>) => Promise<B> {
   return (ta: Promise<A>): Promise<B> => ta.then(fab);
 }
