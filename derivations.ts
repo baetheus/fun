@@ -27,22 +27,20 @@ export function createDo<URI extends URIS>(
     Do: <B = never, C = never, D = never>() => M.of<{}, B, C, D>({}),
     bindTo: <N extends string>(
       name: N,
-    ): (<A, B, C, D>(
+    ): <A, B, C, D>(
       ta: Kind<URI, [A, B, C, D]>,
-    ) => Kind<URI, [{ [K in N]: A }, B, C, D]>) =>
+    ) => Kind<URI, [{ [K in N]: A }, B, C, D]> =>
       // deno-lint-ignore no-explicit-any
       M.map((a: any): any => ({ [name]: a })),
     bind: <N extends string, A, I, B, C, D>(
       name: Exclude<N, keyof A>,
       fati: (a: A) => Kind<URI, [I, B, C, D]>,
     ): (
-      (
-        ma: Kind<URI, [A, B, C, D]>,
-      ) => Kind<
-        URI,
-        [{ readonly [K in keyof A | N]: K extends keyof A ? A[K] : I }, B, C, D]
-      >
-    ) =>
+      ma: Kind<URI, [A, B, C, D]>,
+    ) => Kind<
+      URI,
+      [{ readonly [K in keyof A | N]: K extends keyof A ? A[K] : I }, B, C, D]
+    > =>
       // deno-lint-ignore no-explicit-any
       M.chain((a: any): any =>
         // deno-lint-ignore no-explicit-any

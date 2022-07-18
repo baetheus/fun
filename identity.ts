@@ -20,13 +20,13 @@ export function of<A>(a: A): Identity<A> {
 
 export function map<A, I>(
   fai: (a: A) => I,
-): ((ta: Identity<A>) => Identity<I>) {
+): (ta: Identity<A>) => Identity<I> {
   return fai;
 }
 
 export function ap<A, I>(
   tfai: Identity<(a: A) => I>,
-): ((ta: Identity<A>) => Identity<I>) {
+): (ta: Identity<A>) => Identity<I> {
   return tfai;
 }
 
@@ -36,7 +36,7 @@ export function join<A>(ta: Identity<Identity<A>>): Identity<A> {
 
 export function chain<A, I>(
   fati: (a: A) => Identity<I>,
-): ((ta: Identity<A>) => Identity<I>) {
+): (ta: Identity<A>) => Identity<I> {
   return fati;
 }
 

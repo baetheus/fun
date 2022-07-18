@@ -119,7 +119,13 @@ Deno.test("Record deleteAt", () => {
 });
 
 Deno.test("Record omit", () => {
-  assertEquals(R.omit(["a", "b"], { a: 1, b: 2, c: 3 }), { c: 3 });
+  assertEquals(R.omit(["a", "c"] as const)({ a: 1, b: 2 }), { b: 2 });
+  const foo = Symbol();
+  const bar = Symbol();
+  assertEquals(
+    R.omit([foo] as const)({ [foo]: "foo", [bar]: "bar" }),
+    { [bar]: "bar" },
+  );
 });
 
 Deno.test("Record pick", () => {

@@ -22,26 +22,26 @@ export function make<E, A = never>(e: E): Const<E, A> {
 
 export function map<A, I>(
   _fai: (a: A) => I,
-): (<B = never>(ta: Const<B, A>) => Const<B, I>) {
+): <B = never>(ta: Const<B, A>) => Const<B, I> {
   return identity;
 }
 
 export function contramap<A, I>(
   _fai: (a: A) => I,
-): (<B = never>(ta: Const<B, I>) => Const<B, A>) {
+): <B = never>(ta: Const<B, I>) => Const<B, A> {
   return identity;
 }
 
 export function bimap<A, B, I, J>(
   fbj: (b: B) => J,
   _fai: (a: A) => I,
-): ((tab: Const<B, A>) => Const<J, I>) {
+): (tab: Const<B, A>) => Const<J, I> {
   return (tab) => make(fbj(tab));
 }
 
 export function mapLeft<B, J>(
   fbj: (b: B) => J,
-): (<A = never>(tab: Const<B, A>) => Const<J, A>) {
+): <A = never>(tab: Const<B, A>) => Const<J, A> {
   return bimap(fbj, identity);
 }
 

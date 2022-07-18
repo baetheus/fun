@@ -215,7 +215,7 @@ export function getRightMonad<E>(
 export function bimap<A, B, I, J>(
   fbj: (b: B) => J,
   fai: (a: A) => I,
-): ((ta: Either<B, A>) => Either<J, I>) {
+): (ta: Either<B, A>) => Either<J, I> {
   return (ta) => isLeft(ta) ? left(fbj(ta.left)) : right(fai(ta.right));
 }
 
@@ -230,13 +230,13 @@ export function stringifyJSON<E>(
   return tryCatch(() => JSON.stringify(u), onError);
 }
 
-export function widen<F>(): (<E, A>(ta: Either<E, A>) => Either<E | F, A>) {
+export function widen<F>(): <E, A>(ta: Either<E, A>) => Either<E | F, A> {
   return identity;
 }
 
 export function map<A, I>(
   fai: (a: A) => I,
-): (<B>(ta: Either<B, A>) => Either<B, I>) {
+): <B>(ta: Either<B, A>) => Either<B, I> {
   return (ta) => isLeft(ta) ? ta : right(fai(ta.right));
 }
 
@@ -246,14 +246,14 @@ export function chainLeft<E, A, J>(fej: (e: E) => Either<J, A>) {
 
 export function ap<A, I, B>(
   tfai: Either<B, (a: A) => I>,
-): ((ta: Either<B, A>) => Either<B, I>) {
+): (ta: Either<B, A>) => Either<B, I> {
   return (ta) =>
     isLeft(ta) ? ta : isLeft(tfai) ? tfai : right(tfai.right(ta.right));
 }
 
 export function chain<A, I, B>(
   fati: (a: A) => Either<B, I>,
-): ((ta: Either<B, A>) => Either<B, I>) {
+): (ta: Either<B, A>) => Either<B, I> {
   return (ta) => isLeft(ta) ? ta : fati(ta.right);
 }
 
@@ -263,34 +263,34 @@ export function join<A, B>(ta: Either<B, Either<B, A>>): Either<B, A> {
 
 export function mapLeft<B, J>(
   fbj: (b: B) => J,
-): (<A>(ta: Either<B, A>) => Either<J, A>) {
+): <A>(ta: Either<B, A>) => Either<J, A> {
   return (ta) => isLeft(ta) ? left(fbj(ta.left)) : ta;
 }
 
 export function alt<A, B>(
   tb: Either<B, A>,
-): ((ta: Either<B, A>) => Either<B, A>) {
+): (ta: Either<B, A>) => Either<B, A> {
   return (ta) => isLeft(ta) ? tb : ta;
 }
 
 export function extend<A, I, B>(
   ftai: (ta: Either<B, A>) => I,
-): ((ta: Either<B, A>) => Either<B, I>) {
+): (ta: Either<B, A>) => Either<B, I> {
   return (ta) => right(ftai(ta));
 }
 
 export function reduce<A, O>(
   foao: (o: O, a: A) => O,
   o: O,
-): (<B>(ta: Either<B, A>) => O) {
+): <B>(ta: Either<B, A>) => O {
   return (ta) => isLeft(ta) ? o : foao(o, ta.right);
 }
 
 export function traverse<VRI extends URIS>(
   A: T.Applicative<VRI>,
-): (<A, I, J, K, L>(
+): <A, I, J, K, L>(
   faui: (a: A) => Kind<VRI, [I, J, K, L]>,
-) => <B>(ta: Either<B, A>) => Kind<VRI, [Either<B, I>, J, K, L]>) {
+) => <B>(ta: Either<B, A>) => Kind<VRI, [Either<B, I>, J, K, L]> {
   return (faui) =>
     fold((l) => A.of(left(l)), flow(faui, A.map((r) => right(r))));
 }

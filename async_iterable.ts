@@ -87,7 +87,7 @@ export function ap<A, I>(
 }
 
 export function map<A, I>(
-  fai: (a: A) => (I | PromiseLike<I>),
+  fai: (a: A) => I | PromiseLike<I>,
 ): (ta: AsyncIterable<A>) => AsyncIterable<I> {
   return (ta) =>
     make(async function* () {
