@@ -233,20 +233,19 @@ export function prepend<A>(
   return (ma) => [head, ...ma];
 }
 
-export const lookup = (i: number) =>
-  <A>(as: ReadonlyArray<A>): O.Option<A> =>
-    isOutOfBounds(i, as) ? O.none : O.some(as[i]);
+export const lookup = (i: number) => <A>(as: ReadonlyArray<A>): O.Option<A> =>
+  isOutOfBounds(i, as) ? O.none : O.some(as[i]);
 
-export const insertAt = <A>(i: number, a: A) =>
-  (as: ReadonlyArray<A>): O.Option<ReadonlyArray<A>> =>
+export const insertAt =
+  <A>(i: number, a: A) => (as: ReadonlyArray<A>): O.Option<ReadonlyArray<A>> =>
     i < 0 || i > as.length ? O.none : O.some(unsafeInsertAt(i, a, as));
 
-export const updateAt = <A>(i: number, a: A) =>
-  (as: ReadonlyArray<A>): O.Option<ReadonlyArray<A>> =>
+export const updateAt =
+  <A>(i: number, a: A) => (as: ReadonlyArray<A>): O.Option<ReadonlyArray<A>> =>
     isOutOfBounds(i, as) ? O.none : O.some(unsafeUpdateAt(i, a, as));
 
-export const deleteAt = (i: number) =>
-  <A>(as: ReadonlyArray<A>): O.Option<ReadonlyArray<A>> =>
+export const deleteAt =
+  (i: number) => <A>(as: ReadonlyArray<A>): O.Option<ReadonlyArray<A>> =>
     isOutOfBounds(i, as) ? O.none : O.some(unsafeDeleteAt(i, as));
 
 /**
@@ -289,7 +288,8 @@ export const range = (
  *
  * @category combinators
  */
-export const zipWith = <B, A, C>(fb: ReadonlyArray<B>, f: (a: A, b: B) => C) =>
+export const zipWith =
+  <B, A, C>(fb: ReadonlyArray<B>, f: (a: A, b: B) => C) =>
   (
     fa: ReadonlyArray<A>,
   ): ReadonlyArray<C> => {
@@ -394,10 +394,9 @@ export const Traversable: T.Traversable<URI> = IndexedTraversable;
 
 export function getSetoid<A>(S: T.Setoid<A>): T.Setoid<ReadonlyArray<A>> {
   return ({
-    equals: (a) =>
-      (b) =>
-        a === b ||
-        (a.length === b.length && a.every((v, i) => S.equals(v)(b[i]))),
+    equals: (a) => (b) =>
+      a === b ||
+      (a.length === b.length && a.every((v, i) => S.equals(v)(b[i]))),
   });
 }
 
@@ -405,17 +404,16 @@ export function getOrd<A>(O: T.Ord<A>): T.Ord<ReadonlyArray<A>> {
   const { equals } = getSetoid(O);
   return ({
     equals,
-    lte: (b) =>
-      (a) => {
-        const length = Math.min(a.length, b.length);
-        let index = -1;
-        while (++index < length) {
-          if (!O.equals(a[index])(b[index])) {
-            return O.lte(b[index])(a[index]);
-          }
+    lte: (b) => (a) => {
+      const length = Math.min(a.length, b.length);
+      let index = -1;
+      while (++index < length) {
+        if (!O.equals(a[index])(b[index])) {
+          return O.lte(b[index])(a[index]);
         }
-        return a.length <= b.length;
-      },
+      }
+      return a.length <= b.length;
+    },
   });
 }
 

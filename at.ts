@@ -31,11 +31,10 @@ export function atMap<A = never>(): At<Map<string, A>, string, Option<A>> {
       tag: "Lens",
       get: (m) => fromNullable(m.get(key)),
       set: fold(
-        () =>
-          (m) => {
-            m.delete(key);
-            return m;
-          },
+        () => (m) => {
+          m.delete(key);
+          return m;
+        },
         (a) => (m) => m.set(key, a),
       ),
     }),

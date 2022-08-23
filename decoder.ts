@@ -204,7 +204,8 @@ export function tuple<A extends any[]>(
   ) as Decoder<unknown, { [K in keyof A]: A[K] }>;
 }
 
-const traverseStruct = (items: Record<string, Decoder<unknown, unknown>>) =>
+const traverseStruct =
+  (items: Record<string, Decoder<unknown, unknown>>) =>
   (a: Record<string, unknown>) =>
     pipe(
       items,
@@ -231,7 +232,8 @@ const undefinedProperty: R.Result<E.Either<void, unknown>> = R.success(
   E.right(undefined),
 );
 
-const traversePartial = (items: Record<string, Decoder<unknown, unknown>>) =>
+const traversePartial =
+  (items: Record<string, Decoder<unknown, unknown>>) =>
   (a: Record<string, unknown>) =>
     pipe(
       items,
@@ -259,33 +261,31 @@ export function partial<A>(
 export function intersect<B, I>(
   and: Decoder<B, I>,
 ): <A>(ta: Decoder<B, A>) => Decoder<B, A & I> {
-  return (ta) =>
-    (a) =>
-      pipe(
-        R.sequenceTuple(ta(a), and(a)),
-        E.bimap(
-          (e) => R.ofWrap("cannot decode intersection", e),
-          ([left, right]) => _intersect(left, right),
-        ),
-      );
+  return (ta) => (a) =>
+    pipe(
+      R.sequenceTuple(ta(a), and(a)),
+      E.bimap(
+        (e) => R.ofWrap("cannot decode intersection", e),
+        ([left, right]) => _intersect(left, right),
+      ),
+    );
 }
 
 export function union<B, I>(
   or: Decoder<B, I>,
 ): <A>(ta: Decoder<B, A>) => Decoder<B, A | I> {
-  return <A>(ta: Decoder<B, A>) =>
-    (a) =>
-      pipe(
-        ta(a),
-        E.chainLeft((left) =>
-          pipe(
-            or(a),
-            E.mapLeft((right) =>
-              R.ofWrap("cannot decode union", R.concat(left)(right))
-            ),
-          ) as R.Result<A | I>
-        ),
-      );
+  return <A>(ta: Decoder<B, A>) => (a) =>
+    pipe(
+      ta(a),
+      E.chainLeft((left) =>
+        pipe(
+          or(a),
+          E.mapLeft((right) =>
+            R.ofWrap("cannot decode union", R.concat(left)(right))
+          ),
+        ) as R.Result<A | I>
+      ),
+    );
 }
 
 export function lazy<A, B>(id: string, fn: () => Decoder<B, A>): Decoder<B, A> {

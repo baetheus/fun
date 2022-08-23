@@ -14,12 +14,11 @@ export function indexArray<A>(): Index<ReadonlyArray<A>, number, A> {
     index: (i) => ({
       tag: "Optional",
       getOption: lookup(i),
-      set: (a) =>
-        (as) =>
-          pipe(
-            updateAt(i, a)(as),
-            getOrElse(() => as),
-          ),
+      set: (a) => (as) =>
+        pipe(
+          updateAt(i, a)(as),
+          getOrElse(() => as),
+        ),
     }),
   });
 }

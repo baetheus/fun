@@ -129,8 +129,8 @@ export function fromTask<A, B = never>(ta: Task<A>): TaskEither<B, A> {
 export function fromFailableTask<A, B>(
   onError: (e: unknown) => B,
 ): (ta: Task<A>) => TaskEither<B, A> {
-  return (ta) =>
-    () => ta().then(eitherRight).catch((e) => eitherLeft(onError(e)));
+  return (ta) => () =>
+    ta().then(eitherRight).catch((e) => eitherLeft(onError(e)));
 }
 
 /**

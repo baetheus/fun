@@ -134,32 +134,31 @@ export function getSemigroup<A, B>(
   SA: T.Semigroup<A>,
 ): T.Semigroup<These<B, A>> {
   return ({
-    concat: (x) =>
-      (y) => {
-        if (isLeft(x)) {
-          if (isLeft(y)) {
-            return left(SB.concat(x.left)(y.left));
-          } else if (isRight(y)) {
-            return both(x.left, y.right);
-          }
-          return both(SB.concat(x.left)(y.left), y.right);
-        }
-
-        if (isRight(x)) {
-          if (isLeft(y)) {
-            return both(y.left, x.right);
-          } else if (isRight(y)) {
-            return right(SA.concat(x.right)(y.right));
-          }
-          return both(y.left, SA.concat(x.right)(y.right));
-        }
-
+    concat: (x) => (y) => {
+      if (isLeft(x)) {
         if (isLeft(y)) {
-          return both(SB.concat(x.left)(y.left), x.right);
+          return left(SB.concat(x.left)(y.left));
         } else if (isRight(y)) {
-          return both(x.left, SA.concat(x.right)(y.right));
+          return both(x.left, y.right);
         }
-        return both(SB.concat(x.left)(y.left), SA.concat(x.right)(y.right));
-      },
+        return both(SB.concat(x.left)(y.left), y.right);
+      }
+
+      if (isRight(x)) {
+        if (isLeft(y)) {
+          return both(y.left, x.right);
+        } else if (isRight(y)) {
+          return right(SA.concat(x.right)(y.right));
+        }
+        return both(y.left, SA.concat(x.right)(y.right));
+      }
+
+      if (isLeft(y)) {
+        return both(SB.concat(x.left)(y.left), x.right);
+      } else if (isRight(y)) {
+        return both(x.left, SA.concat(x.right)(y.right));
+      }
+      return both(SB.concat(x.left)(y.left), SA.concat(x.right)(y.right));
+    },
   });
 }
