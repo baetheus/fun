@@ -77,15 +77,14 @@ export function size<K, A>(d: Map<K, A>): number {
 export function lookupWithKey<K>(
   S: T.Setoid<K>,
 ): (k: K) => <A>(ta: Map<K, A>) => Option<[K, A]> {
-  return (k) =>
-    (ta) => {
-      for (const [ka, a] of ta.entries()) {
-        if (S.equals(ka)(k)) {
-          return O.some([ka, a]);
-        }
+  return (k) => (ta) => {
+    for (const [ka, a] of ta.entries()) {
+      if (S.equals(ka)(k)) {
+        return O.some([ka, a]);
       }
-      return O.none;
-    };
+    }
+    return O.none;
+  };
 }
 
 export function lookup<K>(
@@ -300,26 +299,25 @@ export function getMonoid<K, A>(
 ): T.Monoid<Map<K, A>> {
   const lookupKey = lookupWithKey(SK);
   return {
-    concat: (a) =>
-      (b) => {
-        if (isEmpty(a)) {
-          return b;
-        }
-        if (isEmpty(b)) {
-          return a;
-        }
-        const r = new Map(a);
-        for (const [bk, ba] of b) {
-          pipe(
-            lookupKey(bk)(a),
-            O.fold(
-              () => r.set(bk, ba),
-              ([ak, aa]) => r.set(ak, SA.concat(aa)(ba)),
-            ),
-          );
-        }
-        return r;
-      },
+    concat: (a) => (b) => {
+      if (isEmpty(a)) {
+        return b;
+      }
+      if (isEmpty(b)) {
+        return a;
+      }
+      const r = new Map(a);
+      for (const [bk, ba] of b) {
+        pipe(
+          lookupKey(bk)(a),
+          O.fold(
+            () => r.set(bk, ba),
+            ([ak, aa]) => r.set(ak, SA.concat(aa)(ba)),
+          ),
+        );
+      }
+      return r;
+    },
     empty,
   };
 }

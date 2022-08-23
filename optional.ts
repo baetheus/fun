@@ -39,16 +39,14 @@ export function optional<S, A>(
 export function asTraversal<S, A>(sa: Optional<S, A>): Traversal<S, A> {
   return {
     tag: "Traversal",
-    traverse: (F) =>
-      (fata) =>
-        (s) =>
-          pipe(
-            sa.getOption(s),
-            O.fold(
-              () => F.of(s),
-              (a) => pipe(fata(a), F.map((a: A) => sa.set(a)(s))),
-            ),
-          ),
+    traverse: (F) => (fata) => (s) =>
+      pipe(
+        sa.getOption(s),
+        O.fold(
+          () => F.of(s),
+          (a) => pipe(fata(a), F.map((a: A) => sa.set(a)(s))),
+        ),
+      ),
   };
 }
 
@@ -71,13 +69,12 @@ export function compose<J, K>(
   return (ij) =>
     optional(
       flow(ij.getOption, O.chain(jk.getOption)),
-      (b) =>
-        (s) =>
-          pipe(
-            ij.getOption(s),
-            O.map(jk.set(b)),
-            O.fold(() => identity, ij.set),
-          )(s),
+      (b) => (s) =>
+        pipe(
+          ij.getOption(s),
+          O.map(jk.set(b)),
+          O.fold(() => identity, ij.set),
+        )(s),
     );
 }
 
@@ -97,13 +94,12 @@ export function composeLens<A, B>(
   return (sa) =>
     optional(
       flow(sa.getOption, O.map(ab.get)),
-      (b) =>
-        (s) =>
-          pipe(
-            sa.getOption(s),
-            O.map(ab.set(b)),
-            O.fold(constant(s), flow(sa.set, apply(s))),
-          ),
+      (b) => (s) =>
+        pipe(
+          sa.getOption(s),
+          O.map(ab.set(b)),
+          O.fold(constant(s), flow(sa.set, apply(s))),
+        ),
     );
 }
 
@@ -122,16 +118,14 @@ export function composeTraversal<A, B>(
 ): <S>(sa: Optional<S, A>) => Traversal<S, B> {
   return (sa) => ({
     tag: "Traversal",
-    traverse: (T) =>
-      (fata) =>
-        (s) =>
-          pipe(
-            sa.getOption(s),
-            O.fold(
-              constant(T.of(s)),
-              flow(ab.traverse(T)(fata), T.map(flow(sa.set, apply(s)))),
-            ),
-          ),
+    traverse: (T) => (fata) => (s) =>
+      pipe(
+        sa.getOption(s),
+        O.fold(
+          constant(T.of(s)),
+          flow(ab.traverse(T)(fata), T.map(flow(sa.set, apply(s)))),
+        ),
+      ),
   });
 }
 
@@ -154,13 +148,12 @@ export function filter<A>(
 export function modify<A>(
   faa: (a: A) => A,
 ): <S>(sa: Optional<S, A>) => (s: S) => S {
-  return (sa) =>
-    (s) =>
-      pipe(
-        sa.getOption(s),
-        O.map(faa),
-        O.fold(constant(s), flow(sa.set, apply(s))),
-      );
+  return (sa) => (s) =>
+    pipe(
+      sa.getOption(s),
+      O.map(faa),
+      O.fold(constant(s), flow(sa.set, apply(s))),
+    );
 }
 
 export function traverse<URI extends URIS>(

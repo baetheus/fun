@@ -49,15 +49,15 @@ Deno.test("fns compose", () => {
   assertEquals(comp2("ff", 16), 256);
 
   const template = (add: number) =>
-    (
-      [start, ...segments]: TemplateStringsArray,
-      ...numbers: number[]
-    ): string =>
-      [
-        start,
-        ...zip(segments)(numbers)
-          .map(([number, segment]) => `${number + add}${segment}`),
-      ].join("");
+  (
+    [start, ...segments]: TemplateStringsArray,
+    ...numbers: number[]
+  ): string =>
+    [
+      start,
+      ...zip(segments)(numbers)
+        .map(([number, segment]) => `${number + add}${segment}`),
+    ].join("");
   const repeated = F.flow(template, F.compose((a) => [a, a]));
   assertEquals(repeated(1)`a${2}b${3}`, ["a3b4", "a3b4"]);
 });
@@ -147,8 +147,8 @@ Deno.test("fns _", () => {
 });
 
 Deno.test("fns wait", async () => {
-  const within = (high: number, low: number) =>
-    (value: number): boolean => value >= low && value <= high;
+  const within = (high: number, low: number) => (value: number): boolean =>
+    value >= low && value <= high;
   const target = 100;
   const high = 900; // github actions on macos tend to drag
   const low = 50;

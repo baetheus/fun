@@ -79,7 +79,8 @@ export function traverse<VRI extends URIS>(
 ) => (ta: Tree<A>) => Kind<VRI, [Tree<I>, J, K, L]> {
   const traverseVRI = A.traverse(V);
   return (favi) => {
-    const out = <A, I, J, K, L>(_favi: (a: A) => Kind<VRI, [I, J, K, L]>) =>
+    const out =
+      <A, I, J, K, L>(_favi: (a: A) => Kind<VRI, [I, J, K, L]>) =>
       (ta: Tree<A>): Kind<VRI, [Tree<I>, J, K, L]> =>
         pipe(
           ta.forest,

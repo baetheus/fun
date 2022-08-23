@@ -43,8 +43,8 @@ export function map<A, I>(fai: (a: A) => I): (ta: Task<A>) => Task<I> {
 
 export function ap<A, I>(tfai: Task<(a: A) => I>): (ta: Task<A>) => Task<I> {
   const handleThen = ([fai, a]: [(a: A) => I, A]) => fai(a);
-  return (ta) =>
-    () => Promise.all([toPromise(tfai), toPromise(ta)]).then(handleThen);
+  return (ta) => () =>
+    Promise.all([toPromise(tfai), toPromise(ta)]).then(handleThen);
 }
 
 export function apSeq<A, I>(tfai: Task<(a: A) => I>): (ta: Task<A>) => Task<I> {

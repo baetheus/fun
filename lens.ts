@@ -43,8 +43,8 @@ export function asOptional<S, A>(sa: Lens<S, A>): Optional<S, A> {
 export function asTraversal<S, A>(sa: Lens<S, A>): Traversal<S, A> {
   return ({
     tag: "Traversal",
-    traverse: (A) =>
-      (fata) => (s) => pipe(fata(sa.get(s)), A.map((a: A) => sa.set(a)(s))),
+    traverse: (A) => (fata) => (s) =>
+      pipe(fata(sa.get(s)), A.map((a: A) => sa.set(a)(s))),
   });
 }
 
@@ -100,10 +100,8 @@ export function composeTraversal<A, B>(
 ): <S>(sa: Lens<S, A>) => Traversal<S, B> {
   return (sa) => ({
     tag: "Traversal",
-    traverse: (A) =>
-      (fata) =>
-        (s) =>
-          pipe(ab.traverse(A)(fata)(sa.get(s)), A.map((a: A) => sa.set(a)(s))),
+    traverse: (A) => (fata) => (s) =>
+      pipe(ab.traverse(A)(fata)(sa.get(s)), A.map((a: A) => sa.set(a)(s))),
   });
 }
 
@@ -120,12 +118,11 @@ export function filter<A>(
 }
 
 export function modify<A>(f: (a: A) => A): <S>(sa: Lens<S, A>) => (s: S) => S {
-  return (sa) =>
-    (s) => {
-      const o = sa.get(s);
-      const n = f(o);
-      return o === n ? s : sa.set(n)(s);
-    };
+  return (sa) => (s) => {
+    const o = sa.get(s);
+    const n = f(o);
+    return o === n ? s : sa.set(n)(s);
+  };
 }
 
 export function traverse<URI extends URIS>(
