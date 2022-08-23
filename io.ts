@@ -22,11 +22,11 @@ export function of<A>(a: A): IO<A> {
   return constant(a);
 }
 
-export function ap<A, I>(tfai: IO<(a: A) => I>): ((ta: IO<A>) => IO<I>) {
+export function ap<A, I>(tfai: IO<(a: A) => I>): (ta: IO<A>) => IO<I> {
   return (ta) => flow(ta, tfai());
 }
 
-export function map<A, I>(fai: (a: A) => I): ((ta: IO<A>) => IO<I>) {
+export function map<A, I>(fai: (a: A) => I): (ta: IO<A>) => IO<I> {
   return (ta) => flow(ta, fai);
 }
 
@@ -34,26 +34,26 @@ export function join<A>(ta: IO<IO<A>>): IO<A> {
   return () => ta()();
 }
 
-export function chain<A, I>(fati: (a: A) => IO<I>): ((ta: IO<A>) => IO<I>) {
+export function chain<A, I>(fati: (a: A) => IO<I>): (ta: IO<A>) => IO<I> {
   return (ta) => flow(ta, fati, apply());
 }
 
-export function extend<A, I>(ftai: (ta: IO<A>) => I): ((ta: IO<A>) => IO<I>) {
+export function extend<A, I>(ftai: (ta: IO<A>) => I): (ta: IO<A>) => IO<I> {
   return (ta) => () => ftai(ta);
 }
 
 export function reduce<A, O>(
   foao: (o: O, a: A) => O,
   o: O,
-): ((ta: IO<A>) => O) {
+): (ta: IO<A>) => O {
   return (ta) => foao(o, ta());
 }
 
 export function traverse<VRI extends URIS>(
   A: T.Applicative<VRI>,
-): (<A, I, J, K, L>(
+): <A, I, J, K, L>(
   faui: (a: A) => Kind<VRI, [I, J, K, L]>,
-) => (ta: IO<A>) => Kind<VRI, [IO<I>, J, K, L]>) {
+) => (ta: IO<A>) => Kind<VRI, [IO<I>, J, K, L]> {
   return (faui) => (ta) => pipe(faui(ta()), A.map(of));
 }
 

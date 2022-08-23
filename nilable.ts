@@ -41,7 +41,7 @@ export function make<A = never>(a: A): Nilable<A> {
 
 export function fromPredicate<A>(
   predicate: Predicate<A>,
-): ((ta: Nilable<A>) => Nilable<A>) {
+): (ta: Nilable<A>) => Nilable<A> {
   return (ta) => isNotNil(ta) && predicate(ta) ? ta : nil;
 }
 
@@ -56,11 +56,11 @@ export function tryCatch<A>(fa: () => A): Nilable<A> {
 export function fold<A, I>(
   onNil: () => I,
   onValue: (a: A) => I,
-): ((ta: Nilable<A>) => I) {
+): (ta: Nilable<A>) => I {
   return (ta) => (isNil(ta) ? onNil() : onValue(ta));
 }
 
-export function getOrElse<A>(onNil: () => A): ((ta: Nilable<A>) => A) {
+export function getOrElse<A>(onNil: () => A): (ta: Nilable<A>) => A {
   return (ta) => isNil(ta) ? onNil() : ta;
 }
 
@@ -90,11 +90,11 @@ export function throwError<A = never>(): Nilable<A> {
 
 export function ap<A, I>(
   tfai: Nilable<(a: A) => I>,
-): ((ta: Nilable<A>) => Nilable<I>) {
+): (ta: Nilable<A>) => Nilable<I> {
   return (ta) => isNil(ta) ? nil : isNil(tfai) ? nil : tfai(ta);
 }
 
-export function map<A, I>(fai: (a: A) => I): ((ta: Nilable<A>) => Nilable<I>) {
+export function map<A, I>(fai: (a: A) => I): (ta: Nilable<A>) => Nilable<I> {
   return (ta) => isNil(ta) ? nil : fai(ta);
 }
 
@@ -104,11 +104,11 @@ export function join<A>(tta: Nilable<Nilable<A>>): Nilable<A> {
 
 export function chain<A, I>(
   fati: (a: A) => Nilable<I>,
-): ((ta: Nilable<A>) => Nilable<I>) {
+): (ta: Nilable<A>) => Nilable<I> {
   return (ta) => isNil(ta) ? nil : fati(ta);
 }
 
-export function alt<A>(tb: Nilable<A>): ((ta: Nilable<A>) => Nilable<A>) {
+export function alt<A>(tb: Nilable<A>): (ta: Nilable<A>) => Nilable<A> {
   return (ta) => isNil(ta) ? tb : ta;
 }
 
