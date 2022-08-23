@@ -131,20 +131,19 @@ export function getSetoid<A, B>(
   SA: T.Setoid<A>,
 ): T.Setoid<Either<B, A>> {
   return ({
-    equals: (b) =>
-      (a) => {
-        if (isLeft(a)) {
-          if (isLeft(b)) {
-            return SB.equals(b.left)(a.left);
-          }
-          return false;
-        }
-
+    equals: (b) => (a) => {
+      if (isLeft(a)) {
         if (isLeft(b)) {
-          return false;
+          return SB.equals(b.left)(a.left);
         }
-        return SA.equals(b.right)(a.right);
-      },
+        return false;
+      }
+
+      if (isLeft(b)) {
+        return false;
+      }
+      return SA.equals(b.right)(a.right);
+    },
   });
 }
 
@@ -154,20 +153,19 @@ export function getOrd<A, B>(
 ): T.Ord<Either<B, A>> {
   return ({
     ...getSetoid(OB, OA),
-    lte: (b) =>
-      (a) => {
-        if (isLeft(a)) {
-          if (isLeft(b)) {
-            return OB.lte(b.left)(a.left);
-          }
-          return true;
-        }
-
+    lte: (b) => (a) => {
+      if (isLeft(a)) {
         if (isLeft(b)) {
-          return false;
+          return OB.lte(b.left)(a.left);
         }
-        return OA.lte(b.right)(a.right);
-      },
+        return true;
+      }
+
+      if (isLeft(b)) {
+        return false;
+      }
+      return OA.lte(b.right)(a.right);
+    },
   });
 }
 
@@ -175,8 +173,8 @@ export function getLeftSemigroup<E = never, A = never>(
   SE: T.Semigroup<E>,
 ): T.Semigroup<Either<E, A>> {
   return ({
-    concat: (x) =>
-      (y) => isRight(x) ? x : isRight(y) ? y : left(SE.concat(x.left)(y.left)),
+    concat: (x) => (y) =>
+      isRight(x) ? x : isRight(y) ? y : left(SE.concat(x.left)(y.left)),
   });
 }
 
@@ -184,8 +182,8 @@ export function getRightSemigroup<E = never, A = never>(
   SA: T.Semigroup<A>,
 ): T.Semigroup<Either<E, A>> {
   return ({
-    concat: (x) =>
-      (y) => isLeft(x) ? x : isLeft(y) ? y : right(SA.concat(x.right)(y.right)),
+    concat: (x) => (y) =>
+      isLeft(x) ? x : isLeft(y) ? y : right(SA.concat(x.right)(y.right)),
   });
 }
 
@@ -204,11 +202,11 @@ export function getRightMonad<E>(
   return ({
     ...Monad,
     ap: (tfai) =>
-      // deno-lint-ignore no-explicit-any
-      (ta): Either<any, any> =>
-        isLeft(tfai)
-          ? (isLeft(ta) ? left(concat(tfai.left)(ta.left)) : tfai)
-          : (isLeft(ta) ? ta : right(tfai.right(ta.right))),
+    // deno-lint-ignore no-explicit-any
+    (ta): Either<any, any> =>
+      isLeft(tfai)
+        ? (isLeft(ta) ? left(concat(tfai.left)(ta.left)) : tfai)
+        : (isLeft(ta) ? ta : right(tfai.right(ta.right))),
   });
 }
 

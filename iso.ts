@@ -46,13 +46,12 @@ export function asOptional<S, A>(sa: Iso<S, A>): Optional<S, A> {
 export function asTraversal<S, A>(sa: Iso<S, A>): Traversal<S, A> {
   return {
     tag: "Traversal",
-    traverse: ({ map }) =>
-      (fata) =>
-        flow(
-          sa.get,
-          fata,
-          map(sa.reverseGet),
-        ),
+    traverse: ({ map }) => (fata) =>
+      flow(
+        sa.get,
+        fata,
+        map(sa.reverseGet),
+      ),
   };
 }
 
@@ -95,13 +94,12 @@ export function composeTraversal<A, B>(
 ): <S>(sa: Iso<S, A>) => Traversal<S, B> {
   return (sa) => ({
     tag: "Traversal",
-    traverse: (A) =>
-      (fata) =>
-        flow(
-          sa.get,
-          ab.traverse(A)(fata),
-          A.map(sa.reverseGet),
-        ),
+    traverse: (A) => (fata) =>
+      flow(
+        sa.get,
+        ab.traverse(A)(fata),
+        A.map(sa.reverseGet),
+      ),
   });
 }
 

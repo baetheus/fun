@@ -52,12 +52,11 @@ export function map<A, I>(
 export function ap<A, I, B>(
   tfai: State<B, (a: A) => I>,
 ): (ta: State<B, A>) => State<B, I> {
-  return (ta) =>
-    (s1) => {
-      const [fai, s2] = tfai(s1);
-      const [a, s3] = ta(s2);
-      return [fai(a), s3];
-    };
+  return (ta) => (s1) => {
+    const [fai, s2] = tfai(s1);
+    const [a, s3] = ta(s2);
+    return [fai(a), s3];
+  };
 }
 
 export function chain<A, I, B>(

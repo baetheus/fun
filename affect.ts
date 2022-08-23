@@ -85,11 +85,10 @@ declare module "./kind.ts" {
 export function ap<A, I, B, C>(
   tfai: Affect<C, B, (a: A) => I>,
 ): (ta: Affect<C, B, A>) => Affect<C, B, I> {
-  return (ta) =>
-    (r) =>
-      Promise.all([tfai(r), ta(r)]).then(([efai, ea]) =>
-        pipe(ea, eitherAp(efai))
-      );
+  return (ta) => (r) =>
+    Promise.all([tfai(r), ta(r)]).then(([efai, ea]) =>
+      pipe(ea, eitherAp(efai))
+    );
 }
 
 /**
@@ -233,11 +232,10 @@ export function bimap<A, B, I, J>(
 export function chain<A, I, B, C>(
   fati: (a: A) => Affect<C, B, I>,
 ): (ta: Affect<C, B, A>) => Affect<C, B, I> {
-  return (ta) =>
-    async (r) => {
-      const ea = await ta(r);
-      return eitherIsLeft(ea) ? ea : fati(ea.right)(r);
-    };
+  return (ta) => async (r) => {
+    const ea = await ta(r);
+    return eitherIsLeft(ea) ? ea : fati(ea.right)(r);
+  };
 }
 
 /**
@@ -268,11 +266,10 @@ export function chain<A, I, B, C>(
 export function compose<I, B, A>(
   tai: Affect<A, B, I>,
 ): <C>(tca: Affect<C, B, A>) => Affect<C, B, I> {
-  return (tca) =>
-    async (c) => {
-      const ea = await tca(c);
-      return eitherIsLeft(ea) ? ea : await tai(ea.right);
-    };
+  return (tca) => async (c) => {
+    const ea = await tca(c);
+    return eitherIsLeft(ea) ? ea : await tai(ea.right);
+  };
 }
 
 /**
@@ -369,11 +366,10 @@ export function fromIOEither<A, B, C = never>(
 export function fromOption<B, C>(
   onNone: (c: C) => B,
 ): <A>(ta: Option<A>) => Affect<C, B, A> {
-  return <A>(ta: Option<A>) =>
-    (c) =>
-      isNone(ta)
-        ? resolve(eitherLeft(onNone(c)))
-        : resolve(eitherRight(ta.value));
+  return <A>(ta: Option<A>) => (c) =>
+    isNone(ta)
+      ? resolve(eitherLeft(onNone(c)))
+      : resolve(eitherRight(ta.value));
 }
 
 /**
