@@ -73,16 +73,16 @@ Deno.test("Iso compose", () => {
 });
 
 Deno.test("Iso composeLens", () => {
-  const { get, set } = pipe(I.id<number>(), I.composeLens(I.asLens(iso)));
+  const { get, set } = I.composeLens(I.id<number>(), I.asLens(iso));
 
   assertEquals(get(1), "1");
   assertEquals(set("2")(1), 2);
 });
 
 Deno.test("Iso composePrism", () => {
-  const { getOption, reverseGet } = pipe(
+  const { getOption, reverseGet } = I.composePrism(
     I.id<number>(),
-    I.composePrism(I.asPrism(iso)),
+    I.asPrism(iso),
   );
 
   assertEquals(getOption(1), O.some("1"));
@@ -90,9 +90,9 @@ Deno.test("Iso composePrism", () => {
 });
 
 Deno.test("Iso composeOptional", () => {
-  const { getOption, set } = pipe(
+  const { getOption, set } = I.composeOptional(
     I.id<number>(),
-    I.composeOptional(I.asOptional(iso)),
+    I.asOptional(iso),
   );
 
   assertEquals(getOption(1), O.some("1"));
@@ -100,10 +100,8 @@ Deno.test("Iso composeOptional", () => {
 });
 
 Deno.test("Iso composeTraversal", () => {
-  const { traverse } = pipe(
-    I.id<number>(),
-    I.composeTraversal(I.asTraversal(iso)),
-  );
+  const { traverse } = I.composeTraversal(I.id<number>(), I.asTraversal(iso));
+
   const t0 = traverse(O.Applicative);
   const t1 = t0(O.some);
 

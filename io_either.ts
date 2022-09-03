@@ -4,8 +4,7 @@ import type * as T from "./types.ts";
 import * as E from "./either.ts";
 import * as I from "./io.ts";
 import * as S from "./apply.ts";
-import { createDo } from "./derivations.ts";
-import { apply, constant, flow, identity, pipe } from "./fns.ts";
+import { constant, flow, identity, pipe } from "./fns.ts";
 
 export type IOEither<L, R> = I.IO<E.Either<L, R>>;
 
@@ -69,14 +68,14 @@ export function map<A, I>(
   return I.map(E.map(fai));
 }
 
-export function join<A, B>(ta: IOEither<B, IOEither<B, A>>): IOEither<B, A> {
-  return flow(ta, E.chain(apply()));
-}
-
 export function chain<A, I, B>(
   fati: (a: A) => IOEither<B, I>,
 ): (ta: IOEither<B, A>) => IOEither<B, I> {
   return (ta) => flow(ta, E.fold(E.left, (a) => fati(a)()));
+}
+
+export function join<A, B>(ta: IOEither<B, IOEither<B, A>>): IOEither<B, A> {
+  return pipe(ta, chain(identity));
 }
 
 export function chainLeft<A, B, J>(
@@ -117,10 +116,6 @@ export function reduce<A, O>(
   return (ta) => pipe(ta(), E.fold(() => o, (a) => foao(o, a)));
 }
 
-export function widen<J>(): <A, B>(ta: IOEither<B, A>) => IOEither<B | J, A> {
-  return identity;
-}
-
 export const Functor: T.Functor<URI> = { map };
 
 export const Apply: T.Apply<URI> = { ap, map };
@@ -144,5 +139,3 @@ export const Foldable: T.Foldable<URI> = { reduce };
 export const sequenceTuple = S.createSequenceTuple(Apply);
 
 export const sequenceStruct = S.createSequenceStruct(Apply);
-
-export const { Do, bind, bindTo } = createDo(Monad);

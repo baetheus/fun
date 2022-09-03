@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
+import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
 import * as D from "../datum.ts";
 import * as O from "../option.ts";
@@ -408,21 +408,21 @@ Deno.test("Datum traverse", () => {
   assertEquals(add(D.refresh(1)), O.some(D.refresh(1)));
 });
 
-Deno.test("Datum Do, bind, bindTo", () => {
-  assertEquals(
-    pipe(
-      D.Do(),
-      D.bind("one", () => D.replete(1)),
-      D.bind("two", ({ one }) => D.refresh(one + one)),
-      D.map(({ one, two }) => one + two),
-    ),
-    D.refresh(3),
-  );
-  assertEquals(
-    pipe(
-      D.replete(1),
-      D.bindTo("one"),
-    ),
-    D.replete({ one: 1 }),
-  );
-});
+// Deno.test("Datum Do, bind, bindTo", () => {
+//   assertEquals(
+//     pipe(
+//       D.Do(),
+//       D.bind("one", () => D.replete(1)),
+//       D.bind("two", ({ one }) => D.refresh(one + one)),
+//       D.map(({ one, two }) => one + two),
+//     ),
+//     D.refresh(3),
+//   );
+//   assertEquals(
+//     pipe(
+//       D.replete(1),
+//       D.bindTo("one"),
+//     ),
+//     D.replete({ one: 1 }),
+//   );
+// });

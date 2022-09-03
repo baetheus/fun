@@ -64,7 +64,7 @@ Deno.test("Optional compose", () => {
     (n: number) => n > 0 ? O.some(n) : O.none,
     (n) => (_) => n,
   );
-  const o3 = pipe(o2, M.compose(M.id()));
+  const o3 = M.composeOptional(o2, M.id());
   assertEquals(o3.getOption(0), O.none);
   assertEquals(o3.getOption(1), O.some(1));
   assertEquals(o3.set(0)(0), 0);
@@ -75,7 +75,7 @@ Deno.test("Optional compose", () => {
 
 Deno.test("Optional composeIso", () => {
   const iso = I.iso((n: number) => n.toString(), (s: string) => parseFloat(s));
-  const { getOption, set } = pipe(optional, M.composeIso(iso));
+  const { getOption } = M.composeIso(optional, iso);
 
   assertEquals(getOption(undefined), O.none);
   assertEquals(getOption(1), O.some("1"));
@@ -86,7 +86,7 @@ Deno.test("Optional composeLens", () => {
     (n: number) => n.toString(),
     (a: string) => (_: number) => parseFloat(a),
   );
-  const { getOption, set } = pipe(optional, M.composeLens(lens));
+  const { getOption, set } = M.composeLens(optional, lens);
 
   assertEquals(getOption(undefined), O.none);
   assertEquals(getOption(1), O.some("1"));
@@ -97,7 +97,7 @@ Deno.test("Optional composeLens", () => {
 
 Deno.test("Optional composePrism", () => {
   const prism = P.id<number>();
-  const { getOption, set } = pipe(optional, M.composePrism(prism));
+  const { getOption, set } = M.composePrism(optional, prism);
 
   assertEquals(getOption(0), O.some(0));
   assertEquals(getOption(undefined), O.none);
@@ -107,9 +107,9 @@ Deno.test("Optional composePrism", () => {
 });
 
 Deno.test("Optional composeTraversal", () => {
-  const { traverse } = pipe(
+  const { traverse } = M.composeTraversal(
     optional,
-    M.composeTraversal(M.asTraversal(M.id<number>())),
+    M.asTraversal(M.id<number>()),
   );
   const t1 = traverse(O.Applicative);
   const t2 = t1((n) => n === 0 ? O.none : O.some(n));
@@ -137,7 +137,7 @@ Deno.test("Optional traverse", () => {
     M.optional(
       (n: number): O.Option<E.Either<number, number>> =>
         O.some(n > 0 ? E.right(n) : E.left(n)),
-      (a: E.Either<number, number>) => (s: number) =>
+      (a: E.Either<number, number>) => (_: number) =>
         pipe(a, E.fold((n) => n, (n) => n)),
     ),
     M.traverse(E.Traversable),

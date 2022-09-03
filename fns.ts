@@ -6,16 +6,16 @@ import type { ConstPrimitive, Fn, Nil, UnknownFn } from "./types.ts";
  *
  * This is a general wrapper around try catch.
  */
-export function handleThrow<A, I>(
-  fa: () => A,
-  onSuccess: (a: A) => I,
-  onThrow: (e: unknown) => I,
-): () => I {
-  return () => {
+export function handleThrow<AS extends unknown[], R, I>(
+  fasr: (...as: AS) => R,
+  onSuccess: (r: R, as: AS) => I,
+  onThrow: (e: unknown, as: AS) => I,
+): (...as: AS) => I {
+  return (...as) => {
     try {
-      return onSuccess(fa());
+      return onSuccess(fasr(...as), as);
     } catch (e) {
-      return onThrow(e);
+      return onThrow(e, as);
     }
   };
 }
@@ -152,13 +152,6 @@ export function intersect<A, B>(a: A, b: B): A & B {
 }
 
 /**
- * HasOwnProperty
- *
- * An alias for Object.prototype.hasOwnProperty
- */
-export const hasOwnProperty = Object.prototype.hasOwnProperty;
-
-/**
  * Apply
  *
  * Takes a group of arguments and curries them so that a function can be appied
@@ -210,6 +203,20 @@ export function _<T>(): T {
 }
 
 /**
+ * Todo
+ *
+ * Todo is a function that can return any type but will throw an error
+ * if ever called. It's useful for stubbing out an interface while you work
+ * on it.
+ */
+export function todo<T>(message?: unknown): T {
+  if (message !== undefined) {
+    console.warn(message);
+  }
+  throw new Error("Todo: not yet implemented!");
+}
+
+/**
  * Wait
  *
  * The wait function returns a Promise<void> that resolves after ms milliseconds
@@ -223,7 +230,7 @@ export function wait(ms: number): Promise<void> {
  *
  * An alias for Promise.resolve
  */
-export function resolve<A>(a: A): Promise<A> {
+export function resolve<A>(a: A | PromiseLike<A>): Promise<A> {
   return Promise.resolve(a);
 }
 
@@ -232,7 +239,9 @@ export function resolve<A>(a: A): Promise<A> {
  *
  * An alias for Promise.reject
  */
-export function reject<A = never, B = unknown>(b: B): Promise<A> {
+export function reject<A = never, B = unknown>(
+  b: B | PromiseLike<A>,
+): Promise<A> {
   return Promise.reject(b);
 }
 

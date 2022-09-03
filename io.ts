@@ -1,9 +1,12 @@
 import type { Kind, URIS } from "./kind.ts";
 import type * as T from "./types.ts";
 
-import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
+import {
+  createApplySemigroup,
+  createSequenceStruct,
+  createSequenceTuple,
+} from "./apply.ts";
 import { apply, constant, flow, pipe } from "./fns.ts";
-import { createApplySemigroup, createDo } from "./derivations.ts";
 
 export type IO<A> = () => A;
 
@@ -83,5 +86,3 @@ export const getMonoid = <A>(M: T.Monoid<A>): T.Monoid<IO<A>> => ({
 export const sequenceTuple = createSequenceTuple(Apply);
 
 export const sequenceStruct = createSequenceStruct(Apply);
-
-export const { Do, bind, bindTo } = createDo(Monad);

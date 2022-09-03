@@ -2,7 +2,7 @@ import {
   assertEquals,
   assertStrictEquals,
   assertThrows,
-} from "https://deno.land/std/testing/asserts.ts";
+} from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
 import * as F from "../fns.ts";
 import { zip } from "../array.ts";
@@ -115,10 +115,6 @@ Deno.test("fns intersect", () => {
   assertStrictEquals(F.intersect(b, null), b);
   assertStrictEquals(F.intersect(undefined, b), b);
   assertStrictEquals(F.intersect(b, undefined), b);
-});
-
-Deno.test("fns hasOwnProperty", () => {
-  assertEquals(F.hasOwnProperty("a"), false);
 });
 
 Deno.test("fns apply", () => {

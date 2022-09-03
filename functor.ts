@@ -1,4 +1,4 @@
-//deno-lint-ignore-file no-explicit-any
+// deno-lint-ignore-file no-explicit-any
 import type { Kind, URIS } from "./kind.ts";
 
 /**

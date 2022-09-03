@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
+import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
 import * as AS from "./assert.ts";
 
@@ -337,21 +337,21 @@ Deno.test("Option exists", () => {
   assertEquals(exists(O.none), false);
 });
 
-Deno.test("Option Do, bind, bindTo", () => {
-  assertEquals(
-    pipe(
-      O.Do(),
-      O.bind("one", () => O.some(1)),
-      O.bind("two", ({ one }) => O.some(one + one)),
-      O.map(({ one, two }) => one + two),
-    ),
-    O.some(3),
-  );
-  assertEquals(
-    pipe(
-      O.some(1),
-      O.bindTo("one"),
-    ),
-    O.some({ one: 1 }),
-  );
-});
+// Deno.test("Option Do, bind, bindTo", () => {
+//   assertEquals(
+//     pipe(
+//       O.Do(),
+//       O.bind("one", () => O.some(1)),
+//       O.bind("two", ({ one }) => O.some(one + one)),
+//       O.map(({ one, two }) => one + two),
+//     ),
+//     O.some(3),
+//   );
+//   assertEquals(
+//     pipe(
+//       O.some(1),
+//       O.bindTo("one"),
+//     ),
+//     O.some({ one: 1 }),
+//   );
+// });

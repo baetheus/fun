@@ -2,7 +2,7 @@ import type { Kind, URIS } from "./kind.ts";
 import type * as T from "./types.ts";
 import type { Fn } from "./types.ts";
 
-import { hasOwnProperty, pipe } from "./fns.ts";
+import { pipe } from "./fns.ts";
 import { ordString, toCompare } from "./ord.ts";
 
 export type ReadonlyRecord<V> = Readonly<Record<string, V>>;
@@ -93,7 +93,7 @@ export function deleteAt<K extends string>(
   k: K,
 ): <KS extends string, A>(ta: Record<KS | K, A>) => Record<Exclude<KS, K>, A> {
   return (ta) => {
-    if (!hasOwnProperty.call(ta, k)) {
+    if (!(k in ta)) {
       return ta;
     }
     const out = Object.assign({}, ta);

@@ -2,7 +2,6 @@ import type { Kind, URIS } from "./kind.ts";
 import type * as T from "./types.ts";
 
 import { apply, flow, identity, isNotNil, pipe } from "./fns.ts";
-import { createDo } from "./derivations.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
 export type Initial = {
@@ -284,5 +283,3 @@ export const Traversable: T.Traversable<URI> = { map, reduce, traverse };
 export const sequenceTuple = createSequenceTuple(Apply);
 
 export const sequenceStruct = createSequenceStruct(Apply);
-
-export const { Do, bind, bindTo } = createDo(Monad);

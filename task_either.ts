@@ -1,4 +1,4 @@
-import type { Kind } from "./kind.ts";
+import "./kind.ts";
 import type * as T from "./types.ts";
 import type { Task } from "./task.ts";
 import type { Either } from "./either.ts";
@@ -7,7 +7,7 @@ import {
   ap as eitherAp,
   bimap as eitherBimap,
   fold as eitherFold,
-  isLeft,
+  isLeft as eitherIsLeft,
   left as eitherLeft,
   map as eitherMap,
   mapLeft as eitherMapLeft,
@@ -16,12 +16,11 @@ import {
 import {
   ap as taskAp,
   apSeq as taskApSeq,
-  chain as taskChain,
   map as taskMap,
   of as taskOf,
 } from "./task.ts";
-import { createDo } from "./derivations.ts";
-import { flow, handleThrow, identity, pipe, resolve, then } from "./fns.ts";
+import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
+import { handleThrow, identity, pipe, resolve } from "./fns.ts";
 
 /**
  * The TaskEither type can best be thought of as an asynchronous function that
@@ -98,22 +97,30 @@ export function right<A = never, B = never>(right: A): TaskEither<B, A> {
  * import * as TE from "./task_either.ts";
  * import * as E from "./either.ts";
  *
- * const succ = TE.tryCatch(() => Promise.resolve(1), String);
- * const fail = TE.tryCatch(() => Promise.reject(0), String);
+ * const _fetch = TE.tryCatch(
+ *   fetch,
+ *   (error, args) => ({ message: "Fetch Error", error, args })
+ * );
  *
- * assertEquals(await succ(), E.right(1));
- * assertEquals(await fail(), E.left("0"));
+ * const t1 = await _fetch("blah")();
+ * assertEquals(t1.tag, "Left");
+ *
+ * const t2 = await _fetch("https://deno.land/")();
+ * assertEquals(t2.tag, "Right");
  * ```
  */
-export function tryCatch<A, B>(
-  fa: Task<A>,
-  onError: (e: unknown) => B,
-): TaskEither<B, A> {
-  return handleThrow(
-    fa,
-    flow((a) => a.then(eitherRight).catch(flow(onError, eitherLeft))),
-    flow(onError, (b) => eitherLeft<B, A>(b), resolve),
-  );
+export function tryCatch<AS extends unknown[], A, B>(
+  fasr: (...as: AS) => A | PromiseLike<A>,
+  onThrow: (e: unknown, as: AS) => B,
+): (...as: AS) => TaskEither<B, A> {
+  return (...as) => {
+    const _onThrow = (e: unknown) => eitherLeft(onThrow(e, as));
+    return handleThrow(
+      () => fasr(...as),
+      (a) => resolve(a).then(eitherRight).catch(_onThrow),
+      (e) => resolve(_onThrow(e)),
+    );
+  };
 }
 
 /**
@@ -124,20 +131,10 @@ export function fromTask<A, B = never>(ta: Task<A>): TaskEither<B, A> {
 }
 
 /**
- * @deprecated tryCatch is more idiomatic.
- */
-export function fromFailableTask<A, B>(
-  onError: (e: unknown) => B,
-): (ta: Task<A>) => TaskEither<B, A> {
-  return (ta) => () =>
-    ta().then(eitherRight).catch((e) => eitherLeft(onError(e)));
-}
-
-/**
  * Lifts an Either<B,A> into a TaskEither<B,A>
  */
 export function fromEither<A, B>(ta: Either<B, A>): TaskEither<B, A> {
-  return pipe(ta, eitherFold((e) => left(e), right));
+  return () => resolve(ta);
 }
 
 /**
@@ -219,11 +216,27 @@ export function apSeq<A, I, B>(
  * assertEquals(await ta(), E.right(4))
  * ```
  */
-export function chain<A, I, B>(
-  fati: (a: A) => TaskEither<B, I>,
-): (ta: TaskEither<B, A>) => TaskEither<B, I> {
-  return (ta) =>
-    pipe(ta, taskChain(eitherFold<B, A, TaskEither<B, I>>(left, fati)));
+export function chain<A, I, J>(
+  fati: (a: A) => TaskEither<J, I>,
+): <B>(ta: TaskEither<B, A>) => TaskEither<B | J, I> {
+  return (ta) => async () => {
+    const ea = await ta();
+    return eitherIsLeft(ea) ? ea : fati(ea.right)();
+  };
+}
+
+export function chainFirst<A, I, J>(
+  fati: (a: A) => TaskEither<J, I>,
+): <B>(ta: TaskEither<B, A>) => TaskEither<B | J, A> {
+  return (ta) => async () => {
+    const ea = await ta();
+    if (eitherIsLeft(ea)) {
+      return ea;
+    } else {
+      const ei = await fati(ea.right)();
+      return eitherIsLeft(ei) ? ei : ea;
+    }
+  };
 }
 
 /**
@@ -245,11 +258,13 @@ export function chain<A, I, B>(
  * assertEquals(await ta(), E.right(4))
  * ```
  */
-export function chainLeft<A, B, J>(
-  fbtj: (b: B) => TaskEither<J, A>,
-): (ta: TaskEither<B, A>) => TaskEither<J, A> {
-  return (ta) =>
-    pipe(ta, taskChain(eitherFold<B, A, TaskEither<J, A>>(fbtj, right)));
+export function chainLeft<B, J, I>(
+  fbtj: (b: B) => TaskEither<J, I>,
+): <A>(ta: TaskEither<B, A>) => TaskEither<J, A | I> {
+  return (ta) => async () => {
+    const ea = await ta();
+    return eitherIsLeft(ea) ? fbtj(ea.left)() : ea;
+  };
 }
 
 /**
@@ -295,20 +310,13 @@ export function join<A, B>(
  * assertEquals(await ta(), E.right(2))
  * ```
  */
-export function alt<A, B>(
-  tb: TaskEither<B, A>,
-): (ta: TaskEither<B, A>) => TaskEither<B, A> {
-  return (ta) => () => ta().then((ea) => isLeft(ea) ? tb() : ea);
-}
-
-/**
- * Widens the *Left* side of the computation.
- * @deprecated Will be removed in v2?
- */
-export function widen<J>(): <A, B>(
-  ta: TaskEither<B, A>,
-) => TaskEither<B | J, A> {
-  return identity;
+export function alt<I, J>(
+  ti: TaskEither<J, I>,
+): <A, B>(ta: TaskEither<B, A>) => TaskEither<B | J, A | I> {
+  return (ta) => async () => {
+    const ea = await ta();
+    return eitherIsLeft(ea) ? ti() : ea;
+  };
 }
 
 /**
@@ -382,4 +390,6 @@ export const MonadThrowSeq: T.MonadThrow<URI> = {
   throwError,
 };
 
-export const { Do, bind, bindTo } = createDo(Monad);
+export const sequenceTuple = createSequenceTuple(Apply);
+
+export const sequenceStruct = createSequenceStruct(Apply);

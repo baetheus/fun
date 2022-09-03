@@ -65,21 +65,21 @@ Deno.test("State execute", () => {
   assertEquals(pipe(S.get<number>(), S.execute(0)), 0);
 });
 
-Deno.test("State Do, bind, bindTo", () => {
-  assertEqualsS(
-    pipe(
-      S.Do<number, number, number>(),
-      S.bind("one", () => S.make(1, 1)),
-      S.bind("two", ({ one }) => S.make(one + one, 1)),
-      S.map(({ one, two }) => one + two),
-    ),
-    S.make(3, 1),
-  );
-  assertEqualsS(
-    pipe(
-      S.make(1, 1),
-      S.bindTo("one"),
-    ),
-    S.make({ one: 1 }, 1),
-  );
-});
+// Deno.test("State Do, bind, bindTo", () => {
+//   assertEqualsS(
+//     pipe(
+//       S.Do<number, number, number>(),
+//       S.bind("one", () => S.make(1, 1)),
+//       S.bind("two", ({ one }) => S.make(one + one, 1)),
+//       S.map(({ one, two }) => one + two),
+//     ),
+//     S.make(3, 1),
+//   );
+//   assertEqualsS(
+//     pipe(
+//       S.make(1, 1),
+//       S.bindTo("one"),
+//     ),
+//     S.make({ one: 1 }, 1),
+//   );
+// });

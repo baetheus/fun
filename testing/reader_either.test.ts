@@ -8,13 +8,13 @@ import * as AS from "./assert.ts";
 
 const assertEqualsRE = (
   // deno-lint-ignore no-explicit-any
-  a: R.ReaderEither<any, any, any>,
+  a: R.ReaderEither<[number], any, any>,
   // deno-lint-ignore no-explicit-any
-  b: R.ReaderEither<any, any, any>,
+  b: R.ReaderEither<[number], any, any>,
 ) => assertEquals(a(0), b(0));
 
 Deno.test("ReaderEither ask", () => {
-  assertEqualsRE(R.ask<number>(), R.ask<number>());
+  assertEqualsRE(R.ask<[number]>(), R.ask<[number]>());
 });
 
 Deno.test("ReaderEither asks", () => {
@@ -22,16 +22,25 @@ Deno.test("ReaderEither asks", () => {
 });
 
 Deno.test("ReaderEither left", () => {
-  assertEquals(R.left("Hello")(0 as never), E.left("Hello"));
+  assertEquals(R.left("Hello")(), E.left("Hello"));
 });
 
 Deno.test("ReaderEither right", () => {
-  assertEquals(R.right("Hello")(0 as never), E.right("Hello"));
+  assertEquals(R.right("Hello")(), E.right("Hello"));
 });
 
 Deno.test("ReaderEither tryCatch", () => {
-  assertEqualsRE(R.tryCatch(_, () => -1), R.left(-1));
-  assertEqualsRE(R.tryCatch(() => 0, () => -1), R.right(0));
+  const throwOnZero = R.tryCatch(
+    (n: number) => {
+      if (n === 0) {
+        throw new Error("Zero");
+      }
+      return n;
+    },
+    (_, [n]) => n,
+  );
+  assertEquals(throwOnZero(0), E.left(0));
+  assertEquals(throwOnZero(1), E.right(1));
 });
 
 Deno.test("ReaderEither fromEither", () => {
@@ -44,13 +53,13 @@ Deno.test("ReaderEither of", () => {
 });
 
 Deno.test("ReaderEither ap", () => {
-  const ap0 = R.ap(R.right<typeof AS.add, number, number>(AS.add));
-  const ap1 = R.ap(R.left<typeof AS.add, number, number>(0));
+  const fnr = R.right<typeof AS.add, number, []>(AS.add);
+  const fnl = R.left<typeof AS.add, number, []>(0);
 
-  assertEqualsRE(pipe(R.right(1), ap0), R.right(2));
-  assertEqualsRE(pipe(R.right(0), ap1), R.left(0));
-  assertEqualsRE(pipe(R.left(1), ap0), R.left(1));
-  assertEqualsRE(pipe(R.left(1), ap1), R.left(0));
+  assertEqualsRE(pipe(R.right(1), R.ap(fnr)), R.right(2));
+  assertEqualsRE(pipe(R.right(0), R.ap(fnl)), R.left(0));
+  assertEqualsRE(pipe(R.left(1), R.ap(fnr)), R.left(1));
+  assertEqualsRE(pipe(R.left(1), R.ap(fnl)), R.left(0));
 });
 
 Deno.test("ReaderEither join", () => {
@@ -105,31 +114,26 @@ Deno.test("ReaderEither chainLeft", () => {
 
 Deno.test("ReaderEither compose", () => {
   assertEqualsRE(
-    pipe(R.ask<number>(), R.compose(R.asks((n) => n + 1))),
+    pipe(R.ask<[number]>(), R.compose(R.asks((n) => n + 1))),
     R.right(1),
   );
 });
 
-Deno.test("ReaderEither widen", () => {
-  assertEqualsRE(pipe(R.right(0), R.widen<number>()), R.right(0));
-  assertEqualsRE(pipe(R.left(0), R.widen<string>()), R.left(0));
-});
-
-Deno.test("ReaderEither Do, bind, bindTo", () => {
-  assertEqualsRE(
-    pipe(
-      R.Do<number, unknown, unknown>(),
-      R.bind("one", () => R.right(1)),
-      R.bind("two", ({ one }) => R.right(one + one)),
-      R.map(({ one, two }) => one + two),
-    ),
-    R.right(3),
-  );
-  assertEqualsRE(
-    pipe(
-      R.right(1),
-      R.bindTo("one"),
-    ),
-    R.asks((_: number) => ({ one: 1 })),
-  );
-});
+// Deno.test("ReaderEither Do, bind, bindTo", () => {
+//   assertEqualsRE(
+//     pipe(
+//       R.Do<number, unknown, unknown>(),
+//       R.bind("one", () => R.right(1)),
+//       R.bind("two", ({ one }) => R.right(one + one)),
+//       R.map(({ one, two }) => one + two),
+//     ),
+//     R.right(3),
+//   );
+//   assertEqualsRE(
+//     pipe(
+//       R.right(1),
+//       R.bindTo("one"),
+//     ),
+//     R.asks((_: number) => ({ one: 1 })),
+//   );
+// });

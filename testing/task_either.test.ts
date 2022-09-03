@@ -1,9 +1,8 @@
-import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
+import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
-import { of as taskOf } from "../task.ts";
 import * as T from "../task_either.ts";
 import * as E from "../either.ts";
-import { _, pipe, resolve, then } from "../fns.ts";
+import { _, pipe, then, wait } from "../fns.ts";
 
 import * as AS from "./assert.ts";
 
@@ -11,6 +10,21 @@ const assertEqualsT = async (
   a: T.TaskEither<unknown, unknown>,
   b: T.TaskEither<unknown, unknown>,
 ) => assertEquals(await a(), await b());
+
+function throwSync(n: number): number {
+  if (n % 2 === 0) {
+    throw new Error(`Number '${n}' is divisible by 2`);
+  }
+  return n;
+}
+
+async function throwAsync(n: number): Promise<number> {
+  await wait(200);
+  if (n % 2 === 0) {
+    return Promise.reject(`Number '${n}' is divisible by 2`);
+  }
+  return n;
+}
 
 Deno.test("TaskEither left", async () => {
   await assertEqualsT(T.left(1), T.left(1));
@@ -22,42 +36,11 @@ Deno.test("TaskEither right", async () => {
 
 Deno.test("TaskEither tryCatch", async (t) => {
   await t.step("Sync", async () => {
-    await assertEqualsT(T.tryCatch(_, () => "Bad"), T.left("Bad"));
-    await assertEqualsT(
-      T.tryCatch(() => {
-        throw new Error("Boom");
-      }, () => "Bad"),
-      T.left("Bad"),
-    );
-    await assertEqualsT(T.tryCatch(() => resolve(1), String), T.right(1));
-    await assertEqualsT(T.tryCatch(taskOf(1), String), T.right(1));
+    await assertEqualsT(T.tryCatch(throwSync, () => "Bad")(1), T.right(1));
+    await assertEqualsT(T.tryCatch(throwSync, () => "Bad")(2), T.left("Bad"));
+    await assertEqualsT(T.tryCatch(throwAsync, () => "Bad")(1), T.right(1));
+    await assertEqualsT(T.tryCatch(throwAsync, () => "Bad")(2), T.left("Bad"));
   });
-  await t.step("Async", async () => {
-    await assertEqualsT(T.tryCatch(async () => await 1, String), T.right(1));
-    await assertEqualsT(
-      T.tryCatch(async () => await resolve(1), String),
-      T.right(1),
-    );
-    await assertEqualsT(
-      T.tryCatch(() => {
-        throw new Error("boom");
-      }, () => "Bad"),
-      T.left("Bad"),
-    );
-    await assertEqualsT(
-      T.tryCatch(async () => {
-        await "work";
-        throw new Error("boom");
-      }, () => "Bad"),
-      T.left("Bad"),
-    );
-  });
-});
-
-Deno.test("TaskEither fromFailableTask", async () => {
-  const fromFailableTask = T.fromFailableTask(() => "Bad");
-  await assertEqualsT(fromFailableTask(() => Promise.reject()), T.left("Bad"));
-  await assertEqualsT(fromFailableTask(() => Promise.resolve(1)), T.right(1));
 });
 
 Deno.test("TaskEither fromEither", async () => {
@@ -135,10 +118,6 @@ Deno.test("TaskEither chainLeft", async () => {
   await assertEqualsT(chainLeft(T.left(1)), T.left(1));
 });
 
-Deno.test("TaskEither widen", async () => {
-  await assertEqualsT(pipe(T.right(1), T.widen<number>()), T.right(1));
-});
-
 Deno.test("TaskEither fold", async () => {
   const fold = T.fold((l: string) => l, String);
 
@@ -146,21 +125,21 @@ Deno.test("TaskEither fold", async () => {
   assertEquals(await fold(T.left("asdf"))(), "asdf");
 });
 
-Deno.test("TaskEither Do, bind, bindTo", () => {
-  assertEqualsT(
-    pipe(
-      T.Do<number, number, number>(),
-      T.bind("one", () => T.right(1)),
-      T.bind("two", ({ one }) => T.right(one + one)),
-      T.map(({ one, two }) => one + two),
-    ),
-    T.right(3),
-  );
-  assertEqualsT(
-    pipe(
-      T.right(1),
-      T.bindTo("one"),
-    ),
-    T.right({ one: 1 }),
-  );
-});
+// Deno.test("TaskEither Do, bind, bindTo", () => {
+//   assertEqualsT(
+//     pipe(
+//       T.Do<number, number, number>(),
+//       T.bind("one", () => T.right(1)),
+//       T.bind("two", ({ one }) => T.right(one + one)),
+//       T.map(({ one, two }) => one + two),
+//     ),
+//     T.right(3),
+//   );
+//   assertEqualsT(
+//     pipe(
+//       T.right(1),
+//       T.bindTo("one"),
+//     ),
+//     T.right({ one: 1 }),
+//   );
+// });

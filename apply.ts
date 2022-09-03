@@ -1,6 +1,7 @@
 //deno-lint-ignore-file no-explicit-any
 import type { Kind, URIS } from "./kind.ts";
 import type { Functor } from "./functor.ts";
+import type { Semigroup } from "./semigroup.ts";
 import type { NonEmptyArray, NonEmptyRecord } from "./types.ts";
 
 import { pipe } from "./fns.ts";
@@ -81,4 +82,12 @@ export function createSequenceStruct<URI extends URIS>(
       pipe(r[head] as any, A.map(_loopRecord(keys) as any) as any),
     ) as any;
   };
+}
+
+export function createApplySemigroup<URI extends URIS>(A: Apply<URI>) {
+  return <A, B = never, C = never, D = never>(
+    S: Semigroup<A>,
+  ): Semigroup<Kind<URI, [A, B, C, D]>> => ({
+    concat: (a) => A.ap(pipe(a, A.map(S.concat))),
+  });
 }
