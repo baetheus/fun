@@ -30,12 +30,6 @@ export type { Functor } from "./functor.ts";
 
 export type { Group } from "./group.ts";
 
-export type { IndexedFoldable } from "./indexed_foldable.ts";
-
-export type { IndexedFunctor } from "./indexed_functor.ts";
-
-export type { IndexedTraversable } from "./indexed_traversable.ts";
-
 export type { Monad } from "./monad.ts";
 
 export type { MonadThrow } from "./monad_throw.ts";

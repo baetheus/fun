@@ -144,22 +144,6 @@ Deno.test("Array Foldable", () => {
   });
 });
 
-Deno.test("Array IndexedFoldable", () => {
-  AS.assertIndexedFoldable<
-    A.URI,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number
-  >(A.IndexedFoldable, {
-    a: 1,
-    tb: [1, 2, 3],
-    faia: (a: number, i: number, index: number) => a + i + index,
-  });
-});
-
 Deno.test("Array traverse", () => {
   const traverseOption = A.traverse(O.Applicative);
 
@@ -287,21 +271,21 @@ Deno.test("Array lookup", () => {
 });
 
 Deno.test("Array insertAt", () => {
-  assertEquals(pipe([1, 2, 3], A.insertAt(0, 10)), O.some([10, 1, 2, 3]));
-  assertEquals(pipe([1, 2, 3], A.insertAt(3, 10)), O.some([1, 2, 3, 10]));
-  assertEquals(pipe([1, 2, 3], A.insertAt(5, 10)), O.none);
+  assertEquals(pipe([1, 2, 3], A.insertAt(0)(10)), [10, 1, 2, 3]);
+  assertEquals(pipe([1, 2, 3], A.insertAt(3)(10)), [1, 2, 3, 10]);
+  assertEquals(pipe([1, 2, 3], A.insertAt(5)(10)), [1, 2, 3]);
 });
 
 Deno.test("Array updateAt", () => {
-  assertEquals(pipe([1, 2, 3], A.updateAt(0, 10)), O.some([10, 2, 3]));
-  assertEquals(pipe([1, 2, 3], A.updateAt(2, 10)), O.some([1, 2, 10]));
-  assertEquals(pipe([1, 2, 3], A.updateAt(5, 10)), O.none);
+  assertEquals(pipe([1, 2, 3], A.updateAt(0)(10)), [10, 2, 3]);
+  assertEquals(pipe([1, 2, 3], A.updateAt(2)(10)), [1, 2, 10]);
+  assertEquals(pipe([1, 2, 3], A.updateAt(5)(10)), [1, 2, 3]);
 });
 
 Deno.test("Array deleteAt", () => {
-  assertEquals(pipe([1, 2, 3], A.deleteAt(0)), O.some([2, 3]));
-  assertEquals(pipe([1, 2, 3], A.deleteAt(2)), O.some([1, 2]));
-  assertEquals(pipe([1, 2, 3], A.deleteAt(5)), O.none);
+  assertEquals(pipe([1, 2, 3], A.deleteAt(0)), [2, 3]);
+  assertEquals(pipe([1, 2, 3], A.deleteAt(2)), [1, 2]);
+  assertEquals(pipe([1, 2, 3], A.deleteAt(5)), [1, 2, 3]);
 });
 
 Deno.test("Array range", () => {

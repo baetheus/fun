@@ -14,11 +14,17 @@ import { fromTraversable } from "./from_traversable.ts";
 
 import * as O from "./option.ts";
 import * as E from "./either.ts";
+import * as A from "./array.ts";
+import * as R from "./record.ts";
+import * as M from "./map.ts";
 import { apply, constant, flow, identity, pipe } from "./fns.ts";
 
-import { atRecord } from "./at.ts";
-import { indexArray, indexRecord } from "./index.ts";
-import { id as lensId, prop as lensProp, props as lensProps } from "./lens.ts";
+import {
+  atRecord,
+  id as lensId,
+  prop as lensProp,
+  props as lensProps,
+} from "./lens.ts";
 
 export type Optional<S, A> = {
   readonly tag: "Optional";
@@ -30,11 +36,53 @@ export type From<T> = T extends Optional<infer S, infer _> ? S : never;
 
 export type To<T> = T extends Optional<infer _, infer A> ? A : never;
 
+export type Index<S, I, A> = {
+  readonly index: (i: I) => Optional<S, A>;
+};
+
 export function optional<S, A>(
   getOption: (s: S) => Option<A>,
   set: (a: A) => (s: S) => S,
 ): Optional<S, A> {
   return { tag: "Optional", getOption, set };
+}
+
+export function indexArray<A>(): Index<ReadonlyArray<A>, number, A> {
+  return ({
+    index: (key) =>
+      optional(
+        A.lookup(key),
+        A.updateAt(key),
+      ),
+  });
+}
+
+export function indexRecord<A>(): Index<
+  R.ReadonlyRecord<A>,
+  string,
+  A
+> {
+  return ({
+    index: (key) => {
+      const lookup = R.lookup(key);
+      return optional(
+        lookup,
+        R.updateAt(key),
+      );
+    },
+  });
+}
+
+export function indexMap<A, B>(setoid: T.Setoid<B>): Index<Map<B, A>, B, A> {
+  const lookup = M.lookup(setoid);
+  const updateAt = M.updateAt(setoid);
+  return ({
+    index: (key) =>
+      optional(
+        lookup(key),
+        updateAt(key),
+      ),
+  });
 }
 
 export function asTraversal<S, A>(sa: Optional<S, A>): Traversal<S, A> {

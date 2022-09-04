@@ -154,80 +154,90 @@ export function collect<B>(
     );
 }
 
-export function insertAt<B>(
-  S: T.Setoid<B>,
-): <A>(b: B, a: A) => (ta: Map<B, A>) => Map<B, A> {
-  const _lookupWithKey = lookupWithKey(S);
-  return (b, a) => {
-    const lookupWithB = _lookupWithKey(b);
-    return (ta) => {
-      const found = lookupWithB(ta);
-      if (O.isNone(found)) {
-        const r = new Map(ta);
-        r.set(b, a);
-        return r;
-      } else if (found.value[1] !== a) {
-        const r = new Map(ta);
-        r.set(found.value[0], a);
-        return r;
-      }
-      return ta;
-    };
-  };
-}
-
 export function deleteAt<B>(
   S: T.Setoid<B>,
-): (b: B) => <A>(ta: Map<B, A>) => Map<B, A> {
-  const _lookupWithKey = lookupWithKey(S);
-  return (b) => {
-    const lookupWithB = _lookupWithKey(b);
-    return (ta) => {
-      const found = lookupWithB(ta);
-      if (O.isSome(found)) {
-        const r = new Map(ta);
-        r.delete(found.value[0]);
-        return r;
-      }
-      return ta;
-    };
-  };
+): (key: B) => <A>(map: Map<B, A>) => Map<B, A> {
+  const _lookup = lookupWithKey(S);
+  return (key) => (map) =>
+    pipe(
+      _lookup(key)(map),
+      O.fold(
+        () => map,
+        ([_key]) => {
+          const out = new Map(map);
+          out.delete(_key);
+          return out;
+        },
+      ),
+    );
 }
 
-export function updateAt<B>(
+export function insert<B>(
   S: T.Setoid<B>,
-): <A>(b: B, a: A) => (ta: Map<B, A>) => Option<Map<B, A>> {
-  const _lookupWithKey = lookupWithKey(S);
-  return (b, a) => {
-    const lookupWithB = _lookupWithKey(b);
-    return (ta) => {
-      const found = lookupWithB(ta);
-      if (O.isNone(found)) {
-        return O.none;
-      }
-      const r = new Map(ta);
-      r.set(found.value[0], a);
-      return O.some(r);
-    };
-  };
+) {
+  const _lookup = lookupWithKey(S);
+  return <A>(value: A) => (key: B) => (map: Map<B, A>): Map<B, A> =>
+    pipe(
+      _lookup(key)(map),
+      O.fold(
+        () => {
+          const _map = new Map(map);
+          _map.set(key, value);
+          return _map;
+        },
+        ([_key, _value]) => {
+          if (value !== _value) {
+            const _map = new Map(map);
+            _map.set(_key, value);
+            return _map;
+          }
+          return map;
+        },
+      ),
+    );
+}
+
+export function insertAt<B>(
+  S: T.Setoid<B>,
+) {
+  const _insert = insert(S);
+  return (key: B) => <A>(value: A) => _insert(value)(key);
+}
+
+export function modify<B>(
+  S: T.Setoid<B>,
+): <A>(modifyFn: (a: A) => A) => (key: B) => (ta: Map<B, A>) => Map<B, A> {
+  const _lookup = lookupWithKey(S);
+  return (modifyFn) => (key) => (map) =>
+    pipe(
+      _lookup(key)(map),
+      O.fold(
+        () => map,
+        ([_key, value]) => {
+          const _map = new Map(map);
+          _map.set(_key, modifyFn(value));
+          return _map;
+        },
+      ),
+    );
 }
 
 export function modifyAt<B>(
   S: T.Setoid<B>,
-): <A>(b: B, faa: (a: A) => A) => (ta: Map<B, A>) => Option<Map<B, A>> {
-  const _lookupWithKey = lookupWithKey(S);
-  return (b, faa) => {
-    const lookupWithB = _lookupWithKey(b);
-    return (ta) => {
-      const found = lookupWithB(ta);
-      if (O.isNone(found)) {
-        return O.none;
-      }
-      const r = new Map(ta);
-      r.set(found.value[0], faa(found.value[1]));
-      return O.some(r);
-    };
-  };
+): (key: B) => <A>(modifyFn: (value: A) => A) => (map: Map<B, A>) => Map<B, A> {
+  return (key) => (modifyFn) => modify(S)(modifyFn)(key);
+}
+
+export function update<B>(
+  S: T.Setoid<B>,
+): <A>(value: A) => (key: B) => (map: Map<B, A>) => Map<B, A> {
+  return (value) => (key) => modify(S)(() => value)(key);
+}
+
+export function updateAt<B>(
+  S: T.Setoid<B>,
+): (key: B) => <A>(value: A) => (map: Map<B, A>) => Map<B, A> {
+  return (key) => (value) => modify(S)(() => value)(key);
 }
 
 export function pop<B>(

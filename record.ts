@@ -1,11 +1,12 @@
 import type { Kind, URIS } from "./kind.ts";
 import type * as T from "./types.ts";
-import type { Fn } from "./types.ts";
 
-import { pipe } from "./fns.ts";
-import { ordString, toCompare } from "./ord.ts";
+import type { Option } from "./option.ts";
 
-export type ReadonlyRecord<V> = Readonly<Record<string, V>>;
+import { none, some } from "./option.ts";
+import { has, pipe } from "./fns.ts";
+
+export type ReadonlyRecord<A> = Readonly<Record<string, A>>;
 
 export const URI = "ReadonlyRecord";
 
@@ -18,10 +19,6 @@ declare module "./kind.ts" {
   }
 }
 
-const compareStrings = toCompare(ordString);
-
-const sortStrings = (keys: string[]): string[] => keys.sort(compareStrings);
-
 /**
  * Creates a new object with the same keys of `ta`. Values are transformed
  * using `fai`.
@@ -33,11 +30,11 @@ const sortStrings = (keys: string[]): string[] => keys.sort(compareStrings);
  */
 export function map<A, I>(
   fai: (a: A, i: string) => I,
-): <T>(ta: { [K in keyof T]: A }) => { [K in keyof T]: I } {
-  return (ta) => {
-    const out = {} as { [K in keyof typeof ta]: I };
-    for (const [key, entry] of Object.entries(ta) as [keyof typeof ta, A][]) {
-      out[key] = fai(entry, key as string);
+) {
+  return (ta: ReadonlyRecord<A>): ReadonlyRecord<I> => {
+    const out = {} as Record<string, I>;
+    for (const [key, entry] of Object.entries(ta) as [string, A][]) {
+      out[key] = fai(entry, key);
     }
     return out;
   };
@@ -46,9 +43,9 @@ export function map<A, I>(
 export function reduce<A, O>(
   foao: (o: O, a: A, i: string) => O,
   o: O,
-): <KS extends string>(ta: { [K in KS]: A }) => O {
-  return (ta) => {
-    const keys = sortStrings(Object.keys(ta)) as (keyof typeof ta)[];
+) {
+  return (ta: ReadonlyRecord<A>): O => {
+    const keys = Object.getOwnPropertyNames(ta);
     const length = keys.length;
     let index = -1;
     let result = o;
@@ -65,40 +62,101 @@ export function reduce<A, O>(
   };
 }
 
-export function traverse<VRI extends URIS>(
-  A: T.Applicative<VRI>,
-): <A, I, J, K, L>(
-  favi: (a: A, i: string) => Kind<VRI, [I, J, K, L]>,
-) => (ta: ReadonlyRecord<A>) => Kind<VRI, [ReadonlyRecord<I>, J, K, L]> {
-  return (favi) =>
+// deno-lint-ignore no-explicit-any
+export function traverse<VRI extends URIS, _ extends any[] = any[]>(
+  A: T.Applicative<VRI, _>,
+) {
+  return <A, I, J = never, K = never, L = never>(
+    favi: (a: A, i: string) => Kind<VRI, [I, J, K, L]>,
+  ): (ta: ReadonlyRecord<A>) => Kind<VRI, [ReadonlyRecord<I>, J, K, L]> =>
     reduce(
       (fbs, a, index) =>
         pipe(
           favi(a, index),
           A.ap(pipe(fbs, A.map((xs) => (x) => ({ ...xs, [index]: x })))),
         ),
-      // deno-lint-ignore no-explicit-any
-      A.of({} as Record<string, any>),
+      A.of({} as ReadonlyRecord<I>),
     );
 }
 
-export function insertAt<K extends string, A>(
-  k: K,
-  a: A,
-): <KS extends string>(ta: Record<KS | K, A>) => Record<KS | K, A> {
-  return (ta) => (ta[k] === a ? ta : { ...ta, [k]: a });
+export function insert<A>(value: A) {
+  return (key: string) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
+    rec[key] === value ? rec : { ...rec, [key]: value };
 }
 
-export function deleteAt<K extends string>(
-  k: K,
-): <KS extends string, A>(ta: Record<KS | K, A>) => Record<Exclude<KS, K>, A> {
-  return (ta) => {
-    if (!(k in ta)) {
-      return ta;
+export function insertAt(key: string) {
+  return <A>(value: A) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
+    rec[key] === value ? rec : { ...rec, [key]: value };
+}
+
+export function modify<A>(modifyFn: (a: A) => A) {
+  return (key: string) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
+    has(rec, key) ? { ...rec, [key]: modifyFn(rec[key]) } : rec;
+}
+
+export function modifyAt(key: string) {
+  return <A>(modifyFn: (a: A) => A) =>
+  (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
+    has(rec, key) ? { ...rec, [key]: modifyFn(rec[key]) } : rec;
+}
+
+export function update<A>(value: A) {
+  return (key: string) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
+    has(rec, key) ? { ...rec, [key]: value } : rec;
+}
+
+export function updateAt(key: string) {
+  return <A>(value: A) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
+    has(rec, key) ? { ...rec, [key]: value } : rec;
+}
+
+export function lookupAt(key: string) {
+  return <A>(rec: ReadonlyRecord<A>): Option<A> =>
+    has(rec, key) ? some(rec[key]) : none;
+}
+
+export function deleteAtWithValue(key: string) {
+  return <A>(
+    rec: ReadonlyRecord<A>,
+  ): Option<[A, ReadonlyRecord<A>]> => {
+    if (has(rec, key)) {
+      const out = { ...rec };
+      const value = rec[key];
+      delete out[key];
+      return some([value, out]);
     }
-    const out = Object.assign({}, ta);
-    delete out[k];
-    return out;
+    return none;
+  };
+}
+
+export function deleteAt(key: string) {
+  return <A>(
+    rec: ReadonlyRecord<A>,
+  ): ReadonlyRecord<A> => {
+    if (has(rec, key)) {
+      const out = { ...rec };
+      delete out[key];
+      return out;
+    }
+    return rec;
+  };
+}
+
+export function lookupWithKey(key: string) {
+  return <A>(record: ReadonlyRecord<A>): Option<[string, A]> => {
+    if (Object.hasOwn(record, key)) {
+      return some([key, record[key]]);
+    }
+    return none;
+  };
+}
+
+export function lookup(key: string) {
+  return <A>(record: ReadonlyRecord<A>): Option<A> => {
+    if (Object.hasOwn(record, key)) {
+      return some(record[key]);
+    }
+    return none;
   };
 }
 
@@ -161,29 +219,24 @@ export function keys<P extends Record<string, unknown>>(p: P): (keyof P)[] {
   return (Object.keys(p) as unknown) as (keyof P)[];
 }
 
-export function zipFirst<A, I>(
-  fabi: Fn<[string, A, unknown], I>,
-): (tb: Record<string, unknown>) => <T>(
-  ta: { [K in keyof T]: A },
-) => { [K in keyof T]: I } {
-  return (tb) => map((a: A, key) => fabi(key, a, tb[key]));
+export function zipFirst<A, Q, I>(
+  fabi: (index: string, left: A, right: Q) => I,
+) {
+  return (
+    right: ReadonlyRecord<Q>,
+  ): (left: ReadonlyRecord<A>) => ReadonlyRecord<I> =>
+    map((a: A, key) => fabi(key, a, right[key]));
 }
 
-export const Functor: T.Functor<URI> = { map };
+export const Functor: T.Functor<URI, [string]> = { map };
 
-export const IndexedFunctor: T.IndexedFunctor<URI, string> = { map };
+export const Foldable: T.Foldable<URI, [string]> = { reduce };
 
-export const IndexedFoldable: T.IndexedFoldable<URI, string> = { reduce };
-
-export const IndexedTraversable: T.IndexedTraversable<URI, string> = {
+export const Traversable: T.Traversable<URI, [string]> = {
   map,
   reduce,
   traverse,
 };
-
-export const Foldable: T.Foldable<URI> = IndexedFoldable;
-
-export const Traversable: T.Traversable<URI> = IndexedTraversable;
 
 export function getShow<A>(SA: T.Show<A>): T.Show<Record<string, A>> {
   return ({
