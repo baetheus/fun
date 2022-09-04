@@ -41,7 +41,8 @@ jobs:
     strategy:
       matrix:
         deno: ["v1.x"]
-        os: [macOS-latest, windows-latest, ubuntu-latest]
+        # os: [macOS-latest, windows-latest, ubuntu-latest]
+        os: [ubuntu-latest]
 
     steps:
       - name: Setup repo
