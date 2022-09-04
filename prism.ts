@@ -15,9 +15,13 @@ import * as O from "./option.ts";
 import * as E from "./either.ts";
 import { apply, constant, flow, identity, pipe } from "./fns.ts";
 
-import { atRecord } from "./at.ts";
-import { indexArray, indexRecord } from "./index.ts";
-import { id as lensId, prop as lensProp, props as lensProps } from "./lens.ts";
+import {
+  atRecord,
+  id as lensId,
+  prop as lensProp,
+  props as lensProps,
+} from "./lens.ts";
+import { indexArray, indexRecord } from "./optional.ts";
 
 export type Prism<S, A> = {
   readonly tag: "Prism";

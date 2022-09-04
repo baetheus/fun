@@ -172,17 +172,17 @@ Deno.test("Map collect", () => {
 Deno.test("Map insertAt", () => {
   const insertAt = M.insertAt(setoidNumber);
 
-  assertEquals(pipe(M.singleton(1, 1), insertAt(1, 2)), M.singleton(1, 2));
+  assertEquals(pipe(M.singleton(1, 1), insertAt(1)(2)), M.singleton(1, 2));
   assertEquals(
-    pipe(M.empty<number, number>(), insertAt(1, 1)),
+    pipe(M.empty<number, number>(), insertAt(1)(1)),
     M.singleton(1, 1),
   );
   assertEquals(
-    pipe(M.singleton(1, 1), insertAt(1, 1)),
+    pipe(M.singleton(1, 1), insertAt(1)(1)),
     M.singleton(1, 1),
   );
   assertEquals(
-    pipe(M.singleton(1, 1), insertAt(1, 2)),
+    pipe(M.singleton(1, 1), insertAt(1)(2)),
     M.singleton(1, 2),
   );
 });
@@ -198,20 +198,23 @@ Deno.test("Map updateAt", () => {
   const updateAt = M.updateAt(setoidNumber);
 
   assertEquals(
-    pipe(M.singleton(1, 1), updateAt(1, 2)),
-    O.some(M.singleton(1, 2)),
+    pipe(M.singleton(1, 1), updateAt(1)(2)),
+    M.singleton(1, 2),
   );
-  assertEquals(pipe(M.singleton(1, 1), updateAt(2, 2)), O.none);
+  assertEquals(pipe(M.singleton(1, 1), updateAt(2)(2)), M.singleton(1, 1));
 });
 
 Deno.test("Map modifyAt", () => {
   const modifyAt = M.modifyAt(setoidNumber);
 
   assertEquals(
-    pipe(M.singleton(1, 1), modifyAt(1, (n) => n + 1)),
-    O.some(M.singleton(1, 2)),
+    pipe(M.singleton(1, 1), modifyAt(1)((n) => n + 1)),
+    M.singleton(1, 2),
   );
-  assertEquals(pipe(M.singleton(1, 1), modifyAt(2, (n) => n + 1)), O.none);
+  assertEquals(
+    pipe(M.singleton(1, 1), modifyAt(2)((n) => n + 1)),
+    M.singleton(1, 1),
+  );
 });
 
 Deno.test("Map pop", () => {
