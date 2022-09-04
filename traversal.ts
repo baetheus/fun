@@ -18,17 +18,20 @@ import * as A from "./array.ts";
 import { flow, identity, pipe } from "./fns.ts";
 
 import { fromTraversable } from "./from_traversable.ts";
-import { atRecord } from "./at.ts";
-import { indexArray, indexRecord } from "./index.ts";
 import { asTraversal as isoAsTraversal, iso } from "./iso.ts";
 import {
   asTraversal as prismAsTraversal,
   fromPredicate,
   prism,
 } from "./prism.ts";
-import { asTraversal as optionalAsTraversal } from "./optional.ts";
+import {
+  asTraversal as optionalAsTraversal,
+  indexArray,
+  indexRecord,
+} from "./optional.ts";
 import {
   asTraversal as lensAsTraversal,
+  atRecord,
   id as lensId,
   prop as lensProp,
   props as lensProps,

@@ -1,8 +1,9 @@
 import { Kind, URIS } from "./kind.ts";
 import type * as T from "./types.ts";
 import type { Predicate } from "./types.ts";
+import type { Option } from "./option.ts";
 
-import * as O from "./option.ts";
+import { none, some } from "./option.ts";
 import { apply, flow, identity, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 import { Ord, toCompare } from "./ord.ts";
@@ -232,20 +233,50 @@ export function prepend<A>(
   return (ma) => [head, ...ma];
 }
 
-export const lookup = (i: number) => <A>(as: ReadonlyArray<A>): O.Option<A> =>
-  isOutOfBounds(i, as) ? O.none : O.some(as[i]);
+export function insert<A>(value: A) {
+  return (index: number) => (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
+    index < 0 || index > arr.length ? arr : unsafeInsertAt(index, value, arr);
+}
 
-export const insertAt =
-  <A>(i: number, a: A) => (as: ReadonlyArray<A>): O.Option<ReadonlyArray<A>> =>
-    i < 0 || i > as.length ? O.none : O.some(unsafeInsertAt(i, a, as));
+export function insertAt(index: number) {
+  return <A>(value: A) => (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
+    index < 0 || index > arr.length ? arr : unsafeInsertAt(index, value, arr);
+}
 
-export const updateAt =
-  <A>(i: number, a: A) => (as: ReadonlyArray<A>): O.Option<ReadonlyArray<A>> =>
-    isOutOfBounds(i, as) ? O.none : O.some(unsafeUpdateAt(i, a, as));
+export function update<A>(value: A) {
+  return (index: number) => (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
+    isOutOfBounds(index, arr) ? arr : unsafeUpdateAt(index, value, arr);
+}
 
-export const deleteAt =
-  (i: number) => <A>(as: ReadonlyArray<A>): O.Option<ReadonlyArray<A>> =>
-    isOutOfBounds(i, as) ? O.none : O.some(unsafeDeleteAt(i, as));
+export function updateAt(index: number) {
+  return <A>(value: A) => (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
+    isOutOfBounds(index, arr) ? arr : unsafeUpdateAt(index, value, arr);
+}
+
+export function modify<A>(modifyFn: (a: A) => A) {
+  return (index: number) => (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
+    isOutOfBounds(index, arr)
+      ? arr
+      : unsafeUpdateAt(index, modifyFn(arr[index]), arr);
+}
+
+export function modifyAt(index: number) {
+  return <A>(modifyFn: (a: A) => A) =>
+  (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
+    isOutOfBounds(index, arr)
+      ? arr
+      : unsafeUpdateAt(index, modifyFn(arr[index]), arr);
+}
+
+export function lookup(i: number) {
+  return <A>(as: ReadonlyArray<A>): Option<A> =>
+    isOutOfBounds(i, as) ? none : some(as[i]);
+}
+
+export function deleteAt(index: number) {
+  return <A>(arr: ReadonlyArray<A>): ReadonlyArray<A> =>
+    isOutOfBounds(index, arr) ? arr : unsafeDeleteAt(index, arr);
+}
 
 /**
  * Create a `ReadonlyArray` containing a range of integers,
@@ -379,17 +410,13 @@ export const Alt: T.Alt<URI> = { alt, map };
 
 export const Filterable: T.Filterable<URI> = { filter };
 
-export const IndexedFoldable: T.IndexedFoldable<URI> = { reduce };
+export const Foldable: T.Foldable<URI> = { reduce };
 
-export const IndexedTraversable: T.IndexedTraversable<URI> = {
+export const Traversable: T.Traversable<URI> = {
   map,
   reduce,
   traverse,
 };
-
-export const Foldable: T.Foldable<URI> = IndexedFoldable;
-
-export const Traversable: T.Traversable<URI> = IndexedTraversable;
 
 export function getSetoid<A>(S: T.Setoid<A>): T.Setoid<ReadonlyArray<A>> {
   return ({

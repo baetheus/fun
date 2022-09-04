@@ -22,14 +22,6 @@ Deno.test("Record Functor", () => {
   });
 });
 
-Deno.test("Record IndexedFoldable", () => {
-  AS.assertIndexedFoldable(R.IndexedFoldable, {
-    a: 0,
-    tb: { a: 1, b: 2 },
-    faia: (a: number, i: number) => a + i,
-  });
-});
-
 Deno.test("Record Foldable", () => {
   AS.assertFoldable(R.Foldable, {
     a: 0,
@@ -71,9 +63,11 @@ Deno.test("Record map", () => {
   assertEquals(map({}), {});
   assertEquals(map({ a: 1, b: 2 }), { a: 2, b: 3 });
 
+  // Note that when deno supports exact optional properties that this
+  // & will no longer be necessary.
   type Foo = { bar: number; baz?: number };
-  const foo: Foo = { bar: 1 };
-  assertEquals<Foo>(map(foo), { bar: 2 });
+  const foo: Foo = { bar: 2 };
+  assertEquals(map(foo), { bar: 3 });
 });
 
 Deno.test("Record indexedTraverse", () => {
@@ -107,8 +101,8 @@ Deno.test("Record indexedMap", () => {
 });
 
 Deno.test("Record insertAt", () => {
-  assertEquals(pipe({ a: 1, b: 2 }, R.insertAt("b", 3)), { a: 1, b: 3 });
-  assertEquals(pipe({ a: 1, b: 2 }, R.insertAt("a", 1)), { a: 1, b: 2 });
+  assertEquals(pipe({ a: 1, b: 2 }, R.insertAt("b")(3)), { a: 1, b: 3 });
+  assertEquals(pipe({ a: 1, b: 2 }, R.insertAt("a")(1)), { a: 1, b: 2 });
 });
 
 Deno.test("Record deleteAt", () => {

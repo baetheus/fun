@@ -726,37 +726,6 @@ export const assertFoldable = <
 };
 
 /** *****************************************************************************
- * Assert: IndexedFoldable
- * *****************************************************************************/
-
-export const assertIndexedFoldable = <
-  URI extends URIS,
-  Index,
-  A = never,
-  B = never,
-  C = never,
-  D = never,
-  I = never,
->(
-  F: T.IndexedFoldable<URI, Index>,
-  { a, tb, faia }: {
-    a: A;
-    tb: Kind<URI, [I, B, C, D]>;
-    faia: (a: A, i: I, index: Index) => A;
-  },
-): void => {
-  // F.reduce ≡ (f, x, u) => F.reduce((acc, y) => acc.concat([y]), [], u).reduce(f, x)
-  assertEquals(
-    pipe(tb, F.reduce((acc, y) => acc.concat([y]), [] as I[])).reduce(
-      // deno-lint-ignore no-explicit-any
-      faia as any,
-      a,
-    ),
-    pipe(tb, F.reduce(faia, a)),
-  );
-};
-
-/** *****************************************************************************
  * Assert: Extend
  * *****************************************************************************/
 

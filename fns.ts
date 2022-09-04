@@ -175,6 +175,21 @@ export function call<AS extends unknown[], B>(
 }
 
 /**
+ * Has
+ *
+ * An alias for Object.hasOwn
+ */
+export function has<
+  T extends Record<string | number | symbol, unknown>,
+  KS extends keyof T,
+>(
+  obj: T,
+  key: KS,
+): boolean {
+  return Object.hasOwn(obj, key);
+}
+
+/**
  * Apply1
  *
  * A special case of apply for functions that only take a single argument

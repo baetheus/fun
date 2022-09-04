@@ -2,12 +2,14 @@ import type * as T from "./types.ts";
 import type { Kind, URIS } from "./kind.ts";
 import type { Predicate, Refinement } from "./types.ts";
 import type { Either } from "./either.ts";
+import type { Option } from "./option.ts";
 
 import type { Optic } from "./optic.ts";
 import type { Iso } from "./iso.ts";
 import type { Prism } from "./prism.ts";
 import type { Traversal } from "./traversal.ts";
 import type { Optional } from "./optional.ts";
+import type { ReadonlyRecord } from "./record.ts";
 
 import { fromTraversable } from "./from_traversable.ts";
 import { prism } from "./prism.ts";
@@ -16,10 +18,10 @@ import { optional } from "./optional.ts";
 import * as O from "./option.ts";
 import * as E from "./either.ts";
 import * as R from "./record.ts";
+import * as M from "./map.ts";
 import { constant, flow, identity, pipe } from "./fns.ts";
 
-import { atRecord } from "./at.ts";
-import { indexArray, indexRecord } from "./index.ts";
+import { indexArray, indexRecord } from "./optional.ts";
 
 export type Lens<S, A> = {
   readonly tag: "Lens";
@@ -36,6 +38,46 @@ export function lens<S, A>(
   set: (a: A) => (s: S) => S,
 ): Lens<S, A> {
   return ({ tag: "Lens", get, set });
+}
+
+export type At<S, I, A> = {
+  readonly at: (i: I) => Lens<S, A>;
+};
+
+export function atRecord<A = never>(): At<
+  ReadonlyRecord<A>,
+  string,
+  Option<A>
+> {
+  return ({
+    at: (key) =>
+      lens(
+        R.lookupAt(key),
+        O.fold(
+          () => R.deleteAt(key),
+          R.insertAt(key),
+        ),
+      ),
+  });
+}
+
+export function atMap<A, B>(
+  setoid: T.Setoid<B>,
+): At<Map<B, A>, B, Option<A>> {
+  const _lookup = M.lookup(setoid);
+  const _deleteAt = M.deleteAt(setoid);
+  const _insertAt = M.insertAt(setoid);
+
+  return ({
+    at: (key) =>
+      lens(
+        _lookup(key),
+        O.fold(
+          () => _deleteAt(key),
+          _insertAt(key),
+        ),
+      ),
+  });
 }
 
 export function asOptional<S, A>(sa: Lens<S, A>): Optional<S, A> {
