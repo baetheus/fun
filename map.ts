@@ -77,15 +77,14 @@ export function size<K, A>(d: Map<K, A>): number {
 export function lookupWithKey<K>(
   S: T.Setoid<K>,
 ): (k: K) => <A>(ta: Map<K, A>) => Option<[K, A]> {
-  return (k) =>
-    (ta) => {
-      for (const [ka, a] of ta.entries()) {
-        if (S.equals(ka)(k)) {
-          return O.some([ka, a]);
-        }
+  return (k) => (ta) => {
+    for (const [ka, a] of ta.entries()) {
+      if (S.equals(ka)(k)) {
+        return O.some([ka, a]);
       }
-      return O.none;
-    };
+    }
+    return O.none;
+  };
 }
 
 export function lookup<K>(
@@ -159,46 +158,43 @@ export function deleteAt<B>(
   S: T.Setoid<B>,
 ): (key: B) => <A>(map: Map<B, A>) => Map<B, A> {
   const _lookup = lookupWithKey(S);
-  return (key) =>
-    (map) =>
-      pipe(
-        _lookup(key)(map),
-        O.fold(
-          () => map,
-          ([_key]) => {
-            const out = new Map(map);
-            out.delete(_key);
-            return out;
-          },
-        ),
-      );
+  return (key) => (map) =>
+    pipe(
+      _lookup(key)(map),
+      O.fold(
+        () => map,
+        ([_key]) => {
+          const out = new Map(map);
+          out.delete(_key);
+          return out;
+        },
+      ),
+    );
 }
 
 export function insert<B>(
   S: T.Setoid<B>,
 ) {
   const _lookup = lookupWithKey(S);
-  return <A>(value: A) =>
-    (key: B) =>
-      (map: Map<B, A>): Map<B, A> =>
-        pipe(
-          _lookup(key)(map),
-          O.fold(
-            () => {
-              const _map = new Map(map);
-              _map.set(key, value);
-              return _map;
-            },
-            ([_key, _value]) => {
-              if (value !== _value) {
-                const _map = new Map(map);
-                _map.set(_key, value);
-                return _map;
-              }
-              return map;
-            },
-          ),
-        );
+  return <A>(value: A) => (key: B) => (map: Map<B, A>): Map<B, A> =>
+    pipe(
+      _lookup(key)(map),
+      O.fold(
+        () => {
+          const _map = new Map(map);
+          _map.set(key, value);
+          return _map;
+        },
+        ([_key, _value]) => {
+          if (value !== _value) {
+            const _map = new Map(map);
+            _map.set(_key, value);
+            return _map;
+          }
+          return map;
+        },
+      ),
+    );
 }
 
 export function insertAt<B>(
@@ -212,20 +208,18 @@ export function modify<B>(
   S: T.Setoid<B>,
 ): <A>(modifyFn: (a: A) => A) => (key: B) => (ta: Map<B, A>) => Map<B, A> {
   const _lookup = lookupWithKey(S);
-  return (modifyFn) =>
-    (key) =>
-      (map) =>
-        pipe(
-          _lookup(key)(map),
-          O.fold(
-            () => map,
-            ([_key, value]) => {
-              const _map = new Map(map);
-              _map.set(_key, modifyFn(value));
-              return _map;
-            },
-          ),
-        );
+  return (modifyFn) => (key) => (map) =>
+    pipe(
+      _lookup(key)(map),
+      O.fold(
+        () => map,
+        ([_key, value]) => {
+          const _map = new Map(map);
+          _map.set(_key, modifyFn(value));
+          return _map;
+        },
+      ),
+    );
 }
 
 export function modifyAt<B>(
@@ -315,26 +309,25 @@ export function getMonoid<K, A>(
 ): T.Monoid<Map<K, A>> {
   const lookupKey = lookupWithKey(SK);
   return {
-    concat: (a) =>
-      (b) => {
-        if (isEmpty(a)) {
-          return b;
-        }
-        if (isEmpty(b)) {
-          return a;
-        }
-        const r = new Map(a);
-        for (const [bk, ba] of b) {
-          pipe(
-            lookupKey(bk)(a),
-            O.fold(
-              () => r.set(bk, ba),
-              ([ak, aa]) => r.set(ak, SA.concat(aa)(ba)),
-            ),
-          );
-        }
-        return r;
-      },
+    concat: (a) => (b) => {
+      if (isEmpty(a)) {
+        return b;
+      }
+      if (isEmpty(b)) {
+        return a;
+      }
+      const r = new Map(a);
+      for (const [bk, ba] of b) {
+        pipe(
+          lookupKey(bk)(a),
+          O.fold(
+            () => r.set(bk, ba),
+            ([ak, aa]) => r.set(ak, SA.concat(aa)(ba)),
+          ),
+        );
+      }
+      return r;
+    },
     empty,
   };
 }
