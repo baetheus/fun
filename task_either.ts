@@ -219,26 +219,24 @@ export function apSeq<A, I, B>(
 export function chain<A, I, J>(
   fati: (a: A) => TaskEither<J, I>,
 ): <B>(ta: TaskEither<B, A>) => TaskEither<B | J, I> {
-  return (ta) =>
-    async () => {
-      const ea = await ta();
-      return eitherIsLeft(ea) ? ea : fati(ea.right)();
-    };
+  return (ta) => async () => {
+    const ea = await ta();
+    return eitherIsLeft(ea) ? ea : fati(ea.right)();
+  };
 }
 
 export function chainFirst<A, I, J>(
   fati: (a: A) => TaskEither<J, I>,
 ): <B>(ta: TaskEither<B, A>) => TaskEither<B | J, A> {
-  return (ta) =>
-    async () => {
-      const ea = await ta();
-      if (eitherIsLeft(ea)) {
-        return ea;
-      } else {
-        const ei = await fati(ea.right)();
-        return eitherIsLeft(ei) ? ei : ea;
-      }
-    };
+  return (ta) => async () => {
+    const ea = await ta();
+    if (eitherIsLeft(ea)) {
+      return ea;
+    } else {
+      const ei = await fati(ea.right)();
+      return eitherIsLeft(ei) ? ei : ea;
+    }
+  };
 }
 
 /**
@@ -263,11 +261,10 @@ export function chainFirst<A, I, J>(
 export function chainLeft<B, J, I>(
   fbtj: (b: B) => TaskEither<J, I>,
 ): <A>(ta: TaskEither<B, A>) => TaskEither<J, A | I> {
-  return (ta) =>
-    async () => {
-      const ea = await ta();
-      return eitherIsLeft(ea) ? fbtj(ea.left)() : ea;
-    };
+  return (ta) => async () => {
+    const ea = await ta();
+    return eitherIsLeft(ea) ? fbtj(ea.left)() : ea;
+  };
 }
 
 /**
@@ -316,11 +313,10 @@ export function join<A, B>(
 export function alt<I, J>(
   ti: TaskEither<J, I>,
 ): <A, B>(ta: TaskEither<B, A>) => TaskEither<B | J, A | I> {
-  return (ta) =>
-    async () => {
-      const ea = await ta();
-      return eitherIsLeft(ea) ? ti() : ea;
-    };
+  return (ta) => async () => {
+    const ea = await ta();
+    return eitherIsLeft(ea) ? ti() : ea;
+  };
 }
 
 /**

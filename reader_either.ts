@@ -100,18 +100,17 @@ export function mapLeft<B, J>(
 export function ap<A, I, B, C extends unknown[] = []>(
   tfai: ReaderEither<C, B, (a: A) => I>,
 ): (ta: ReaderEither<C, B, A>) => ReaderEither<C, B, I> {
-  return (ta) =>
-    (...c) => pipe(tfai(...c), E.chain((fai) => pipe(ta(...c), E.map(fai))));
+  return (ta) => (...c) =>
+    pipe(tfai(...c), E.chain((fai) => pipe(ta(...c), E.map(fai))));
 }
 
 export function chain<A, C extends unknown[], I, J>(
   fati: (a: A) => ReaderEither<C, J, I>,
 ): <B>(ta: ReaderEither<C, B, A>) => ReaderEither<C, B | J, I> {
-  return (ta) =>
-    (...c) => {
-      const e = ta(...c);
-      return E.isLeft(e) ? e : fati(e.right)(...c);
-    };
+  return (ta) => (...c) => {
+    const e = ta(...c);
+    return E.isLeft(e) ? e : fati(e.right)(...c);
+  };
 }
 
 export function join<A, B, C extends unknown[]>(
@@ -123,11 +122,10 @@ export function join<A, B, C extends unknown[]>(
 export function alt<A, B, C extends unknown[]>(
   tb: ReaderEither<C, B, A>,
 ): (ta: ReaderEither<C, B, A>) => ReaderEither<C, B, A> {
-  return (ta) =>
-    (...c) => {
-      const e = ta(...c);
-      return E.isLeft(e) ? tb(...c) : e;
-    };
+  return (ta) => (...c) => {
+    const e = ta(...c);
+    return E.isLeft(e) ? tb(...c) : e;
+  };
 }
 
 export function chainLeft<A, B, C extends unknown[], J>(
@@ -150,15 +148,15 @@ export function getRightMonad<B>(
   return ({
     of,
     ap: (tfai) =>
-      // deno-lint-ignore no-explicit-any
-      (ta): ReaderEither<any, any, any> =>
-        (...c) => {
-          const efai = tfai(...c);
-          const ea = ta(...c);
-          return E.isLeft(efai)
-            ? (E.isLeft(ea) ? E.left(concat(efai.left)(ea.left)) : efai)
-            : (E.isLeft(ea) ? ea : E.right(efai.right(ea.right)));
-        },
+    // deno-lint-ignore no-explicit-any
+    (ta): ReaderEither<any, any, any> =>
+    (...c) => {
+      const efai = tfai(...c);
+      const ea = ta(...c);
+      return E.isLeft(efai)
+        ? (E.isLeft(ea) ? E.left(concat(efai.left)(ea.left)) : efai)
+        : (E.isLeft(ea) ? ea : E.right(efai.right(ea.right)));
+    },
     map,
     join,
     chain,

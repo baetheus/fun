@@ -35,24 +35,23 @@ export type Free<A> = Of<A> | Concat<A>;
 
 export const Free = {
   of: <A>(a: A): Free<A> => ({ tag: "Of", value: a }),
-  concat: <A>(left: Free<A>) =>
-    (right: Free<A>): Free<A> => ({
-      tag: "Concat",
-      left,
-      right,
-    }),
+  concat: <A>(left: Free<A>) => (right: Free<A>): Free<A> => ({
+    tag: "Concat",
+    left,
+    right,
+  }),
   fold: <A, R>(
     onOf: (value: A) => R,
     onConcat: (left: Free<A>, right: Free<A>) => R,
   ) =>
-    (f: Free<A>): R => {
-      switch (f.tag) {
-        case "Of":
-          return onOf(f.value);
-        case "Concat":
-          return onConcat(f.left, f.right);
-      }
-    },
+  (f: Free<A>): R => {
+    switch (f.tag) {
+      case "Of":
+        return onOf(f.value);
+      case "Concat":
+        return onConcat(f.left, f.right);
+    }
+  },
 };
 
 export const semigroupAll: Semigroup<boolean> = {
@@ -107,14 +106,13 @@ export function getStructSemigroup<O extends Readonly<Record<string, any>>>(
   semigroups: { [K in keyof O]: Semigroup<O[K]> },
 ): Semigroup<O> {
   return ({
-    concat: (x) =>
-      (y) => {
-        const r = {} as Record<string, O[keyof O]>;
-        for (const key of Object.keys(semigroups)) {
-          r[key] = semigroups[key].concat(x[key])(y[key]);
-        }
-        return r as { [K in keyof O]: O[K] };
-      },
+    concat: (x) => (y) => {
+      const r = {} as Record<string, O[keyof O]>;
+      for (const key of Object.keys(semigroups)) {
+        r[key] = semigroups[key].concat(x[key])(y[key]);
+      }
+      return r as { [K in keyof O]: O[K] };
+    },
   });
 }
 

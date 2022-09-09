@@ -310,31 +310,29 @@ export function getShow<A>({ show }: T.Show<A>): T.Show<Option<A>> {
  */
 export function getSetoid<A>(S: T.Setoid<A>): T.Setoid<Option<A>> {
   return ({
-    equals: (a) =>
-      (b) =>
-        a === b ||
-        ((isSome(a) && isSome(b))
-          ? S.equals(a.value)(b.value)
-          : (isNone(a) && isNone(b))),
+    equals: (a) => (b) =>
+      a === b ||
+      ((isSome(a) && isSome(b))
+        ? S.equals(a.value)(b.value)
+        : (isNone(a) && isNone(b))),
   });
 }
 
 export function getOrd<A>(O: T.Ord<A>): T.Ord<Option<A>> {
   return ({
     ...getSetoid(O),
-    lte: (b) =>
-      (a) => {
-        if (a === b) {
-          return true;
-        }
-        if (isNone(a)) {
-          return true;
-        }
-        if (isNone(b)) {
-          return false;
-        }
-        return O.lte(b.value)(a.value);
-      },
+    lte: (b) => (a) => {
+      if (a === b) {
+        return true;
+      }
+      if (isNone(a)) {
+        return true;
+      }
+      if (isNone(b)) {
+        return false;
+      }
+      return O.lte(b.value)(a.value);
+    },
   });
 }
 
@@ -342,8 +340,8 @@ export function getSemigroup<A>(
   S: T.Semigroup<A>,
 ): T.Semigroup<Option<A>> {
   return ({
-    concat: (x) =>
-      (y) => isNone(x) ? y : isNone(y) ? x : of(S.concat(x.value)(y.value)),
+    concat: (x) => (y) =>
+      isNone(x) ? y : isNone(y) ? x : of(S.concat(x.value)(y.value)),
   });
 }
 
