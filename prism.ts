@@ -57,14 +57,16 @@ export function asOptional<S, A>(sa: Prism<S, A>): Optional<S, A> {
 export function asTraversal<S, A>(sa: Prism<S, A>): Traversal<S, A> {
   return {
     tag: "Traversal",
-    traverse: (T) => (fata) => (s) =>
-      pipe(
-        sa.getOption(s),
-        O.fold(
-          () => T.of(s),
-          flow(fata, T.map(flow(getSet(sa), apply(s)))),
-        ),
-      ),
+    traverse: (T) =>
+      (fata) =>
+        (s) =>
+          pipe(
+            sa.getOption(s),
+            O.fold(
+              () => T.of(s),
+              flow(fata, T.map(flow(getSet(sa), apply(s)))),
+            ),
+          ),
   };
 }
 
@@ -95,11 +97,12 @@ export function composeLens<A, B, C>(
 ): Optional<A, C> {
   return optional(
     flow(left.getOption, O.map(right.get)),
-    (b) => (s) =>
-      pipe(
-        left.getOption(s),
-        O.fold(() => s, flow(right.set(b), left.reverseGet)),
-      ),
+    (b) =>
+      (s) =>
+        pipe(
+          left.getOption(s),
+          O.fold(() => s, flow(right.set(b), left.reverseGet)),
+        ),
   );
 }
 
@@ -119,11 +122,12 @@ export function composeOptional<A, B, C>(
 ): Optional<A, C> {
   return optional(
     flow(left.getOption, O.chain(right.getOption)),
-    (b) => (s) =>
-      pipe(
-        left.getOption(s),
-        O.fold(() => s, flow(right.set(b), left.reverseGet)),
-      ),
+    (b) =>
+      (s) =>
+        pipe(
+          left.getOption(s),
+          O.fold(() => s, flow(right.set(b), left.reverseGet)),
+        ),
   );
 }
 
@@ -133,14 +137,16 @@ export function composeTraversal<A, B, C>(
 ): Traversal<A, C> {
   return ({
     tag: "Traversal",
-    traverse: (A) => (fata) => (s) =>
-      pipe(
-        left.getOption(s),
-        O.fold(
-          constant(A.of(s)),
-          flow(right.traverse(A)(fata), A.map(left.reverseGet)),
-        ),
-      ),
+    traverse: (A) =>
+      (fata) =>
+        (s) =>
+          pipe(
+            left.getOption(s),
+            O.fold(
+              constant(A.of(s)),
+              flow(right.traverse(A)(fata), A.map(left.reverseGet)),
+            ),
+          ),
   });
 }
 
@@ -205,15 +211,16 @@ export function traverse<URI extends URIS>(
 }
 
 export function modify<A>(f: (a: A) => A): <S>(sa: Prism<S, A>) => (s: S) => S {
-  return (sa) => (s) =>
-    pipe(
-      sa.getOption(s),
-      O.map((a) => {
-        const na = f(a);
-        return na === a ? s : sa.reverseGet(na);
-      }),
-      O.getOrElse(() => s),
-    );
+  return (sa) =>
+    (s) =>
+      pipe(
+        sa.getOption(s),
+        O.map((a) => {
+          const na = f(a);
+          return na === a ? s : sa.reverseGet(na);
+        }),
+        O.getOrElse(() => s),
+      );
 }
 
 export function map<A, B>(

@@ -44,19 +44,10 @@ export function reduce<A, O>(
   foao: (o: O, a: A, i: string) => O,
   o: O,
 ) {
-  return (ta: ReadonlyRecord<A>): O => {
-    const keys = Object.getOwnPropertyNames(ta);
-    const length = keys.length;
-    let index = -1;
+  return (rec: ReadonlyRecord<A>): O => {
     let result = o;
-
-    if (length === 0) {
-      return o;
-    }
-
-    while (++index < length) {
-      const key = keys[index];
-      result = foao(result, ta[key], key);
+    for (const key in rec) {
+      result = foao(result, rec[key], key);
     }
     return result;
   };
@@ -66,7 +57,13 @@ export function reduce<A, O>(
 export function traverse<VRI extends URIS, _ extends any[] = any[]>(
   A: T.Applicative<VRI, _>,
 ) {
-  return <A, I, J = never, K = never, L = never>(
+  return <
+    A,
+    I,
+    J extends _[0] = never,
+    K extends _[1] = never,
+    L extends _[2] = never,
+  >(
     favi: (a: A, i: string) => Kind<VRI, [I, J, K, L]>,
   ): (ta: ReadonlyRecord<A>) => Kind<VRI, [ReadonlyRecord<I>, J, K, L]> =>
     reduce(
@@ -80,34 +77,39 @@ export function traverse<VRI extends URIS, _ extends any[] = any[]>(
 }
 
 export function insert<A>(value: A) {
-  return (key: string) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
-    rec[key] === value ? rec : { ...rec, [key]: value };
+  return (key: string) =>
+    (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
+      rec[key] === value ? rec : { ...rec, [key]: value };
 }
 
 export function insertAt(key: string) {
-  return <A>(value: A) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
-    rec[key] === value ? rec : { ...rec, [key]: value };
+  return <A>(value: A) =>
+    (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
+      rec[key] === value ? rec : { ...rec, [key]: value };
 }
 
 export function modify<A>(modifyFn: (a: A) => A) {
-  return (key: string) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
-    has(rec, key) ? { ...rec, [key]: modifyFn(rec[key]) } : rec;
+  return (key: string) =>
+    (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
+      has(rec, key) ? { ...rec, [key]: modifyFn(rec[key]) } : rec;
 }
 
 export function modifyAt(key: string) {
   return <A>(modifyFn: (a: A) => A) =>
-  (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
-    has(rec, key) ? { ...rec, [key]: modifyFn(rec[key]) } : rec;
+    (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
+      has(rec, key) ? { ...rec, [key]: modifyFn(rec[key]) } : rec;
 }
 
 export function update<A>(value: A) {
-  return (key: string) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
-    has(rec, key) ? { ...rec, [key]: value } : rec;
+  return (key: string) =>
+    (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
+      has(rec, key) ? { ...rec, [key]: value } : rec;
 }
 
 export function updateAt(key: string) {
-  return <A>(value: A) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
-    has(rec, key) ? { ...rec, [key]: value } : rec;
+  return <A>(value: A) =>
+    (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
+      has(rec, key) ? { ...rec, [key]: value } : rec;
 }
 
 export function lookupAt(key: string) {

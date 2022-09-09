@@ -37,11 +37,11 @@ export const add = (n: number) => n + 1;
 
 export const multiply = (n: number) => n * n;
 
-export const wrapAdd =
-  <URI extends URIS>(A: T.Applicative<URI>) => (n: number) => A.of(add(n));
+export const wrapAdd = <URI extends URIS>(A: T.Applicative<URI>) =>
+  (n: number) => A.of(add(n));
 
-export const wrapMultiply =
-  <URI extends URIS>(A: T.Applicative<URI>) => (n: number) => A.of(multiply(n));
+export const wrapMultiply = <URI extends URIS>(A: T.Applicative<URI>) =>
+  (n: number) => A.of(multiply(n));
 
 /** *****************************************************************************
  * Assert: Setoid

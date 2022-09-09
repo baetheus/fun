@@ -2,7 +2,7 @@ import type { Kind, URIS } from "./kind.ts";
 
 import { memoize } from "./fns.ts";
 
-export type Literal = string | number | boolean | null;
+export type Literal = string | number | boolean | null | undefined;
 
 export type UnknownSchemable<URI extends URIS> = {
   readonly unknown: <B = never, C = never, D = never>() => Kind<

@@ -137,8 +137,8 @@ Deno.test("Optional traverse", () => {
     M.optional(
       (n: number): O.Option<E.Either<number, number>> =>
         O.some(n > 0 ? E.right(n) : E.left(n)),
-      (a: E.Either<number, number>) => (_: number) =>
-        pipe(a, E.fold((n) => n, (n) => n)),
+      (a: E.Either<number, number>) =>
+        (_: number) => pipe(a, E.fold((n) => n, (n) => n)),
     ),
     M.traverse(E.Traversable),
   );
