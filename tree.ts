@@ -2,6 +2,7 @@ import type { Kind, URIS } from "./kind.ts";
 import type * as T from "./types.ts";
 
 import * as A from "./array.ts";
+import * as AP from "./apply.ts";
 import { apply, flow, identity, pipe } from "./fns.ts";
 
 export type Forest<A> = ReadonlyArray<Tree<A>>;
@@ -78,8 +79,7 @@ export function traverse<VRI extends URIS>(
 ) => (ta: Tree<A>) => Kind<VRI, [Tree<I>, J, K, L]> {
   const traverseVRI = A.traverse(V);
   return (favi) => {
-    const out =
-      <A, I, J, K, L>(_favi: (a: A) => Kind<VRI, [I, J, K, L]>) =>
+    const out = <A, I, J, K, L>(_favi: (a: A) => Kind<VRI, [I, J, K, L]>) =>
       (ta: Tree<A>): Kind<VRI, [Tree<I>, J, K, L]> =>
         pipe(
           ta.forest,
@@ -122,3 +122,9 @@ export const getShow = <A>(S: T.Show<A>): T.Show<Tree<A>> => {
       : `Tree(${S.show(ta.value)}, [${ta.forest.map(show).join(", ")}])`;
   return ({ show });
 };
+
+export const getApplySemigroup = AP.createApplySemigroup(Apply);
+
+export const sequenceStruct = AP.createSequenceStruct(Apply);
+
+export const sequenceTuple = AP.createSequenceTuple(Apply);

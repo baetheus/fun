@@ -1,4 +1,4 @@
-import type { Kind } from "./kind.ts";
+import type * as __ from "./kind.ts";
 
 import { isNil } from "./fns.ts";
 import * as S from "./schemable.ts";
@@ -50,8 +50,11 @@ export function isArray(a: unknown): a is Array<unknown> {
   return Array.isArray(a);
 }
 
-export function isArrayN(n: number): Guard<unknown, Array<unknown>> {
-  return (a): a is Array<unknown> => isArray(a) && a.length == n;
+export function isArrayN<N extends number>(
+  n: N,
+): Guard<unknown, Array<unknown> & { length: N }> {
+  return (a): a is Array<unknown> & { length: N } =>
+    isArray(a) && a.length == n;
 }
 
 export function literal<A extends [S.Literal, ...S.Literal[]]>(

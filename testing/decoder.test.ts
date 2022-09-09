@@ -2,7 +2,7 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
 import * as D from "../decoder.ts";
 import * as G from "../guard.ts";
-import * as R from "../result.ts";
+import * as R from "../decode_error.ts";
 import * as E from "../either.ts";
 import { flow, pipe } from "../fns.ts";
 
@@ -16,7 +16,7 @@ Deno.test("Decoder success", () => {
 });
 
 Deno.test("Decoder failure", () => {
-  assertEquals(D.failure(1, "1"), E.left(R.ofLeaf(1, "1")));
+  assertEquals(D.failure(1, "1"), E.left(R.leaf(1, "1")));
 });
 
 Deno.test("Decoder fromGuard", () => {
@@ -80,9 +80,9 @@ Deno.test("Decoder nullable", () => {
   assertEquals(decoder(null), D.success(null));
   assertEquals(
     out(decoder(true)),
-    `cannot decode nullable
-├─ cannot decode true, should be number
-└─ cannot decode true, should be null`,
+    `cannot decode union (any of)
+├─ cannot decode true, should be null
+└─ cannot decode true, should be number`,
   );
 });
 
@@ -92,9 +92,9 @@ Deno.test("Decoder undefinable", () => {
   assertEquals(decoder(undefined), D.success(undefined));
   assertEquals(
     out(decoder(true)),
-    `cannot decode undefinable
-├─ cannot decode true, should be number
-└─ cannot decode true, should be undefined`,
+    `cannot decode union (any of)
+├─ cannot decode true, should be undefined
+└─ cannot decode true, should be number`,
   );
 });
 
@@ -106,7 +106,9 @@ Deno.test("Decoder record", () => {
   assertEquals(out(decoder(null)), "cannot decode null, should be record");
   assertEquals(
     out(decoder({ one: "one" })),
-    'cannot decode record\n└─ optional property "one"\n   └─ cannot decode "one", should be number',
+    `cannot decode record
+└─ optional property "one"
+   └─ cannot decode "one", should be number`,
   );
 });
 
@@ -118,7 +120,9 @@ Deno.test("Decoder array", () => {
   assertEquals(out(decoder(null)), "cannot decode null, should be array");
   assertEquals(
     out(decoder(["one"])),
-    'cannot decode array\n└─ optional index 0\n   └─ cannot decode "one", should be number',
+    `cannot decode array
+└─ optional index 0
+   └─ cannot decode "one", should be number`,
   );
 });
 
@@ -137,7 +141,11 @@ Deno.test("Decoder tuple", () => {
   );
   assertEquals(
     out(decoder(["one", 1])),
-    'cannot decode tuple\n├─ required index 0\n│  └─ cannot decode "one", should be number\n└─ required index 1\n   └─ cannot decode 1, should be string',
+    `cannot decode tuple
+├─ required index 0
+│  └─ cannot decode "one", should be number
+└─ required index 1
+   └─ cannot decode 1, should be string`,
   );
 });
 
@@ -157,19 +165,33 @@ Deno.test("Decoder struct", () => {
   );
   assertEquals(
     out(decoder({})),
-    'cannot decode struct\n├─ required property "one"\n│  └─ cannot decode undefined, should be number\n└─ required property "two"\n   └─ cannot decode undefined, should be string',
+    `cannot decode struct
+├─ required property "one"
+│  └─ cannot decode undefined, should be number
+└─ required property "two"
+   └─ cannot decode undefined, should be string`,
   );
   assertEquals(
     out(decoder({ one: 1 })),
-    'cannot decode struct\n└─ required property "two"\n   └─ cannot decode undefined, should be string',
+    `cannot decode struct
+└─ required property "two"
+   └─ cannot decode undefined, should be string`,
   );
   assertEquals(
     out(decoder({ one: "one" })),
-    'cannot decode struct\n├─ required property "one"\n│  └─ cannot decode "one", should be number\n└─ required property "two"\n   └─ cannot decode undefined, should be string',
+    `cannot decode struct
+├─ required property "one"
+│  └─ cannot decode "one", should be number
+└─ required property "two"
+   └─ cannot decode undefined, should be string`,
   );
   assertEquals(
     out(decoder({ one: "one", two: 2 })),
-    'cannot decode struct\n├─ required property "one"\n│  └─ cannot decode "one", should be number\n└─ required property "two"\n   └─ cannot decode 2, should be string',
+    `cannot decode struct
+├─ required property "one"
+│  └─ cannot decode "one", should be number
+└─ required property "two"
+   └─ cannot decode 2, should be string`,
   );
   assertEquals(
     decoder({ one: 1, two: "two", three: true }),
@@ -194,11 +216,17 @@ Deno.test("Decoder partial", () => {
   );
   assertEquals(
     out(decoder({ one: "one" })),
-    'cannot decode partial\n└─ optional property "one"\n   └─ cannot decode "one", should be number',
+    `cannot decode partial struct
+└─ optional property "one"
+   └─ cannot decode "one", should be number`,
   );
   assertEquals(
     out(decoder({ one: "one", two: 2 })),
-    'cannot decode partial\n├─ optional property "one"\n│  └─ cannot decode "one", should be number\n└─ optional property "two"\n   └─ cannot decode 2, should be string',
+    `cannot decode partial struct
+├─ optional property "one"
+│  └─ cannot decode "one", should be number
+└─ optional property "two"
+   └─ cannot decode 2, should be string`,
   );
 });
 
@@ -214,15 +242,19 @@ Deno.test("Decoder intersect", () => {
   );
   assertEquals(
     out(decoder(null)),
-    "cannot decode intersection\n├─ cannot decode struct\n│  └─ cannot decode null, should be record\n└─ cannot decode partial\n   └─ cannot decode null, should be record",
+    `cannot decode intersection (all of)
+├─ cannot decode struct
+│  └─ cannot decode null, should be record
+└─ cannot decode partial struct
+   └─ cannot decode null, should be record`,
   );
   assertEquals(
     out(decoder({ one: "one", two: 2 })),
-    `cannot decode intersection
+    `cannot decode intersection (all of)
 ├─ cannot decode struct
 │  └─ required property "one"
 │     └─ cannot decode "one", should be number
-└─ cannot decode partial
+└─ cannot decode partial struct
    └─ optional property "two"
       └─ cannot decode 2, should be string`,
   );
@@ -237,7 +269,9 @@ Deno.test("Decoder union", () => {
   assertEquals(decoder("one"), D.success("one"));
   assertEquals(
     out(decoder(null)),
-    "cannot decode union\n├─ cannot decode null, should be number\n└─ cannot decode null, should be string",
+    `cannot decode union (any of)
+├─ cannot decode null, should be number
+└─ cannot decode null, should be string`,
   );
 });
 
@@ -246,6 +280,7 @@ Deno.test("Decoder lazy", () => {
   assertEquals(decoder(0), D.success(0));
   assertEquals(
     out(decoder(null)),
-    "lazy type MyDecoder\n└─ cannot decode null, should be number",
+    `lazy type MyDecoder
+└─ cannot decode null, should be number`,
   );
 });
