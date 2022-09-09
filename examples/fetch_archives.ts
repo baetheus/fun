@@ -28,14 +28,14 @@ const foldErrors = <O>(
   onFetchError: (e: unknown) => O,
   onDecodeError: (e: string) => O,
 ) =>
-(e: MyErrors) => {
-  switch (e.type) {
-    case "FetchError":
-      return onFetchError(e.error);
-    case "DecodeError":
-      return onDecodeError(e.error);
-  }
-};
+  (e: MyErrors) => {
+    switch (e.type) {
+      case "FetchError":
+        return onFetchError(e.error);
+      case "DecodeError":
+        return onDecodeError(e.error);
+    }
+  };
 
 /**
  * Let's make a helper function for fetch. This one takes the same

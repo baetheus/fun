@@ -32,10 +32,11 @@ export function copy<A>(ta: Set<A>): Set<A> {
   return new Set(ta);
 }
 
-const unsafeAdd = <A>(ta: Set<A>) => (a: A): Set<A> => {
-  ta.add(a);
-  return ta;
-};
+const unsafeAdd = <A>(ta: Set<A>) =>
+  (a: A): Set<A> => {
+    ta.add(a);
+    return ta;
+  };
 
 export function some<A>(predicate: Predicate<A>): (ta: Set<A>) => boolean {
   return (ta) => {
@@ -76,16 +77,17 @@ export function isSubset<A>(
 export function union<A>(
   S: T.Setoid<A>,
 ): (tb: Set<A>) => (ta: Set<A>) => Set<A> {
-  return (tb) => (ta) => {
-    const out = copy(ta);
-    const isIn = elemOf(S)(out);
-    for (const b of tb) {
-      if (!isIn(b)) {
-        out.add(b);
+  return (tb) =>
+    (ta) => {
+      const out = copy(ta);
+      const isIn = elemOf(S)(out);
+      for (const b of tb) {
+        if (!isIn(b)) {
+          out.add(b);
+        }
       }
-    }
-    return out;
-  };
+      return out;
+    };
 }
 
 export function intersection<A>(

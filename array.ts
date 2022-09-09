@@ -1,8 +1,10 @@
 import { Kind, URIS } from "./kind.ts";
 import type * as T from "./types.ts";
-import type { Predicate } from "./types.ts";
+import type { Separated } from "./separated.ts";
+import type { Predicate, Refinement } from "./types.ts";
 import type { Option } from "./option.ts";
 
+import { separated } from "./separated.ts";
 import { none, some } from "./option.ts";
 import { apply, flow, identity, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
@@ -204,9 +206,16 @@ export function filter<A>(
   };
 }
 
-export function traverse<VRI extends URIS>(
-  A: T.Applicative<VRI>,
-): <A, I, J, K, L>(
+// deno-lint-ignore no-explicit-any
+export function traverse<VRI extends URIS, _ extends any[] = any[]>(
+  A: T.Applicative<VRI, _>,
+): <
+  A,
+  I,
+  J extends _[0] = never,
+  K extends _[1] = never,
+  L extends _[2] = never,
+>(
   favi: (a: A, i: number) => Kind<VRI, [I, J, K, L]>,
 ) => (ta: ReadonlyArray<A>) => Kind<VRI, [ReadonlyArray<I>, J, K, L]> {
   return (favi) =>
@@ -234,38 +243,43 @@ export function prepend<A>(
 }
 
 export function insert<A>(value: A) {
-  return (index: number) => (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
-    index < 0 || index > arr.length ? arr : unsafeInsertAt(index, value, arr);
+  return (index: number) =>
+    (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
+      index < 0 || index > arr.length ? arr : unsafeInsertAt(index, value, arr);
 }
 
 export function insertAt(index: number) {
-  return <A>(value: A) => (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
-    index < 0 || index > arr.length ? arr : unsafeInsertAt(index, value, arr);
+  return <A>(value: A) =>
+    (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
+      index < 0 || index > arr.length ? arr : unsafeInsertAt(index, value, arr);
 }
 
 export function update<A>(value: A) {
-  return (index: number) => (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
-    isOutOfBounds(index, arr) ? arr : unsafeUpdateAt(index, value, arr);
+  return (index: number) =>
+    (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
+      isOutOfBounds(index, arr) ? arr : unsafeUpdateAt(index, value, arr);
 }
 
 export function updateAt(index: number) {
-  return <A>(value: A) => (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
-    isOutOfBounds(index, arr) ? arr : unsafeUpdateAt(index, value, arr);
+  return <A>(value: A) =>
+    (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
+      isOutOfBounds(index, arr) ? arr : unsafeUpdateAt(index, value, arr);
 }
 
 export function modify<A>(modifyFn: (a: A) => A) {
-  return (index: number) => (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
-    isOutOfBounds(index, arr)
-      ? arr
-      : unsafeUpdateAt(index, modifyFn(arr[index]), arr);
+  return (index: number) =>
+    (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
+      isOutOfBounds(index, arr)
+        ? arr
+        : unsafeUpdateAt(index, modifyFn(arr[index]), arr);
 }
 
 export function modifyAt(index: number) {
   return <A>(modifyFn: (a: A) => A) =>
-  (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
-    isOutOfBounds(index, arr)
-      ? arr
-      : unsafeUpdateAt(index, modifyFn(arr[index]), arr);
+    (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
+      isOutOfBounds(index, arr)
+        ? arr
+        : unsafeUpdateAt(index, modifyFn(arr[index]), arr);
 }
 
 export function lookup(i: number) {
@@ -318,8 +332,7 @@ export const range = (
  *
  * @category combinators
  */
-export const zipWith =
-  <B, A, C>(fb: ReadonlyArray<B>, f: (a: A, b: B) => C) =>
+export const zipWith = <B, A, C>(fb: ReadonlyArray<B>, f: (a: A, b: B) => C) =>
   (
     fa: ReadonlyArray<A>,
   ): ReadonlyArray<C> => {
@@ -396,6 +409,39 @@ export function sort<B>(
   return (as) => as.slice().sort(_compare);
 }
 
+export function partition<A, B extends A>(
+  refinement: (a: A, index: number) => a is B,
+): (ta: ReadonlyArray<A>) => Separated<ReadonlyArray<A>, ReadonlyArray<B>>;
+export function partition<A, B extends A>(
+  refinement: Refinement<A, B>,
+): (ta: ReadonlyArray<A>) => Separated<ReadonlyArray<A>, ReadonlyArray<B>>;
+export function partition<A>(
+  predicate: (a: A, index: number) => boolean,
+): (ta: ReadonlyArray<A>) => Separated<ReadonlyArray<A>, ReadonlyArray<A>>;
+export function partition<A>(
+  predicate: Predicate<A>,
+): (ta: ReadonlyArray<A>) => Separated<ReadonlyArray<A>, ReadonlyArray<A>>;
+export function partition<A>(
+  refinement: (a: A, index: number) => boolean,
+): (ta: ReadonlyArray<A>) => Separated<ReadonlyArray<A>, ReadonlyArray<A>> {
+  return (ta) => {
+    const left: Array<A> = [];
+    const right: Array<A> = [];
+    const length = ta.length;
+    let index = -1;
+
+    while (++index < length) {
+      const value = ta[index];
+      if (refinement(value, index)) {
+        right.push(value);
+      } else {
+        left.push(value);
+      }
+    }
+    return separated(left, right);
+  };
+}
+
 export const Functor: T.Functor<URI> = { map };
 
 export const Apply: T.Apply<URI> = { ap, map };
@@ -420,9 +466,10 @@ export const Traversable: T.Traversable<URI> = {
 
 export function getSetoid<A>(S: T.Setoid<A>): T.Setoid<ReadonlyArray<A>> {
   return ({
-    equals: (a) => (b) =>
-      a === b ||
-      (a.length === b.length && a.every((v, i) => S.equals(v)(b[i]))),
+    equals: (a) =>
+      (b) =>
+        a === b ||
+        (a.length === b.length && a.every((v, i) => S.equals(v)(b[i]))),
   });
 }
 
@@ -430,16 +477,17 @@ export function getOrd<A>(O: T.Ord<A>): T.Ord<ReadonlyArray<A>> {
   const { equals } = getSetoid(O);
   return ({
     equals,
-    lte: (b) => (a) => {
-      const length = Math.min(a.length, b.length);
-      let index = -1;
-      while (++index < length) {
-        if (!O.equals(a[index])(b[index])) {
-          return O.lte(b[index])(a[index]);
+    lte: (b) =>
+      (a) => {
+        const length = Math.min(a.length, b.length);
+        let index = -1;
+        while (++index < length) {
+          if (!O.equals(a[index])(b[index])) {
+            return O.lte(b[index])(a[index]);
+          }
         }
-      }
-      return a.length <= b.length;
-    },
+        return a.length <= b.length;
+      },
   });
 }
 

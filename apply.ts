@@ -44,9 +44,9 @@ type SequenceTuple<URI extends URIS, R extends NonEmptyArray<Kind<URI, any[]>>> 
 /**
  * Create a sequence over tuple function from Apply
  */
-export function createSequenceTuple<URI extends URIS>(
-  A: Apply<URI>,
-): <R extends NonEmptyArray<Kind<URI, any[]>>>(
+export function createSequenceTuple<URI extends URIS, _ extends any[] = any[]>(
+  A: Apply<URI, _>,
+): <R extends NonEmptyArray<Kind<URI, [any, ..._]>>>(
   ...r: R
 ) => SequenceTuple<URI, R> {
   const reducer = (acc: any, cur: any) => pipe(cur, A.ap(acc)) as any;
@@ -67,9 +67,9 @@ type SequenceStruct<URI extends URIS, R extends Record<string, Kind<URI, any[]>>
   { [K in keyof R]: R[K] extends Kind<URI, [infer _, infer _, infer _, infer D]> ? D : never }[keyof R]
 ]>
 
-export function createSequenceStruct<URI extends URIS>(
-  A: Apply<URI>,
-): <R extends Record<string, Kind<URI, any[]>>>(
+export function createSequenceStruct<URI extends URIS, _ extends any[] = any[]>(
+  A: Apply<URI, _>,
+): <R extends Record<string, Kind<URI, [any, ..._]>>>(
   r: NonEmptyRecord<R>,
 ) => SequenceStruct<URI, R> {
   return (r) => {
@@ -84,8 +84,15 @@ export function createSequenceStruct<URI extends URIS>(
   };
 }
 
-export function createApplySemigroup<URI extends URIS>(A: Apply<URI>) {
-  return <A, B = never, C = never, D = never>(
+export function createApplySemigroup<URI extends URIS, _ extends any[] = any[]>(
+  A: Apply<URI, _>,
+) {
+  return <
+    A,
+    B extends _[0] = never,
+    C extends _[1] = never,
+    D extends _[2] = never,
+  >(
     S: Semigroup<A>,
   ): Semigroup<Kind<URI, [A, B, C, D]>> => ({
     concat: (a) => A.ap(pipe(a, A.map(S.concat))),

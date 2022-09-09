@@ -1,7 +1,5 @@
-import * as G from "../schemable/guard.ts";
-import * as D from "../schemable/decoder.ts";
 import * as E from "../either.ts";
-import * as O from "../option.ts";
+import * as D from "../decoder.ts";
 import { flow, identity, pipe } from "../fns.ts";
 
 const go = flow(
