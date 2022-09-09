@@ -1,11 +1,10 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
-import * as D from "../derivations.ts";
+import * as D from "../monad.ts";
 import * as O from "../option.ts";
-import { semigroupSum } from "../semigroup.ts";
 import { pipe } from "../fns.ts";
 
-Deno.test("Derivations createMonad", () => {
+Deno.test("Monad createMonad", () => {
   const M = D.createMonad<O.URI>({ of: O.of, chain: O.chain });
 
   // ap

@@ -30,9 +30,7 @@ export type { Functor } from "./functor.ts";
 
 export type { Group } from "./group.ts";
 
-export type { Monad } from "./monad.ts";
-
-export type { MonadThrow } from "./monad_throw.ts";
+export type { Monad, MonadThrow } from "./monad.ts";
 
 export type { Monoid } from "./monoid.ts";
 
