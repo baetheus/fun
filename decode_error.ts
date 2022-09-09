@@ -224,9 +224,8 @@ export function draw(err: DecodeError): string {
 
 // Union Semigroup
 export const Semigroup: T.Semigroup<DecodeError> = {
-  concat: (right) =>
-    (left) =>
-      isIntersection(left) && isIntersection(right)
-        ? intersection(left, right)
-        : many(left, right),
+  concat: (right) => (left) =>
+    isIntersection(left) && isIntersection(right)
+      ? intersection(left, right)
+      : many(left, right),
 };

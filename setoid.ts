@@ -15,16 +15,14 @@ export function fromEquals<A>(equals: (x: A) => (y: A) => boolean): Setoid<A> {
 export function getStructSetoid<O extends Readonly<Record<string, any>>>(
   eqs: { [K in keyof O]: Setoid<O[K]> },
 ): Setoid<O> {
-  return fromEquals((x) =>
-    (y) => {
-      for (const key in eqs) {
-        if (!eqs[key].equals(x[key])(y[key])) {
-          return false;
-        }
+  return fromEquals((x) => (y) => {
+    for (const key in eqs) {
+      if (!eqs[key].equals(x[key])(y[key])) {
+        return false;
       }
-      return true;
     }
-  );
+    return true;
+  });
 }
 
 export function getTupleSetoid<T extends ReadonlyArray<Setoid<any>>>(

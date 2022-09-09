@@ -77,39 +77,34 @@ export function traverse<VRI extends URIS, _ extends any[] = any[]>(
 }
 
 export function insert<A>(value: A) {
-  return (key: string) =>
-    (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
-      rec[key] === value ? rec : { ...rec, [key]: value };
+  return (key: string) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
+    rec[key] === value ? rec : { ...rec, [key]: value };
 }
 
 export function insertAt(key: string) {
-  return <A>(value: A) =>
-    (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
-      rec[key] === value ? rec : { ...rec, [key]: value };
+  return <A>(value: A) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
+    rec[key] === value ? rec : { ...rec, [key]: value };
 }
 
 export function modify<A>(modifyFn: (a: A) => A) {
-  return (key: string) =>
-    (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
-      has(rec, key) ? { ...rec, [key]: modifyFn(rec[key]) } : rec;
+  return (key: string) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
+    has(rec, key) ? { ...rec, [key]: modifyFn(rec[key]) } : rec;
 }
 
 export function modifyAt(key: string) {
   return <A>(modifyFn: (a: A) => A) =>
-    (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
-      has(rec, key) ? { ...rec, [key]: modifyFn(rec[key]) } : rec;
+  (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
+    has(rec, key) ? { ...rec, [key]: modifyFn(rec[key]) } : rec;
 }
 
 export function update<A>(value: A) {
-  return (key: string) =>
-    (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
-      has(rec, key) ? { ...rec, [key]: value } : rec;
+  return (key: string) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
+    has(rec, key) ? { ...rec, [key]: value } : rec;
 }
 
 export function updateAt(key: string) {
-  return <A>(value: A) =>
-    (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
-      has(rec, key) ? { ...rec, [key]: value } : rec;
+  return <A>(value: A) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
+    has(rec, key) ? { ...rec, [key]: value } : rec;
 }
 
 export function lookupAt(key: string) {

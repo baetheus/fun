@@ -243,43 +243,38 @@ export function prepend<A>(
 }
 
 export function insert<A>(value: A) {
-  return (index: number) =>
-    (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
-      index < 0 || index > arr.length ? arr : unsafeInsertAt(index, value, arr);
+  return (index: number) => (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
+    index < 0 || index > arr.length ? arr : unsafeInsertAt(index, value, arr);
 }
 
 export function insertAt(index: number) {
-  return <A>(value: A) =>
-    (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
-      index < 0 || index > arr.length ? arr : unsafeInsertAt(index, value, arr);
+  return <A>(value: A) => (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
+    index < 0 || index > arr.length ? arr : unsafeInsertAt(index, value, arr);
 }
 
 export function update<A>(value: A) {
-  return (index: number) =>
-    (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
-      isOutOfBounds(index, arr) ? arr : unsafeUpdateAt(index, value, arr);
+  return (index: number) => (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
+    isOutOfBounds(index, arr) ? arr : unsafeUpdateAt(index, value, arr);
 }
 
 export function updateAt(index: number) {
-  return <A>(value: A) =>
-    (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
-      isOutOfBounds(index, arr) ? arr : unsafeUpdateAt(index, value, arr);
+  return <A>(value: A) => (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
+    isOutOfBounds(index, arr) ? arr : unsafeUpdateAt(index, value, arr);
 }
 
 export function modify<A>(modifyFn: (a: A) => A) {
-  return (index: number) =>
-    (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
-      isOutOfBounds(index, arr)
-        ? arr
-        : unsafeUpdateAt(index, modifyFn(arr[index]), arr);
+  return (index: number) => (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
+    isOutOfBounds(index, arr)
+      ? arr
+      : unsafeUpdateAt(index, modifyFn(arr[index]), arr);
 }
 
 export function modifyAt(index: number) {
   return <A>(modifyFn: (a: A) => A) =>
-    (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
-      isOutOfBounds(index, arr)
-        ? arr
-        : unsafeUpdateAt(index, modifyFn(arr[index]), arr);
+  (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
+    isOutOfBounds(index, arr)
+      ? arr
+      : unsafeUpdateAt(index, modifyFn(arr[index]), arr);
 }
 
 export function lookup(i: number) {
@@ -332,7 +327,8 @@ export const range = (
  *
  * @category combinators
  */
-export const zipWith = <B, A, C>(fb: ReadonlyArray<B>, f: (a: A, b: B) => C) =>
+export const zipWith =
+  <B, A, C>(fb: ReadonlyArray<B>, f: (a: A, b: B) => C) =>
   (
     fa: ReadonlyArray<A>,
   ): ReadonlyArray<C> => {
@@ -466,10 +462,9 @@ export const Traversable: T.Traversable<URI> = {
 
 export function getSetoid<A>(S: T.Setoid<A>): T.Setoid<ReadonlyArray<A>> {
   return ({
-    equals: (a) =>
-      (b) =>
-        a === b ||
-        (a.length === b.length && a.every((v, i) => S.equals(v)(b[i]))),
+    equals: (a) => (b) =>
+      a === b ||
+      (a.length === b.length && a.every((v, i) => S.equals(v)(b[i]))),
   });
 }
 
@@ -477,17 +472,16 @@ export function getOrd<A>(O: T.Ord<A>): T.Ord<ReadonlyArray<A>> {
   const { equals } = getSetoid(O);
   return ({
     equals,
-    lte: (b) =>
-      (a) => {
-        const length = Math.min(a.length, b.length);
-        let index = -1;
-        while (++index < length) {
-          if (!O.equals(a[index])(b[index])) {
-            return O.lte(b[index])(a[index]);
-          }
+    lte: (b) => (a) => {
+      const length = Math.min(a.length, b.length);
+      let index = -1;
+      while (++index < length) {
+        if (!O.equals(a[index])(b[index])) {
+          return O.lte(b[index])(a[index]);
         }
-        return a.length <= b.length;
-      },
+      }
+      return a.length <= b.length;
+    },
   });
 }
 

@@ -151,42 +151,40 @@ export function json<A>(decoder: Decoder<unknown, A>): Decoder<unknown, A> {
 export function intersect<B, I>(
   right: Decoder<B, I>,
 ) {
-  return <A>(left: Decoder<B, A>): Decoder<B, A & I> =>
-    (a) => {
-      const _left = left(a);
-      const _right = right(a);
+  return <A>(left: Decoder<B, A>): Decoder<B, A & I> => (a) => {
+    const _left = left(a);
+    const _right = right(a);
 
-      if (E.isRight(_left) && E.isRight(_right)) {
-        return success(merge(_left.right, _right.right));
-      }
+    if (E.isRight(_left) && E.isRight(_right)) {
+      return success(merge(_left.right, _right.right));
+    }
 
-      if (E.isLeft(_left)) {
-        if (E.isLeft(_right)) {
-          return fromDecodeError(DE.intersection(_left.left, _right.left));
-        }
-        return _left as Decoded<A & I>;
+    if (E.isLeft(_left)) {
+      if (E.isLeft(_right)) {
+        return fromDecodeError(DE.intersection(_left.left, _right.left));
       }
-      return _right as Decoded<A & I>;
-    };
+      return _left as Decoded<A & I>;
+    }
+    return _right as Decoded<A & I>;
+  };
 }
 
 export function union<B, I>(
   right: Decoder<B, I>,
 ): <A>(left: Decoder<B, A>) => Decoder<B, A | I> {
-  return <A>(left: Decoder<B, A>) =>
-    (a) => {
-      const _left = left(a);
-      if (E.isRight(_left)) {
-        return _left;
-      }
+  return <A>(left: Decoder<B, A>) => (a) => {
+    const _left = left(a);
+    if (E.isRight(_left)) {
+      return _left;
+    }
 
-      const _right = right(a);
-      if (E.isRight(_right)) {
-        return _right;
-      }
+    const _right = right(a);
+    if (E.isRight(_right)) {
+      return _right;
+    }
 
-      return fromDecodeError(DE.union(_left.left, _right.left));
-    };
+    return fromDecodeError(DE.union(_left.left, _right.left));
+  };
 }
 
 export function nullable<A, B>(
@@ -252,7 +250,8 @@ export function tuple<A extends any[]>(
   ) as Decoder<unknown, { [K in keyof A]: A[K] }>;
 }
 
-const traverseStruct = (items: Record<string, Decoder<unknown, unknown>>) =>
+const traverseStruct =
+  (items: Record<string, Decoder<unknown, unknown>>) =>
   (a: Record<string, unknown>) =>
     pipe(
       items,
@@ -282,7 +281,8 @@ const undefinedProperty: Decoded<E.Either<void, unknown>> = success(
   E.right(undefined),
 );
 
-const traversePartial = (items: Record<string, Decoder<unknown, unknown>>) =>
+const traversePartial =
+  (items: Record<string, Decoder<unknown, unknown>>) =>
   (a: Record<string, unknown>) =>
     pipe(
       items,
