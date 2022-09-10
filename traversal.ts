@@ -17,7 +17,7 @@ import * as C from "./const.ts";
 import * as A from "./array.ts";
 import { flow, identity, pipe } from "./fns.ts";
 
-import { fromTraversable } from "./from_traversable.ts";
+import { toTraversal } from "./traversable.ts";
 import { asTraversal as isoAsTraversal, iso } from "./iso.ts";
 import {
   asTraversal as prismAsTraversal,
@@ -60,7 +60,7 @@ export function traversal<S, A>(
   return ({ tag: "Traversal", traverse });
 }
 
-export { fromTraversable };
+export { toTraversal };
 
 export function composeIso<A, B, C>(
   left: Traversal<A, B>,
@@ -213,7 +213,7 @@ export function traverse<URI extends URIS>(
 ): <S, A, B = never, C = never, D = never>(
   sa: Traversal<S, Kind<URI, [A, B, C, D]>>,
 ) => Traversal<S, A> {
-  const _traversal = fromTraversable(T);
+  const _traversal = toTraversal(T);
   return (sa) => composeTraversal(sa, _traversal());
 }
 

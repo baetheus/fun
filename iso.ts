@@ -10,14 +10,14 @@ import type { Optional } from "./optional.ts";
 import type { Prism } from "./prism.ts";
 import type { Traversal } from "./traversal.ts";
 
-import { fromTraversable } from "./from_traversable.ts";
+import { toTraversal } from "./traversable.ts";
 import { lens, prop as lensProp } from "./lens.ts";
 import { prism } from "./prism.ts";
 import { optional } from "./optional.ts";
 
 import * as O from "./option.ts";
 import * as E from "./either.ts";
-import { constant, flow, identity, pipe } from "./fns.ts";
+import { constant, flow, identity } from "./fns.ts";
 
 export type Iso<S, A> = {
   readonly tag: "Iso";
@@ -198,7 +198,7 @@ export function traverse<URI extends URIS>(
 ): <S, A, B = never, C = never, D = never>(
   sa: Iso<S, Kind<URI, [A, B, C, D]>>,
 ) => Traversal<S, A> {
-  const _traversal = fromTraversable(T);
+  const _traversal = toTraversal(T);
   return (sa) => composeTraversal(sa, _traversal());
 }
 
