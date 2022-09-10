@@ -1,9 +1,9 @@
-# functional [![Coverage Status](https://coveralls.io/repos/github/nullpub/fun/badge.svg?branch=main)](https://coveralls.io/github/nullpub/fun?branch=main)
+# functional [![Coverage Status](https://coveralls.io/repos/github/baetheus/fun/badge.svg?branch=main)](https://coveralls.io/github/baetheus/fun?branch=main)
 
 functional is a set of utility modules in the vein of
 [Ramda](https://ramdajs.com/) and [fp-ts](https://gcanti.github.io/fp-ts/). It
 uses a
-[lightweight higher kinded type encoding](https://github.com/nullpub/fun/blob/main/hkt.ts)
+[lightweight higher kinded type encoding](https://github.com/baetheus/fun/blob/main/kind.ts)
 to implement type classes/algebraic structurs such as
 [Functor](https://github.com/baetheus/fun/blob/main/functor.ts),
 [Monad](https://github.com/baetheus/fun/blob/main/monad.ts), and
@@ -12,10 +12,10 @@ Originally, it followed the
 [static-land](https://github.com/fantasyland/static-land/blob/master/docs/spec.md)
 specification for these modules, but has since diverged and settled on a curried
 form of those same module definitions. It contains many common algebraic types
-such as [Option](https://github.com/nullpub/fun/blob/main/option.ts),
-[Either](https://github.com/nullpub/fun/blob/main/either.ts), and other tools
-such as [Lenses](https://github.com/nullpub/fun/blob/main/lens.ts) and
-[Schemables](https://github.com/nullpub/fun/blob/main/schemable.ts).
+such as [Option](https://github.com/baetheus/fun/blob/main/option.ts),
+[Either](https://github.com/baetheus/fun/blob/main/either.ts), and other tools
+such as [Lenses](https://github.com/baetheus/fun/blob/main/lens.ts) and
+[Schemables](https://github.com/baetheus/fun/blob/main/schemable.ts).
 
 The primary goals of functional are to be:
 
