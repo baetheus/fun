@@ -4,16 +4,18 @@ functional is a set of utility modules in the vein of
 [Ramda](https://ramdajs.com/) and [fp-ts](https://gcanti.github.io/fp-ts/). It
 uses a
 [lightweight higher kinded type encoding](https://github.com/nullpub/fun/blob/main/hkt.ts)
-to implement
-[type classes](https://github.com/nullpub/fun/blob/main/type_classes.ts) such as
-Functor, Monad, and Traversable. Originally, it followed the
+to implement type classes/algebraic structurs such as
+[Functor](https://github.com/baetheus/fun/blob/main/functor.ts),
+[Monad](https://github.com/baetheus/fun/blob/main/monad.ts), and
+[Traversable](https://github.com/baetheus/fun/blob/main/traversable.ts).
+Originally, it followed the
 [static-land](https://github.com/fantasyland/static-land/blob/master/docs/spec.md)
 specification for these modules, but has since diverged and settled on a curried
 form of those same module definitions. It contains many common algebraic types
 such as [Option](https://github.com/nullpub/fun/blob/main/option.ts),
 [Either](https://github.com/nullpub/fun/blob/main/either.ts), and other tools
-such as [Lenses](https://github.com/nullpub/fun/blob/main/optics/lens.ts) and
-[Schemables](https://github.com/nullpub/fun/blob/main/schemable/schemable.ts).
+such as [Lenses](https://github.com/nullpub/fun/blob/main/lens.ts) and
+[Schemables](https://github.com/nullpub/fun/blob/main/schemable.ts).
 
 The primary goals of functional are to be:
 
@@ -30,6 +32,93 @@ Some non-goals of functional are:
 
 - To be an exact port of fp-ts. Many changes have been implemented throughout
   functional that diverge sharply from fp-ts, this is often on purpose.
+
+## Documentation
+
+Deno comes with a documentation generator. The
+[documentation generation](https://github.com/denoland/deno_doc) doesn't handle
+re-exports or types on consts that are functions, as that work progresses the
+documentation for functional will improve. The current documentation for any
+module at the `HEAD` of the `main` branch can be found here:
+
+- [alt.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/alt.ts)
+- [alternative.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/alternative.ts)
+- [applicative.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/applicative.ts)
+- [apply.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/apply.ts)
+- [array.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/array.ts)
+- [async_iterable.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/async_iterable.ts)
+- [bifunctor.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/bifunctor.ts)
+- [boolean.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/boolean.ts)
+- [category.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/category.ts)
+- [chain.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/chain.ts)
+- [comonad.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/comonad.ts)
+- [const.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/const.ts)
+- [contravariant.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/contravariant.ts)
+- [datum.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/datum.ts)
+- [decode_error.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/decode_error.ts)
+- [decoder.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/decoder.ts)
+- [either.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/either.ts)
+- [extend.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/extend.ts)
+- [filterable.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/filterable.ts)
+- [fns.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/fns.ts)
+- [foldable.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/foldable.ts)
+- [functor.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/functor.ts)
+- [group.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/group.ts)
+- [guard.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/guard.ts)
+- [identity.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/identity.ts)
+- [io.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/io.ts)
+- [io_either.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/io_either.ts)
+- [iso.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/iso.ts)
+- [iterable.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/iterable.ts)
+- [json.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/json.ts)
+- [kind.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/kind.ts)
+- [lens.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/lens.ts)
+- [map.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/map.ts)
+- [mod.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/mod.ts)
+- [monad.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/monad.ts)
+- [monoid.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/monoid.ts)
+- [newtype.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/newtype.ts)
+- [nilable.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/nilable.ts)
+- [number.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/number.ts)
+- [optic.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/optic.ts)
+- [option.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/option.ts)
+- [optional.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/optional.ts)
+- [ord.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/ord.ts)
+- [plus.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/plus.ts)
+- [prism.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/prism.ts)
+- [profunctor.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/profunctor.ts)
+- [reader.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/reader.ts)
+- [reader_either.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/reader_either.ts)
+- [record.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/record.ts)
+- [schemable.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/schemable.ts)
+- [semigroup.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/semigroup.ts)
+- [semigroupoid.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/semigroupoid.ts)
+- [separated.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/separated.ts)
+- [set.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/set.ts)
+- [setoid.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/setoid.ts)
+- [show.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/show.ts)
+- [state.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/state.ts)
+- [string.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/string.ts)
+- [task.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/task.ts)
+- [task_either.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/task_either.ts)
+- [these.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/these.ts)
+- [traversable.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/traversable.ts)
+- [traversal.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/traversal.ts)
+- [tree.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/tree.ts)
+- [types.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/types.ts)
+
+In general, you can take any specific module url and put it into
+[https://doc.deno.land/](https://doc.deno.land/) to get a decent rendering of
+the documentation. (Note: Currently the deno_doc crate, which is what
+doc.deno.land uses, does not handle re-exports or const arrow function exports
+well. Eventually, the documentation will get better even if this libraries
+maintainers have to write those patches themselves).
+
+## Versions
+
+| Version | Deno Release                                                  | TypeScript Version                                                   |
+| ------- | ------------------------------------------------------------- | -------------------------------------------------------------------- |
+| 1.0.0   | [1.9.2](https://github.com/denoland/deno/releases/tag/v1.9.2) | [4.2.2](https://github.com/microsoft/TypeScript/releases/tag/v4.2.2) |
 
 ## History
 
@@ -57,68 +146,6 @@ writing your own implementation of an ADT such as Option or Either. From Functor
 to IndexedTraversable with everything inbetween, there is a lot to learn about
 the mechanics of programming in general by taking these small pieces apart and
 putting them back together.
-
-## Documentation
-
-Deno comes with a documentation generator. The
-[documentation generation](https://github.com/denoland/deno_doc) doesn't handle
-re-exports or types on consts that are functions, as that work progresses the
-documentation for functional will improve. The current documentation for any
-module at the `HEAD` of the `main` branch can be found here:
-
-- [Affect](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Faffect.ts)
-- [Array](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Farray.ts)
-- [Const](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Fconst.ts)
-- [Datum](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Fdatum.ts)
-- [Derivations](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Fderivations.ts)
-- [Either](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Feither.ts)
-- [Functions](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Ffns.ts)
-- [HKT](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Fhkt.ts)
-- [Identity](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Fidentity.ts)
-- [IO](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Fio.ts)
-- [IOEither](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Fio_either.ts)
-- [Map](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Fmap.ts)
-- [Monoid](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Fmonoid.ts)
-- [Nilable](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Fnilable.ts)
-- [Option](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Foption.ts)
-- [Ord](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Ford.ts)
-- [Reader](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Freader.ts)
-- [ReaderEither](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Freader_either.ts)
-- [Record](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Frecord.ts)
-- [Semigroup](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Fsemigroup.ts)
-- [Sequence](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Fsequence.ts)
-- [Set](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Fset.ts)
-- [Setoid](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Fsetoid.ts)
-- [State](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Fstate.ts)
-- [Task](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Ftask.ts)
-- [TaskEither](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Ftask_either.ts)
-- [These](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Fthese.ts)
-- [Tree](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Ftree.ts)
-- [Type Classes](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Ftype_classes.ts)
-- [Types](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Ftypes.ts)
-- [At](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Foptics/at.ts)
-- [Index](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Foptics%2Findex.ts)
-- [Iso](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Foptics%2Fiso.ts)
-- [Lens](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Foptics%2Flens.ts)
-- [Optional](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Foptics%2Foptional.ts)
-- [Prism](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Foptics%2Fprism.ts)
-- [Traversal](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Foptics%2Ftraversal.ts)
-- [Decoder](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Fschemable%2Fdecoder.ts)
-- [Guard](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Fschemable%2Fguard.ts)
-- [Schemable](https://doc.deno.land/https/raw.githubusercontent.com%2Fnullpub%2Ffun%2Fmain%2Fschemable%2Fschemable.ts)
-
-In general, you can take any specific module url and put it into
-[https://doc.deno.land/](https://doc.deno.land/) to get a decent rendering of
-the documentation. (Note: Currently the deno_doc crate, which is what
-doc.deno.land uses, does not handle re-exports or const arrow function exports
-well. Eventually, the documentation will get better even if this libraries
-maintainers have to write those patches themselves).
-
-## Versions
-
-| Version | Deno Release                                                  | TypeScript Version                                                   |
-| ------- | ------------------------------------------------------------- | -------------------------------------------------------------------- |
-| 1.0.0   | [1.9.2](https://github.com/denoland/deno/releases/tag/v1.9.2) | [4.2.2](https://github.com/microsoft/TypeScript/releases/tag/v4.2.2) |
 
 ## Contributions
 
