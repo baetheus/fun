@@ -1,10 +1,10 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
-import * as F from "../from_traversable.ts";
+import * as F from "../traversable.ts";
 import * as O from "../option.ts";
 
-Deno.test("FromTraversable fromTraversable", () => {
-  const createTraversal = F.fromTraversable(O.Traversable);
+Deno.test("Traversable toTraversal", () => {
+  const createTraversal = F.toTraversal(O.Traversable);
   const traversal = createTraversal<number>();
 
   assertEquals(O.Traversable.traverse, traversal.traverse);

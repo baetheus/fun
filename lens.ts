@@ -11,7 +11,7 @@ import type { Traversal } from "./traversal.ts";
 import type { Optional } from "./optional.ts";
 import type { ReadonlyRecord } from "./record.ts";
 
-import { fromTraversable } from "./from_traversable.ts";
+import { toTraversal } from "./traversable.ts";
 import { prism } from "./prism.ts";
 import { optional } from "./optional.ts";
 
@@ -223,7 +223,7 @@ export function traverse<URI extends URIS>(
 ): <S, A, B = never, C = never, D = never>(
   sa: Lens<S, Kind<URI, [A, B, C, D]>>,
 ) => Traversal<S, A> {
-  const _traversal = fromTraversable(T);
+  const _traversal = toTraversal(T);
   return (sa) => composeTraversal(sa, _traversal());
 }
 

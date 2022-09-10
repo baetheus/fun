@@ -8,7 +8,7 @@ import type { Lens } from "./lens.ts";
 import type { Optional } from "./optional.ts";
 import type { Traversal } from "./traversal.ts";
 
-import { fromTraversable } from "./from_traversable.ts";
+import { toTraversal } from "./traversable.ts";
 import { optional } from "./optional.ts";
 
 import * as O from "./option.ts";
@@ -200,7 +200,7 @@ export function traverse<URI extends URIS>(
 ): <S, A, B = never, C = never, D = never>(
   sa: Prism<S, Kind<URI, [A, B, C, D]>>,
 ) => Traversal<S, A> {
-  const _traversal = fromTraversable(T);
+  const _traversal = toTraversal(T);
   return (sa) => composeTraversal(sa, _traversal());
 }
 
