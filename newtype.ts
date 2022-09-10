@@ -1,50 +1,229 @@
+/**
+ * Newtype presents a type level "rebranding" of an existing type.
+ *
+ * It's basic purpose is to create a branded type from an existing
+ * type. This is much like using TypeScript type aliases, ie.
+ * `type MyNumber = number`. However, Newtype will prevent the
+ * existing type from being used where the Branded type is
+ * specified.
+ */
+
 import type { Monoid, Ord, Predicate, Semigroup, Setoid } from "./types.ts";
 import type { Iso } from "./iso.ts";
 import type { Prism } from "./prism.ts";
 
-import { iso } from "./iso.ts";
-import { fromPredicate as prismFromPredicate } from "./prism.ts";
+import * as I from "./iso.ts";
+import * as P from "./prism.ts";
 import { unsafeCoerce } from "./fns.ts";
 
-export type Newtype<URI, A> = {
-  readonly URI: URI;
-  readonly A: A;
+// ---
+// Locals
+// ---
+
+/**
+ * We use a single Iso<any, any> when constructing an iso for
+ * Newtype. This is only for optimization.
+ */
+// deno-lint-ignore no-explicit-any
+const anyIso = I.iso<any, any>(unsafeCoerce, unsafeCoerce);
+
+/**
+ * We use non-existing, non-exported symbols to keep
+ * the
+ */
+declare const Brand: unique symbol;
+declare const Representation: unique symbol;
+
+// ---
+// Types
+// ---
+
+/**
+ * Create a branded type from an existing type. The branded
+ * type can be used anywhere the existing type can, but the
+ * existing type cannot be used where the branded one can.
+ *
+ * It is important to note that while a Newtype looks like
+ * a struct, its actual representation is that of the
+ * inner type.
+ *
+ * @example
+ * ```ts
+ * import type { Newtype } from "./newtype.ts";
+ *
+ * type Integer = Newtype<'Integer', number>;
+ *
+ * const int = 1 as unknown as Integer;
+ * const num = 1;
+ *
+ * declare function addOne(n: Integer): number;
+ *
+ * addOne(int); // This is ok!
+ * // addOne(num); // This is not
+ * ```
+ *
+ * @since 2.0.0
+ */
+export type Newtype<Brand, Representation> = {
+  readonly [Brand]: Brand;
+  readonly [Representation]: Representation;
 };
 
+/**
+ * Extracts the inner type value from a Newtype.
+ *
+ * @example
+ * ```ts
+ * import type { Newtype, From } from "./newtype.ts";
+ *
+ * type Integer = Newtype<'Integer', number>;
+ *
+ * type InnerInteger = From<Integer>; // number
+ * ```
+ *
+ * @since 2.0.0
+ */
+export type From<T> = T extends Newtype<infer _, infer A> ? A : never;
+
+/**
+ * A type alias for Newtype<any, any> that is useful when constructing
+ * Newtype related runtime instances.
+ *
+ * @since 2.0.0
+ */
 // deno-lint-ignore no-explicit-any
 export type AnyNewtype = Newtype<any, any>;
 
-export type URIOf<N extends AnyNewtype> = N["URI"];
+// ---
+// Combinators
+// ---
 
-export type CarrierOf<N extends AnyNewtype> = N["A"];
-
-export function getSetoid<S extends AnyNewtype>(
-  S: Setoid<CarrierOf<S>>,
-): Setoid<S> {
-  return S;
-}
-
-export function getOrd<S extends AnyNewtype>(O: Ord<CarrierOf<S>>): Ord<S> {
-  return O;
-}
-
-export const getSemigroup = <S extends AnyNewtype>(
-  S: Semigroup<CarrierOf<S>>,
-): Semigroup<S> => S;
-
-export const getMonoid = <S extends AnyNewtype>(
-  M: Monoid<CarrierOf<S>>,
-): Monoid<S> => M;
-
-// deno-lint-ignore no-explicit-any
-const anyIso = iso<any, any>(unsafeCoerce, unsafeCoerce);
-
-export function toIso<S extends AnyNewtype>(): Iso<S, CarrierOf<S>> {
+/**
+ * Construct an Iso instance for a Newtype. This is useful to
+ * keep from using manual hacks to retype a Newtype. This
+ * should only be used if the representation can always
+ * be used in place of the Newtype.
+ *
+ * @example
+ * ```ts
+ * import { Newtype, iso } from "./newtype.ts";
+ *
+ * type Real = Newtype<'Real', number>;
+ * const isoReal = iso<Real>();
+ *
+ * const real: Real = isoReal.get(1);
+ * const num: number = isoReal.reverseGet(real);
+ * ```
+ */
+export function iso<T extends AnyNewtype>(): Iso<From<T>, T> {
   return anyIso;
 }
 
-export function fromPredicate<S extends AnyNewtype>(
-  predicate: Predicate<CarrierOf<S>>,
-): Prism<CarrierOf<S>, S> {
-  return prismFromPredicate(predicate);
+/**
+ * Construct a Prism instance for a Newtype from a predicate.
+ * Use this when the Newtype is a strict subset of the
+ * representation.
+ *
+ * @example
+ * ```ts
+ * import { Newtype, prism } from "./newtype.ts";
+ * import * as O from "./option.ts";
+ * import { pipe } from "./fns.ts";
+ *
+ * type Integer = Newtype<'Integer', number>;
+ * const prismInteger = prism<Integer>(Number.isInteger);
+ *
+ * const int = prismInteger.getOption(1); // Option<Integer>
+ * const num = pipe(int, O.map(prismInteger.reverseGet)); // Option<number>
+ * ```
+ */
+export function prism<T extends AnyNewtype>(
+  predicate: Predicate<From<T>>,
+): Prism<From<T>, T> {
+  return P.fromPredicate(predicate) as unknown as Prism<From<T>, T>;
+}
+// ---
+// Instance Getters
+// ---
+
+/**
+ * Retype an existing Setoid from an inner type to a Newtype.
+ *
+ * @example
+ * ```ts
+ * import { Newtype, getSetoid } from "./newtype.ts";
+ * import * as N from "./number.ts";
+ *
+ * type Integer = Newtype<'Integer', number>;
+ *
+ * const setoidInteger = getSetoid<Integer>(N.Setoid);
+ * ```
+ *
+ * @since 2.0.0
+ */
+export function getSetoid<T extends AnyNewtype>(
+  setoid: Setoid<From<T>>,
+): Setoid<T> {
+  return setoid as Setoid<T>;
+}
+
+/**
+ * Retype an existing Ord from an inner type to a Newtype.
+ *
+ * @example
+ * ```ts
+ * import { Newtype, getOrd } from "./newtype.ts";
+ * import * as N from "./number.ts";
+ *
+ * type Integer = Newtype<'Integer', number>;
+ *
+ * const ordInteger = getOrd<Integer>(N.Ord);
+ * ```
+ *
+ * @since 2.0.0
+ */
+export function getOrd<T extends AnyNewtype>(ord: Ord<From<T>>): Ord<T> {
+  return ord as Ord<T>;
+}
+
+/**
+ * Retype an existing Semigroup from an inner type to a Newtype.
+ *
+ * @example
+ * ```ts
+ * import { Newtype, getSemigroup } from "./newtype.ts";
+ * import * as N from "./number.ts";
+ *
+ * type Integer = Newtype<'Integer', number>;
+ *
+ * const semigroupInteger = getSemigroup<Integer>(N.SemigroupSum);
+ * ```
+ *
+ * @since 2.0.0
+ */
+export function getSemigroup<T extends AnyNewtype>(
+  semigroup: Semigroup<From<T>>,
+): Semigroup<T> {
+  return semigroup as unknown as Semigroup<T>;
+}
+
+/**
+ * Retype an existing Monoid from an inner type to a Newtype.
+ *
+ * @example
+ * ```ts
+ * import { Newtype, getMonoid } from "./newtype.ts";
+ * import * as N from "./number.ts";
+ *
+ * type Integer = Newtype<'Integer', number>;
+ *
+ * const monoidInteger = getMonoid<Integer>(N.MonoidSum);
+ * ```
+ *
+ * @since 2.0.0
+ */
+export function getMonoid<T extends AnyNewtype>(
+  monoid: Monoid<From<T>>,
+): Monoid<T> {
+  return monoid as unknown as Monoid<T>;
 }
