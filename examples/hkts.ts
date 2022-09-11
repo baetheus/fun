@@ -98,21 +98,22 @@ export type Option<A> = None | Some<A>;
 export const none: Option<never> = { tag: "None" };
 export const some = <A>(value: A): Option<A> => ({ tag: "Some", value });
 
-export const map = <A, I>(fai: (a: A) => I) =>
-  (ta: Option<A>): Option<I> => ta.tag === "Some" ? some(fai(ta.value)) : none;
+export const map = <A, I>(fai: (a: A) => I) => (ta: Option<A>): Option<I> =>
+  ta.tag === "Some" ? some(fai(ta.value)) : none;
 
-export const ap = <A, I>(tfai: Option<(a: A) => I>) =>
-  (ta: Option<A>): Option<I> =>
+export const ap =
+  <A, I>(tfai: Option<(a: A) => I>) => (ta: Option<A>): Option<I> =>
     tfai.tag === "Some" && ta.tag === "Some"
       ? some(tfai.value(ta.value))
       : none;
 
 export const Applicative: Applicative<Option<_>> = { of: some, map, ap };
 
-export const traverse = <U>(A: Applicative<U>) =>
+export const traverse =
+  <U>(A: Applicative<U>) =>
   <A, I>(faui: (a: A) => $<U, [I]>) =>
-    (ta: Option<A>): $<U, [Option<I>]> =>
-      ta.tag === "Some" ? pipe(faui(ta.value), A.map(some)) : A.of(none);
+  (ta: Option<A>): $<U, [Option<I>]> =>
+    ta.tag === "Some" ? pipe(faui(ta.value), A.map(some)) : A.of(none);
 
 export const Traversable: Traversable<Option<_>> = { map, traverse };
 
@@ -139,11 +140,10 @@ export const right = <A>(right: A): Either<never, A> => ({
 
 export const ApplicativeEither: Applicative<Either<_1, _>> = {
   of: right,
-  ap: <A, I, B>(tfai: Either<B, (a: A) => I>) =>
-    (ta: Either<B, A>) =>
-      ta.tag === "Left"
-        ? ta
-        : (tfai.tag === "Left" ? tfai : right(tfai.right(ta.right))),
+  ap: <A, I, B>(tfai: Either<B, (a: A) => I>) => (ta: Either<B, A>) =>
+    ta.tag === "Left"
+      ? ta
+      : (tfai.tag === "Left" ? tfai : right(tfai.right(ta.right))),
   map: (fai) => (ta) => ta.tag === "Right" ? right(fai(ta.right)) : ta,
 };
 
