@@ -1,9 +1,10 @@
-import type { Kind, URIS } from "./kind.ts";
-import type { Predicate } from "./types.ts";
 import type * as T from "./types.ts";
+import type { Kind, URIS } from "./kind.ts";
+import type { Predicate } from "./predicate.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
-import { flow, identity, isNotNil, pipe } from "./fns.ts";
+import { isNotNil } from "./nilable.ts";
+import { flow, identity, pipe } from "./fns.ts";
 
 /**
  * The None type represents the non-existence of a value.

@@ -1,5 +1,4 @@
 import type { Setoid } from "./setoid.ts";
-import type { Fn } from "./types.ts";
 
 import { flow, lessThanOrEqual, strictEquals } from "./fns.ts";
 
@@ -7,13 +6,13 @@ import { flow, lessThanOrEqual, strictEquals } from "./fns.ts";
  * Ord
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#ord
  */
-export interface Ord<T> extends Setoid<T> {
+export type Ord<T> = Setoid<T> & {
   readonly lte: (a: T) => (b: T) => boolean;
-}
+};
 
 export type Ordering = -1 | 0 | 1;
 
-export type Compare<A> = Fn<[A, A], Ordering>;
+export type Compare<A> = (left: A, right: A) => Ordering;
 
 export const ordString: Ord<string> = {
   equals: strictEquals,

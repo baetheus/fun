@@ -1,6 +1,6 @@
-import type { Kind } from "./kind.ts";
-import type { Option } from "./option.ts";
+import type * as __ from "./kind.ts";
 import type * as T from "./types.ts";
+import type { Option } from "./option.ts";
 
 import * as O from "./option.ts";
 import * as A from "./array.ts";
