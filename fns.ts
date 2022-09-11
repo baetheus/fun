@@ -1,5 +1,4 @@
 // deno-lint-ignore-file no-explicit-any
-import type { ConstPrimitive, Fn, Nil, UnknownFn } from "./types.ts";
 
 /**
  * handleThrow
@@ -28,28 +27,19 @@ export function handleThrow<AS extends unknown[], R, I>(
  *      const p1 = typeOf(null); // "null"
  *      const p2 = typeOf(1); // "number"
  */
-export function typeOf(x: unknown): ConstPrimitive | "null" {
+export function typeOf(
+  x: unknown,
+):
+  | "string"
+  | "number"
+  | "bigint"
+  | "boolean"
+  | "symbol"
+  | "undefined"
+  | "object"
+  | "function"
+  | "null" {
   return (x === null ? "null" : typeof x);
-}
-
-/**
- * isNotNil
- *
- * Takes a value and returns true if the value is not null or undefined. Also
- * acts as a type guard.
- */
-export function isNotNil<A>(a: A): a is NonNullable<A> {
-  return a !== null && a !== undefined;
-}
-
-/**
- * isNil
- *
- * Takes a value and returns false if the value is not null or undefined. Also
- * acts as a type guard.
- */
-export function isNil(a: unknown): a is Nil {
-  return a === null || a === undefined;
 }
 
 /**
@@ -94,8 +84,8 @@ export function identity<A>(a: A): A {
  * function.
  */
 export function compose<B, C>(
-  fbc: Fn<[B], C>,
-): <A extends unknown[]>(fab: Fn<A, B>) => Fn<A, C> {
+  fbc: (b: B) => C,
+): <AS extends unknown[]>(fab: (...as: AS) => B) => (...as: AS) => C {
   return (fab) => (...args) => fbc(fab(...args));
 }
 
@@ -142,9 +132,9 @@ export function memoize<A, B>(fab: (a: A) => B): (a: A) => B {
  * Takes two types and returns their intersection (if it is possible)
  */
 export function intersect<A, B>(a: A, b: B): A & B {
-  if (isNil(a)) {
+  if (a === null || a === undefined) {
     return b as A & B;
-  } else if (isNil(b)) {
+  } else if (b === null || b === undefined) {
     return a as A & B;
   } else {
     return Object.assign({}, a, b);
@@ -169,7 +159,7 @@ export function apply<AS extends unknown[], B>(
  * Takes a function and returns that function (pipeable Function.call)
  */
 export function call<AS extends unknown[], B>(
-  fab: Fn<AS, B>,
+  fab: (...as: AS) => B,
 ): (...as: AS) => B {
   return (...as) => fab(...as);
 }
@@ -194,7 +184,7 @@ export function has<
  *
  * A special case of apply for functions that only take a single argument
  */
-export function apply1<A, B>(a: A, fn: Fn<[A], B>): B {
+export function apply1<A, B>(a: A, fn: (a: A) => B): B {
   return fn(a);
 }
 
@@ -410,7 +400,7 @@ export function pipe<A, B, C, D, E, F, G, H, I, J, K, L>(
   kl: (K: K) => L,
   end: never,
 ): L;
-export function pipe(a: unknown, ...fns: UnknownFn[]): unknown {
+export function pipe(a: unknown, ...fns: ((u: unknown) => unknown)[]): unknown {
   return fns.reduce(apply1, a);
 }
 
@@ -499,7 +489,7 @@ export function flow<
 ): (...a: A) => J;
 export function flow<AS extends unknown[], B>(
   a: (...as: AS) => B,
-  ...fns: Fn<[any], any>[]
+  ...fns: ((_: any) => any)[]
 ): (...as: AS) => unknown {
   return (...args: AS): unknown => fns.reduce(apply1, a(...args));
 }

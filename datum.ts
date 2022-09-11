@@ -1,7 +1,8 @@
 import type { Kind, URIS } from "./kind.ts";
 import type * as T from "./types.ts";
 
-import { apply, flow, identity, isNotNil, pipe } from "./fns.ts";
+import { isNotNil } from "./nilable.ts";
+import { apply, flow, identity, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
 export type Initial = {

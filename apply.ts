@@ -2,7 +2,7 @@
 import type { Kind, URIS } from "./kind.ts";
 import type { Functor } from "./functor.ts";
 import type { Semigroup } from "./semigroup.ts";
-import type { NonEmptyArray, NonEmptyRecord } from "./types.ts";
+import type { NonEmptyRecord } from "./types.ts";
 
 import { pipe } from "./fns.ts";
 
@@ -32,6 +32,8 @@ function _loopRecord<K extends string>(
     ? init
     : (a: unknown) => _loopRecord(keys, i + 1, { ...init, [keys[i]]: a });
 }
+
+type NonEmptyArray<A> = readonly [A, ...A[]];
 
 // deno-fmt-ignore
 type SequenceTuple<URI extends URIS, R extends NonEmptyArray<Kind<URI, any[]>>> = Kind<URI, [

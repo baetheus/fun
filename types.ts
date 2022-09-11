@@ -1,149 +1,191 @@
 /**
- * Re-exports of algebraic structures
+ * Types is the mod.ts file for all type classes
+ * in fun. It also contains useful types that don't
+ * belong anywhere else in fun.
  */
 
+/**
+ * Reexport of Alt type
+ */
 export type { Alt } from "./alt.ts";
 
+/**
+ * Reexport of Alternative type
+ */
 export type { Alternative } from "./alternative.ts";
 
+/**
+ * Reexport of Applicative type
+ */
 export type { Applicative } from "./applicative.ts";
 
+/**
+ * Reexport of Apply type
+ */
 export type { Apply } from "./apply.ts";
 
+/**
+ * Reexport of Bifunctor type
+ */
 export type { Bifunctor } from "./bifunctor.ts";
 
+/**
+ * Reexport of Category type
+ */
 export type { Category } from "./category.ts";
 
+/**
+ * Reexport of Chain type
+ */
 export type { Chain } from "./chain.ts";
 
+/**
+ * Reexport of Comonad type
+ */
 export type { Comonad } from "./comonad.ts";
 
+/**
+ * Reexport of Contravariant type
+ */
 export type { Contravariant } from "./contravariant.ts";
 
+/**
+ * Reexport of Extend type
+ */
 export type { Extend } from "./extend.ts";
 
+/**
+ * Reexport of Filterable type
+ */
 export type { Filterable } from "./filterable.ts";
 
+/**
+ * Reexport of Foldable type
+ */
 export type { Foldable } from "./foldable.ts";
 
+/**
+ * Reexport of Functor type
+ */
 export type { Functor } from "./functor.ts";
 
+/**
+ * Reexport of Group type
+ */
 export type { Group } from "./group.ts";
 
+/**
+ * Reexport of Monad and MonadThrow types
+ */
 export type { Monad, MonadThrow } from "./monad.ts";
 
+/**
+ * Reexport of Monoid type
+ */
 export type { Monoid } from "./monoid.ts";
 
+/**
+ * Reexport of Ord type
+ */
 export type { Ord } from "./ord.ts";
 
+/**
+ * Reexport of Plus type
+ */
 export type { Plus } from "./plus.ts";
 
+/**
+ * Reexport of Profunctor type
+ */
 export type { Profunctor } from "./profunctor.ts";
 
+/**
+ * Reexport of Schemable type
+ */
 export type { Schemable } from "./schemable.ts";
 
+/**
+ * Reexport of Semigroup type
+ */
 export type { Semigroup } from "./semigroup.ts";
 
+/**
+ * Reexport of Semigroupoid type
+ */
 export type { Semigroupoid } from "./semigroupoid.ts";
 
+/**
+ * Reexport of Setoid type
+ */
 export type { Setoid } from "./setoid.ts";
 
+/**
+ * Reexport of Show type
+ */
 export type { Show } from "./show.ts";
 
+/**
+ * Reexport of Traversable type
+ */
 export type { Traversable } from "./traversable.ts";
 
 /**
- * String representations of primitive values as returned by typeof
- */
-export type ConstPrimitive =
-  | "string"
-  | "number"
-  | "bigint"
-  | "boolean"
-  | "symbol"
-  | "undefined"
-  | "object"
-  | "function";
-
-/**
- * Fn Type
+ * NonEmptyRecord<R> is a bounding type that will will
+ * return a type level never if the type value of R is
+ * either not a record is is a record without any
+ * index or key values.
  *
- * Represents a function with arbitrary arity of arguments
- */
-export type Fn<AS extends unknown[], B> = (...as: AS) => B;
-
-/**
- * UnknownFn Type
+ * @example
+ * ```
+ * import type { NonEmptyRecord } from "./types.ts";
  *
- * Represents a function with unknown unputs and output
- */
-export type UnknownFn = Fn<unknown[], unknown>;
-
-/**
- * Nil Type
+ * function doSomething<R>(_: NonEmptyRecord<R>): void {
+ *   return undefined;
+ * }
  *
- * An alias for undefined | null
- */
-export type Nil = undefined | null;
-
-/**
- * Predicate<A>
+ * const result = doSomething({ one: 1 }); // This is ok
+ * // const result2 = doSomethign({}); // This is a type error
+ * ```
  *
- * An alias for a function that takes type A and returns a boolean
- */
-export type Predicate<A> = Fn<[A], boolean>;
-
-/**
- * Guard<A>
- *
- * An alias for the TypeScript type guard function
- */
-export type Guard<A> = (a: unknown) => a is A;
-
-/**
- * Refinement<A, B extends A>
- *
- * An alias for a function that takes an A type and refines it to a B type
- */
-export type Refinement<A, B extends A> = (a: A) => a is B;
-
-/**
- * Ordering Type
- *
- * Ordering is a type alias for -1 | 0 | 1 consts
- */
-export type Ordering = -1 | 0 | 1;
-
-/**
- * NonEmptyRecord<R>
- *
- * NonEmptyRecord<R> returns R only if it has properties, otherwise it
- * coerces to never. When used in the argument position this forces a generic
- * to have keys.
+ * @since 2.0.0
  */
 export type NonEmptyRecord<R> = keyof R extends never ? never : R;
 
-export type NonEmptyArray<A> = [A, ...A[]];
-
 /**
- * Return
+ * Args is an extraction type over functions. Given any function
+ * type it will return a tuple type of all of the functions
+ * argument types in order.
  *
- * Extracts the return type of a function type
- */
-// deno-lint-ignore no-explicit-any
-export type Return<T> = T extends (...as: any[]) => infer R ? R : never;
-
-/**
- * Args
+ * @example
+ * ```ts
+ * import type { Args } from "./types.ts";
  *
- * Extracts the argument types of a function type
+ * function _doSomething(n: number, s: string): number {
+ *   return n + s.length;
+ * }
+ *
+ * type args = Args<typeof _doSomething>; // [number, string]
+ * ```
+ *
+ * @since 2.0.0
  */
 // deno-lint-ignore no-explicit-any
 export type Args<T> = T extends (...as: infer AS) => any ? AS : never;
 
 /**
- * Or
+ * Return is an extraction type over functions. Given any function
+ * type it will output the return type of that function.
  *
- * Replaces a type A with B if B doesn't extend never;
+ * @example
+ * ```ts
+ * import type { Return } from "./types.ts";
+ *
+ * type SomeFunc = (n: number, s: string) => Record<string, boolean>;
+ *
+ * type result = Return<SomeFunc>; // Record<string, boolean>;
+ * ```
+ *
+ * @since 2.0.0
  */
-export type Or<A, B> = B extends never ? A : B;
+// deno-lint-ignore no-explicit-any
+export type Return<T> = T extends (...as: any[]) => infer R ? R : never;

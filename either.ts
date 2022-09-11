@@ -1,9 +1,11 @@
 import type { Kind, URIS } from "./kind.ts";
 import type * as T from "./types.ts";
-import type { Fn, Predicate, Refinement } from "./types.ts";
+import type { Predicate } from "./predicate.ts";
+import type { Refinement } from "./refinement.ts";
 
 import * as O from "./option.ts";
-import { flow, isNotNil, pipe } from "./fns.ts";
+import { isNotNil } from "./nilable.ts";
+import { flow, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
 export type Left<L> = { tag: "Left"; left: L };
@@ -63,9 +65,9 @@ export function tryCatch<E, A>(
 }
 
 export function tryCatchWrap<E, A, AS extends unknown[]>(
-  fn: Fn<AS, A>,
+  fn: (...as: AS) => A,
   onError: (e: unknown) => E,
-): Fn<AS, Either<E, A>> {
+): (...as: AS) => Either<E, A> {
   return (...as: AS) => {
     try {
       return right(fn(...as));

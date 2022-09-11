@@ -7,24 +7,6 @@ import {
 import * as F from "../fns.ts";
 import { zip } from "../array.ts";
 
-Deno.test("fns isNotNil", () => {
-  assertEquals(F.isNotNil(undefined), false);
-  assertEquals(F.isNotNil(null), false);
-  assertEquals(F.isNotNil(1), true);
-  assertEquals(F.isNotNil(0), true);
-  assertEquals(F.isNotNil("Hello"), true);
-  assertEquals(F.isNotNil(""), true);
-});
-
-Deno.test("fns isNil", () => {
-  assertEquals(F.isNil(undefined), true);
-  assertEquals(F.isNil(null), true);
-  assertEquals(F.isNil(1), false);
-  assertEquals(F.isNil(0), false);
-  assertEquals(F.isNil("Hello"), false);
-  assertEquals(F.isNil(""), false);
-});
-
 Deno.test("fns isRecord", () => {
   assertEquals(F.isRecord(null), false);
   assertEquals(F.isRecord(undefined), false);

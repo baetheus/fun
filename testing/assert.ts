@@ -1,7 +1,7 @@
 import { assertEquals } from "https://deno.land/std@0.77.0/testing/asserts.ts";
 
 import type * as T from "../types.ts";
-import type { Predicate } from "../types.ts";
+import type { Predicate } from "../predicate.ts";
 import type { Kind, URIS } from "../kind.ts";
 
 import { apply, flow, pipe } from "../fns.ts";

@@ -1,5 +1,5 @@
 import type { Kind, URIS } from "./kind.ts";
-import type { Predicate } from "./types.ts";
+import type { Predicate } from "./predicate.ts";
 import type * as T from "./types.ts";
 
 import { flow, pipe } from "./fns.ts";
