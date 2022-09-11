@@ -167,59 +167,6 @@ export const assertMonoid = <T>(
 // };
 
 /** *****************************************************************************
- * Assert: Semigroupoid
- * TODO Extend Types
- * *****************************************************************************/
-
-// export const assertSemigroupoid = <
-//   URI extends URIS,
-//   A = never,
-//   B = never,
-//   C = never,
-//   D = never,
-// >(
-//   S: T.Semigroupoid<URI>,
-//   { a, b, c }: Record<"a" | "b" | "c", Kind<URI, [A, B, C, D]>>,
-// ): void => {
-//   // Associativity: S.compose(S.compose(a, b), c) ≡ S.compose(a, S.compose(b, c))
-//   assertEquals(
-//     S.compose(c)(S.compose(b)(a)),
-//     S.compose(S.compose(c)(b))(a),
-//   );
-// };
-
-/** *****************************************************************************
- * Assert: Category
- * TODO Extend Types
- * *****************************************************************************/
-
-// export const assertCategory = <
-//   URI extends URIS,
-//   A = never,
-//   B = never,
-//   C = never,
-//   D = never,
-// >(
-//   C: T.Category<URI>,
-//   { a, b, c }: Record<"a" | "b" | "c", Kind<URI, [A, B, C, D]>>,
-// ): void => {
-//   // Right identity: M.compose(a, M.id()) ≡ a
-//   assertEquals(
-//     pipe(a, C.compose(C.id())),
-//     a,
-//   );
-//
-//   // Left identity: M.compose(M.id(), a) ≡ a
-//   assertEquals(
-//     C.compose(a)(C.id()),
-//     a,
-//   );
-//
-//   // Assert Semigroupoid
-//   assertSemigroupoid(C, { a, b, c });
-// };
-
-/** *****************************************************************************
  * Assert: Filterable
  * *****************************************************************************/
 
