@@ -30,11 +30,6 @@ export type { Apply } from "./apply.ts";
 export type { Bifunctor } from "./bifunctor.ts";
 
 /**
- * Reexport of Category type
- */
-export type { Category } from "./category.ts";
-
-/**
  * Reexport of Chain type
  */
 export type { Chain } from "./chain.ts";
@@ -108,11 +103,6 @@ export type { Schemable } from "./schemable.ts";
  * Reexport of Semigroup type
  */
 export type { Semigroup } from "./semigroup.ts";
-
-/**
- * Reexport of Semigroupoid type
- */
-export type { Semigroupoid } from "./semigroupoid.ts";
 
 /**
  * Reexport of Setoid type
