@@ -1,8 +1,9 @@
 import type * as T from "./types.ts";
 import type { Kind, URIS } from "./kind.ts";
-import type { Predicate, Refinement } from "./types.ts";
 import type { Either } from "./either.ts";
 import type { Option } from "./option.ts";
+import type { Predicate } from "./predicate.ts";
+import type { Refinement } from "./refinement.ts";
 
 import type { Optic } from "./optic.ts";
 import type { Iso } from "./iso.ts";

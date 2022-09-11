@@ -1,10 +1,12 @@
 //deno-lint-ignore-file no-explicit-any
 import type { Kind, URIS } from "./kind.ts";
-import type { Predicate } from "./types.ts";
+import type { Predicate } from "./predicate.ts";
 
 /**
  * Filterable
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#filterable
+ *
+ * TODO; add refine method
  */
 export interface Filterable<URI extends URIS, _ extends any[] = any[]> {
   readonly filter: <A>(

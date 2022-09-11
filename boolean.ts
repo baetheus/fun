@@ -5,3 +5,7 @@ export function equals(second: boolean): (first: boolean) => boolean {
 }
 
 export const Setoid: T.Setoid<boolean> = { equals };
+
+export const constTrue = () => true;
+
+export const constFalse = () => false;

@@ -1,8 +1,9 @@
 import { Kind, URIS } from "./kind.ts";
 import type * as T from "./types.ts";
 import type { Separated } from "./separated.ts";
-import type { Predicate, Refinement } from "./types.ts";
 import type { Option } from "./option.ts";
+import type { Predicate } from "./predicate.ts";
+import type { Refinement } from "./refinement.ts";
 
 import { separated } from "./separated.ts";
 import { none, some } from "./option.ts";
