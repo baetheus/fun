@@ -2,10 +2,7 @@ import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
 import * as E from "../either.ts";
 import * as O from "../option.ts";
-import { ordNumber } from "../ord.ts";
-import { monoidSum } from "../monoid.ts";
-import { Setoid as setoidNumber } from "../number.ts";
-import { semigroupSum } from "../semigroup.ts";
+import * as N from "../number.ts";
 import { pipe } from "../fns.ts";
 
 import * as AS from "./assert.ts";
@@ -119,7 +116,7 @@ Deno.test("Either getShow", () => {
 });
 
 Deno.test("Either getSetoid", () => {
-  const Setoid = E.getSetoid(setoidNumber, setoidNumber);
+  const Setoid = E.getSetoid(N.Setoid, N.Setoid);
   const right = Setoid.equals(E.right(1));
   const left = Setoid.equals(E.left(1));
 
@@ -142,7 +139,7 @@ Deno.test("Either getSetoid", () => {
 });
 
 Deno.test("Either getOrd", () => {
-  const Ord = E.getOrd(ordNumber, ordNumber);
+  const Ord = E.getOrd(N.Ord, N.Ord);
   const right = Ord.lte(E.right(2));
   const left = Ord.lte(E.left(2));
 
@@ -164,7 +161,7 @@ Deno.test("Either getOrd", () => {
 });
 
 Deno.test("Either getLeftSemigroup", () => {
-  const Semigroup = E.getLeftSemigroup<number, number>(semigroupSum);
+  const Semigroup = E.getLeftSemigroup<number, number>(N.SemigroupSum);
   const right = Semigroup.concat(E.right(1));
   const left = Semigroup.concat(E.left(1));
 
@@ -178,7 +175,7 @@ Deno.test("Either getLeftSemigroup", () => {
 });
 
 Deno.test("Either getRightSemigroup", () => {
-  const Semigroup = E.getRightSemigroup<number, number>(semigroupSum);
+  const Semigroup = E.getRightSemigroup<number, number>(N.SemigroupSum);
   const right = Semigroup.concat(E.right(1));
   const left = Semigroup.concat(E.left(1));
 
@@ -197,16 +194,16 @@ Deno.test("Either getRightSemigroup", () => {
 });
 
 Deno.test("Either getRightMonoid", () => {
-  const Monoid = E.getRightMonoid<number, number>(monoidSum);
+  const Monoid = E.getRightMonoid<number, number>(N.MonoidSum);
 
   AS.assertMonoid(Monoid, { a: E.right(1), b: E.right(1), c: E.right(1) });
   AS.assertMonoid(Monoid, { a: E.left(1), b: E.left(1), c: E.left(1) });
 
-  assertEquals(Monoid.empty(), E.right(monoidSum.empty()));
+  assertEquals(Monoid.empty(), E.right(N.MonoidSum.empty()));
 });
 
 Deno.test("Either getRightMonad", () => {
-  const Monad = E.getRightMonad(semigroupSum);
+  const Monad = E.getRightMonad(N.SemigroupSum);
 
   AS.assertMonad(Monad, {
     a: 1,

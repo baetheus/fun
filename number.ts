@@ -39,11 +39,30 @@ export const SemigroupSum: T.Semigroup<number> = {
   concat: add,
 };
 
+export const SemigroupMax: T.Semigroup<number> = {
+  concat: (right) => (left) => right > left ? right : left,
+};
+
+export const SemigroupMin: T.Semigroup<number> = {
+  concat: (right) => (left) => right < left ? right : left,
+};
+
 export const MonoidProduct: T.Monoid<number> = {
   concat: multiply,
   empty: emptyOne,
 };
+
 export const MonoidSum: T.Monoid<number> = {
   concat: add,
   empty: emptyZero,
+};
+
+export const MonoidMax: T.Monoid<number> = {
+  concat: SemigroupMax.concat,
+  empty: () => Number.NEGATIVE_INFINITY,
+};
+
+export const MonoidMin: T.Monoid<number> = {
+  concat: SemigroupMin.concat,
+  empty: () => Number.POSITIVE_INFINITY,
 };
