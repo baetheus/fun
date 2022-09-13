@@ -1,10 +1,8 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
 import * as C from "../const.ts";
-import { Setoid as setoidBoolean } from "../boolean.ts";
-import { ordNumber } from "../ord.ts";
-import { semigroupSum } from "../semigroup.ts";
-import { monoidSum } from "../monoid.ts";
+import * as B from "../boolean.ts";
+import * as N from "../number.ts";
 import { pipe } from "../fns.ts";
 
 import * as AS from "./assert.ts";
@@ -20,14 +18,14 @@ Deno.test("Const getShow", () => {
 });
 
 Deno.test("Const getSetoid", () => {
-  const setoid = C.getSetoid(setoidBoolean);
+  const setoid = C.getSetoid(B.Setoid);
 
   assertEquals(setoid.equals(C.make(true))(C.make(true)), true);
   assertEquals(setoid.equals(C.make(false))(C.make(true)), false);
 });
 
 Deno.test("Const getOrd", () => {
-  const ord = C.getOrd(ordNumber);
+  const ord = C.getOrd(N.Ord);
 
   assertEquals(ord.lte(C.make(1))(C.make(1)), true);
   assertEquals(ord.lte(C.make(2))(C.make(1)), true);
@@ -35,20 +33,20 @@ Deno.test("Const getOrd", () => {
 });
 
 Deno.test("Const getSemigroup", () => {
-  const semigroup = C.getSemigroup(semigroupSum);
+  const semigroup = C.getSemigroup(N.SemigroupSum);
 
   assertEquals(semigroup.concat(C.make(1))(C.make(1)), 2);
 });
 
 Deno.test("Const getApply", () => {
-  const apply = C.getApply(monoidSum);
+  const apply = C.getApply(N.MonoidSum);
 
   assertEquals(pipe(C.make(1), apply.ap(1)), 2);
   assertEquals(pipe(C.make(1), apply.map((n: number) => n + 1)), 1);
 });
 
 Deno.test("Const getApplicative", () => {
-  const applicative = C.getApplicative(monoidSum);
+  const applicative = C.getApplicative(N.MonoidSum);
 
   assertEquals(pipe(C.make(1), applicative.ap(1)), 2);
   assertEquals(pipe(C.make(1), applicative.map((n: number) => n + 1)), 1);

@@ -4,22 +4,20 @@ import * as AS from "./assert.ts";
 
 import * as I from "../io.ts";
 import * as O from "../option.ts";
-import { semigroupSum } from "../semigroup.ts";
-import { monoidSum } from "../monoid.ts";
-import { pipe } from "../fns.ts";
+import { MonoidSum, SemigroupSum } from "../number.ts";
 
 // deno-lint-ignore no-explicit-any
 const assertEqualsIO = (a: I.IO<any>, b: I.IO<any>) => assertEquals(a(), b());
 
 Deno.test("IO getSemigroup", () => {
-  const Semigroup = I.getSemigroup(semigroupSum);
+  const Semigroup = I.getSemigroup(SemigroupSum);
   const concat = Semigroup.concat(I.of(1));
 
   assertEqualsIO(concat(I.of(1)), I.of(2));
 });
 
 Deno.test("IO getMonoid", () => {
-  const Monoid = I.getMonoid(monoidSum);
+  const Monoid = I.getMonoid(MonoidSum);
   const empty = Monoid.empty();
 
   assertEqualsIO(empty, I.of(0));
