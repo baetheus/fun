@@ -1,16 +1,15 @@
-// deno-lint-ignore-file ban-types
-//
 import type * as T from "./types.ts";
 import type * as S from "./schemable.ts";
 import type { Kind } from "./kind.ts";
 import type { State } from "./state.ts";
 
 import * as M from "./state.ts";
+import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 import { pipe } from "./fns.ts";
 
 type NonEmptyArray<T> = readonly [T, ...T[]];
 
-export type Unknown = {};
+export type Unknown = Record<string, unknown>;
 
 export type Boolean = { type: "boolean" };
 
@@ -69,20 +68,19 @@ export type Type =
     | Ref
   );
 
-export type JsonSchema<A> = State<Definitions, Type>;
+export type JsonSchema<_> = State<Definitions, Type>;
 
 export type TypeOf<T> = T extends JsonSchema<infer A> ? A : never;
 
-export const URI = "JsonSchema";
-
-export type URI = typeof URI;
-
-declare module "./kind.ts" {
-  // deno-lint-ignore no-explicit-any
-  export interface Kinds<_ extends any[]> {
-    [URI]: JsonSchema<_[0]>;
-  }
+export interface URI extends Kind {
+  readonly type: JsonSchema<this[0]>;
 }
+
+const Apply = M.Applicative as unknown as T.Apply<URI>;
+
+const sequenceTuple = createSequenceTuple(Apply);
+
+const sequenceStruct = createSequenceStruct(Apply);
 
 const { concat }: T.Semigroup<Definitions> = {
   concat: (a) => (b) => Object.assign({}, a, b),
@@ -114,14 +112,14 @@ export function literal<A extends [S.Literal, ...S.Literal[]]>(
 
 export function nullable<A>(or: JsonSchema<A>): JsonSchema<A | null> {
   return pipe(
-    M.sequenceTuple(or, of({ type: "null" })),
+    sequenceTuple(or, of({ type: "null" })),
     M.map((anyOf) => ({ anyOf })),
   );
 }
 
 export function undefinable<A>(or: JsonSchema<A>): JsonSchema<A | undefined> {
   return pipe(
-    M.sequenceTuple(or, of({})),
+    sequenceTuple(or, of({})),
     M.map((anyOf) => ({ anyOf })),
   );
 }
@@ -158,7 +156,7 @@ export function struct<A>(
 ): JsonSchema<{ [K in keyof A]: A[K] }> {
   return pipe(
     items as Record<string, JsonSchema<unknown>>,
-    M.sequenceStruct,
+    sequenceStruct,
     M.map((properties) => ({
       type: "object",
       properties,
@@ -172,7 +170,7 @@ export function partial<A>(
 ): JsonSchema<{ [K in keyof A]: A[K] }> {
   return pipe(
     items as Record<string, JsonSchema<unknown>>,
-    M.sequenceStruct,
+    sequenceStruct,
     M.map((properties) => ({ type: "object", properties })),
   ) as JsonSchema<{ [K in keyof A]: A[K] }>;
 }
@@ -182,7 +180,7 @@ export function intersect<I>(
 ): <A>(ta: JsonSchema<A>) => JsonSchema<A & I> {
   return <A>(ta: JsonSchema<A>) =>
     pipe(
-      M.sequenceTuple(ta, and),
+      sequenceTuple(ta, and),
       M.map((allOf) => ({ allOf })),
     );
 }
@@ -192,7 +190,7 @@ export function union<I>(
 ): <A>(ta: JsonSchema<A>) => JsonSchema<A & I> {
   return <A>(ta: JsonSchema<A>) =>
     pipe(
-      M.sequenceTuple(ta, or),
+      sequenceTuple(ta, or),
       M.map((anyOf) => ({ anyOf })),
     );
 }

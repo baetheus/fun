@@ -1,5 +1,5 @@
 import type * as T from "./types.ts";
-import type { Kind, URIS } from "./kind.ts";
+import type { $, Kind } from "./kind.ts";
 import type { Predicate } from "./predicate.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
@@ -22,15 +22,8 @@ export type Some<V> = { tag: "Some"; value: V };
  */
 export type Option<A> = Some<A> | None;
 
-export const URI = "Option";
-
-export type URI = typeof URI;
-
-declare module "./kind.ts" {
-  // deno-lint-ignore no-explicit-any
-  export interface Kinds<_ extends any[]> {
-    [URI]: Option<_[0]>;
-  }
+export interface URI extends Kind {
+  readonly type: Option<this[0]>;
 }
 
 /**
@@ -241,10 +234,10 @@ export function reduce<A, O>(
   return (ta) => isSome(ta) ? foao(o, ta.value) : o;
 }
 
-export function traverse<VRI extends URIS>(A: T.Applicative<VRI>) {
+export function traverse<V extends Kind>(A: T.Applicative<V>) {
   return <A, I, J, K, L>(
-    favi: (a: A) => Kind<VRI, [I, J, K, L]>,
-  ): (ta: Option<A>) => Kind<VRI, [Option<I>, J, K, L]> =>
+    favi: (a: A) => $<V, [I, J, K, L]>,
+  ): (ta: Option<A>) => $<V, [Option<I>, J, K, L]> =>
     fold(
       () => A.of(constNone()),
       (a) => pipe(favi(a), A.map((i) => some(i))),

@@ -1,5 +1,5 @@
-import type * as __ from "./kind.ts";
-import * as T from "./types.ts";
+import type { Kind } from "./kind.ts";
+import type * as T from "./types.ts";
 
 /**
  * Separated
@@ -8,15 +8,8 @@ import * as T from "./types.ts";
  */
 export type Separated<B, A> = { readonly left: B; readonly right: A };
 
-export const URI = "Separated";
-
-export type URI = typeof URI;
-
-declare module "./kind.ts" {
-  // deno-lint-ignore no-explicit-any
-  export interface Kinds<_ extends any[]> {
-    [URI]: Separated<_[1], _[0]>;
-  }
+export interface URI extends Kind {
+  readonly type: Separated<this[1], this[0]>;
 }
 
 export function separated<A, B>(left: B, right: A): Separated<B, A> {

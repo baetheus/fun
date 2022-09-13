@@ -1,4 +1,4 @@
-import type { Kind, URIS } from "./kind.ts";
+import type { $, Kind } from "./kind.ts";
 import type * as T from "./types.ts";
 
 import * as A from "./array.ts";
@@ -12,15 +12,8 @@ export type Tree<A> = {
   readonly forest: Forest<A>;
 };
 
-export const URI = "Tree";
-
-export type URI = typeof URI;
-
-declare module "./kind.ts" {
-  // deno-lint-ignore no-explicit-any
-  export interface Kinds<_ extends any[]> {
-    [URI]: Tree<_[0]>;
-  }
+export interface URI extends Kind {
+  readonly type: Tree<this[0]>;
 }
 
 function draw(indentation: string, forest: Forest<string>): string {
@@ -72,19 +65,19 @@ export function reduce<A, O>(
   return (ta) => A.reduce(reducer, foao(o, ta.value))(ta.forest);
 }
 
-export function traverse<VRI extends URIS>(
-  V: T.Applicative<VRI>,
+export function traverse<V extends Kind>(
+  V: T.Applicative<V>,
 ): <A, I, J, K, L>(
-  favi: (a: A) => Kind<VRI, [I, J, K, L]>,
-) => (ta: Tree<A>) => Kind<VRI, [Tree<I>, J, K, L]> {
-  const traverseVRI = A.traverse(V);
+  favi: (a: A) => $<V, [I, J, K, L]>,
+) => (ta: Tree<A>) => $<V, [Tree<I>, J, K, L]> {
+  const traverseV = A.traverse(V);
   return (favi) => {
     const out =
-      <A, I, J, K, L>(_favi: (a: A) => Kind<VRI, [I, J, K, L]>) =>
-      (ta: Tree<A>): Kind<VRI, [Tree<I>, J, K, L]> =>
+      <A, I, J, K, L>(_favi: (a: A) => $<V, [I, J, K, L]>) =>
+      (ta: Tree<A>): $<V, [Tree<I>, J, K, L]> =>
         pipe(
           ta.forest,
-          traverseVRI(out(_favi)),
+          traverseV(out(_favi)),
           V.ap(pipe(_favi(ta.value), V.map(_make))),
         );
     return out(favi);

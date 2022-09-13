@@ -3,15 +3,8 @@ import type * as T from "./types.ts";
 
 export type Identity<A> = A;
 
-export const URI = "Identity";
-
-export type URI = typeof URI;
-
-declare module "./kind.ts" {
-  // deno-lint-ignore no-explicit-any
-  export interface Kinds<_ extends any[]> {
-    [URI]: Identity<_[0]>;
-  }
+export interface URI extends Kind {
+  readonly type: Identity<this[0]>;
 }
 
 export function of<A>(a: A): Identity<A> {

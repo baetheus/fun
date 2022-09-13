@@ -1,4 +1,4 @@
-import { Kind, URIS } from "./kind.ts";
+import type { $, Kind } from "./kind.ts";
 import type * as T from "./types.ts";
 import type { Separated } from "./separated.ts";
 import type { Option } from "./option.ts";
@@ -11,18 +11,11 @@ import { apply, flow, identity, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 import { Ord, toCompare } from "./ord.ts";
 
-export type TypeOf<T> = T extends ReadonlyArray<infer A> ? A : never;
-
-export const URI = "Array";
-
-export type URI = typeof URI;
-
-declare module "./kind.ts" {
-  // deno-lint-ignore no-explicit-any
-  export interface Kinds<_ extends any[]> {
-    [URI]: ReadonlyArray<_[0]>;
-  }
+export interface URI extends Kind {
+  readonly type: ReadonlyArray<this[0]>;
 }
+
+export type TypeOf<T> = T extends ReadonlyArray<infer A> ? A : never;
 
 export function empty<A = never>(): ReadonlyArray<A> {
   return [];
@@ -207,18 +200,11 @@ export function filter<A>(
   };
 }
 
-// deno-lint-ignore no-explicit-any
-export function traverse<VRI extends URIS, _ extends any[] = any[]>(
-  A: T.Applicative<VRI, _>,
-): <
-  A,
-  I,
-  J extends _[0] = never,
-  K extends _[1] = never,
-  L extends _[2] = never,
->(
-  favi: (a: A, i: number) => Kind<VRI, [I, J, K, L]>,
-) => (ta: ReadonlyArray<A>) => Kind<VRI, [ReadonlyArray<I>, J, K, L]> {
+export function traverse<V extends Kind>(
+  A: T.Applicative<V>,
+): <A, I, J, K, L>(
+  favi: (a: A, i: number) => $<V, [I, J, K, L]>,
+) => (ta: ReadonlyArray<A>) => $<V, [ReadonlyArray<I>, J, K, L]> {
   return (favi) =>
     reduce(
       (vis, a, index) =>
@@ -503,11 +489,11 @@ export function getMonoid<A = never>(): T.Monoid<ReadonlyArray<A>> {
   });
 }
 
-export const createSequence = <VRI extends URIS>(
-  A: T.Applicative<VRI>,
+export const createSequence = <V extends Kind>(
+  A: T.Applicative<V>,
 ): <A, B, C, D>(
-  ta: Kind<VRI, [A, B, C, D]>[],
-) => Kind<VRI, [ReadonlyArray<A>, B, C, D]> => {
+  ta: $<V, [A, B, C, D]>[],
+) => $<V, [ReadonlyArray<A>, B, C, D]> => {
   // deno-lint-ignore no-explicit-any
   return pipe(A.map(identity), traverse(A)) as any;
 };

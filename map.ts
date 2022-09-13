@@ -1,4 +1,4 @@
-import type * as __ from "./kind.ts";
+import type { Kind } from "./kind.ts";
 import type * as T from "./types.ts";
 import type { Option } from "./option.ts";
 
@@ -8,34 +8,29 @@ import { toCompare } from "./ord.ts";
 import { fromEquals } from "./setoid.ts";
 import { flow, pipe } from "./fns.ts";
 
-export const URI = "Map";
-
-export type URI = typeof URI;
-
-declare module "./kind.ts" {
-  // deno-lint-ignore no-explicit-any
-  export interface Kinds<_ extends any[]> {
-    [URI]: Map<_[1], _[0]>;
-  }
+export interface URI extends Kind {
+  readonly type: ReadonlyMap<this[1], this[0]>;
 }
 
-export function zero(): Map<never, never> {
+export function zero(): ReadonlyMap<never, never> {
   return new Map<never, never>();
 }
 
-export function empty<K, A>(): Map<K, A> {
+export function empty<K, A>(): ReadonlyMap<K, A> {
   return new Map();
 }
 
-export function singleton<K, A>(k: K, a: A): Map<K, A> {
+export function singleton<K, A>(k: K, a: A): ReadonlyMap<K, A> {
   return new Map([[k, a]]);
 }
 
-export function isEmpty<A, B>(ta: Map<B, A>): boolean {
+export function isEmpty<A, B>(ta: ReadonlyMap<B, A>): boolean {
   return ta.size === 0;
 }
 
-export function map<A, I>(fai: (a: A) => I): <B>(ta: Map<B, A>) => Map<B, I> {
+export function map<A, I>(
+  fai: (a: A) => I,
+): <B>(ta: ReadonlyMap<B, A>) => ReadonlyMap<B, I> {
   return (ta) => {
     const tb = new Map();
     for (const [k, a] of ta) {
@@ -48,7 +43,7 @@ export function map<A, I>(fai: (a: A) => I): <B>(ta: Map<B, A>) => Map<B, I> {
 export function bimap<A, B, I, J>(
   fbj: (b: B) => J,
   fai: (a: A) => I,
-): (ta: Map<B, A>) => Map<J, I> {
+): (ta: ReadonlyMap<B, A>) => ReadonlyMap<J, I> {
   return (ta) => {
     const tb = new Map();
     for (const [b, a] of ta) {
@@ -60,7 +55,7 @@ export function bimap<A, B, I, J>(
 
 export function mapLeft<B, J>(
   fbj: (b: B) => J,
-): <A>(ta: Map<B, A>) => Map<J, A> {
+): <A>(ta: ReadonlyMap<B, A>) => ReadonlyMap<J, A> {
   return (ta) => {
     const tb = new Map();
     for (const [b, a] of ta) {
@@ -70,13 +65,13 @@ export function mapLeft<B, J>(
   };
 }
 
-export function size<K, A>(d: Map<K, A>): number {
+export function size<K, A>(d: ReadonlyMap<K, A>): number {
   return d.size;
 }
 
 export function lookupWithKey<K>(
   S: T.Setoid<K>,
-): (k: K) => <A>(ta: Map<K, A>) => Option<[K, A]> {
+): (k: K) => <A>(ta: ReadonlyMap<K, A>) => Option<[K, A]> {
   return (k) => (ta) => {
     for (const [ka, a] of ta.entries()) {
       if (S.equals(ka)(k)) {
@@ -89,7 +84,7 @@ export function lookupWithKey<K>(
 
 export function lookup<K>(
   S: T.Setoid<K>,
-): (k: K) => <A>(ta: Map<K, A>) => Option<A> {
+): (k: K) => <A>(ta: ReadonlyMap<K, A>) => Option<A> {
   const _lookupWithKey = lookupWithKey(S);
   return (k) => {
     const lookupWithKeyE = _lookupWithKey(k);
@@ -104,14 +99,14 @@ export function lookup<K>(
 
 export function member<K>(
   S: T.Setoid<K>,
-): (k: K) => <A>(ta: Map<K, A>) => boolean {
+): (k: K) => <A>(ta: ReadonlyMap<K, A>) => boolean {
   const lookupKey = lookup(S);
   return (k) => (m) => pipe(lookupKey(k)(m), O.isSome);
 }
 
 export function elem<A>(
   S: T.Setoid<A>,
-): (a: A) => <K>(m: Map<K, A>) => boolean {
+): (a: A) => <K>(m: ReadonlyMap<K, A>) => boolean {
   return (a) => {
     const eq = S.equals(a);
     return (ta) => {
@@ -127,25 +122,27 @@ export function elem<A>(
 
 export function entries<B>(
   O: T.Ord<B>,
-): <A>(ta: Map<B, A>) => ReadonlyArray<[B, A]> {
+): <A>(ta: ReadonlyMap<B, A>) => ReadonlyArray<[B, A]> {
   const _compare = toCompare(O);
   return (ta) =>
     Array.from(ta.entries()).sort(([left], [right]) => _compare(left, right));
 }
 
-export function keys<K>(O: T.Ord<K>): <A>(ta: Map<K, A>) => K[] {
+export function keys<K>(O: T.Ord<K>): <A>(ta: ReadonlyMap<K, A>) => K[] {
   const _compare = toCompare(O);
   return (ta) => Array.from(ta.keys()).sort(_compare);
 }
 
-export function values<A>(O: T.Ord<A>): <K>(ta: Map<K, A>) => A[] {
+export function values<A>(O: T.Ord<A>): <K>(ta: ReadonlyMap<K, A>) => A[] {
   const _compare = toCompare(O);
   return (ta) => Array.from(ta.values()).sort(_compare);
 }
 
 export function collect<B>(
   O: T.Ord<B>,
-): <A, I>(fai: (b: B, a: A) => I) => (ta: Map<B, A>) => ReadonlyArray<I> {
+): <A, I>(
+  fai: (b: B, a: A) => I,
+) => (ta: ReadonlyMap<B, A>) => ReadonlyArray<I> {
   const _entries = entries(O);
   return (fai) =>
     flow(
@@ -156,7 +153,7 @@ export function collect<B>(
 
 export function deleteAt<B>(
   S: T.Setoid<B>,
-): (key: B) => <A>(map: Map<B, A>) => Map<B, A> {
+): (key: B) => <A>(map: ReadonlyMap<B, A>) => ReadonlyMap<B, A> {
   const _lookup = lookupWithKey(S);
   return (key) => (map) =>
     pipe(
@@ -176,7 +173,9 @@ export function insert<B>(
   S: T.Setoid<B>,
 ) {
   const _lookup = lookupWithKey(S);
-  return <A>(value: A) => (key: B) => (map: Map<B, A>): Map<B, A> =>
+  return <A>(value: A) =>
+  (key: B) =>
+  (map: ReadonlyMap<B, A>): ReadonlyMap<B, A> =>
     pipe(
       _lookup(key)(map),
       O.fold(
@@ -206,7 +205,9 @@ export function insertAt<B>(
 
 export function modify<B>(
   S: T.Setoid<B>,
-): <A>(modifyFn: (a: A) => A) => (key: B) => (ta: Map<B, A>) => Map<B, A> {
+): <A>(
+  modifyFn: (a: A) => A,
+) => (key: B) => (ta: ReadonlyMap<B, A>) => ReadonlyMap<B, A> {
   const _lookup = lookupWithKey(S);
   return (modifyFn) => (key) => (map) =>
     pipe(
@@ -224,25 +225,29 @@ export function modify<B>(
 
 export function modifyAt<B>(
   S: T.Setoid<B>,
-): (key: B) => <A>(modifyFn: (value: A) => A) => (map: Map<B, A>) => Map<B, A> {
+): (
+  key: B,
+) => <A>(
+  modifyFn: (value: A) => A,
+) => (map: ReadonlyMap<B, A>) => ReadonlyMap<B, A> {
   return (key) => (modifyFn) => modify(S)(modifyFn)(key);
 }
 
 export function update<B>(
   S: T.Setoid<B>,
-): <A>(value: A) => (key: B) => (map: Map<B, A>) => Map<B, A> {
+): <A>(value: A) => (key: B) => (map: ReadonlyMap<B, A>) => ReadonlyMap<B, A> {
   return (value) => (key) => modify(S)(() => value)(key);
 }
 
 export function updateAt<B>(
   S: T.Setoid<B>,
-): (key: B) => <A>(value: A) => (map: Map<B, A>) => Map<B, A> {
+): (key: B) => <A>(value: A) => (map: ReadonlyMap<B, A>) => ReadonlyMap<B, A> {
   return (key) => (value) => modify(S)(() => value)(key);
 }
 
 export function pop<B>(
   S: T.Setoid<B>,
-): (b: B) => <A>(ta: Map<B, A>) => Option<[A, Map<B, A>]> {
+): (b: B) => <A>(ta: ReadonlyMap<B, A>) => Option<[A, ReadonlyMap<B, A>]> {
   const _lookup = lookup(S);
   const _deleteAt = deleteAt(S);
   return (b) => {
@@ -259,7 +264,7 @@ export function pop<B>(
 export function isSubmap<K, A>(
   SK: T.Setoid<K>,
   SA: T.Setoid<A>,
-): (sub: Map<K, A>) => (sup: Map<K, A>) => boolean {
+): (sub: ReadonlyMap<K, A>) => (sup: ReadonlyMap<K, A>) => boolean {
   const _lookupWithKey = lookupWithKey(SK);
   return (sub) => {
     return (sup) => {
@@ -284,13 +289,13 @@ export const Bifunctor: T.Bifunctor<URI> = { bimap, mapLeft };
 export function getShow<K, A>(
   SK: T.Show<K>,
   SA: T.Show<A>,
-): T.Show<Map<K, A>> {
+): T.Show<ReadonlyMap<K, A>> {
   return ({
     show: (ta) => {
       const elements = Array.from(ta).map(([k, a]) =>
         `[${SK.show(k)}, ${SA.show(a)}]`
       ).join(", ");
-      return `new Map([${elements}])`;
+      return `new ReadonlyMap([${elements}])`;
     },
   });
 }
@@ -298,7 +303,7 @@ export function getShow<K, A>(
 export function getSetoid<K, A>(
   SK: T.Setoid<K>,
   SA: T.Setoid<A>,
-): T.Setoid<Map<K, A>> {
+): T.Setoid<ReadonlyMap<K, A>> {
   const submap = isSubmap(SK, SA);
   return fromEquals((x) => (y) => submap(x)(y) && submap(y)(x));
 }
@@ -306,7 +311,7 @@ export function getSetoid<K, A>(
 export function getMonoid<K, A>(
   SK: T.Setoid<K>,
   SA: T.Semigroup<A>,
-): T.Monoid<Map<K, A>> {
+): T.Monoid<ReadonlyMap<K, A>> {
   const lookupKey = lookupWithKey(SK);
   return {
     concat: (a) => (b) => {

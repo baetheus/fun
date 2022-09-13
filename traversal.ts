@@ -1,5 +1,5 @@
 import type * as T from "./types.ts";
-import type { Kind, URIS } from "./kind.ts";
+import type { $, Kind } from "./kind.ts";
 import type { Predicate } from "./predicate.ts";
 import type { Refinement } from "./refinement.ts";
 import type { Either } from "./either.ts";
@@ -40,11 +40,11 @@ import {
 
 export type Traversal<S, A> = {
   readonly tag: "Traversal";
-  readonly traverse: <URI extends URIS>(
-    A: T.Applicative<URI>,
-  ) => <B = never, C = never, D = never>(
-    fata: (a: A) => Kind<URI, [A, B, C, D]>,
-  ) => (s: S) => Kind<URI, [S, B, C, D]>;
+  readonly traverse: <V extends Kind>(
+    A: T.Applicative<V>,
+  ) => <B, C, D>(
+    fata: (a: A) => $<V, [A, B, C, D]>,
+  ) => (s: S) => $<V, [S, B, C, D]>;
 };
 
 export type From<T> = T extends Traversal<infer S, infer _> ? S : never;
@@ -52,11 +52,11 @@ export type From<T> = T extends Traversal<infer S, infer _> ? S : never;
 export type To<T> = T extends Traversal<infer _, infer A> ? A : never;
 
 export function traversal<S, A>(
-  traverse: <URI extends URIS>(
-    A: T.Applicative<URI>,
+  traverse: <U extends Kind>(
+    A: T.Applicative<U>,
   ) => <B = never, C = never, D = never>(
-    fata: (a: A) => Kind<URI, [A, B, C, D]>,
-  ) => (s: S) => Kind<URI, [S, B, C, D]>,
+    fata: (a: A) => $<U, [A, B, C, D]>,
+  ) => (s: S) => $<U, [S, B, C, D]>,
 ): Traversal<S, A> {
   return ({ tag: "Traversal", traverse });
 }
@@ -209,10 +209,10 @@ export function atKey(
   return (sa) => composeLens(sa, _at);
 }
 
-export function traverse<URI extends URIS>(
-  T: T.Traversable<URI>,
+export function traverse<U extends Kind>(
+  T: T.Traversable<U>,
 ): <S, A, B = never, C = never, D = never>(
-  sa: Traversal<S, Kind<URI, [A, B, C, D]>>,
+  sa: Traversal<S, $<U, [A, B, C, D]>>,
 ) => Traversal<S, A> {
   const _traversal = toTraversal(T);
   return (sa) => composeTraversal(sa, _traversal());

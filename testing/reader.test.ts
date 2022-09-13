@@ -5,15 +5,17 @@ import { pipe } from "../fns.ts";
 
 import * as AS from "./assert.ts";
 
+const n = null as unknown as never;
+
 const assertEqualsR = (
   // deno-lint-ignore no-explicit-any
-  a: R.Reader<[number], any>,
+  a: R.Reader<number, any>,
   // deno-lint-ignore no-explicit-any
-  b: R.Reader<[number], any>,
+  b: R.Reader<number, any>,
 ) => assertEquals(a(0), b(0));
 
 Deno.test("Reader ask", () => {
-  assertEqualsR(R.ask<[number]>(), R.ask<[number]>());
+  assertEqualsR(R.ask<number>(), R.ask<number>());
 });
 
 Deno.test("Reader asks", () => {
@@ -26,21 +28,20 @@ Deno.test("Reader of", () => {
 });
 
 Deno.test("Reader ap", () => {
-  assertEqualsR(pipe(R.of(0), R.ap(R.of(AS.add))), R.of(1));
+  assertEquals(pipe(R.of(0), R.ap(R.of(AS.add)))(n), R.of(1)(n));
 });
 
 Deno.test("Reader map", () => {
-  assertEqualsR(pipe(R.of(0), R.map(AS.add)), R.of(1));
+  assertEquals(pipe(R.of(0), R.map(AS.add))(n), R.of(1)(n));
 });
 
 Deno.test("Reader join", () => {
-  const tta = R.asks((n: number) => R.of(n));
-  assertEquals(R.join(tta)(0), 0);
+  assertEquals(pipe(R.of(R.of(0)), R.join)(n), R.of(0)(n));
 });
 
 Deno.test("Reader chain", () => {
   const chain = R.chain((n: number) => R.of(n + 1));
-  assertEqualsR(chain(R.of(0)), R.of(1));
+  assertEquals(chain(R.of(0))(n), R.of(1)(n));
 });
 
 // Deno.test("Reader Do, bind, bindTo", () => {

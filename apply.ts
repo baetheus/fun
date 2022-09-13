@@ -1,5 +1,5 @@
 //deno-lint-ignore-file no-explicit-any
-import type { Kind, URIS } from "./kind.ts";
+import type { $, Kind } from "./kind.ts";
 import type { Functor } from "./functor.ts";
 import type { Semigroup } from "./semigroup.ts";
 import type { NonEmptyRecord } from "./types.ts";
@@ -10,13 +10,12 @@ import { pipe } from "./fns.ts";
  * Apply
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#apply
  */
-export interface Apply<URI extends URIS, _ extends any[] = any[]>
-  extends Functor<URI, _> {
-  readonly ap: <A, I, B extends _[0], C extends _[1], D extends _[2]>(
-    tfai: Kind<URI, [(a: A) => I, B, C, D]>,
+export interface Apply<U extends Kind> extends Functor<U> {
+  readonly ap: <A, I, B = never, C = never, D = never>(
+    tfai: $<U, [(a: A) => I, B, C, D]>,
   ) => (
-    ta: Kind<URI, [A, B, C, D]>,
-  ) => Kind<URI, [I, B, C, D]>;
+    ta: $<U, [A, B, C, D]>,
+  ) => $<U, [I, B, C, D]>;
 }
 
 function _loopTuple<T>(len: number, init: T[] = []): T[] | ((t: T) => any) {
@@ -36,21 +35,21 @@ function _loopRecord<K extends string>(
 type NonEmptyArray<A> = readonly [A, ...A[]];
 
 // deno-fmt-ignore
-type SequenceTuple<URI extends URIS, R extends NonEmptyArray<Kind<URI, any[]>>> = Kind<URI, [
-  { [K in keyof R]: R[K] extends Kind<URI, [infer A, infer _, infer _, infer _]> ? A : never },
-  { [K in keyof R]: R[K] extends Kind<URI, [infer _, infer B, infer _, infer _]> ? B : never }[number],
-  { [K in keyof R]: R[K] extends Kind<URI, [infer _, infer _, infer C, infer _]> ? C : never }[number],
-  { [K in keyof R]: R[K] extends Kind<URI, [infer _, infer _, infer _, infer D]> ? D : never }[number]
+type SequenceTuple<U extends Kind, R extends NonEmptyArray<$<U, any[]>>> = $<U, [
+  { [K in keyof R]: R[K] extends $<U, [infer A, infer _, infer _, infer _]> ? A : never },
+  { [K in keyof R]: R[K] extends $<U, [infer _, infer B, infer _, infer _]> ? B : never }[number],
+  { [K in keyof R]: R[K] extends $<U, [infer _, infer _, infer C, infer _]> ? C : never }[number],
+  { [K in keyof R]: R[K] extends $<U, [infer _, infer _, infer _, infer D]> ? D : never }[number]
 ]>;
 
 /**
  * Create a sequence over tuple function from Apply
  */
-export function createSequenceTuple<URI extends URIS, _ extends any[] = any[]>(
-  A: Apply<URI, _>,
-): <R extends NonEmptyArray<Kind<URI, [any, ..._]>>>(
+export function createSequenceTuple<U extends Kind>(
+  A: Apply<U>,
+): <R extends NonEmptyArray<$<U, unknown[]>>>(
   ...r: R
-) => SequenceTuple<URI, R> {
+) => SequenceTuple<U, R> {
   const reducer = (acc: any, cur: any) => pipe(cur, A.ap(acc)) as any;
   return (...r) => {
     const [head, ...tail] = r;
@@ -62,18 +61,18 @@ export function createSequenceTuple<URI extends URIS, _ extends any[] = any[]>(
 }
 
 // deno-fmt-ignore
-type SequenceStruct<URI extends URIS, R extends Record<string, Kind<URI, any[]>>> = Kind<URI, [
-  { [K in keyof R]: R[K] extends Kind<URI, [infer A, infer _, infer _, infer _]> ? A : never },
-  { [K in keyof R]: R[K] extends Kind<URI, [infer _, infer B, infer _, infer _]> ? B : never }[keyof R],
-  { [K in keyof R]: R[K] extends Kind<URI, [infer _, infer _, infer C, infer _]> ? C : never }[keyof R],
-  { [K in keyof R]: R[K] extends Kind<URI, [infer _, infer _, infer _, infer D]> ? D : never }[keyof R]
+type SequenceStruct<U extends Kind, R extends Record<string, $<U, any[]>>> = $<U, [
+  { [K in keyof R]: R[K] extends $<U, [infer A, infer _, infer _, infer _]> ? A : never },
+  { [K in keyof R]: R[K] extends $<U, [infer _, infer B, infer _, infer _]> ? B : never }[keyof R],
+  { [K in keyof R]: R[K] extends $<U, [infer _, infer _, infer C, infer _]> ? C : never }[keyof R],
+  { [K in keyof R]: R[K] extends $<U, [infer _, infer _, infer _, infer D]> ? D : never }[keyof R]
 ]>
 
-export function createSequenceStruct<URI extends URIS, _ extends any[] = any[]>(
-  A: Apply<URI, _>,
-): <R extends Record<string, Kind<URI, [any, ..._]>>>(
+export function createSequenceStruct<U extends Kind>(
+  A: Apply<U>,
+): <R extends Record<string, $<U, unknown[]>>>(
   r: NonEmptyRecord<R>,
-) => SequenceStruct<URI, R> {
+) => SequenceStruct<U, R> {
   return (r) => {
     // Sort included to make apply ordering explicit and consistent
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
@@ -86,17 +85,12 @@ export function createSequenceStruct<URI extends URIS, _ extends any[] = any[]>(
   };
 }
 
-export function createApplySemigroup<URI extends URIS, _ extends any[] = any[]>(
-  A: Apply<URI, _>,
+export function createApplySemigroup<U extends Kind>(
+  A: Apply<U>,
 ) {
-  return <
-    A,
-    B extends _[0] = never,
-    C extends _[1] = never,
-    D extends _[2] = never,
-  >(
+  return <A, B, C, D>(
     S: Semigroup<A>,
-  ): Semigroup<Kind<URI, [A, B, C, D]>> => ({
+  ): Semigroup<$<U, [A, B, C, D]>> => ({
     concat: (a) => A.ap(pipe(a, A.map(S.concat))),
   });
 }

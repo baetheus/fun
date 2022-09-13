@@ -3,15 +3,8 @@ import type * as T from "./types.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
-export const URI = "Iterable";
-
-export type URI = typeof URI;
-
-declare module "./kind.ts" {
-  // deno-lint-ignore no-explicit-any
-  export interface Kinds<_ extends any[]> {
-    [URI]: Iterable<_[0]>;
-  }
+export interface URI extends Kind {
+  readonly type: Iterable<this[0]>;
 }
 
 const isIterator = <A>(
