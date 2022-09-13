@@ -7,15 +7,8 @@ import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
 export type State<S, A> = (s: S) => [A, S];
 
-export const URI = "State";
-
-export type URI = typeof URI;
-
-declare module "./kind.ts" {
-  // deno-lint-ignore no-explicit-any
-  export interface Kinds<_ extends any[]> {
-    [URI]: State<_[1], _[0]>;
-  }
+export interface URI extends Kind {
+  readonly type: State<this[1], this[0]>;
 }
 
 export function get<S>(): State<S, S> {

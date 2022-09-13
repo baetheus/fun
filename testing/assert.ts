@@ -2,7 +2,7 @@ import { assertEquals } from "https://deno.land/std@0.77.0/testing/asserts.ts";
 
 import type * as T from "../types.ts";
 import type { Predicate } from "../predicate.ts";
-import type { Kind, URIS } from "../kind.ts";
+import type { $, Kind } from "../kind.ts";
 
 import { apply, flow, pipe } from "../fns.ts";
 
@@ -11,7 +11,7 @@ import { apply, flow, pipe } from "../fns.ts";
  * *****************************************************************************/
 
 export type MonadTest<
-  URI extends URIS,
+  URI extends Kind,
   A,
   B = never,
   C = never,
@@ -20,13 +20,13 @@ export type MonadTest<
   J = never,
 > = {
   a: A;
-  ta: Kind<URI, [A, B, C, D]>;
+  ta: $<URI, [A, B, C, D]>;
   fai: (a: A) => I;
   fij: (i: I) => J;
-  tfai: Kind<URI, [(a: A) => I, B, C, D]>;
-  tfij: Kind<URI, [(i: I) => J, B, C, D]>;
-  fati: (a: A) => Kind<URI, [I, B, C, D]>;
-  fitj: (i: I) => Kind<URI, [J, B, C, D]>;
+  tfai: $<URI, [(a: A) => I, B, C, D]>;
+  tfij: $<URI, [(i: I) => J, B, C, D]>;
+  fati: (a: A) => $<URI, [I, B, C, D]>;
+  fitj: (i: I) => $<URI, [J, B, C, D]>;
 };
 
 /** *****************************************************************************
@@ -38,10 +38,10 @@ export const add = (n: number) => n + 1;
 export const multiply = (n: number) => n * n;
 
 export const wrapAdd =
-  <URI extends URIS>(A: T.Applicative<URI>) => (n: number) => A.of(add(n));
+  <URI extends Kind>(A: T.Applicative<URI>) => (n: number) => A.of(add(n));
 
 export const wrapMultiply =
-  <URI extends URIS>(A: T.Applicative<URI>) => (n: number) => A.of(multiply(n));
+  <URI extends Kind>(A: T.Applicative<URI>) => (n: number) => A.of(multiply(n));
 
 /** *****************************************************************************
  * Assert: Setoid
@@ -171,7 +171,7 @@ export const assertMonoid = <T>(
  * *****************************************************************************/
 
 export const assertFilterable = <
-  URI extends URIS,
+  URI extends Kind,
   A = never,
   B = never,
   C = never,
@@ -179,8 +179,8 @@ export const assertFilterable = <
 >(
   F: T.Filterable<URI>,
   { a, b, f, g }: {
-    a: Kind<URI, [A, B, C, D]>;
-    b: Kind<URI, [A, B, C, D]>;
+    a: $<URI, [A, B, C, D]>;
+    b: $<URI, [A, B, C, D]>;
     f: Predicate<A>;
     g: Predicate<A>;
   },
@@ -209,7 +209,7 @@ export const assertFilterable = <
  * *****************************************************************************/
 
 export const assertFunctor = <
-  URI extends URIS,
+  URI extends Kind,
   A = never,
   B = never,
   C = never,
@@ -219,7 +219,7 @@ export const assertFunctor = <
 >(
   F: T.Functor<URI>,
   { ta, fai, fij }: {
-    ta: Kind<URI, [A, B, C, D]>;
+    ta: $<URI, [A, B, C, D]>;
     fai: (a: A) => I;
     fij: (i: I) => J;
   },
@@ -242,7 +242,7 @@ export const assertFunctor = <
  * *****************************************************************************/
 
 export const assertBifunctor = <
-  URI extends URIS,
+  URI extends Kind,
   A = never,
   B = never,
   C = never,
@@ -254,7 +254,7 @@ export const assertBifunctor = <
 >(
   B: T.Bifunctor<URI>,
   { tab, fai, fij, fbx, fxy }: {
-    tab: Kind<URI, [A, B, C, D]>;
+    tab: $<URI, [A, B, C, D]>;
     fai: (a: A) => I;
     fij: (i: I) => J;
     fbx: (b: B) => X;
@@ -285,7 +285,7 @@ export const assertBifunctor = <
  * *****************************************************************************/
 
 // export const assertContravariant = <
-//   URI extends URIS,
+//   URI extends Kind,
 //   A = never,
 //   B = never,
 //   C = never,
@@ -295,8 +295,8 @@ export const assertBifunctor = <
 // >(
 //   C: T.Contravariant<URI>,
 //   { ti, tj, fai, fij }: {
-//     ti: Kind<URI, [I, B, C, D]>;
-//     tj: Kind<URI, [J, B, C, D]>;
+//     ti: $<URI, [I, B, C, D]>;
+//     tj: $<URI, [J, B, C, D]>;
 //     fai: (a: A) => I;
 //     fij: (i: I) => J;
 //   },
@@ -320,7 +320,7 @@ export const assertBifunctor = <
  * *****************************************************************************/
 
 // export const assertProfunctor = <
-//   URI extends URIS,
+//   URI extends Kind,
 //   A = never,
 //   B = never,
 //   C = never,
@@ -332,7 +332,7 @@ export const assertBifunctor = <
 // >(
 //   P: T.Profunctor<URI>,
 //   { tay, fai, fij, fbx, fxy }: {
-//     tay: Kind<URI, [J, B, C, D]>;
+//     tay: $<URI, [J, B, C, D]>;
 //     fai: (a: A) => I;
 //     fij: (i: I) => J;
 //     fbx: (b: B) => X;
@@ -364,7 +364,7 @@ export const assertBifunctor = <
  * *****************************************************************************/
 
 export const assertApply = <
-  URI extends URIS,
+  URI extends Kind,
   A = never,
   B = never,
   C = never,
@@ -374,11 +374,11 @@ export const assertApply = <
 >(
   A: T.Apply<URI>,
   { ta, fai, fij, tfai, tfij }: {
-    ta: Kind<URI, [A, B, C, D]>;
+    ta: $<URI, [A, B, C, D]>;
     fai: (a: A) => I;
     fij: (i: I) => J;
-    tfai: Kind<URI, [(a: A) => I, B, C, D]>;
-    tfij: Kind<URI, [(i: I) => J, B, C, D]>;
+    tfai: $<URI, [(a: A) => I, B, C, D]>;
+    tfij: $<URI, [(i: I) => J, B, C, D]>;
   },
 ): void => {
   // Composition: A.ap(A.ap(A.map(f => g => x => f(g(x)), a), u), v) ≡ A.ap(a, A.ap(u, v))
@@ -409,7 +409,7 @@ export const assertApply = <
  * *****************************************************************************/
 
 export const assertApplicative = <
-  URI extends URIS,
+  URI extends Kind,
   A = never,
   B = never,
   C = never,
@@ -420,11 +420,11 @@ export const assertApplicative = <
   A: T.Applicative<URI>,
   { a, ta, fai, fij, tfai, tfij }: {
     a: A;
-    ta: Kind<URI, [A, B, C, D]>;
+    ta: $<URI, [A, B, C, D]>;
     fai: (a: A) => I;
     fij: (i: I) => J;
-    tfai: Kind<URI, [(a: A) => I, B, C, D]>;
-    tfij: Kind<URI, [(i: I) => J, B, C, D]>;
+    tfai: $<URI, [(a: A) => I, B, C, D]>;
+    tfij: $<URI, [(i: I) => J, B, C, D]>;
   },
 ): void => {
   // Identity: A.ap(A.of(x => x), v) ≡ v
@@ -454,7 +454,7 @@ export const assertApplicative = <
  * *****************************************************************************/
 
 export const assertAlt = <
-  URI extends URIS,
+  URI extends Kind,
   A = never,
   B = never,
   C = never,
@@ -464,9 +464,9 @@ export const assertAlt = <
 >(
   A: T.Alt<URI>,
   { ta, tb, tc, fai, fij }: {
-    ta: Kind<URI, [A, B, C, D]>;
-    tb: Kind<URI, [A, B, C, D]>;
-    tc: Kind<URI, [A, B, C, D]>;
+    ta: $<URI, [A, B, C, D]>;
+    tb: $<URI, [A, B, C, D]>;
+    tc: $<URI, [A, B, C, D]>;
     fai: (a: A) => I;
     fij: (i: I) => J;
   },
@@ -492,7 +492,7 @@ export const assertAlt = <
  * *****************************************************************************/
 
 export const assertPlus = <
-  URI extends URIS,
+  URI extends Kind,
   A = never,
   B = never,
   C = never,
@@ -502,9 +502,9 @@ export const assertPlus = <
 >(
   P: T.Plus<URI>,
   { ta, tb, tc, fai, fij }: {
-    ta: Kind<URI, [A, B, C, D]>;
-    tb: Kind<URI, [A, B, C, D]>;
-    tc: Kind<URI, [A, B, C, D]>;
+    ta: $<URI, [A, B, C, D]>;
+    tb: $<URI, [A, B, C, D]>;
+    tc: $<URI, [A, B, C, D]>;
     fai: (a: A) => I;
     fij: (i: I) => J;
   },
@@ -538,7 +538,7 @@ export const assertPlus = <
  * *****************************************************************************/
 
 export const assertAlternative = <
-  URI extends URIS,
+  URI extends Kind,
   A = never,
   B = never,
   C = never,
@@ -549,13 +549,13 @@ export const assertAlternative = <
   A: T.Alternative<URI>,
   { a, ta, tb, tc, fai, fij, tfai, tfij }: {
     a: A;
-    ta: Kind<URI, [A, B, C, D]>;
-    tb: Kind<URI, [A, B, C, D]>;
-    tc: Kind<URI, [A, B, C, D]>;
+    ta: $<URI, [A, B, C, D]>;
+    tb: $<URI, [A, B, C, D]>;
+    tc: $<URI, [A, B, C, D]>;
     fai: (a: A) => I;
     fij: (i: I) => J;
-    tfai: Kind<URI, [(a: A) => I, B, C, D]>;
-    tfij: Kind<URI, [(i: I) => J, B, C, D]>;
+    tfai: $<URI, [(a: A) => I, B, C, D]>;
+    tfij: $<URI, [(i: I) => J, B, C, D]>;
   },
 ): void => {
   // Distributivity: A.ap(A.alt(a, b), c) ≡ A.alt(A.ap(a, c), A.ap(b, c))
@@ -582,7 +582,7 @@ export const assertAlternative = <
  * *****************************************************************************/
 
 export const assertChain = <
-  URI extends URIS,
+  URI extends Kind,
   A = never,
   B = never,
   C = never,
@@ -613,7 +613,7 @@ export const assertChain = <
  * *****************************************************************************/
 
 export const assertMonad = <
-  URI extends URIS,
+  URI extends Kind,
   A,
   B = never,
   C = never,
@@ -648,7 +648,7 @@ export const assertMonad = <
  * *****************************************************************************/
 
 export const assertFoldable = <
-  URI extends URIS,
+  URI extends Kind,
   A = never,
   B = never,
   C = never,
@@ -658,7 +658,7 @@ export const assertFoldable = <
   F: T.Foldable<URI>,
   { a, tb, faia }: {
     a: A;
-    tb: Kind<URI, [I, B, C, D]>;
+    tb: $<URI, [I, B, C, D]>;
     faia: (a: A, i: I) => A;
   },
 ): void => {
@@ -677,7 +677,7 @@ export const assertFoldable = <
  * *****************************************************************************/
 
 export const assertExtend = <
-  URI extends URIS,
+  URI extends Kind,
   A = never,
   B = never,
   C = never,
@@ -687,11 +687,11 @@ export const assertExtend = <
 >(
   E: T.Extend<URI>,
   { ta, fai, fij, ftai, ftij }: {
-    ta: Kind<URI, [A, B, C, D]>;
+    ta: $<URI, [A, B, C, D]>;
     fai: (a: A) => I;
     fij: (i: I) => J;
-    ftai: (ta: Kind<URI, [A, B, C, D]>) => I;
-    ftij: (tb: Kind<URI, [I, B, C, D]>) => J;
+    ftai: (ta: $<URI, [A, B, C, D]>) => I;
+    ftij: (tb: $<URI, [I, B, C, D]>) => J;
   },
 ): void => {
   // Associativity: E.extend(f, E.extend(g, w)) ≡ E.extend(_w => f(E.extend(g, _w)), w)
@@ -709,7 +709,7 @@ export const assertExtend = <
  * *****************************************************************************/
 
 // export const assertComonad = <
-//   URI extends URIS,
+//   URI extends Kind,
 //   A = never,
 //   B = never,
 //   C = never,
@@ -719,11 +719,11 @@ export const assertExtend = <
 // >(
 //   C: T.Comonad<URI>,
 //   { ta, fai, fij, ftai, ftij }: {
-//     ta: Kind<URI, [A, B, C, D]>;
+//     ta: $<URI, [A, B, C, D]>;
 //     fai: (a: A) => I;
 //     fij: (i: I) => J;
-//     ftai: (ta: Kind<URI, [A, B, C, D]>) => I;
-//     ftij: (tb: Kind<URI, [I, B, C, D]>) => J;
+//     ftai: (ta: $<URI, [A, B, C, D]>) => I;
+//     ftij: (tb: $<URI, [I, B, C, D]>) => J;
 //   },
 // ): void => {
 //   // Left identity: C.extend(C.extract, w) ≡ w

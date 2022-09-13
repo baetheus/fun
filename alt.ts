@@ -6,9 +6,8 @@
  * "If this one doesn't work, try this other one".
  */
 
-// deno-lint-ignore-file no-explicit-any
 import type { Functor } from "./functor.ts";
-import type { Kind, URIS } from "./kind.ts";
+import type { $, Kind } from "./kind.ts";
 
 /**
  * An instance of Alt extends Functor and provides a new method
@@ -27,10 +26,10 @@ import type { Kind, URIS } from "./kind.ts";
  * The original type came from
  * [here](https://github.com/fantasyland/static-land/blob/master/docs/spec.md#alt)
  */
-export type Alt<URI extends URIS, _ extends any[] = any[]> =
-  & Functor<URI, _>
+export type Alt<U extends Kind> =
+  & Functor<U>
   & {
-    readonly alt: <A, B extends _[0], C extends _[1], D extends _[2]>(
-      right: Kind<URI, [A, B, C, D]>,
-    ) => (left: Kind<URI, [A, B, C, D]>) => Kind<URI, [A, B, C, D]>;
+    readonly alt: <A, B, C, D>(
+      right: $<U, [A, B, C, D]>,
+    ) => (left: $<U, [A, B, C, D]>) => $<U, [A, B, C, D]>;
   };

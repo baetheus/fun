@@ -1,10 +1,10 @@
 import type * as T from "./types.ts";
-import type { Forest, Tree } from "./tree.ts";
+import type { Forest } from "./tree.ts";
 
 import * as TR from "./tree.ts";
 import * as A from "./array.ts";
 import * as O from "./option.ts";
-import { pipe, todo } from "./fns.ts";
+import { pipe } from "./fns.ts";
 
 export const required = "required" as const;
 

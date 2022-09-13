@@ -1,4 +1,4 @@
-import type { Kind, URIS } from "./kind.ts";
+import type { $, Kind } from "./kind.ts";
 import type * as T from "./types.ts";
 
 import {
@@ -10,15 +10,8 @@ import { apply, constant, flow, pipe } from "./fns.ts";
 
 export type IO<A> = () => A;
 
-export const URI = "IO";
-
-export type URI = typeof URI;
-
-declare module "./kind.ts" {
-  // deno-lint-ignore no-explicit-any
-  export interface Kinds<_ extends any[]> {
-    [URI]: IO<_[0]>;
-  }
+export interface URI extends Kind {
+  readonly type: IO<this[0]>;
 }
 
 export function of<A>(a: A): IO<A> {
@@ -52,11 +45,11 @@ export function reduce<A, O>(
   return (ta) => foao(o, ta());
 }
 
-export function traverse<VRI extends URIS>(
-  A: T.Applicative<VRI>,
+export function traverse<V extends Kind>(
+  A: T.Applicative<V>,
 ): <A, I, J, K, L>(
-  faui: (a: A) => Kind<VRI, [I, J, K, L]>,
-) => (ta: IO<A>) => Kind<VRI, [IO<I>, J, K, L]> {
+  faui: (a: A) => $<V, [I, J, K, L]>,
+) => (ta: IO<A>) => $<V, [IO<I>, J, K, L]> {
   return (faui) => (ta) => pipe(faui(ta()), A.map(of));
 }
 

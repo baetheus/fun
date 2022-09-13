@@ -1,5 +1,3 @@
-// deno-lint-ignore-file no-explicit-any
-
 /**
  * Setoid
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#setoid
@@ -12,7 +10,7 @@ export function fromEquals<A>(equals: (x: A) => (y: A) => boolean): Setoid<A> {
   return ({ equals: (x) => (y) => x === y || equals(x)(y) });
 }
 
-export function getStructSetoid<O extends Readonly<Record<string, any>>>(
+export function getStructSetoid<O extends Readonly<Record<string, unknown>>>(
   eqs: { [K in keyof O]: Setoid<O[K]> },
 ): Setoid<O> {
   return fromEquals((x) => (y) => {
@@ -25,13 +23,15 @@ export function getStructSetoid<O extends Readonly<Record<string, any>>>(
   });
 }
 
-export function getTupleSetoid<T extends ReadonlyArray<Setoid<any>>>(
+export function getTupleSetoid<T extends ReadonlyArray<Setoid<unknown>>>(
   ...eqs: T
 ): Setoid<{ [K in keyof T]: T[K] extends Setoid<infer A> ? A : never }> {
   return fromEquals((x) => (y) => eqs.every((E, i) => E.equals(x[i])(y[i])));
 }
 
-export function getValueOfSetoid<A extends { valueOf: () => any }>(): Setoid<
+export function getValueOfSetoid<
+  A extends { valueOf: () => unknown },
+>(): Setoid<
   A
 > {
   return {

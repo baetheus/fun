@@ -10,7 +10,7 @@ import { semigroupSum } from "../semigroup.ts";
 import { pipe } from "../fns.ts";
 
 Deno.test("Map zero", () => {
-  assertEquals(M.zero(), new Map());
+  assertEquals(M.zero(), new Map() as unknown as ReadonlyMap<never, never>);
 });
 
 Deno.test("Map empty", () => {
@@ -43,7 +43,7 @@ Deno.test("Map getShow", () => {
   const showNumber = { show: (n: number) => n.toString() };
   const Show = M.getShow(showNumber, showNumber);
 
-  assertEquals(Show.show(M.singleton(1, 1)), "new Map([[1, 1]])");
+  assertEquals(Show.show(M.singleton(1, 1)), "new ReadonlyMap([[1, 1]])");
 });
 
 Deno.test("Map getSetoid", () => {

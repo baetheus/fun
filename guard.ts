@@ -1,4 +1,4 @@
-import type * as __ from "./kind.ts";
+import type { Kind } from "./kind.ts";
 
 import { isNil } from "./nilable.ts";
 import * as S from "./schemable.ts";
@@ -9,15 +9,8 @@ export type TypeOf<T> = T extends Guard<infer _, infer A> ? A : never;
 
 export type InputOf<T> = T extends Guard<infer B, infer _> ? B : never;
 
-export const URI = "Guard";
-
-export type URI = typeof URI;
-
-declare module "./kind.ts" {
-  // deno-lint-ignore no-explicit-any
-  export interface Kinds<_ extends any[]> {
-    [URI]: Guard<unknown, _[0]>;
-  }
+export interface URI extends Kind {
+  readonly type: Guard<unknown, this[0]>;
 }
 
 export function compose<A, B extends A, C extends B>(

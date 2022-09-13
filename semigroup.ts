@@ -1,5 +1,3 @@
-// deno-lint-ignore-file no-explicit-any
-
 import type { Ord } from "./ord.ts";
 
 import { reduce } from "./array.ts";
@@ -90,11 +88,14 @@ export function getLastSemigroup<A = never>(): Semigroup<A> {
   return ({ concat: (_) => (y) => y });
 }
 
+// deno-lint-ignore no-explicit-any
 export function getTupleSemigroup<T extends ReadonlyArray<Semigroup<any>>>(
   ...semigroups: T
 ): Semigroup<{ [K in keyof T]: T[K] extends Semigroup<infer A> ? A : never }> {
+  type Return = { [K in keyof T]: T[K] extends Semigroup<infer A> ? A : never };
   return ({
-    concat: (x) => (y) => semigroups.map((s, i) => s.concat(x[i])(y[i])) as any,
+    concat: (x) => (y) =>
+      semigroups.map((s, i) => s.concat(x[i])(y[i])) as unknown as Return,
   });
 }
 
@@ -102,6 +103,7 @@ export function getDualSemigroup<A>(S: Semigroup<A>): Semigroup<A> {
   return ({ concat: (x) => (y) => S.concat(y)(x) });
 }
 
+// deno-lint-ignore no-explicit-any
 export function getStructSemigroup<O extends Readonly<Record<string, any>>>(
   semigroups: { [K in keyof O]: Semigroup<O[K]> },
 ): Semigroup<O> {

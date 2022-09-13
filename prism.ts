@@ -1,5 +1,5 @@
 import type * as T from "./types.ts";
-import type { Kind, URIS } from "./kind.ts";
+import type { $, Kind } from "./kind.ts";
 import type { Predicate } from "./predicate.ts";
 import type { Refinement } from "./refinement.ts";
 
@@ -196,10 +196,10 @@ export function filter<A>(
     );
 }
 
-export function traverse<URI extends URIS>(
-  T: T.Traversable<URI>,
-): <S, A, B = never, C = never, D = never>(
-  sa: Prism<S, Kind<URI, [A, B, C, D]>>,
+export function traverse<U extends Kind>(
+  T: T.Traversable<U>,
+): <S, A, B, C, D>(
+  sa: Prism<S, $<U, [A, B, C, D]>>,
 ) => Traversal<S, A> {
   const _traversal = toTraversal(T);
   return (sa) => composeTraversal(sa, _traversal());

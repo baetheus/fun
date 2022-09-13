@@ -1,19 +1,12 @@
 import type { Kind } from "./kind.ts";
 import type * as T from "./types.ts";
-import type { Predicate } from "./types.ts";
+import type { Predicate } from "./predicate.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 import { wait } from "./fns.ts";
 
-export const URI = "AsyncIterable";
-
-export type URI = typeof URI;
-
-declare module "./kind.ts" {
-  // deno-lint-ignore no-explicit-any
-  export interface Kinds<_ extends any[]> {
-    [URI]: AsyncIterable<_[0]>;
-  }
+export interface URI extends Kind {
+  readonly type: AsyncIterable<this[0]>;
 }
 
 const isAsyncIterator = <A>(

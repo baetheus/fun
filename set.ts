@@ -1,43 +1,38 @@
-import type { Kind, URIS } from "./kind.ts";
+import type { $, Kind } from "./kind.ts";
 import type { Predicate } from "./predicate.ts";
 import type * as T from "./types.ts";
 
-import { flow, pipe } from "./fns.ts";
+import { flow, pipe, todo } from "./fns.ts";
 import { fromEquals } from "./setoid.ts";
 
-export const URI = "Set";
-
-export type URI = typeof URI;
-
-declare module "./kind.ts" {
-  // deno-lint-ignore no-explicit-any
-  export interface Kinds<_ extends any[]> {
-    [URI]: Set<_[0]>;
-  }
+export interface URI extends Kind {
+  readonly type: ReadonlySet<this[0]>;
 }
 
-export function zero(): Set<never> {
+export function zero(): ReadonlySet<never> {
   return new Set();
 }
 
-export function empty<A = never>(): Set<A> {
+export function empty<A = never>(): ReadonlySet<A> {
   return new Set();
 }
 
-export function make<A>(...as: [A, ...A[]]): Set<A> {
+export function set<A>(...as: [A, ...A[]]): ReadonlySet<A> {
   return new Set(as);
 }
 
-export function copy<A>(ta: Set<A>): Set<A> {
+export function copy<A>(ta: ReadonlySet<A>): ReadonlySet<A> {
   return new Set(ta);
 }
 
-const unsafeAdd = <A>(ta: Set<A>) => (a: A): Set<A> => {
-  ta.add(a);
+export const unsafeAdd = <A>(ta: ReadonlySet<A>) => (a: A): ReadonlySet<A> => {
+  (ta as Set<A>).add(a);
   return ta;
 };
 
-export function some<A>(predicate: Predicate<A>): (ta: Set<A>) => boolean {
+export function some<A>(
+  predicate: Predicate<A>,
+): (ta: ReadonlySet<A>) => boolean {
   return (ta) => {
     for (const a of ta) {
       if (predicate(a)) {
@@ -48,7 +43,9 @@ export function some<A>(predicate: Predicate<A>): (ta: Set<A>) => boolean {
   };
 }
 
-export function every<A>(predicate: Predicate<A>): (ta: Set<A>) => boolean {
+export function every<A>(
+  predicate: Predicate<A>,
+): (ta: ReadonlySet<A>) => boolean {
   return (ta) => {
     for (const a of ta) {
       if (!predicate(a)) {
@@ -59,29 +56,33 @@ export function every<A>(predicate: Predicate<A>): (ta: Set<A>) => boolean {
   };
 }
 
-export function elem<A>(S: T.Setoid<A>): (a: A) => (ta: Set<A>) => boolean {
+export function elem<A>(
+  S: T.Setoid<A>,
+): (a: A) => (ta: ReadonlySet<A>) => boolean {
   return (a) => some(S.equals(a));
 }
 
-export function elemOf<A>(S: T.Setoid<A>): (ta: Set<A>) => (a: A) => boolean {
+export function elemOf<A>(
+  S: T.Setoid<A>,
+): (ta: ReadonlySet<A>) => (a: A) => boolean {
   return (ta) => (a) => elem(S)(a)(ta);
 }
 
 export function isSubset<A>(
   S: T.Setoid<A>,
-): (tb: Set<A>) => (ta: Set<A>) => boolean {
+): (tb: ReadonlySet<A>) => (ta: ReadonlySet<A>) => boolean {
   return flow(elemOf(S), every);
 }
 
 export function union<A>(
   S: T.Setoid<A>,
-): (tb: Set<A>) => (ta: Set<A>) => Set<A> {
+): (tb: ReadonlySet<A>) => (ta: ReadonlySet<A>) => ReadonlySet<A> {
   return (tb) => (ta) => {
     const out = copy(ta);
     const isIn = elemOf(S)(out);
     for (const b of tb) {
       if (!isIn(b)) {
-        out.add(b);
+        (out as Set<A>).add(b);
       }
     }
     return out;
@@ -90,7 +91,7 @@ export function union<A>(
 
 export function intersection<A>(
   S: T.Setoid<A>,
-): (ta: Set<A>) => (tb: Set<A>) => Set<A> {
+): (ta: ReadonlySet<A>) => (tb: ReadonlySet<A>) => ReadonlySet<A> {
   return (ta) => {
     const isIn = elemOf(S)(ta);
     return (tb) => {
@@ -105,7 +106,9 @@ export function intersection<A>(
   };
 }
 
-export function compact<A>(S: T.Setoid<A>): (ta: Set<A>) => Set<A> {
+export function compact<A>(
+  S: T.Setoid<A>,
+): (ta: ReadonlySet<A>) => ReadonlySet<A> {
   return (ta) => {
     const out = new Set<A>();
     const isIn = elemOf(S)(out);
@@ -118,7 +121,7 @@ export function compact<A>(S: T.Setoid<A>): (ta: Set<A>) => Set<A> {
   };
 }
 
-export function join<A>(tta: Set<Set<A>>): Set<A> {
+export function join<A>(tta: ReadonlySet<ReadonlySet<A>>): ReadonlySet<A> {
   const out = new Set<A>();
   for (const ta of tta) {
     for (const a of ta) {
@@ -128,7 +131,9 @@ export function join<A>(tta: Set<Set<A>>): Set<A> {
   return out;
 }
 
-export function map<A, I>(fai: (a: A) => I): (ta: Set<A>) => Set<I> {
+export function map<A, I>(
+  fai: (a: A) => I,
+): (ta: ReadonlySet<A>) => ReadonlySet<I> {
   return (ta) => {
     const ti = new Set<I>();
     for (const a of ta) {
@@ -138,7 +143,9 @@ export function map<A, I>(fai: (a: A) => I): (ta: Set<A>) => Set<I> {
   };
 }
 
-export function ap<A, I>(tfai: Set<(a: A) => I>): (ta: Set<A>) => Set<I> {
+export function ap<A, I>(
+  tfai: ReadonlySet<(a: A) => I>,
+): (ta: ReadonlySet<A>) => ReadonlySet<I> {
   return (ta) => {
     const ti = new Set<I>();
     for (const fai of tfai) {
@@ -150,7 +157,9 @@ export function ap<A, I>(tfai: Set<(a: A) => I>): (ta: Set<A>) => Set<I> {
   };
 }
 
-export function chain<A, I>(fati: (a: A) => Set<I>): (ta: Set<A>) => Set<I> {
+export function chain<A, I>(
+  fati: (a: A) => ReadonlySet<I>,
+): (ta: ReadonlySet<A>) => ReadonlySet<I> {
   return (ta) => {
     const ti = new Set<I>();
     for (const a of ta) {
@@ -163,7 +172,9 @@ export function chain<A, I>(fati: (a: A) => Set<I>): (ta: Set<A>) => Set<I> {
   };
 }
 
-export function filter<A>(predicate: Predicate<A>): (ta: Set<A>) => Set<A> {
+export function filter<A>(
+  predicate: Predicate<A>,
+): (ta: ReadonlySet<A>) => ReadonlySet<A> {
   return (ta) => {
     const _ta = new Set<A>();
     for (const a of ta) {
@@ -175,7 +186,10 @@ export function filter<A>(predicate: Predicate<A>): (ta: Set<A>) => Set<A> {
   };
 }
 
-export function reduce<A, O>(foao: (o: O, a: A) => O, o: O): (ta: Set<A>) => O {
+export function reduce<A, O>(
+  foao: (o: O, a: A) => O,
+  o: O,
+): (ta: ReadonlySet<A>) => O {
   return (ta) => {
     let out = o;
     for (const a of ta) {
@@ -185,37 +199,42 @@ export function reduce<A, O>(foao: (o: O, a: A) => O, o: O): (ta: Set<A>) => O {
   };
 }
 
-export function traverse<VRI extends URIS>(
-  A: T.Applicative<VRI>,
-): <A, I, J, K, L>(
-  favi: (a: A) => Kind<VRI, [I, J, K, L]>,
-) => (ta: Set<A>) => Kind<VRI, [Set<I>, J, K, L]> {
-  return (favi) =>
+// TODO: Flatten this out a bit.
+export function traverse<V extends Kind>(
+  A: T.Applicative<V>,
+) {
+  return <A, I, J, K, L>(
+    favi: (a: A) => $<V, [I, J, K, L]>,
+  ): (ta: ReadonlySet<A>) => $<V, [ReadonlySet<I>, J, K, L]> =>
     reduce(
-      (fbs, a) =>
+      (fis, a) =>
         pipe(
           favi(a),
           A.ap(pipe(
-            fbs,
-            A.map(unsafeAdd),
+            fis,
+            A.map((is: ReadonlySet<I>) => (i: I) => {
+              const _is = is as unknown as Set<I>;
+              _is.add(i);
+              return _is;
+            }),
           )),
         ),
-      A.of(new Set()),
+      A.of(empty()),
     );
 }
 
-export function getShow<A>(S: T.Show<A>): T.Show<Set<A>> {
+export function getShow<A>(S: T.Show<A>): T.Show<ReadonlySet<A>> {
   return ({
     show: (s) => `Set([${Array.from(s.values()).map(S.show).join(", ")}])`,
   });
 }
 
-export function getSetoid<A>(S: T.Setoid<A>): T.Setoid<Set<A>> {
+export function getSetoid<A>(S: T.Setoid<A>): T.Setoid<ReadonlySet<A>> {
   const subset = isSubset(S);
   return fromEquals((x) => (y) => subset(x)(y) && subset(y)(x));
 }
 
-export function getUnionMonoid<A>(S: T.Setoid<A>): T.Monoid<Set<A>> {
+export function getUnionMonoid<A>(S: T.Setoid<A>): T.Monoid<ReadonlySet<A>> {
   return ({ concat: union(S), empty });
 }
 

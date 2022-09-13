@@ -1,4 +1,4 @@
-import type { Kind, URIS } from "./kind.ts";
+import type { $, Kind } from "./kind.ts";
 import type * as T from "./types.ts";
 
 import { isNotNil } from "./nilable.ts";
@@ -31,15 +31,8 @@ export type Some<A> = Refresh<A> | Replete<A>;
 
 export type Loading<A> = Pending | Refresh<A>;
 
-export const URI = "Datum";
-
-export type URI = typeof URI;
-
-declare module "./kind.ts" {
-  // deno-lint-ignore no-explicit-any
-  export interface Kinds<_ extends any[]> {
-    [URI]: Datum<_[0]>;
-  }
+export interface URI extends Kind {
+  readonly type: Datum<this[0]>;
 }
 
 export const initial: Initial = { tag: "Initial" };
@@ -183,11 +176,11 @@ export function reduce<A, O>(
   return (ta) => isSome(ta) ? foao(o, ta.value) : o;
 }
 
-export function traverse<VRI extends URIS>(
-  A: T.Applicative<VRI>,
+export function traverse<V extends Kind>(
+  A: T.Applicative<V>,
 ): <A, I, J, K, L>(
-  favi: (a: A) => Kind<VRI, [I, J, K, L]>,
-) => (ta: Datum<A>) => Kind<VRI, [Datum<I>, J, K, L]> {
+  favi: (a: A) => $<V, [I, J, K, L]>,
+) => (ta: Datum<A>) => $<V, [Datum<I>, J, K, L]> {
   return (favi) =>
     fold(
       () => A.of(constInitial()),
