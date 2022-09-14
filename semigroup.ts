@@ -170,11 +170,10 @@ export function tuple<T extends ReadonlyArray<Semigroup<any>>>(
 ): Semigroup<{ [K in keyof T]: T[K] extends Semigroup<infer A> ? A : never }> {
   type Return = { [K in keyof T]: T[K] extends Semigroup<infer A> ? A : never };
   return ({
-    concat: (right) =>
-      (left): Return =>
-        semigroups.map((s, i) =>
-          s.concat(right[i])(left[i])
-        ) as unknown as Return,
+    concat: (right) => (left): Return =>
+      semigroups.map((s, i) =>
+        s.concat(right[i])(left[i])
+      ) as unknown as Return,
   });
 }
 
@@ -218,14 +217,13 @@ export function struct<O extends Readonly<Record<string, unknown>>>(
 ): Semigroup<O> {
   type Entries = [keyof O, typeof semigroups[keyof O]][];
   return ({
-    concat: (right) =>
-      (left) => {
-        const r = {} as Record<keyof O, O[keyof O]>;
-        for (const [key, semigroup] of Object.entries(semigroups) as Entries) {
-          r[key] = semigroup.concat(right[key])(left[key]);
-        }
-        return r as { [K in keyof O]: O[K] };
-      },
+    concat: (right) => (left) => {
+      const r = {} as Record<keyof O, O[keyof O]>;
+      for (const [key, semigroup] of Object.entries(semigroups) as Entries) {
+        r[key] = semigroup.concat(right[key])(left[key]);
+      }
+      return r as { [K in keyof O]: O[K] };
+    },
   });
 }
 
