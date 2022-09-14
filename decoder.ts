@@ -113,6 +113,16 @@ export const number = fromGuard(G.number, "number");
 
 export const boolean = fromGuard(G.boolean, "boolean");
 
+export function date(a: unknown): Decoded<Date> {
+  try {
+    // deno-lint-ignore no-explicit-any
+    const _date = new Date(a as any);
+    return isNaN(_date.getTime()) ? failure(a, "date") : success(_date);
+  } catch {
+    return failure(a, "date");
+  }
+}
+
 const _null = literal(null);
 
 const _undefined = literal(undefined);
@@ -302,7 +312,7 @@ export function partial<A>(
 
 export function lazy<A, B>(id: string, fn: () => Decoder<B, A>): Decoder<B, A> {
   const get = memoize<void, Decoder<B, A>>(fn);
-  return flow(get(), E.mapLeft((e) => DE.wrap(`lazy type ${id}`, e)));
+  return (u) => pipe(get()(u), E.mapLeft((e) => DE.wrap(`lazy type ${id}`, e)));
 }
 
 export const Schemable: S.Schemable<URI> = {
@@ -310,6 +320,7 @@ export const Schemable: S.Schemable<URI> = {
   string: () => string,
   number: () => number,
   boolean: () => boolean,
+  date: () => date,
   literal,
   nullable,
   undefinable,

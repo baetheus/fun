@@ -35,6 +35,16 @@ export function boolean(a: unknown): a is boolean {
   return typeof a === "boolean";
 }
 
+export function date(a: unknown): a is Date {
+  try {
+    // deno-lint-ignore no-explicit-any
+    const _date = new Date(a as any);
+    return !isNaN(_date.getTime());
+  } catch {
+    return false;
+  }
+}
+
 export function isRecord(a: unknown): a is Record<string, unknown> {
   return typeof a === "object" && a !== null;
 }
@@ -132,6 +142,7 @@ export const Schemable: S.Schemable<URI> = {
   string: () => string,
   number: () => number,
   boolean: () => boolean,
+  date: () => date,
   literal,
   nullable,
   undefinable,
