@@ -13,6 +13,8 @@ export type Unknown = Record<string, unknown>;
 
 export type Boolean = { type: "boolean" };
 
+export type Date = { type: "string"; format: "date" };
+
 export type Null = { type: "null" };
 
 export type Enum = { enum: NonEmptyArray<S.Literal> };
@@ -60,6 +62,7 @@ export type Type =
     | Object
     | Array
     | Boolean
+    | Date
     | Null
     | Enum
     | AllOf
@@ -102,6 +105,10 @@ export function number(s: Definitions = {}): [Type, Definitions] {
 
 export function boolean(s: Definitions = {}): [Type, Definitions] {
   return [{ type: "boolean" }, s];
+}
+
+export function date(s: Definitions = {}): [Type, Definitions] {
+  return [{ type: "string", format: "date" }, s];
 }
 
 export function literal<A extends [S.Literal, ...S.Literal[]]>(
@@ -227,6 +234,7 @@ export const Schemable: S.Schemable<URI> = {
   string: () => string,
   number: () => number,
   boolean: () => boolean,
+  date: () => date,
   literal,
   nullable,
   undefinable,

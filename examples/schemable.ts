@@ -1,36 +1,69 @@
-import * as S from "../schemable.ts";
+import { schema, TypeOf } from "../schemable.ts";
 import * as D from "../decoder.ts";
 import * as E from "../either.ts";
-import { flow } from "../fns.ts";
+import * as G from "../guard.ts";
+import * as J from "../json.ts";
+import { flow, pipe } from "../fns.ts";
 
-export const Thing = S.schema((s) => s.array(s.literal("stuff")));
-
-export type Thing = S.TypeOf<typeof Thing>;
-
-export const Demo = S.schema((s) =>
-  s.struct({
-    one: s.string(),
-    two: s.partial({
-      three: s.string(),
-      four: s.literal(1, 2),
-      five: s.nullable(s.string()),
+const mySchema = schema((s) => {
+  const r = pipe(
+    s.struct({
+      name: s.string(),
+      age: s.number(),
     }),
-    things: Thing(s),
-    maybeNull: s.nullable(s.string()),
-  })
-);
+    s.intersect(s.partial({
+      birthdate: s.date(),
+      interests: s.array(s.string()),
+    })),
+  );
+  return r;
+});
 
-export type Demo = S.TypeOf<typeof Demo>;
+export type MySchema = TypeOf<typeof mySchema>;
 
-export const decode = Demo(D.Schemable);
+const decode = mySchema(D.Schemable);
+const guard = mySchema(G.Schemable);
+const jsonSchema = mySchema(J.Schemable);
 
-export const print = flow(
-  decode,
+const unknown1 = {
+  name: "Batman",
+  age: 45,
+  interests: ["crime fighting", "cake", "bats"],
+};
+
+const unknown2 = {
+  name: "Cthulhu",
+  interests: ["madness"],
+};
+
+const decoded1 = decode(unknown1); // Success!
+const decoded2 = decode(unknown2); // Failure with info
+
+const guarded1 = guard(unknown1); // true
+const guarded2 = guard(unknown2); // false
+
+const print = flow(
   D.extract,
   E.fold(console.error, console.log),
 );
 
-[null, undefined, {}, [], { one: "one", two: {}, things: [] }, {
-  one: "one",
-  things: ["stuff", "things"],
-}].forEach(print);
+console.log("Schema");
+pipe(
+  jsonSchema,
+  J.print,
+  (v) => JSON.stringify(v, null, 2),
+  console.log,
+);
+console.log();
+
+console.log("Guarded");
+console.log({ guarded1, guarded2 });
+console.log();
+
+console.log("Decoded1");
+print(decoded1);
+console.log();
+
+console.log("Decoded2");
+print(decoded2);
+console.log();
