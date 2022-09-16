@@ -1,5 +1,5 @@
 import type * as T from "./types.ts";
-import type { Kind, URIS } from "./kind.ts";
+import type { $, Kind } from "./kind.ts";
 import type { Either } from "./either.ts";
 import type { Option } from "./option.ts";
 import type { Predicate } from "./predicate.ts";
@@ -194,10 +194,10 @@ export function prop<A, P extends keyof A>(
   return flow(asLens, lensProp(prop));
 }
 
-export function traverse<URI extends URIS>(
-  T: T.Traversable<URI>,
+export function traverse<U extends Kind>(
+  T: T.Traversable<U>,
 ): <S, A, B = never, C = never, D = never>(
-  sa: Iso<S, Kind<URI, [A, B, C, D]>>,
+  sa: Iso<S, $<U, [A, B, C, D]>>,
 ) => Traversal<S, A> {
   const _traversal = toTraversal(T);
   return (sa) => composeTraversal(sa, _traversal());

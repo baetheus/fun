@@ -1,4 +1,4 @@
-import type { Kind, URIS } from "./kind.ts";
+import type { $, Kind } from "./kind.ts";
 import type * as T from "./types.ts";
 
 import * as E from "./either.ts";
@@ -12,15 +12,8 @@ export type Both<B, A> = { tag: "Both"; left: B; right: A };
 
 export type These<B, A> = Left<B> | Right<A> | Both<B, A>;
 
-export const URI = "These";
-
-export type URI = typeof URI;
-
-declare module "./kind.ts" {
-  // deno-lint-ignore no-explicit-any
-  export interface Kinds<_ extends any[]> {
-    [URI]: These<_[1], _[0]>;
-  }
+export interface URI extends Kind {
+  readonly type: These<this[1], this[0]>;
 }
 
 export function left<A = never, B = never>(left: B): These<B, A> {
@@ -95,11 +88,11 @@ export function reduce<A, O>(
   return (ta) => isLeft(ta) ? o : foao(o, ta.right);
 }
 
-export function traverse<VRI extends URIS>(
-  A: T.Applicative<VRI>,
+export function traverse<U extends Kind>(
+  A: T.Applicative<U>,
 ): <A, I, J, K, L>(
-  favi: (a: A) => Kind<VRI, [I, J, K, L]>,
-) => <B>(ta: These<B, A>) => Kind<VRI, [These<B, I>, J, K, L]> {
+  favi: (a: A) => $<U, [I, J, K, L]>,
+) => <B>(ta: These<B, A>) => $<U, [These<B, I>, J, K, L]> {
   return (favi) =>
     fold(
       (b) => A.of(left(b)),

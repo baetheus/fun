@@ -1,5 +1,4 @@
-//deno-lint-ignore-file no-explicit-any
-import type { Kind, URIS } from "./kind.ts";
+import type { $, Kind } from "./kind.ts";
 import type { Predicate } from "./predicate.ts";
 
 /**
@@ -8,10 +7,8 @@ import type { Predicate } from "./predicate.ts";
  *
  * TODO; add refine method
  */
-export interface Filterable<URI extends URIS, _ extends any[] = any[]> {
+export interface Filterable<U extends Kind> {
   readonly filter: <A>(
     predicate: Predicate<A>,
-  ) => <B extends _[0], C extends _[1], D extends _[2]>(
-    ta: Kind<URI, [A, B, C, D]>,
-  ) => Kind<URI, [A, B, C, D]>;
+  ) => <B, C, D>(ta: $<U, [A, B, C, D]>) => $<U, [A, B, C, D]>;
 }

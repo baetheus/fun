@@ -1,21 +1,16 @@
-//deno-lint-ignore-file no-explicit-any
-import type { Kind, URIS } from "./kind.ts";
+import type { $, Kind } from "./kind.ts";
 
 /**
  * Bifunctor
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#bifunctor
  */
-export interface Bifunctor<URI extends URIS, _ extends any[] = any[]> {
-  readonly bimap: <A, B extends _[0], I, J>(
+export interface Bifunctor<U extends Kind> {
+  readonly bimap: <A, B, I, J>(
     fbj: (b: B) => J,
     fai: (a: A) => I,
-  ) => <C extends _[1], D extends _[2]>(
-    tab: Kind<URI, [A, B, C, D]>,
-  ) => Kind<URI, [I, J, C, D]>;
+  ) => <C, D>(tab: $<U, [A, B, C, D]>) => $<U, [I, J, C, D]>;
 
-  readonly mapLeft: <B extends _[0], J>(
+  readonly mapLeft: <B, J>(
     fbj: (b: B) => J,
-  ) => <A, C extends _[1], D extends _[2]>(
-    tea: Kind<URI, [A, B, C, D]>,
-  ) => Kind<URI, [A, J, C, D]>;
+  ) => <A, C, D>(tea: $<U, [A, B, C, D]>) => $<U, [A, J, C, D]>;
 }

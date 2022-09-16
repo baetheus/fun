@@ -1,5 +1,3 @@
-// deno-lint-ignore-file no-explicit-any
-
 /**
  * handleThrow
  *
@@ -280,7 +278,7 @@ export function recover<A>(
  * conversion between two types.
  */
 export function unsafeCoerce<A, B>(a: A): B {
-  return a as any;
+  return a as unknown as B;
 }
 
 /**
@@ -489,7 +487,9 @@ export function flow<
 ): (...a: A) => J;
 export function flow<AS extends unknown[], B>(
   a: (...as: AS) => B,
-  ...fns: ((_: any) => any)[]
+  ...fns: ((_: unknown) => unknown)[]
 ): (...as: AS) => unknown {
-  return (...args: AS): unknown => fns.reduce(apply1, a(...args));
+  return (...args: AS): unknown =>
+    // deno-lint-ignore no-explicit-any
+    fns.reduce((a, fab): any => fab(a), a(...args));
 }

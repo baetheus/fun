@@ -6,7 +6,7 @@
  * Nilable is a type like Maybe/Option that uses undefined/null in lieu of tagged unions.
  * *****************************************************************************/
 
-import type * as __ from "./kind.ts";
+import type { Kind } from "./kind.ts";
 import type * as T from "./types.ts";
 import type { Predicate } from "./predicate.ts";
 
@@ -17,15 +17,8 @@ export type Nil = undefined | null;
 
 export type Nilable<A> = Nil | A;
 
-export const URI = "Nilable";
-
-export type URI = typeof URI;
-
-declare module "./kind.ts" {
-  // deno-lint-ignore no-explicit-any
-  export interface Kinds<_ extends any[]> {
-    [URI]: Nilable<_[0]>;
-  }
+export interface URI extends Kind {
+  readonly type: Nilable<this[0]>;
 }
 
 export const nil: Nil = undefined;

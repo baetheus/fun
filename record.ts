@@ -1,4 +1,4 @@
-import type { Kind, URIS } from "./kind.ts";
+import type { $, Kind } from "./kind.ts";
 import type * as T from "./types.ts";
 
 import type { Option } from "./option.ts";
@@ -8,15 +8,8 @@ import { has, pipe } from "./fns.ts";
 
 export type ReadonlyRecord<A> = Readonly<Record<string, A>>;
 
-export const URI = "ReadonlyRecord";
-
-export type URI = typeof URI;
-
-declare module "./kind.ts" {
-  // deno-lint-ignore no-explicit-any
-  export interface Kinds<_ extends any[]> {
-    [URI]: ReadonlyRecord<_[0]>;
-  }
+export interface URI extends Kind {
+  readonly type: ReadonlyRecord<this[0]>;
 }
 
 /**
@@ -53,24 +46,20 @@ export function reduce<A, O>(
   };
 }
 
-// deno-lint-ignore no-explicit-any
-export function traverse<VRI extends URIS, _ extends any[] = any[]>(
-  A: T.Applicative<VRI, _>,
+export function traverse<V extends Kind>(
+  A: T.Applicative<V>,
 ) {
-  return <
-    A,
-    I,
-    J extends _[0] = never,
-    K extends _[1] = never,
-    L extends _[2] = never,
-  >(
-    favi: (a: A, i: string) => Kind<VRI, [I, J, K, L]>,
-  ): (ta: ReadonlyRecord<A>) => Kind<VRI, [ReadonlyRecord<I>, J, K, L]> =>
+  return <A, I, J, K, L>(
+    favi: (a: A, i: string) => $<V, [I, J, K, L]>,
+  ): (ta: ReadonlyRecord<A>) => $<V, [ReadonlyRecord<I>, J, K, L]> =>
     reduce(
       (fbs, a, index) =>
         pipe(
           favi(a, index),
-          A.ap(pipe(fbs, A.map((xs) => (x) => ({ ...xs, [index]: x })))),
+          A.ap(pipe(
+            fbs,
+            A.map((xs: ReadonlyRecord<I>) => (x: I) => ({ ...xs, [index]: x })),
+          )),
         ),
       A.of({} as ReadonlyRecord<I>),
     );
@@ -225,17 +214,17 @@ export function zipFirst<A, Q, I>(
     map((a: A, key) => fabi(key, a, right[key]));
 }
 
-export const Functor: T.Functor<URI, [string]> = { map };
+export const Functor: T.Functor<URI> = { map };
 
-export const Foldable: T.Foldable<URI, [string]> = { reduce };
+export const Foldable: T.Foldable<URI> = { reduce };
 
-export const Traversable: T.Traversable<URI, [string]> = {
+export const Traversable: T.Traversable<URI> = {
   map,
   reduce,
   traverse,
 };
 
-export function getShow<A>(SA: T.Show<A>): T.Show<Record<string, A>> {
+export function getShow<A>(SA: T.Show<A>): T.Show<ReadonlyRecord<A>> {
   return ({
     show: (ta) =>
       `{${

@@ -8,15 +8,8 @@ import { constant, flow, identity, pipe } from "./fns.ts";
 
 export type IOEither<L, R> = I.IO<E.Either<L, R>>;
 
-export const URI = "IOEither";
-
-export type URI = typeof URI;
-
-declare module "./kind.ts" {
-  // deno-lint-ignore no-explicit-any
-  export interface Kinds<_ extends any[]> {
-    [URI]: IOEither<_[1], _[0]>;
-  }
+export interface URI extends Kind {
+  readonly type: IOEither<this[1], this[0]>;
 }
 
 export function left<A = never, B = never>(left: B): IOEither<B, A> {

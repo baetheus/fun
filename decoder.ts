@@ -1,4 +1,4 @@
-import type * as __ from "./kind.ts";
+import type { Kind } from "./kind.ts";
 import type * as T from "./types.ts";
 import type { Either } from "./either.ts";
 import type { DecodeError } from "./decode_error.ts";
@@ -36,7 +36,7 @@ export function extract<A>(ta: Decoded<A>): Either<string, A> {
 
 const MonadDecoded = E.getRightMonad(DE.Semigroup);
 
-const ApplicativeDecoded: T.Applicative<E.URI, [DecodeError]> = MonadDecoded;
+const ApplicativeDecoded: T.Applicative<E.RightURI<DecodeError>> = MonadDecoded;
 
 const traverseRecord = R.traverse(ApplicativeDecoded);
 
@@ -52,15 +52,8 @@ export type From<T> = T extends Decoder<infer _, infer A> ? A : never;
 
 export type To<T> = T extends Decoder<infer B, infer _> ? B : never;
 
-export const URI = "Decoder";
-
-export type URI = typeof URI;
-
-declare module "./kind.ts" {
-  // deno-lint-ignore no-explicit-any
-  export interface Kinds<_ extends any[]> {
-    [URI]: Decoder<unknown, _[0]>;
-  }
+export interface URI extends Kind {
+  readonly type: Decoder<unknown, this[0]>;
 }
 
 // Internal Helpers

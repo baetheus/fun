@@ -1,5 +1,4 @@
-// deno-lint-ignore-file no-explicit-any
-import type { Kind, URIS } from "./kind.ts";
+import type { $, Kind } from "./kind.ts";
 import type { Applicative } from "./applicative.ts";
 import type { Chain } from "./chain.ts";
 
@@ -12,31 +11,27 @@ import { identity, pipe } from "./fns.ts";
  * Here we extend Monad with a join function. Other names for join
  * are flatten or flat.
  */
-export interface Monad<URI extends URIS, _ extends any[] = any[]>
-  extends Applicative<URI, _>, Chain<URI, _> {
-  readonly join: <A, B extends _[0], C extends _[1], D extends _[2]>(
-    tta: Kind<URI, [Kind<URI, [A, B, C, D]>, B, C, D]>,
-  ) => Kind<URI, [A, B, C, D]>;
+export interface Monad<U extends Kind> extends Applicative<U>, Chain<U> {
+  readonly join: <A, B, C, D>(
+    tta: $<U, [$<U, [A, B, C, D]>, B, C, D]>,
+  ) => $<U, [A, B, C, D]>;
 }
 
 /**
  * MonadThrow
  * https://github.com/gcanti/fp-ts/blob/master/src/MonadThrow.ts
  */
-export interface MonadThrow<URI extends URIS, _ extends any[] = any[]>
-  extends Monad<URI, _> {
-  readonly throwError: <A, B extends _[0], C extends _[1], D extends _[2]>(
-    b: B,
-  ) => Kind<URI, [A, B, C, D]>;
+export interface MonadThrow<U extends Kind> extends Monad<U> {
+  readonly throwError: <A, B, C, D>(b: B) => $<U, [A, B, C, D]>;
 }
 
 /**
  * Derive Monad module from of and chain
  */
-export function createMonad<URI extends URIS, _ extends any[] = any[]>(
-  { of, chain }: Pick<Monad<URI, _>, "of" | "chain">,
-): Monad<URI, _> {
-  const Monad: Monad<URI, _> = {
+export function createMonad<U extends Kind>(
+  { of, chain }: Pick<Monad<U>, "of" | "chain">,
+): Monad<U> {
+  const Monad: Monad<U> = {
     of,
     ap: (tfai) => (ta) => pipe(tfai, chain((fab) => pipe(ta, Monad.map(fab)))),
     map: (fai) => (ta) => pipe(ta, chain((a) => of(fai(a)))),
@@ -48,13 +43,13 @@ export function createMonad<URI extends URIS, _ extends any[] = any[]>(
 
 // Following is an initial implementation of Do notation that is incomplete
 
-// export type Do<URI extends URIS> = <B = never, C = never, D = never>() => Kind<
-//   URI,
+// export type Do<U extends Kind> = <B = never, C = never, D = never>() => $<
+//   U,
 //   // deno-lint-ignore ban-types
 //   [{}, B, C, D]
 // >;
 
-// export type Bind<URI extends URIS> = <
+// export type Bind<U extends Kind> = <
 //   N extends string,
 //   A,
 //   I,
@@ -63,9 +58,9 @@ export function createMonad<URI extends URIS, _ extends any[] = any[]>(
 //   D = never,
 // >(
 //   name: Exclude<N, keyof A>,
-//   fati: (a: A) => Kind<URI, [I, B, C, D]>,
-// ) => (ta: Kind<URI, [A, B, C, D]>) => Kind<
-//   URI,
+//   fati: (a: A) => $<U, [I, B, C, D]>,
+// ) => (ta: $<U, [A, B, C, D]>) => $<
+//   U,
 //   [
 //     { readonly [K in keyof A | N]: K extends keyof A ? A[K] : I },
 //     B,
@@ -74,17 +69,17 @@ export function createMonad<URI extends URIS, _ extends any[] = any[]>(
 //   ]
 // >;
 
-// export type BindTo<URI extends URIS> = <N extends string>(
+// export type BindTo<U extends Kind> = <N extends string>(
 //   name: N,
 // ) => <A, B = never, C = never, D = never>(
-//   ta: Kind<URI, [A, B, C, D]>,
-// ) => Kind<URI, [{ [K in N]: A }, B, C, D]>;
+//   ta: $<U, [A, B, C, D]>,
+// ) => $<U, [{ [K in N]: A }, B, C, D]>;
 
-// function makeDo<URI extends URIS>(M: T.Monad<URI>): Do<URI> {
+// function makeDo<U extends Kind>(M: T.Monad<U>): Do<U> {
 //   return () => M.of({});
 // }
 
-// function makeBind<URI extends URIS>(M: T.Monad<URI>): Bind<URI> {
+// function makeBind<U extends Kind>(M: T.Monad<U>): Bind<U> {
 //   return (name, fati) =>
 //     M.chain((a) => {
 //       const ti = fati(a);
@@ -93,13 +88,13 @@ export function createMonad<URI extends URIS, _ extends any[] = any[]>(
 //     });
 // }
 
-// function makeBindTo<URI extends URIS>(M: T.Monad<URI>): BindTo<URI> {
+// function makeBindTo<U extends Kind>(M: T.Monad<U>): BindTo<U> {
 //   // deno-lint-ignore no-explicit-any
 //   return (name) => M.map((a) => ({ [name]: a })) as any;
 // }
 
-// export function createDo<URI extends URIS>(
-//   M: T.Monad<URI>,
+// export function createDo<U extends Kind>(
+//   M: T.Monad<U>,
 // ) {
 //   return {
 //     Do: makeDo(M),

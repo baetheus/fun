@@ -63,8 +63,9 @@ Deno.test("Traversal modify", () => {
 
 Deno.test("Traversal filter", () => {
   const getAll = pipe(
-    T.toTraversal(A.Traversable)<number>(),
-    T.filter((n) => n > 0),
+    T.id<ReadonlyArray<number>>(),
+    T.traverse(A.Traversable),
+    T.filter((n: number) => n > 0),
     T.getAll,
   );
   assertEquals(getAll([]), []);
@@ -129,14 +130,22 @@ Deno.test("Traversal traverse", () => {
 
 Deno.test("Traversal foldMap", () => {
   const foldMapSum = T.foldMap(monoidSum);
-  const traverseNumberArray = pipe(T.toTraversal(A.Traversable)<number>());
-  const foldMap = pipe(traverseNumberArray, foldMapSum((n) => n));
+  const traverseNumberArray = pipe(T.traverse(A.Traversable));
+  const foldMap = pipe(
+    T.id<ReadonlyArray<number>>(),
+    traverseNumberArray,
+    foldMapSum((n) => n),
+  );
   assertEquals(foldMap([]), 0);
   assertEquals(foldMap([1, 2, 3]), 6);
 });
 
 Deno.test("Traversal getAll", () => {
-  const getAll = pipe(T.toTraversal(A.Traversable)<number>(), T.getAll);
+  const getAll = pipe(
+    T.id<ReadonlyArray<number>>(),
+    T.traverse(A.Traversable),
+    T.getAll,
+  );
   assertEquals(getAll([]), []);
   assertEquals(getAll([1, 2, 3]), [1, 2, 3]);
 });

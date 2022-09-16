@@ -1,4 +1,4 @@
-import "./kind.ts";
+import type { Kind } from "./kind.ts";
 import type * as T from "./types.ts";
 import type { Task } from "./task.ts";
 import type { Either } from "./either.ts";
@@ -30,24 +30,8 @@ import { handleThrow, identity, pipe, resolve } from "./fns.ts";
  */
 export type TaskEither<L, R> = Task<Either<L, R>>;
 
-/**
- * URI constant for the TaskEither ADT
- */
-export const URI = "TaskEither";
-
-/**
- * URI constant type for the TaskEither ADT
- */
-export type URI = typeof URI;
-
-/**
- * Kind declaration for TaskEither
- */
-declare module "./kind.ts" {
-  // deno-lint-ignore no-explicit-any
-  export interface Kinds<_ extends any[]> {
-    [URI]: TaskEither<_[1], _[0]>;
-  }
+export interface URI extends Kind {
+  readonly type: TaskEither<this[1], this[0]>;
 }
 
 /**

@@ -1,4 +1,4 @@
-import type { Kind, URIS } from "./kind.ts";
+import type { $, Kind } from "./kind.ts";
 import type * as T from "./types.ts";
 import type { Predicate } from "./predicate.ts";
 import type { Refinement } from "./refinement.ts";
@@ -14,15 +14,12 @@ export type Right<R> = { tag: "Right"; right: R };
 
 export type Either<L, R> = Left<L> | Right<R>;
 
-export const URI = "Either";
+export interface URI extends Kind {
+  readonly type: Either<this[1], this[0]>;
+}
 
-export type URI = typeof URI;
-
-declare module "./kind.ts" {
-  // deno-lint-ignore no-explicit-any
-  export interface Kinds<_ extends any[]> {
-    [URI]: Either<_[1], _[0]>;
-  }
+export interface RightURI<B> extends Kind {
+  readonly type: Either<B, this[0]>;
 }
 
 export function left<E = never, A = never>(left: E): Either<E, A> {
@@ -199,12 +196,10 @@ export function getRightMonoid<E = never, A = never>(
 
 export function getRightMonad<E>(
   { concat }: T.Semigroup<E>,
-): T.Monad<URI, [E]> {
+): T.Monad<RightURI<E>> {
   return ({
     ...Monad,
-    ap: (tfai) =>
-    // deno-lint-ignore no-explicit-any
-    (ta): Either<any, any> =>
+    ap: (tfai) => (ta) =>
       isLeft(tfai)
         ? (isLeft(ta) ? left(concat(ta.left)(tfai.left)) : tfai)
         : (isLeft(ta) ? ta : right(tfai.right(ta.right))),
@@ -283,11 +278,11 @@ export function reduce<A, O>(
   return (ta) => isLeft(ta) ? o : foao(o, ta.right);
 }
 
-export function traverse<VRI extends URIS>(
-  A: T.Applicative<VRI>,
+export function traverse<V extends Kind>(
+  A: T.Applicative<V>,
 ): <A, I, J, K, L>(
-  faui: (a: A) => Kind<VRI, [I, J, K, L]>,
-) => <B>(ta: Either<B, A>) => Kind<VRI, [Either<B, I>, J, K, L]> {
+  faui: (a: A) => $<V, [I, J, K, L]>,
+) => <B>(ta: Either<B, A>) => $<V, [Either<B, I>, J, K, L]> {
   return (faui) =>
     fold((l) => A.of(left(l)), flow(faui, A.map((r) => right(r))));
 }

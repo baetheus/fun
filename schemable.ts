@@ -1,38 +1,38 @@
-import type { Kind, URIS } from "./kind.ts";
+import type { $, Kind } from "./kind.ts";
 
 import { memoize } from "./fns.ts";
 
 export type Literal = string | number | boolean | null | undefined;
 
-export type UnknownSchemable<URI extends URIS> = {
-  readonly unknown: <B = never, C = never, D = never>() => Kind<
-    URI,
+export type UnknownSchemable<U extends Kind> = {
+  readonly unknown: <B = never, C = never, D = never>() => $<
+    U,
     [unknown, B, C, D]
   >;
 };
 
-export type StringSchemable<URI extends URIS> = {
-  readonly string: <B = never, C = never, D = never>() => Kind<
-    URI,
+export type StringSchemable<U extends Kind> = {
+  readonly string: <B = never, C = never, D = never>() => $<
+    U,
     [string, B, C, D]
   >;
 };
 
-export type NumberSchemable<URI extends URIS> = {
-  readonly number: <B = never, C = never, D = never>() => Kind<
-    URI,
+export type NumberSchemable<U extends Kind> = {
+  readonly number: <B = never, C = never, D = never>() => $<
+    U,
     [number, B, C, D]
   >;
 };
 
-export type BooleanSchemable<URI extends URIS> = {
-  readonly boolean: <B = never, C = never, D = never>() => Kind<
-    URI,
+export type BooleanSchemable<U extends Kind> = {
+  readonly boolean: <B = never, C = never, D = never>() => $<
+    U,
     [boolean, B, C, D]
   >;
 };
 
-export type LiteralSchemable<URI extends URIS> = {
+export type LiteralSchemable<U extends Kind> = {
   readonly literal: <
     A extends [Literal, ...Literal[]],
     B = never,
@@ -40,98 +40,98 @@ export type LiteralSchemable<URI extends URIS> = {
     D = never,
   >(
     ...s: A
-  ) => Kind<URI, [A[number], B, C, D]>;
+  ) => $<U, [A[number], B, C, D]>;
 };
 
-export type NullableSchemable<URI extends URIS> = {
+export type NullableSchemable<U extends Kind> = {
   readonly nullable: <A, B = never, C = never, D = never>(
-    or: Kind<URI, [A, B, C, D]>,
-  ) => Kind<URI, [A | null, B, C, D]>;
+    or: $<U, [A, B, C, D]>,
+  ) => $<U, [A | null, B, C, D]>;
 };
 
-export type UndefinableSchemable<URI extends URIS> = {
+export type UndefinableSchemable<U extends Kind> = {
   readonly undefinable: <A, B = never, C = never, D = never>(
-    or: Kind<URI, [A, B, C, D]>,
-  ) => Kind<URI, [A | undefined, B, C, D]>;
+    or: $<U, [A, B, C, D]>,
+  ) => $<U, [A | undefined, B, C, D]>;
 };
 
-export type RecordSchemable<URI extends URIS> = {
+export type RecordSchemable<U extends Kind> = {
   readonly record: <A, B = never, C = never, D = never>(
-    codomain: Kind<URI, [A, B, C, D]>,
-  ) => Kind<URI, [Record<string, A>, B, C, D]>;
+    codomain: $<U, [A, B, C, D]>,
+  ) => $<U, [Record<string, A>, B, C, D]>;
 };
 
-export type ArraySchemable<URI extends URIS> = {
+export type ArraySchemable<U extends Kind> = {
   readonly array: <A, B = never, C = never, D = never>(
-    item: Kind<URI, [A, B, C, D]>,
-  ) => Kind<URI, [ReadonlyArray<A>, B, C, D]>;
+    item: $<U, [A, B, C, D]>,
+  ) => $<U, [ReadonlyArray<A>, B, C, D]>;
 };
 
-export type TupleSchemable<URI extends URIS> = {
+export type TupleSchemable<U extends Kind> = {
   // deno-lint-ignore no-explicit-any
   readonly tuple: <A extends any[], B = never, C = never, D = never>(
-    ...items: { [K in keyof A]: Kind<URI, [A[K], B, C, D]> }
-  ) => Kind<URI, [{ [K in keyof A]: A[K] }, B, C, D]>;
+    ...items: { [K in keyof A]: $<U, [A[K], B, C, D]> }
+  ) => $<U, [{ [K in keyof A]: A[K] }, B, C, D]>;
 };
 
-export type StructSchemable<URI extends URIS> = {
+export type StructSchemable<U extends Kind> = {
   readonly struct: <A, B = never, C = never, D = never>(
-    items: { [K in keyof A]: Kind<URI, [A[K], B, C, D]> },
-  ) => Kind<URI, [{ [K in keyof A]: A[K] }, B, C, D]>;
+    items: { [K in keyof A]: $<U, [A[K], B, C, D]> },
+  ) => $<U, [{ [K in keyof A]: A[K] }, B, C, D]>;
 };
 
-export type PartialSchemable<URI extends URIS> = {
+export type PartialSchemable<U extends Kind> = {
   readonly partial: <A, B = never, C = never, D = never>(
-    items: { [K in keyof A]: Kind<URI, [A[K], B, C, D]> },
-  ) => Kind<URI, [{ [K in keyof A]?: A[K] | null }, B, C, D]>;
+    items: { [K in keyof A]: $<U, [A[K], B, C, D]> },
+  ) => $<U, [{ [K in keyof A]?: A[K] | null }, B, C, D]>;
 };
 
-export type IntersectSchemable<URI extends URIS> = {
+export type IntersectSchemable<U extends Kind> = {
   readonly intersect: <I, B = never, C = never, D = never>(
-    and: Kind<URI, [I, B, C, D]>,
+    and: $<U, [I, B, C, D]>,
   ) => <A>(
-    ta: Kind<URI, [A, B, C, D]>,
-  ) => Kind<URI, [A & I, B, C, D]>;
+    ta: $<U, [A, B, C, D]>,
+  ) => $<U, [A & I, B, C, D]>;
 };
 
-export type UnionSchemable<URI extends URIS> = {
+export type UnionSchemable<U extends Kind> = {
   readonly union: <I, B = never, C = never, D = never>(
-    or: Kind<URI, [I, B, C, D]>,
-  ) => <A>(ta: Kind<URI, [A, B, C, D]>) => Kind<URI, [A | I, B, C, D]>;
+    or: $<U, [I, B, C, D]>,
+  ) => <A>(ta: $<U, [A, B, C, D]>) => $<U, [A | I, B, C, D]>;
 };
 
-export type LazySchemable<URI extends URIS> = {
+export type LazySchemable<U extends Kind> = {
   readonly lazy: <A, B = never, C = never, D = never>(
     id: string,
-    f: () => Kind<URI, [A, B, C, D]>,
-  ) => Kind<URI, [A, B, C, D]>;
+    f: () => $<U, [A, B, C, D]>,
+  ) => $<U, [A, B, C, D]>;
 };
 
-export type Schemable<URI extends URIS> =
-  & UnknownSchemable<URI>
-  & StringSchemable<URI>
-  & NumberSchemable<URI>
-  & BooleanSchemable<URI>
-  & LiteralSchemable<URI>
-  & NullableSchemable<URI>
-  & UndefinableSchemable<URI>
-  & RecordSchemable<URI>
-  & ArraySchemable<URI>
-  & TupleSchemable<URI>
-  & StructSchemable<URI>
-  & PartialSchemable<URI>
-  & IntersectSchemable<URI>
-  & UnionSchemable<URI>
-  & LazySchemable<URI>;
+export type Schemable<U extends Kind> =
+  & UnknownSchemable<U>
+  & StringSchemable<U>
+  & NumberSchemable<U>
+  & BooleanSchemable<U>
+  & LiteralSchemable<U>
+  & NullableSchemable<U>
+  & UndefinableSchemable<U>
+  & RecordSchemable<U>
+  & ArraySchemable<U>
+  & TupleSchemable<U>
+  & StructSchemable<U>
+  & PartialSchemable<U>
+  & IntersectSchemable<U>
+  & UnionSchemable<U>
+  & LazySchemable<U>;
 
-export type Schema<A, B = never, C = never, D = never> = <URI extends URIS>(
-  s: Schemable<URI>,
-) => Kind<URI, [A, B, C, D]>;
+export type Schema<A, B = never, C = never, D = never> = <U extends Kind>(
+  s: Schemable<U>,
+) => $<U, [A, B, C, D]>;
 
 export type TypeOf<T> = T extends Schema<infer A> ? A : never;
 
 export function schema<A, B = never, C = never, D = never>(
-  f: (s: Schemable<URIS>) => Kind<URIS, [A, B, C, D]>,
+  f: (s: Schemable<Kind>) => $<Kind, [A, B, C, D]>,
 ): Schema<A, B, C, D> {
   // deno-lint-ignore no-explicit-any
   return memoize(f) as any;
