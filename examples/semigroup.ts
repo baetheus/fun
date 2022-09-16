@@ -1,13 +1,29 @@
-import * as S from "../semigroup.ts";
+import * as SG from "../semigroup.ts";
+import * as N from "../number.ts";
+import * as S from "../string.ts";
+import { pipe } from "../fns.ts";
+
+const { concat: toList } = pipe(
+  S.Semigroup,
+  SG.intercalcate(", "),
+);
+
+export const list = pipe(
+  "apples",
+  toList("oranges"),
+  toList("and bananas"),
+); // list === "apples, oranges, and bananas"
+
+console.log("intercalcate", { list });
 
 export type T1 = {
   one: string;
   two: number;
 };
 
-const mySemi = S.getStructSemigroup<T1>({
-  one: S.getFirstSemigroup(),
-  two: S.semigroupProduct,
+const mySemi = SG.struct<T1>({
+  one: SG.first(),
+  two: N.SemigroupProduct,
 });
 
 const t1: T1 = { one: "Hello", two: 10 };

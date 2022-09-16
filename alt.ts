@@ -16,7 +16,7 @@ import type { $, Kind } from "./kind.ts";
  * a boolean or, where if the left kind is "false" then the right
  * kind is returned.
  *
- * An instance of alt must obay the following laws:
+ * An instance of alt must obey the following laws:
  *
  * 1. Associativity:
  *    pipe(a, alt(b), alt(c)) === pipe(a, alt(pipe(b, alt(c))))

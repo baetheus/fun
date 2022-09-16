@@ -1,7 +1,8 @@
-#!/bin/sh
+#!/usr/bin/env sh
 
-rm -rf coverage
-deno test -A --unstable --coverage=coverage testing
-deno coverage --unstable ./coverage --lcov > ./coverage/lcov.info
-genhtml ./coverage/lcov.info --output-directory coverage
+export OUTPUT_DIR=coverage
 
+rm -rf $OUTPUT_DIR
+deno test -A --unstable --doc --coverage=$OUTPUT_DIR testing
+deno coverage --unstable ./$OUTPUT_DIR --lcov > ./$OUTPUT_DIR/lcov.info
+genhtml ./$OUTPUT_DIR/lcov.info --output-directory $OUTPUT_DIR

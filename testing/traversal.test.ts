@@ -8,7 +8,7 @@ import * as P from "../prism.ts";
 import * as O from "../option.ts";
 import * as E from "../either.ts";
 import * as A from "../array.ts";
-import { monoidSum } from "../monoid.ts";
+import { MonoidSum } from "../number.ts";
 import { pipe } from "../fns.ts";
 
 const iso = I.iso((n: number) => n.toString(), (s: string) => parseFloat(s));
@@ -129,7 +129,7 @@ Deno.test("Traversal traverse", () => {
 });
 
 Deno.test("Traversal foldMap", () => {
-  const foldMapSum = T.foldMap(monoidSum);
+  const foldMapSum = T.foldMap(MonoidSum);
   const traverseNumberArray = pipe(T.traverse(A.Traversable));
   const foldMap = pipe(
     T.id<ReadonlyArray<number>>(),

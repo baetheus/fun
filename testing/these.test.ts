@@ -3,7 +3,7 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 import * as T from "../these.ts";
 import * as O from "../option.ts";
 import { _ } from "../fns.ts";
-import { semigroupSum } from "../semigroup.ts";
+import { SemigroupSum } from "../number.ts";
 
 import * as AS from "./assert.ts";
 
@@ -53,7 +53,7 @@ Deno.test("These getShow", () => {
 });
 
 Deno.test("These getSemigroup", () => {
-  const Semigroup = T.getSemigroup(semigroupSum, semigroupSum);
+  const Semigroup = T.getSemigroup(SemigroupSum, SemigroupSum);
   const concat = Semigroup.concat;
   const cl = concat(T.left(1));
   const cr = concat(T.right(1));

@@ -3,10 +3,7 @@ import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 import * as AS from "./assert.ts";
 
 import * as O from "../option.ts";
-import { Setoid as setoidNumber } from "../number.ts";
-import { monoidSum } from "../monoid.ts";
-import { ordNumber } from "../ord.ts";
-import { semigroupSum } from "../semigroup.ts";
+import * as N from "../number.ts";
 import { _, pipe } from "../fns.ts";
 
 Deno.test("Option none", () => {
@@ -204,7 +201,7 @@ Deno.test("Option getShow", () => {
 });
 
 Deno.test("Option getSetoid", () => {
-  const Setoid = O.getSetoid(setoidNumber);
+  const Setoid = O.getSetoid(N.Setoid);
   AS.assertSetoid(Setoid, {
     a: O.some(1),
     b: O.some(1),
@@ -214,7 +211,7 @@ Deno.test("Option getSetoid", () => {
 });
 
 Deno.test("Option getOrd", () => {
-  const Ord = O.getOrd(ordNumber);
+  const Ord = O.getOrd(N.Ord);
   const { lte } = Ord;
   AS.assertOrd(Ord, { a: O.none, b: O.some(1) });
   AS.assertOrd(Ord, { a: O.some(2), b: O.some(1) });
@@ -227,12 +224,12 @@ Deno.test("Option getOrd", () => {
 });
 
 Deno.test("Option getSemigroup", () => {
-  const Semigroup = O.getSemigroup(semigroupSum);
+  const Semigroup = O.getSemigroup(N.SemigroupSum);
   AS.assertSemigroup(Semigroup, { a: O.some(1), b: O.some(2), c: O.some(3) });
 });
 
 Deno.test("Option getMonoid", () => {
-  const Monoid = O.getMonoid(monoidSum);
+  const Monoid = O.getMonoid(N.MonoidSum);
   AS.assertMonoid(Monoid, { a: O.some(1), b: O.some(2), c: O.some(3) });
 });
 
