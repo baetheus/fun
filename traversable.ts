@@ -1,4 +1,4 @@
-import type { $, Kind } from "./kind.ts";
+import type { $, Kind, TypeClass } from "./kind.ts";
 import type { Functor } from "./functor.ts";
 import type { Foldable } from "./foldable.ts";
 import type { Applicative } from "./applicative.ts";
@@ -8,7 +8,8 @@ import type { Traversal } from "./traversal.ts";
  * Traversable
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#traversable
  */
-export interface Traversable<U extends Kind> extends Functor<U>, Foldable<U> {
+export interface Traversable<U extends Kind>
+  extends Functor<U>, Foldable<U>, TypeClass<U> {
   readonly traverse: <VRI extends Kind>(
     A: Applicative<VRI>,
   ) => <A, I, J, K, L>(

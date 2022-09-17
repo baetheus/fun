@@ -256,7 +256,7 @@ type InferSchema<U extends Kind, A> =
  * import { schema, TypeOf } from "./schemable.ts";
  * import * as D from "./decoder.ts";
  * import * as G from "./guard.ts";
- * import * as J from "./json.ts";
+ * import * as J from "./json_schema.ts";
  * import { pipe } from "./fns.ts";
  *
  * const mySchema = schema(s => pipe(

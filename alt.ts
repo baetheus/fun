@@ -7,7 +7,7 @@
  */
 
 import type { Functor } from "./functor.ts";
-import type { $, Kind } from "./kind.ts";
+import type { $, Kind, TypeClass } from "./kind.ts";
 
 /**
  * An instance of Alt extends Functor and provides a new method
@@ -27,6 +27,7 @@ import type { $, Kind } from "./kind.ts";
  * [here](https://github.com/fantasyland/static-land/blob/master/docs/spec.md#alt)
  */
 export type Alt<U extends Kind> =
+  & TypeClass<U>
   & Functor<U>
   & {
     readonly alt: <A, B, C, D>(

@@ -3,7 +3,7 @@ import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 import * as S from "../schemable.ts";
 import * as D from "../decoder.ts";
 import * as G from "../guard.ts";
-import * as J from "../json.ts";
+import * as J from "../json_schema.ts";
 import * as E from "../either.ts";
 import { pipe } from "../fns.ts";
 
