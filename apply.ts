@@ -1,5 +1,5 @@
 //deno-lint-ignore-file no-explicit-any
-import type { $, Kind } from "./kind.ts";
+import type { $, Kind, TypeClass } from "./kind.ts";
 import type { Functor } from "./functor.ts";
 import type { Semigroup } from "./semigroup.ts";
 import type { NonEmptyRecord } from "./types.ts";
@@ -10,7 +10,7 @@ import { pipe } from "./fns.ts";
  * Apply
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#apply
  */
-export interface Apply<U extends Kind> extends Functor<U> {
+export interface Apply<U extends Kind> extends Functor<U>, TypeClass<U> {
   readonly ap: <A, I, B = never, C = never, D = never>(
     tfai: $<U, [(a: A) => I, B, C, D]>,
   ) => (

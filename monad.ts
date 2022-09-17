@@ -1,4 +1,4 @@
-import type { $, Kind } from "./kind.ts";
+import type { $, Kind, TypeClass } from "./kind.ts";
 import type { Applicative } from "./applicative.ts";
 import type { Chain } from "./chain.ts";
 
@@ -11,7 +11,8 @@ import { identity, pipe } from "./fns.ts";
  * Here we extend Monad with a join function. Other names for join
  * are flatten or flat.
  */
-export interface Monad<U extends Kind> extends Applicative<U>, Chain<U> {
+export interface Monad<U extends Kind>
+  extends Applicative<U>, Chain<U>, TypeClass<U> {
   readonly join: <A, B, C, D>(
     tta: $<U, [$<U, [A, B, C, D]>, B, C, D]>,
   ) => $<U, [A, B, C, D]>;
