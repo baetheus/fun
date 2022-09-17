@@ -198,11 +198,14 @@ export function getRightMonad<E>(
   { concat }: T.Semigroup<E>,
 ): T.Monad<RightURI<E>> {
   return ({
-    ...Monad,
+    of,
     ap: (tfai) => (ta) =>
       isLeft(tfai)
         ? (isLeft(ta) ? left(concat(ta.left)(tfai.left)) : tfai)
         : (isLeft(ta) ? ta : right(tfai.right(ta.right))),
+    map,
+    join,
+    chain,
   });
 }
 

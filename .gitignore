@@ -6,5 +6,5 @@ coverage
 out
 result
 build
-.envrc
-.direnv
+**/.envrc
+**/.direnv

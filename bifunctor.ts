@@ -1,10 +1,10 @@
-import type { $, Kind } from "./kind.ts";
+import type { $, Kind, TypeClass } from "./kind.ts";
 
 /**
  * Bifunctor
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#bifunctor
  */
-export interface Bifunctor<U extends Kind> {
+export interface Bifunctor<U extends Kind> extends TypeClass<U> {
   readonly bimap: <A, B, I, J>(
     fbj: (b: B) => J,
     fai: (a: A) => I,

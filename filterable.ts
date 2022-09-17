@@ -1,4 +1,4 @@
-import type { $, Kind } from "./kind.ts";
+import type { $, Kind, TypeClass } from "./kind.ts";
 import type { Predicate } from "./predicate.ts";
 
 /**
@@ -7,7 +7,7 @@ import type { Predicate } from "./predicate.ts";
  *
  * TODO; add refine method
  */
-export interface Filterable<U extends Kind> {
+export interface Filterable<U extends Kind> extends TypeClass<U> {
   readonly filter: <A>(
     predicate: Predicate<A>,
   ) => <B, C, D>(ta: $<U, [A, B, C, D]>) => $<U, [A, B, C, D]>;

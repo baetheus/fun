@@ -1,11 +1,11 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
-import * as J from "../json.ts";
+import * as J from "../json_schema.ts";
 
 Deno.test({
   name: "JsonSchema nullable",
   fn() {
-    const actual = J.print(J.nullable(J.string));
+    const actual = J.print(J.nullable(J.string()));
     const expected = {
       anyOf: [
         {
@@ -15,7 +15,6 @@ Deno.test({
           type: "null",
         },
       ],
-      definitions: {},
     };
     assertEquals(actual, expected);
   },
@@ -24,7 +23,7 @@ Deno.test({
 Deno.test({
   name: "JsonSchema undefinable",
   fn() {
-    const actual = J.print(J.undefinable(J.string));
+    const actual = J.print(J.undefinable(J.string()));
     const expected = {
       anyOf: [
         {
@@ -32,7 +31,6 @@ Deno.test({
         },
         {},
       ],
-      definitions: {},
     };
     assertEquals(actual, expected);
   },
@@ -41,10 +39,9 @@ Deno.test({
 Deno.test({
   name: "JsonSchema literal",
   fn() {
-    const actual = J.print(J.literal("Hello", "World", null, 42));
+    const actual = J.print(J.literal("Hello", "World", null, 42, undefined));
     const expected = {
-      definitions: {},
-      enum: ["Hello", "World", null, 42],
+      enum: ["Hello", "World", null, 42, {}],
     };
     assertEquals(actual, expected);
   },
@@ -53,9 +50,8 @@ Deno.test({
 Deno.test({
   name: "JsonSchema string",
   fn() {
-    const actual = J.print(J.string);
+    const actual = J.print(J.string());
     const expected = {
-      definitions: {},
       type: "string",
     };
     assertEquals(actual, expected);
@@ -65,9 +61,8 @@ Deno.test({
 Deno.test({
   name: "JsonSchema number",
   fn() {
-    const actual = J.print(J.number);
+    const actual = J.print(J.number());
     const expected = {
-      definitions: {},
       type: "number",
     };
     assertEquals(actual, expected);
@@ -77,9 +72,8 @@ Deno.test({
 Deno.test({
   name: "JsonSchema boolean",
   fn() {
-    const actual = J.print(J.boolean);
+    const actual = J.print(J.boolean());
     const expected = {
-      definitions: {},
       type: "boolean",
     };
     assertEquals(actual, expected);
@@ -91,11 +85,10 @@ Deno.test({
   fn() {
     const actual = J.print(
       J.struct({
-        foo: J.string,
+        foo: J.string(),
       }),
     );
     const expected = {
-      definitions: {},
       properties: {
         foo: {
           type: "string",
@@ -113,11 +106,10 @@ Deno.test({
   fn() {
     const actual = J.print(
       J.partial({
-        foo: J.string,
+        foo: J.string(),
       }),
     );
     const expected = {
-      definitions: {},
       properties: {
         foo: {
           type: "string",
@@ -132,9 +124,8 @@ Deno.test({
 Deno.test({
   name: "JsonSchema array",
   fn() {
-    const actual = J.print(J.array(J.string));
+    const actual = J.print(J.array(J.string()));
     const expected = {
-      definitions: {},
       items: {
         type: "string",
       },
@@ -147,12 +138,12 @@ Deno.test({
 Deno.test({
   name: "JsonSchema record",
   fn() {
-    const actual = J.print(J.record(J.string));
+    const actual = J.print(J.record(J.string()));
     const expected = {
       additionalProperties: {
         type: "string",
       },
-      definitions: {},
+
       properties: {},
       type: "object",
     };
@@ -163,9 +154,8 @@ Deno.test({
 Deno.test({
   name: "JsonSchema tuple",
   fn() {
-    const actual = J.print(J.tuple(J.string, J.number));
+    const actual = J.print(J.tuple(J.string(), J.number()));
     const expected = {
-      definitions: {},
       items: [
         {
           type: "string",
@@ -184,7 +174,7 @@ Deno.test({
   name: "JsonSchema union",
   fn() {
     const actual = J.print(
-      J.union(J.struct({ foo: J.string }))(J.struct({ bar: J.number })),
+      J.union(J.struct({ foo: J.string() }))(J.struct({ bar: J.number() })),
     );
     const expected = {
       anyOf: [
@@ -207,7 +197,6 @@ Deno.test({
           type: "object",
         },
       ],
-      definitions: {},
     };
     assertEquals(actual, expected);
   },
@@ -217,7 +206,7 @@ Deno.test({
   name: "JsonSchema intersect",
   fn() {
     const actual = J.print(
-      J.intersect(J.struct({ foo: J.string }))(J.struct({ bar: J.number })),
+      J.intersect(J.struct({ foo: J.string() }))(J.struct({ bar: J.number() })),
     );
     const expected = {
       allOf: [
@@ -240,7 +229,6 @@ Deno.test({
           type: "object",
         },
       ],
-      definitions: {},
     };
     assertEquals(actual, expected);
   },
@@ -253,19 +241,19 @@ Deno.test({
       name: string;
       age: number;
       isAlive: boolean;
-      friends: Person[];
+      friends: readonly Person[];
     };
 
-    const Person: J.JsonSchema<Person> = J.lazy("Person", () =>
+    const Person: J.JsonBuilder<Person> = J.lazy("Person", () =>
       J.struct({
-        name: J.string,
-        age: J.number,
-        isAlive: J.boolean,
+        name: J.string(),
+        age: J.number(),
+        isAlive: J.boolean(),
         friends: J.array(Person),
       }));
 
     const actual = J.print(Person);
-    const expected = {
+    const expected: J.JsonSchema = {
       definitions: {
         Person: {
           properties: {
@@ -274,12 +262,15 @@ Deno.test({
             isAlive: { type: "boolean" },
             friends: { items: { $ref: "#/definitions/Person" }, type: "array" },
           },
-          required: ["name", "age", "isAlive", "friends"].sort(),
+          required: ["name", "age", "isAlive", "friends"].sort() as [
+            string,
+            ...string[],
+          ],
           type: "object",
         },
       },
       $ref: "#/definitions/Person",
-    } as J.Type;
+    };
     assertEquals(actual, expected);
   },
 });
@@ -288,25 +279,25 @@ Deno.test({
   name: "JsonSchema mutual recursion",
   fn() {
     type Foo = {
-      bar?: Bar;
+      readonly bar?: Bar;
     };
 
     type Bar = {
-      foo?: Foo;
+      readonly foo?: Foo;
     };
 
-    const Foo: J.JsonSchema<Foo> = J.lazy("Foo", () =>
+    const Foo: J.JsonBuilder<Foo> = J.lazy("Foo", () =>
       J.partial({
         bar: Bar,
       }));
 
-    const Bar: J.JsonSchema<Bar> = J.lazy("Bar", () =>
+    const Bar: J.JsonBuilder<Bar> = J.lazy("Bar", () =>
       J.partial({
         bar: Foo,
       }));
 
     const actual = J.print(Foo);
-    const expected = {
+    const expected: J.JsonSchema = {
       $ref: "#/definitions/Foo",
       definitions: {
         Bar: {
@@ -326,7 +317,7 @@ Deno.test({
           type: "object",
         },
       },
-    } as J.Type;
+    };
 
     assertEquals(actual, expected);
   },
