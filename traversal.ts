@@ -1,7 +1,12 @@
-import type * as T from "./types.ts";
-import type { $, Kind } from "./kind.ts";
-import type { Predicate } from "./predicate.ts";
-import type { Refinement } from "./refinement.ts";
+import type {
+  $,
+  Applicative,
+  Kind,
+  Monoid,
+  Predicate,
+  Refinement,
+  Traversable,
+} from "./types.ts";
 import type { Either } from "./either.ts";
 import type { Option } from "./option.ts";
 
@@ -41,10 +46,10 @@ import {
 export type Traversal<S, A> = {
   readonly tag: "Traversal";
   readonly traverse: <V extends Kind>(
-    A: T.Applicative<V>,
-  ) => <B, C, D>(
-    fata: (a: A) => $<V, [A, B, C, D]>,
-  ) => (s: S) => $<V, [S, B, C, D]>;
+    A: Applicative<V>,
+  ) => <B, C, D, E>(
+    fata: (a: A) => $<V, [A, B, C], [D], [E]>,
+  ) => (s: S) => $<V, [S, B, C], [D], [E]>;
 };
 
 export type From<T> = T extends Traversal<infer S, infer _> ? S : never;
@@ -53,10 +58,10 @@ export type To<T> = T extends Traversal<infer _, infer A> ? A : never;
 
 export function traversal<S, A>(
   traverse: <U extends Kind>(
-    A: T.Applicative<U>,
-  ) => <B = never, C = never, D = never>(
-    fata: (a: A) => $<U, [A, B, C, D]>,
-  ) => (s: S) => $<U, [S, B, C, D]>,
+    A: Applicative<U>,
+  ) => <B = never, C = never, D = never, E = never>(
+    fata: (a: A) => $<U, [A, B, C], [D], [E]>,
+  ) => (s: S) => $<U, [S, B, C], [D], [E]>,
 ): Traversal<S, A> {
   return ({ tag: "Traversal", traverse });
 }
@@ -143,7 +148,7 @@ export function id<A>(): Traversal<A, A> {
 export function modify<A>(
   f: (a: A) => A,
 ): <S>(sa: Traversal<S, A>) => (s: S) => S {
-  return (sa) => pipe(f, sa.traverse(I.Applicative));
+  return (sa) => pipe(f, sa.traverse(I.MonadIdentity));
 }
 
 export function map<A, B>(
@@ -210,16 +215,16 @@ export function atKey(
 }
 
 export function traverse<U extends Kind>(
-  T: T.Traversable<U>,
-): <S, A, B = never, C = never, D = never>(
-  sa: Traversal<S, $<U, [A, B, C, D]>>,
+  T: Traversable<U>,
+): <S, A, B = never, C = never, D = never, E = never>(
+  sa: Traversal<S, $<U, [A, B, C], [D], [E]>>,
 ) => Traversal<S, A> {
   const _traversal = toTraversal(T);
   return (sa) => composeTraversal(sa, _traversal());
 }
 
 export function foldMap<M>(
-  M: T.Monoid<M>,
+  M: Monoid<M>,
 ): <A>(fam: (a: A) => M) => <S>(sa: Traversal<S, A>) => (s: S) => M {
   const _applicative = C.getApplicative(M);
   return (fam) => (sa) => pipe(fam, sa.traverse(_applicative));

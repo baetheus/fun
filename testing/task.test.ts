@@ -3,11 +3,7 @@ import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 import * as T from "../task.ts";
 import { pipe } from "../fns.ts";
 
-import * as AS from "./assert.ts";
-
-// deno-lint-ignore no-explicit-any
-const assertEqualsT = async (a: T.Task<any>, b: T.Task<any>) =>
-  assertEquals(await a(), await b());
+const add = (n: number) => n + 1;
 
 function throwSync(n: number): number {
   if (n % 2 === 0) {
@@ -23,51 +19,51 @@ function throwAsync(n: number): Promise<number> {
   return Promise.resolve(n);
 }
 
-Deno.test("Task make", async () => {
-  await assertEqualsT(T.of(0), T.of(0));
+Deno.test("Task of", async () => {
+  assertEquals(await T.of(0)(), 0);
 });
 
 Deno.test("Task delay", async () => {
-  await assertEqualsT(pipe(T.of(0), T.delay(200)), T.of(0));
+  assertEquals(await pipe(T.of(0), T.delay(200))(), 0);
 });
 
 Deno.test("Task fromThunk", async () => {
-  await assertEqualsT(T.fromThunk(() => 0), T.of(0));
+  assertEquals(await T.fromThunk(() => 0)(), 0);
 });
 
 Deno.test("Task tryCatch", async () => {
-  await assertEqualsT(T.tryCatch(throwSync, () => 0)(1), T.of(1));
-  await assertEqualsT(T.tryCatch(throwSync, () => 0)(2), T.of(0));
-  await assertEqualsT(T.tryCatch(throwAsync, () => 0)(1), T.of(1));
-  await assertEqualsT(T.tryCatch(throwAsync, () => 0)(2), T.of(0));
+  assertEquals(await T.tryCatch(throwSync, () => 0)(1)(), 1);
+  assertEquals(await T.tryCatch(throwSync, () => 0)(2)(), 0);
+  assertEquals(await T.tryCatch(throwAsync, () => 0)(1)(), 1);
+  assertEquals(await T.tryCatch(throwAsync, () => 0)(2)(), 0);
 });
 
 Deno.test("Task of", async () => {
-  await assertEqualsT(T.of(1), T.of(1));
+  assertEquals(await T.of(1)(), 1);
 });
 
-Deno.test("Task ap", async () => {
-  await assertEqualsT(pipe(T.of(1), T.ap(T.of(AS.add))), T.of(2));
+Deno.test("Task apParallel", async () => {
+  assertEquals(await pipe(T.of(1), T.apParallel(T.of(add)))(), 2);
 });
 
 Deno.test("Task map", async () => {
-  await assertEqualsT(pipe(T.of(1), T.map(AS.add)), T.of(2));
+  assertEquals(await pipe(T.of(1), T.map(add))(), 2);
 });
 
 Deno.test("Task join", async () => {
-  await assertEqualsT(T.join(T.of(T.of(1))), T.of(1));
+  assertEquals(await T.join(T.of(T.of(1)))(), 1);
 });
 
 Deno.test("Task chain", async () => {
-  await assertEqualsT(pipe(T.of(1), T.chain((n) => T.of(n + 1))), T.of(2));
+  assertEquals(await pipe(T.of(1), T.chain((n) => T.of(n + 1)))(), 2);
 });
 
 Deno.test("Task apSeq", async () => {
-  await assertEqualsT(pipe(T.of(1), T.apSeq(T.of(AS.add))), T.of(2));
+  assertEquals(await pipe(T.of(1), T.apSequential(T.of(add)))(), 2);
 });
 
 // Deno.test("Task Do, bind, bindTo", () => {
-//   assertEqualsT(
+//   assertEquals(
 //     pipe(
 //       T.Do<number, number, number>(),
 //       T.bind("one", () => T.of(1)),
@@ -76,7 +72,7 @@ Deno.test("Task apSeq", async () => {
 //     ),
 //     T.of(3),
 //   );
-//   assertEqualsT(
+//   assertEquals(
 //     pipe(
 //       T.of(1),
 //       T.bindTo("one"),

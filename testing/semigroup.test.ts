@@ -21,7 +21,7 @@ import { pipe } from "../fns.ts";
 // });
 //
 // Deno.test("Semigroup semigroupAll", () => {
-//   const concat = B.SemigroupAll.concat;
+//   const concat = B.SemigroupBooleanAll.concat;
 //   const concatTrue = concat(true);
 //   const concatFalse = concat(false);
 //
@@ -51,7 +51,7 @@ import { pipe } from "../fns.ts";
 // });
 //
 // Deno.test("Semigroup semigroupSum", () => {
-//   const concat = N.SemigroupSum.concat;
+//   const concat = N.SemigroupNumberSum.concat;
 //   const concatZero = concat(0);
 //   const concatOne = concat(1);
 //
@@ -122,8 +122,8 @@ Deno.test("Semigroup last", () => {
 
 Deno.test("Semigroup tuple", () => {
   const { concat } = SG.tuple(
-    N.SemigroupSum,
-    pipe(S.Semigroup, SG.intercalcate(" ")),
+    N.SemigroupNumberSum,
+    pipe(S.SemigroupString, SG.intercalcate(" ")),
   );
   assertEquals(pipe([1, "Hello"], concat([2, "World"])), [3, "Hello World"]);
 });
@@ -135,8 +135,8 @@ Deno.test("Semigroup dual", () => {
 
 Deno.test("Semigroup struct", () => {
   const { concat } = SG.struct({
-    a: N.SemigroupSum,
-    b: B.SemigroupAll,
+    a: N.SemigroupNumberSum,
+    b: B.SemigroupBooleanAll,
   });
   assertEquals(concat({ a: 1, b: true })({ a: 2, b: false }), {
     a: 3,
@@ -145,7 +145,7 @@ Deno.test("Semigroup struct", () => {
 });
 
 Deno.test("Semigroup min", () => {
-  const { concat } = SG.min(N.Ord);
+  const { concat } = SG.min(N.OrdNumber);
   assertEquals(concat(0)(0), 0);
   assertEquals(concat(0)(1), 0);
   assertEquals(concat(1)(0), 0);
@@ -153,7 +153,7 @@ Deno.test("Semigroup min", () => {
 });
 
 Deno.test("Semigroup max", () => {
-  const { concat } = SG.max(N.Ord);
+  const { concat } = SG.max(N.OrdNumber);
   assertEquals(concat(0)(0), 0);
   assertEquals(concat(0)(1), 1);
   assertEquals(concat(1)(0), 1);
@@ -166,7 +166,7 @@ Deno.test("Semigroup constant", () => {
 });
 
 Deno.test("Semigroup concatAll", () => {
-  const concatAllSum = SG.concatAll(N.SemigroupSum);
+  const concatAllSum = SG.concatAll(N.SemigroupNumberSum);
   const concatAllArray = concatAllSum(0);
 
   assertEquals(typeof concatAllSum, "function");

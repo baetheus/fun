@@ -8,10 +8,9 @@
  * specified.
  */
 
-import type { Monoid, Ord, Semigroup, Setoid } from "./types.ts";
+import type { Monoid, Ord, Predicate, Semigroup, Setoid } from "./types.ts";
 import type { Iso } from "./iso.ts";
 import type { Prism } from "./prism.ts";
-import type { Predicate } from "./predicate.ts";
 
 import * as I from "./iso.ts";
 import * as P from "./prism.ts";
@@ -157,7 +156,7 @@ export function prism<T extends AnyNewtype>(
  *
  * type Integer = Newtype<'Integer', number>;
  *
- * const setoidInteger = getSetoid<Integer>(N.Setoid);
+ * const setoidInteger = getSetoid<Integer>(N.SetoidNumber);
  * ```
  *
  * @since 2.0.0
@@ -178,7 +177,7 @@ export function getSetoid<T extends AnyNewtype>(
  *
  * type Integer = Newtype<'Integer', number>;
  *
- * const ordInteger = getOrd<Integer>(N.Ord);
+ * const ordInteger = getOrd<Integer>(N.OrdNumber);
  * ```
  *
  * @since 2.0.0
@@ -197,7 +196,7 @@ export function getOrd<T extends AnyNewtype>(ord: Ord<From<T>>): Ord<T> {
  *
  * type Integer = Newtype<'Integer', number>;
  *
- * const semigroupInteger = getSemigroup<Integer>(N.SemigroupSum);
+ * const semigroupInteger = getSemigroup<Integer>(N.SemigroupNumberSum);
  * ```
  *
  * @since 2.0.0
@@ -218,7 +217,7 @@ export function getSemigroup<T extends AnyNewtype>(
  *
  * type Integer = Newtype<'Integer', number>;
  *
- * const monoidInteger = getMonoid<Integer>(N.MonoidSum);
+ * const monoidInteger = getMonoid<Integer>(N.MonoidNumberSum);
  * ```
  *
  * @since 2.0.0

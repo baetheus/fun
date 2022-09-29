@@ -1,7 +1,4 @@
-import type * as T from "./types.ts";
-import type { $, Kind } from "./kind.ts";
-import type { Predicate } from "./predicate.ts";
-import type { Refinement } from "./refinement.ts";
+import type { $, Kind, Predicate, Refinement, Traversable } from "./types.ts";
 
 import type { Optic } from "./optic.ts";
 import type { Iso } from "./iso.ts";
@@ -197,9 +194,9 @@ export function filter<A>(
 }
 
 export function traverse<U extends Kind>(
-  T: T.Traversable<U>,
-): <S, A, B, C, D>(
-  sa: Prism<S, $<U, [A, B, C, D]>>,
+  T: Traversable<U>,
+): <S, A, B, C, D, E>(
+  sa: Prism<S, $<U, [A, B, C], [D], [E]>>,
 ) => Traversal<S, A> {
   const _traversal = toTraversal(T);
   return (sa) => composeTraversal(sa, _traversal());

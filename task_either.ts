@@ -1,24 +1,9 @@
-import type { Kind } from "./kind.ts";
-import type * as T from "./types.ts";
+import type { Alt, Bifunctor, Kind, MonadThrow, Out } from "./types.ts";
 import type { Task } from "./task.ts";
 import type { Either } from "./either.ts";
 
-import {
-  ap as eitherAp,
-  bimap as eitherBimap,
-  fold as eitherFold,
-  isLeft as eitherIsLeft,
-  left as eitherLeft,
-  map as eitherMap,
-  mapLeft as eitherMapLeft,
-  right as eitherRight,
-} from "./either.ts";
-import {
-  ap as taskAp,
-  apSeq as taskApSeq,
-  map as taskMap,
-  of as taskOf,
-} from "./task.ts";
+import * as E from "./either.ts";
+import * as T from "./task.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 import { handleThrow, identity, pipe, resolve } from "./fns.ts";
 
@@ -31,7 +16,7 @@ import { handleThrow, identity, pipe, resolve } from "./fns.ts";
 export type TaskEither<L, R> = Task<Either<L, R>>;
 
 export interface URI extends Kind {
-  readonly type: TaskEither<this[1], this[0]>;
+  readonly kind: TaskEither<Out<this, 1>, Out<this, 0>>;
 }
 
 /**
@@ -50,7 +35,7 @@ export interface URI extends Kind {
  * ```
  */
 export function left<A = never, B = never>(left: B): TaskEither<B, A> {
-  return taskOf(eitherLeft(left));
+  return T.of(E.left(left));
 }
 
 /**
@@ -69,7 +54,7 @@ export function left<A = never, B = never>(left: B): TaskEither<B, A> {
  * ```
  */
 export function right<A = never, B = never>(right: A): TaskEither<B, A> {
-  return taskOf(eitherRight(right));
+  return T.of(E.right(right));
 }
 
 /**
@@ -98,10 +83,10 @@ export function tryCatch<AS extends unknown[], A, B>(
   onThrow: (e: unknown, as: AS) => B,
 ): (...as: AS) => TaskEither<B, A> {
   return (...as) => {
-    const _onThrow = (e: unknown) => eitherLeft(onThrow(e, as));
+    const _onThrow = (e: unknown) => E.left(onThrow(e, as));
     return handleThrow(
       () => fasr(...as),
-      (a) => resolve(a).then(eitherRight).catch(_onThrow),
+      (a) => resolve(a).then(E.right).catch(_onThrow),
       (e) => resolve(_onThrow(e)),
     );
   };
@@ -111,7 +96,7 @@ export function tryCatch<AS extends unknown[], A, B>(
  * Lift an always succeeding async computation (Task) into a TaskEither
  */
 export function fromTask<A, B = never>(ta: Task<A>): TaskEither<B, A> {
-  return () => ta().then(eitherRight);
+  return () => ta().then(E.right);
 }
 
 /**
@@ -143,7 +128,7 @@ export function bimap<A, B, I, J>(
   fbj: (b: B) => J,
   fai: (a: A) => I,
 ): (ta: TaskEither<B, A>) => TaskEither<J, I> {
-  return (ta) => pipe(ta, taskMap(eitherBimap(fbj, fai)));
+  return (ta) => pipe(ta, T.map(E.bimap(fbj, fai)));
 }
 
 /**
@@ -152,7 +137,7 @@ export function bimap<A, B, I, J>(
 export function map<A, I>(
   fai: (a: A) => I,
 ): <B>(ta: TaskEither<B, A>) => TaskEither<B, I> {
-  return (ta) => pipe(ta, taskMap(eitherMap(fai)));
+  return (ta) => pipe(ta, T.map(E.map(fai)));
 }
 
 /**
@@ -161,25 +146,25 @@ export function map<A, I>(
 export function mapLeft<B, J>(
   fbj: (b: B) => J,
 ): <A>(ta: TaskEither<B, A>) => TaskEither<J, A> {
-  return (ta) => pipe(ta, taskMap(eitherMapLeft(fbj)));
+  return (ta) => pipe(ta, T.map(E.mapLeft(fbj)));
 }
 
 /**
  * Apply an argument to a function under the *Right* side.
  */
-export function ap<A, I, B>(
+export function apParallel<A, I, B>(
   tfai: TaskEither<B, (a: A) => I>,
 ): (ta: TaskEither<B, A>) => TaskEither<B, I> {
-  return pipe(tfai, taskMap(eitherAp), taskAp);
+  return pipe(tfai, T.map(E.ap), T.apParallel);
 }
 
 /**
  * Sequentially apply arguments
  */
-export function apSeq<A, I, B>(
+export function apSequential<A, I, B>(
   tfai: TaskEither<B, (a: A) => I>,
 ): (ta: TaskEither<B, A>) => TaskEither<B, I> {
-  return pipe(tfai, taskMap(eitherAp), taskApSeq);
+  return pipe(tfai, T.map(E.ap), T.apSequential);
 }
 
 /**
@@ -205,7 +190,7 @@ export function chain<A, I, J>(
 ): <B>(ta: TaskEither<B, A>) => TaskEither<B | J, I> {
   return (ta) => async () => {
     const ea = await ta();
-    return eitherIsLeft(ea) ? ea : fati(ea.right)();
+    return E.isLeft(ea) ? ea : fati(ea.right)();
   };
 }
 
@@ -214,11 +199,11 @@ export function chainFirst<A, I, J>(
 ): <B>(ta: TaskEither<B, A>) => TaskEither<B | J, A> {
   return (ta) => async () => {
     const ea = await ta();
-    if (eitherIsLeft(ea)) {
+    if (E.isLeft(ea)) {
       return ea;
     } else {
       const ei = await fati(ea.right)();
-      return eitherIsLeft(ei) ? ei : ea;
+      return E.isLeft(ei) ? ei : ea;
     }
   };
 }
@@ -247,7 +232,7 @@ export function chainLeft<B, J, I>(
 ): <A>(ta: TaskEither<B, A>) => TaskEither<J, A | I> {
   return (ta) => async () => {
     const ea = await ta();
-    return eitherIsLeft(ea) ? fbtj(ea.left)() : ea;
+    return E.isLeft(ea) ? fbtj(ea.left)() : ea;
   };
 }
 
@@ -299,7 +284,7 @@ export function alt<I, J>(
 ): <A, B>(ta: TaskEither<B, A>) => TaskEither<B | J, A | I> {
   return (ta) => async () => {
     const ea = await ta();
-    return eitherIsLeft(ea) ? ti() : ea;
+    return E.isLeft(ea) ? ti() : ea;
   };
 }
 
@@ -326,54 +311,48 @@ export function fold<L, R, B>(
   onLeft: (left: L) => B,
   onRight: (right: R) => B,
 ): (ta: TaskEither<L, R>) => Task<B> {
-  return (ta) => () => ta().then(eitherFold<L, R, B>(onLeft, onRight));
+  return (ta) => () => ta().then(E.fold<L, R, B>(onLeft, onRight));
 }
 
 // This leaks async ops so we cut it for now.
 //export const timeout = <E, A>(ms: number, onTimeout: () => E) =>
 //  (ta: TaskEither<E, A>): TaskEither<E, A> =>
-//    () => Promise.race([ta(), wait(ms).then(flow(onTimeout, eitherLeft))]);
+//    () => Promise.race([ta(), wait(ms).then(flow(onTimeout, E.left))]);
 
-export const Functor: T.Functor<URI> = { map };
+export const BifunctorTaskEither: Bifunctor<URI> = { bimap, mapLeft };
 
-export const Bifunctor: T.Bifunctor<URI> = { bimap, mapLeft };
-
-export const Apply: T.Apply<URI> = { ap, map };
-
-export const Applicative: T.Applicative<URI> = { of, ap, map };
-
-export const Chain: T.Chain<URI> = { ap, map, chain };
-
-export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
-
-export const MonadThrow: T.MonadThrow<URI> = {
+export const MonadThrowTaskEitherParallel: MonadThrow<URI> = {
   of,
-  ap,
+  ap: apParallel,
   map,
   join,
   chain,
   throwError,
 };
 
-export const Alt: T.Alt<URI> = { alt, map };
+export const AltTaskEither: Alt<URI> = { alt, map };
 
-export const ApplySeq: T.Apply<URI> = { ap: apSeq, map };
-
-export const ApplicativeSeq: T.Applicative<URI> = { of, ap: apSeq, map };
-
-export const ChainSeq: T.Chain<URI> = { ap: apSeq, map, chain };
-
-export const MonadSeq: T.Monad<URI> = { of, ap: apSeq, map, join, chain };
-
-export const MonadThrowSeq: T.MonadThrow<URI> = {
+export const MonadThrowTaskEitherSequential: MonadThrow<URI> = {
   of,
-  ap: apSeq,
+  ap: apSequential,
   map,
   join,
   chain,
   throwError,
 };
 
-export const sequenceTuple = createSequenceTuple(Apply);
+export const sequenceTupleParallel = createSequenceTuple(
+  MonadThrowTaskEitherParallel,
+);
 
-export const sequenceStruct = createSequenceStruct(Apply);
+export const sequenceStructParallel = createSequenceStruct(
+  MonadThrowTaskEitherParallel,
+);
+
+export const sequenceTupleSequential = createSequenceTuple(
+  MonadThrowTaskEitherSequential,
+);
+
+export const sequenceStructSequential = createSequenceStruct(
+  MonadThrowTaskEitherSequential,
+);

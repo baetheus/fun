@@ -3,7 +3,7 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 import * as S from "../state.ts";
 import { pipe } from "../fns.ts";
 
-import * as AS from "./assert.ts";
+const add = (n: number) => n + 1;
 
 const assertEqualsS = (
   a: S.State<number, unknown>,
@@ -27,7 +27,7 @@ Deno.test("State gets", () => {
 });
 
 Deno.test("State make", () => {
-  assertEqualsS(S.make(1, 1), S.get<number>());
+  assertEqualsS(S.state(1, 1), S.get<number>());
 });
 
 Deno.test("State of", () => {
@@ -36,24 +36,24 @@ Deno.test("State of", () => {
 
 Deno.test("State ap", () => {
   const ap = S.ap(S.gets((s: number): (a: number) => number => (a) => a + s));
-  assertEqualsS(ap(S.get()), S.make(2, 1));
+  assertEqualsS(ap(S.get()), S.state(2, 1));
 });
 
 Deno.test("State map", () => {
-  assertEqualsS(pipe(S.get<number>(), S.map(AS.add)), S.make(2, 1));
+  assertEqualsS(pipe(S.get<number>(), S.map(add)), S.state(2, 1));
 });
 
 Deno.test("State join", () => {
   assertEqualsS(
     S.join(S.gets((n: number) => S.gets((m: number) => n + m))),
-    S.make(2, 1),
+    S.state(2, 1),
   );
 });
 
 Deno.test("State chain", () => {
   assertEqualsS(
     pipe(S.get<number>(), S.chain((n) => S.gets((m) => n + m))),
-    S.make(2, 1),
+    S.state(2, 1),
   );
 });
 

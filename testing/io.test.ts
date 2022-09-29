@@ -1,23 +1,23 @@
 import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
-import * as AS from "./assert.ts";
-
 import * as I from "../io.ts";
 import * as O from "../option.ts";
-import { MonoidSum, SemigroupSum } from "../number.ts";
+import { MonoidNumberSum, SemigroupNumberSum } from "../number.ts";
+
+const add = (n: number) => n + 1;
 
 // deno-lint-ignore no-explicit-any
 const assertEqualsIO = (a: I.IO<any>, b: I.IO<any>) => assertEquals(a(), b());
 
 Deno.test("IO getSemigroup", () => {
-  const Semigroup = I.getSemigroup(SemigroupSum);
+  const Semigroup = I.getApplySemigroup(SemigroupNumberSum);
   const concat = Semigroup.concat(I.of(1));
 
   assertEqualsIO(concat(I.of(1)), I.of(2));
 });
 
 Deno.test("IO getMonoid", () => {
-  const Monoid = I.getMonoid(MonoidSum);
+  const Monoid = I.getMonoid(MonoidNumberSum);
   const empty = Monoid.empty();
 
   assertEqualsIO(empty, I.of(0));
@@ -28,12 +28,12 @@ Deno.test("IO of", () => {
 });
 
 Deno.test("IO ap", () => {
-  const ap = I.ap(I.of(AS.add));
+  const ap = I.ap(I.of(add));
   assertEqualsIO(ap(I.of(1)), I.of(2));
 });
 
 Deno.test("IO map", () => {
-  const map = I.map(AS.add);
+  const map = I.map(add);
   assertEqualsIO(map(I.of(1)), I.of(2));
 });
 
@@ -53,7 +53,7 @@ Deno.test("IO reduce", () => {
 
 Deno.test("IO traverse", () => {
   const fold = O.fold(() => -1, (n: I.IO<number>) => n());
-  const t0 = I.traverse(O.Applicative);
+  const t0 = I.traverse(O.MonadThrowOption);
   const t1 = t0((n: number) => n === 0 ? O.none : O.some(n));
   const t2 = fold(t1(I.of(0)));
   const t3 = fold(t1(I.of(1)));

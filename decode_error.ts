@@ -1,4 +1,4 @@
-import type * as T from "./types.ts";
+import type { Semigroup } from "./types.ts";
 import type { Forest } from "./tree.ts";
 
 import * as TR from "./tree.ts";
@@ -223,7 +223,7 @@ export function draw(err: DecodeError): string {
 }
 
 // Union Semigroup
-export const Semigroup: T.Semigroup<DecodeError> = {
+export const SemigroupDecodeError: Semigroup<DecodeError> = {
   concat: (right) => (left) =>
     isIntersection(left) && isIntersection(right)
       ? intersection(left, right)

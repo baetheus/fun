@@ -1,4 +1,6 @@
-import * as __ from "./kind.ts";
+import type { Kind, Out, Semigroup } from "./types.ts";
+
+// TODO: Implement any algebraic structures you can
 
 export type One<A> = {
   readonly tag: "One";
@@ -7,29 +9,22 @@ export type One<A> = {
 
 export type Two<A> = {
   readonly tag: "Two";
-  readonly left: Free<A>;
-  readonly right: Free<A>;
+  readonly first: Free<A>;
+  readonly second: Free<A>;
 };
 
 export type Free<A> = One<A> | Two<A>;
 
-export const URI = "Free";
-
-export type URI = typeof URI;
-
-declare module "./kind.ts" {
-  // deno-lint-ignore no-explicit-any
-  export interface Kinds<_ extends any[]> {
-    [URI]: Free<_[0]>;
-  }
+export interface URI extends Kind {
+  readonly kind: Free<Out<this, 0>>;
 }
 
 export function one<A>(value: A): Free<A> {
   return { tag: "One", value };
 }
 
-export function two<A>(left: A, right: A): Free<A> {
-  return { tag: "Two", left: one(left), right: one(right) };
+export function two<A>(first: A, second: A): Free<A> {
+  return { tag: "Two", first: one(first), second: one(second) };
 }
 
 export function fold<A, O>(
@@ -41,7 +36,15 @@ export function fold<A, O>(
       case "One":
         return onOne(ta.value);
       case "Two":
-        return onTwo(ta.left, ta.right);
+        return onTwo(ta.first, ta.second);
     }
   };
+}
+
+export function concat<A>(second: Free<A>): (first: Free<A>) => Free<A> {
+  return (first) => ({ tag: "Two", first, second });
+}
+
+export function getSemigroup<A>(): Semigroup<Free<A>> {
+  return { concat };
 }

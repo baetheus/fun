@@ -5,8 +5,6 @@ import * as O from "../option.ts";
 import * as N from "../number.ts";
 import { pipe } from "../fns.ts";
 
-import * as AS from "./assert.ts";
-
 Deno.test("Datum initial", () => {
   assertEquals(D.initial, { tag: "Initial" });
 });
@@ -131,7 +129,7 @@ Deno.test("Datum getShow", () => {
 });
 
 Deno.test("Datum getSemigroup", () => {
-  const Semigroup = D.getSemigroup(N.SemigroupSum);
+  const Semigroup = D.getSemigroup(N.SemigroupNumberSum);
   const initial = Semigroup.concat(D.initial);
   const pending = Semigroup.concat(D.pending);
   const replete = Semigroup.concat(D.replete(1));
@@ -156,34 +154,16 @@ Deno.test("Datum getSemigroup", () => {
   assertEquals(refresh(D.pending), D.refresh(1));
   assertEquals(refresh(D.replete(1)), D.refresh(2));
   assertEquals(refresh(D.refresh(1)), D.refresh(2));
-
-  AS.assertSemigroup(Semigroup, {
-    a: D.replete(1),
-    b: D.replete(2),
-    c: D.replete(3),
-  });
 });
 
 Deno.test("Datum getMonoid", () => {
-  const Monoid = D.getMonoid(N.MonoidSum);
+  const Monoid = D.getMonoid(N.MonoidNumberSum);
 
   assertEquals(Monoid.empty(), D.initial);
-
-  AS.assertMonoid(Monoid, {
-    a: D.replete(1),
-    b: D.replete(1),
-    c: D.replete(1),
-  });
-
-  AS.assertMonoid(Monoid, {
-    a: D.replete(1),
-    b: D.refresh(1),
-    c: D.replete(1),
-  });
 });
 
 Deno.test("Datum getSetoid", () => {
-  const Setoid = D.getSetoid(N.Setoid);
+  const Setoid = D.getSetoid(N.SetoidNumber);
   const initial = Setoid.equals(D.initial);
   const pending = Setoid.equals(D.pending);
   const replete = Setoid.equals(D.replete(1));
@@ -210,17 +190,10 @@ Deno.test("Datum getSetoid", () => {
   assertEquals(refresh(D.replete(1)), false);
   assertEquals(refresh(D.refresh(1)), true);
   assertEquals(refresh(D.refresh(2)), false);
-
-  AS.assertSetoid(Setoid, {
-    a: D.replete(1),
-    b: D.replete(1),
-    c: D.replete(1),
-    z: D.refresh(2),
-  });
 });
 
 Deno.test("Datum getOrd", () => {
-  const Ord = D.getOrd(N.Ord);
+  const Ord = D.getOrd(N.OrdNumber);
   const initial = Ord.lte(D.initial);
   const pending = Ord.lte(D.pending);
   const replete = Ord.lte(D.replete(1));
@@ -249,87 +222,6 @@ Deno.test("Datum getOrd", () => {
   assertEquals(refresh(D.refresh(1)), true);
   assertEquals(refresh(D.refresh(0)), true);
   assertEquals(refresh(D.refresh(2)), false);
-
-  AS.assertOrd(Ord, { a: D.constInitial(), b: D.constPending() });
-  AS.assertOrd(Ord, { a: D.constPending(), b: D.constInitial() });
-  AS.assertOrd(Ord, { a: D.refresh(1), b: D.replete(1) });
-  AS.assertOrd(Ord, { a: D.replete(2), b: D.replete(1) });
-});
-
-Deno.test("Datum Functor", () => {
-  AS.assertFunctor(D.Functor, {
-    ta: D.refresh(1),
-    fai: (n: number) => n + 1,
-    fij: (n: number) => n + 2,
-  });
-});
-
-Deno.test("Datum Apply", () => {
-  AS.assertApply(D.Apply, {
-    ta: D.refresh(1),
-    fai: (n: number) => n + 1,
-    fij: (n: number) => n + 2,
-    tfai: D.replete((n: number) => n + 1),
-    tfij: D.refresh((n: number) => 2 * n),
-  });
-});
-
-Deno.test("Datum Applicative", () => {
-  AS.assertApplicative(D.Applicative, {
-    a: 1,
-    ta: D.refresh(1),
-    fai: (n: number) => n + 1,
-    fij: (n: number) => n + 2,
-    tfai: D.replete((n: number) => n + 1),
-    tfij: D.refresh((n: number) => 2 * n),
-  });
-});
-
-Deno.test("Datum Chain", () => {
-  AS.assertChain(D.Chain, {
-    a: 1,
-    ta: D.refresh(1),
-    fai: (n: number) => n + 1,
-    fij: (n: number) => n + 2,
-    tfai: D.replete((n: number) => n + 1),
-    tfij: D.refresh((n: number) => 2 * n),
-    fati: (n: number) => n > 1 ? D.replete(n / 2) : D.constInitial(),
-    fitj: (n: number) => n === 1 ? D.replete(1) : D.refresh(n / 2),
-  });
-});
-
-Deno.test("Datum Monad", () => {
-  AS.assertMonad(D.Monad, {
-    a: 1,
-    ta: D.refresh(1),
-    fai: (n: number) => n + 1,
-    fij: (n: number) => n + 2,
-    tfai: D.replete((n: number) => n + 1),
-    tfij: D.refresh((n: number) => 2 * n),
-    fati: (n: number) => n > 1 ? D.replete(n / 2) : D.constInitial(),
-    fitj: (n: number) => n === 1 ? D.replete(1) : D.refresh(n / 2),
-  });
-});
-
-Deno.test("Datum Alternative", () => {
-  AS.assertAlternative(D.Alternative, {
-    a: 1,
-    ta: D.constInitial(),
-    tb: D.replete(1),
-    tc: D.refresh(2),
-    fai: (n: number) => n + 1,
-    fij: (n: number) => n + 2,
-    tfai: D.replete((n: number) => n + 1),
-    tfij: D.refresh((n: number) => 2 * n),
-  });
-});
-
-Deno.test("Datum Foldable", () => {
-  AS.assertFoldable(D.Foldable, {
-    a: 1,
-    tb: D.replete(1),
-    faia: (a: number, i: number) => a + i,
-  });
 });
 
 Deno.test("Datum of", () => {
@@ -394,7 +286,7 @@ Deno.test("Datum reduce", () => {
 });
 
 Deno.test("Datum traverse", () => {
-  const traverse = D.traverse(O.Applicative);
+  const traverse = D.traverse(O.MonadThrowOption);
   const add = traverse(O.fromPredicate((n: number) => n > 0));
 
   assertEquals(add(D.initial), O.some(D.initial));

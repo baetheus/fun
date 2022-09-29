@@ -1,10 +1,9 @@
-import type { Kind } from "./kind.ts";
-import type * as T from "./types.ts";
+import type { Identity, Kind, Monad, Out } from "./types.ts";
 
-export type Identity<A> = A;
+export type { Identity };
 
 export interface URI extends Kind {
-  readonly type: Identity<this[0]>;
+  readonly kind: Identity<Out<this, 0>>;
 }
 
 export function of<A>(a: A): Identity<A> {
@@ -33,12 +32,4 @@ export function chain<A, I>(
   return fati;
 }
 
-export const Functor: T.Functor<URI> = { map };
-
-export const Apply: T.Apply<URI> = { ap, map };
-
-export const Applicative: T.Applicative<URI> = { of, ap, map };
-
-export const Chain: T.Chain<URI> = { ap, map, chain };
-
-export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
+export const MonadIdentity: Monad<URI> = { of, ap, map, join, chain };

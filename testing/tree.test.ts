@@ -4,68 +4,13 @@ import * as T from "../tree.ts";
 import * as O from "../option.ts";
 import { _, pipe } from "../fns.ts";
 
-import * as AS from "./assert.ts";
+const add = (n: number) => n + 1;
 
-Deno.test("Tree make", () => {
+Deno.test("Tree of", () => {
   assertEquals(T.of(1), { value: 1, forest: [] });
   assertEquals(T.of(1, [T.of(2)]), {
     value: 1,
     forest: [{ value: 2, forest: [] }],
-  });
-});
-
-Deno.test("Tree Functor", () => {
-  AS.assertFunctor(T.Functor, {
-    ta: T.of(1, [T.of(2)]),
-    fai: AS.add,
-    fij: AS.multiply,
-  });
-});
-
-Deno.test("Tree Apply", () => {
-  AS.assertApply(T.Apply, {
-    ta: T.of(1, [T.of(2)]),
-    fai: AS.add,
-    fij: AS.multiply,
-    tfai: T.of(AS.add, [T.of(AS.multiply)]),
-    tfij: T.of(AS.multiply, [T.of(AS.add)]),
-  });
-});
-
-Deno.test("Tree Applcative", () => {
-  AS.assertApplicative(T.Applicative, {
-    a: 1,
-    ta: T.of(1, [T.of(2)]),
-    fai: AS.add,
-    fij: AS.multiply,
-    tfai: T.of(AS.add, [T.of(AS.multiply)]),
-    tfij: T.of(AS.multiply, [T.of(AS.add)]),
-  });
-});
-
-Deno.test("Tree Chain", () => {
-  AS.assertChain(T.Chain, {
-    a: 1,
-    ta: T.of(1, [T.of(2)]),
-    fai: AS.add,
-    fij: AS.multiply,
-    tfai: T.of(AS.add, [T.of(AS.multiply)]),
-    tfij: T.of(AS.multiply, [T.of(AS.add)]),
-    fati: (n: number) => T.of(n + 1),
-    fitj: (n: number) => T.of(n * 2, [T.of(n)]),
-  });
-});
-
-Deno.test("Tree Monad", () => {
-  AS.assertMonad(T.Monad, {
-    a: 1,
-    ta: T.of(1, [T.of(2)]),
-    fai: AS.add,
-    fij: AS.multiply,
-    tfai: T.of(AS.add, [T.of(AS.multiply)]),
-    tfij: T.of(AS.multiply, [T.of(AS.add)]),
-    fati: (n: number) => T.of(n + 1),
-    fitj: (n: number) => T.of(n * 2, [T.of(n)]),
   });
 });
 
@@ -80,15 +25,15 @@ Deno.test("Tree of", () => {
 });
 
 Deno.test("Tree ap", () => {
-  assertEquals(pipe(T.of(1), T.ap(T.of(AS.add))), T.of(2));
+  assertEquals(pipe(T.of(1), T.ap(T.of(add))), T.of(2));
   assertEquals(
-    pipe(T.of(1), T.ap(T.of(AS.add, [T.of(AS.add)]))),
+    pipe(T.of(1), T.ap(T.of(add, [T.of(add)]))),
     T.of(2, [T.of(2)]),
   );
 });
 
 Deno.test("Tree map", () => {
-  assertEquals(pipe(T.of(1), T.map(AS.add)), T.of(2));
+  assertEquals(pipe(T.of(1), T.map(add)), T.of(2));
 });
 
 Deno.test("Tree join", () => {
@@ -108,7 +53,7 @@ Deno.test("Tree reduce", () => {
 });
 
 Deno.test("Tree traverse", () => {
-  const t1 = T.traverse(O.Applicative);
+  const t1 = T.traverse(O.MonadThrowOption);
   const t2 = t1((n: number) => n === 0 ? O.none : O.some(n));
   assertEquals(t2(T.of(0)), O.none);
   assertEquals(t2(T.of(1)), O.some(T.of(1)));

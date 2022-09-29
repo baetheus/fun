@@ -4,7 +4,7 @@ import * as T from "../task_either.ts";
 import * as E from "../either.ts";
 import { _, pipe, then, wait } from "../fns.ts";
 
-import * as AS from "./assert.ts";
+const add = (n: number) => n + 1;
 
 const assertEqualsT = async (
   a: T.TaskEither<unknown, unknown>,
@@ -50,7 +50,7 @@ Deno.test("TaskEither fromEither", async () => {
 
 Deno.test("TaskEither then", async () => {
   assertEquals(
-    await pipe(Promise.resolve(1), then(AS.add)),
+    await pipe(Promise.resolve(1), then(add)),
     await Promise.resolve(2),
   );
 });
@@ -59,16 +59,16 @@ Deno.test("TaskEither of", async () => {
   await assertEqualsT(T.of(1), T.of(1));
 });
 
-Deno.test("TaskEither ap", async () => {
-  await assertEqualsT(pipe(T.right(1), T.ap(T.right(AS.add))), T.right(2));
-  await assertEqualsT(pipe(T.left(1), T.ap(T.right(AS.add))), T.left(1));
-  await assertEqualsT(pipe(T.right(1), T.ap(T.left(1))), T.left(1));
-  await assertEqualsT(pipe(T.left(1), T.ap(T.left(2))), T.left(1));
+Deno.test("TaskEither apParallel", async () => {
+  await assertEqualsT(pipe(T.right(1), T.apParallel(T.right(add))), T.right(2));
+  await assertEqualsT(pipe(T.left(1), T.apParallel(T.right(add))), T.left(1));
+  await assertEqualsT(pipe(T.right(1), T.apParallel(T.left(1))), T.left(1));
+  await assertEqualsT(pipe(T.left(1), T.apParallel(T.left(2))), T.left(1));
 });
 
 Deno.test("TaskEither map", async () => {
-  await assertEqualsT(pipe(T.right(1), T.map(AS.add)), T.right(2));
-  await assertEqualsT(pipe(T.left(1), T.map(AS.add)), T.left(1));
+  await assertEqualsT(pipe(T.right(1), T.map(add)), T.right(2));
+  await assertEqualsT(pipe(T.left(1), T.map(add)), T.left(1));
 });
 
 Deno.test("TaskEither join", async () => {
@@ -85,21 +85,24 @@ Deno.test("TaskEither chain", async () => {
 });
 
 Deno.test("TaskEither bimap", async () => {
-  const bimap = T.bimap(AS.add, AS.add);
+  const bimap = T.bimap(add, add);
   await assertEqualsT(bimap(T.right(1)), T.right(2));
   await assertEqualsT(bimap(T.left(1)), T.left(2));
 });
 
 Deno.test("TaskEither mapLeft", async () => {
-  await assertEqualsT(pipe(T.right(1), T.mapLeft(AS.add)), T.right(1));
-  await assertEqualsT(pipe(T.left(1), T.mapLeft(AS.add)), T.left(2));
+  await assertEqualsT(pipe(T.right(1), T.mapLeft(add)), T.right(1));
+  await assertEqualsT(pipe(T.left(1), T.mapLeft(add)), T.left(2));
 });
 
-Deno.test("TaskEither apSeq", async () => {
-  await assertEqualsT(pipe(T.right(1), T.apSeq(T.right(AS.add))), T.right(2));
-  await assertEqualsT(pipe(T.left(1), T.apSeq(T.right(AS.add))), T.left(1));
-  await assertEqualsT(pipe(T.right(1), T.apSeq(T.left(1))), T.left(1));
-  await assertEqualsT(pipe(T.left(1), T.apSeq(T.left(2))), T.left(1));
+Deno.test("TaskEither apSequential", async () => {
+  await assertEqualsT(
+    pipe(T.right(1), T.apSequential(T.right(add))),
+    T.right(2),
+  );
+  await assertEqualsT(pipe(T.left(1), T.apSequential(T.right(add))), T.left(1));
+  await assertEqualsT(pipe(T.right(1), T.apSequential(T.left(1))), T.left(1));
+  await assertEqualsT(pipe(T.left(1), T.apSequential(T.left(2))), T.left(1));
 });
 
 Deno.test("TaskEither alt", async () => {

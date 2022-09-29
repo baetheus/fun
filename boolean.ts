@@ -1,4 +1,4 @@
-import type * as T from "./types.ts";
+import type { Monoid, Semigroup, Setoid } from "./types.ts";
 
 export const constTrue = () => true;
 
@@ -16,22 +16,22 @@ export function and(right: boolean): (left: boolean) => boolean {
   return (left) => left && right;
 }
 
-export const Setoid: T.Setoid<boolean> = { equals };
+export const SetoidBoolean: Setoid<boolean> = { equals };
 
-export const SemigroupAll: T.Semigroup<boolean> = {
+export const SemigroupBooleanAll: Semigroup<boolean> = {
   concat: and,
 };
 
-export const SemigroupAny: T.Semigroup<boolean> = {
+export const SemigroupBooleanAny: Semigroup<boolean> = {
   concat: or,
 };
 
-export const MonoidAll: T.Monoid<boolean> = {
+export const MonoidBooleanAll: Monoid<boolean> = {
   concat: and,
   empty: constTrue,
 };
 
-export const MonoidAny: T.Monoid<boolean> = {
+export const MonoidBooleanAny: Monoid<boolean> = {
   concat: or,
   empty: constFalse,
 };

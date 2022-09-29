@@ -1,4 +1,4 @@
-import type * as T from "./types.ts";
+import type { Monoid, Ord, Semigroup, Setoid } from "./types.ts";
 
 export function equals(second: string): (first: string) => boolean {
   return (first) => first === second;
@@ -16,10 +16,10 @@ export function empty(): string {
   return "";
 }
 
-export const Setoid: T.Setoid<string> = { equals };
+export const SetoidString: Setoid<string> = { equals };
 
-export const Semigroup: T.Semigroup<string> = { concat };
+export const SemigroupString: Semigroup<string> = { concat };
 
-export const Monoid: T.Monoid<string> = { concat, empty };
+export const MonoidString: Monoid<string> = { concat, empty };
 
-export const Ord: T.Ord<string> = { lte, equals };
+export const OrdString: Ord<string> = { lte, equals };

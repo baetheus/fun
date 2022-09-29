@@ -1,7 +1,7 @@
-import type { Kind } from "./kind.ts";
+import type { In, Kind, Out } from "./types.ts";
 
-import { isNil } from "./nilable.ts";
 import * as S from "./schemable.ts";
+import { isNil } from "./fns.ts";
 
 export type Guard<A, B extends A> = (a: A) => a is B;
 
@@ -10,7 +10,7 @@ export type TypeOf<T> = T extends Guard<infer _, infer A> ? A : never;
 export type InputOf<T> = T extends Guard<infer B, infer _> ? B : never;
 
 export interface URI extends Kind {
-  readonly type: Guard<unknown, this[0]>;
+  readonly kind: Guard<In<this, 0>, Out<this, 0>>;
 }
 
 export function compose<A, B extends A, C extends B>(
@@ -137,12 +137,15 @@ export function lazy<A, B extends A>(
   return fga();
 }
 
-export const Schemable: S.Schemable<URI> = {
+export interface UnknownURI extends Kind {
+  readonly kind: Guard<unknown, Out<this, 0>>;
+}
+
+export const Schemable: S.Schemable<UnknownURI> = {
   unknown: () => unknown,
   string: () => string,
   number: () => number,
   boolean: () => boolean,
-  date: () => date,
   literal,
   nullable,
   undefinable,

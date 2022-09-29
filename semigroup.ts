@@ -7,36 +7,12 @@
  * instance getters, and some utilities around Semigroups.
  */
 
-import type { Ord } from "./ord.ts";
+import type { Ord, Semigroup } from "./types.ts";
 
 import * as Or from "./ord.ts";
 import { pipe } from "./fns.ts";
 
-/**
- * A Semigroup<T> is an algebra with a notion of concatenation. This
- * means that it's used to merge two Ts into one T. The only rule
- * that this merging must follow is that if you merge A, B, and C,
- * that it doesn't matter if you start by merging A and B or start
- * by merging B and C. There are many ways to merge values that
- * follow these rules. A simple example is addition for numbers.
- * It doesn't matter if you add (A + B) + C or if you add A + (B + C).
- * The resulting sum will be the same. Thus, (number, +) can be
- * used to make a Semigroup<number> (see [SemigroupSum](./number.ts)
- * for this exact instance).
- *
- * An instance of concat must obey the following laws:
- *
- * 1. Associativity:
- *    pipe(a, concat(b), concat(c)) === pipe(a, concat(pipe(b, concat(c))))
- *
- * The original type came from
- * [static-land](https://github.com/fantasyland/static-land/blob/master/docs/spec.md#semigroup)
- *
- * @since 2.0.0
- */
-export type Semigroup<T> = {
-  readonly concat: (right: T) => (left: T) => T;
-};
+export type { Semigroup };
 
 /**
  * Get an Semigroup over A that always returns the first
@@ -184,6 +160,7 @@ export function tuple<T extends ReadonlyArray<Semigroup<any>>>(
  *
  * @example
  * ```ts
+ * import type { Semigroup } from "./types.ts";
  * import * as SG from "./semigroup.ts";
  * import * as N from "./number.ts";
  * import { pipe } from "./fns.ts";
@@ -192,7 +169,7 @@ export function tuple<T extends ReadonlyArray<Semigroup<any>>>(
  * const person = (name: string, age: number): Person => ({ name, age });
  *
  * // Chooses the longest string, defaulting to left when equal
- * const longestString: SG.Semigroup<string> = {
+ * const longestString: Semigroup<string> = {
  *   concat: (right) => (left) => right.length > left.length ? right : left,
  * };
  *
@@ -200,7 +177,7 @@ export function tuple<T extends ReadonlyArray<Semigroup<any>>>(
  * // name and the oldest age
  * const { concat } = SG.struct<Person>({
  *   name: longestString,
- *   age: N.SemigroupMax,
+ *   age: N.SemigroupNumberMax,
  * })
  *
  * const brandon = pipe(
@@ -238,7 +215,7 @@ export function struct<O extends Readonly<Record<string, unknown>>>(
  * import * as N from "./number.ts";
  * import { pipe } from "./fns.ts";
  *
- * const { concat } = SG.max(N.Ord);
+ * const { concat } = SG.max(N.OrdNumber);
  *
  * const biggest = pipe(
  *   0,
@@ -267,7 +244,7 @@ export function max<A>(O: Ord<A>): Semigroup<A> {
  * import * as N from "./number.ts";
  * import { pipe } from "./fns.ts";
  *
- * const { concat } = SG.min(N.Ord);
+ * const { concat } = SG.min(N.OrdNumber);
  *
  * const smallest = pipe(
  *   0,
@@ -298,7 +275,7 @@ export function min<A>(O: Ord<A>): Semigroup<A> {
  * import { pipe } from "./fns.ts";
  *
  * const { concat: toList } = pipe(
- *   S.Semigroup,
+ *   S.SemigroupString,
  *   SG.intercalcate(", "),
  * );
  *
@@ -355,7 +332,7 @@ export function constant<A>(a: A): Semigroup<A> {
  * import * as N from "./number.ts";
  * import { pipe } from "./fns.ts";
  *
- * const sumAll = SG.concatAll(N.SemigroupSum);
+ * const sumAll = SG.concatAll(N.SemigroupNumberSum);
  *
  * const sum = pipe(
  *   [1, 30, 80, 1000, 52, 42],

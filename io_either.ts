@@ -1,15 +1,26 @@
-import type { Kind } from "./kind.ts";
-import type * as T from "./types.ts";
+import type {
+  Alt,
+  Bifunctor,
+  Extend,
+  Foldable,
+  Kind,
+  MonadThrow,
+  Out,
+} from "./types.ts";
 
 import * as E from "./either.ts";
 import * as I from "./io.ts";
-import * as S from "./apply.ts";
+import {
+  createApplySemigroup,
+  createSequenceStruct,
+  createSequenceTuple,
+} from "./apply.ts";
 import { constant, flow, identity, pipe } from "./fns.ts";
 
 export type IOEither<L, R> = I.IO<E.Either<L, R>>;
 
 export interface URI extends Kind {
-  readonly type: IOEither<this[1], this[0]>;
+  readonly kind: IOEither<Out<this, 1>, Out<this, 0>>;
 }
 
 export function left<A = never, B = never>(left: B): IOEither<B, A> {
@@ -109,26 +120,25 @@ export function reduce<A, O>(
   return (ta) => pipe(ta(), E.fold(() => o, (a) => foao(o, a)));
 }
 
-export const Functor: T.Functor<URI> = { map };
+export const BifunctorIOEither: Bifunctor<URI> = { bimap, mapLeft };
 
-export const Apply: T.Apply<URI> = { ap, map };
+export const MonadThrowIOEither: MonadThrow<URI> = {
+  of,
+  ap,
+  map,
+  join,
+  chain,
+  throwError,
+};
 
-export const Applicative: T.Applicative<URI> = { of, ap, map };
+export const AltIOEither: Alt<URI> = { alt, map };
 
-export const Chain: T.Chain<URI> = { ap, map, chain };
+export const ExtendsIOEither: Extend<URI> = { map, extend };
 
-export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
+export const FoldableIOEither: Foldable<URI> = { reduce };
 
-export const Bifunctor: T.Bifunctor<URI> = { bimap, mapLeft };
+export const getApplySemigroup = createApplySemigroup(MonadThrowIOEither);
 
-export const MonadThrow: T.MonadThrow<URI> = { ...Monad, throwError };
+export const sequenceTuple = createSequenceTuple(MonadThrowIOEither);
 
-export const Alt: T.Alt<URI> = { alt, map };
-
-export const Extends: T.Extend<URI> = { map, extend };
-
-export const Foldable: T.Foldable<URI> = { reduce };
-
-export const sequenceTuple = S.createSequenceTuple(Apply);
-
-export const sequenceStruct = S.createSequenceStruct(Apply);
+export const sequenceStruct = createSequenceStruct(MonadThrowIOEither);

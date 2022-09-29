@@ -1,5 +1,15 @@
-import type { $, Kind } from "./kind.ts";
-import type * as T from "./types.ts";
+import type {
+  $,
+  Applicative,
+  Bifunctor,
+  Foldable,
+  Functor,
+  Kind,
+  Out,
+  Semigroup,
+  Show,
+  Traversable,
+} from "./types.ts";
 
 import * as E from "./either.ts";
 import { identity, pipe } from "./fns.ts";
@@ -13,7 +23,7 @@ export type Both<B, A> = { tag: "Both"; left: B; right: A };
 export type These<B, A> = Left<B> | Right<A> | Both<B, A>;
 
 export interface URI extends Kind {
-  readonly type: These<this[1], this[0]>;
+  readonly kind: These<Out<this, 1>, Out<this, 0>>;
 }
 
 export function left<A = never, B = never>(left: B): These<B, A> {
@@ -89,10 +99,10 @@ export function reduce<A, O>(
 }
 
 export function traverse<U extends Kind>(
-  A: T.Applicative<U>,
-): <A, I, J, K, L>(
-  favi: (a: A) => $<U, [I, J, K, L]>,
-) => <B>(ta: These<B, A>) => $<U, [These<B, I>, J, K, L]> {
+  A: Applicative<U>,
+): <A, I, J, K, L, M>(
+  favi: (a: A) => $<U, [I, J, K], [L], [M]>,
+) => <B>(ta: These<B, A>) => $<U, [These<B, I>, J, K], [L], [M]> {
   return (favi) =>
     fold(
       (b) => A.of(left(b)),
@@ -101,18 +111,18 @@ export function traverse<U extends Kind>(
     );
 }
 
-export const Bifunctor: T.Bifunctor<URI> = { bimap, mapLeft };
+export const BifunctorThese: Bifunctor<URI> = { bimap, mapLeft };
 
-export const Functor: T.Functor<URI> = { map };
+export const FunctorThese: Functor<URI> = { map };
 
-export const Foldable: T.Foldable<URI> = { reduce };
+export const FoldableThese: Foldable<URI> = { reduce };
 
-export const Traversable: T.Traversable<URI> = { map, reduce, traverse };
+export const TraversableThese: Traversable<URI> = { map, reduce, traverse };
 
 export function getShow<A, B>(
-  SB: T.Show<B>,
-  SA: T.Show<A>,
-): T.Show<These<B, A>> {
+  SB: Show<B>,
+  SA: Show<A>,
+): Show<These<B, A>> {
   return ({
     show: fold(
       (left) => `Left(${SB.show(left)})`,
@@ -123,9 +133,9 @@ export function getShow<A, B>(
 }
 
 export function getSemigroup<A, B>(
-  SB: T.Semigroup<B>,
-  SA: T.Semigroup<A>,
-): T.Semigroup<These<B, A>> {
+  SB: Semigroup<B>,
+  SA: Semigroup<A>,
+): Semigroup<These<B, A>> {
   return ({
     concat: (x) => (y) => {
       if (isLeft(x)) {

@@ -1,3 +1,13 @@
+// deno-lint-ignore-file no-explicit-any
+
+export function isNil(a: unknown): a is null | undefined {
+  return a === null || a === undefined;
+}
+
+export function isNotNil<A>(a: A): a is NonNullable<A> {
+  return !isNil(a);
+}
+
 /**
  * handleThrow
  *
@@ -487,9 +497,7 @@ export function flow<
 ): (...a: A) => J;
 export function flow<AS extends unknown[], B>(
   a: (...as: AS) => B,
-  ...fns: ((_: unknown) => unknown)[]
-): (...as: AS) => unknown {
-  return (...args: AS): unknown =>
-    // deno-lint-ignore no-explicit-any
-    fns.reduce((a, fab): any => fab(a), a(...args));
+  ...fns: ((_: any) => any)[]
+): (...as: AS) => any {
+  return (...args: AS): any => fns.reduce((a, fab): any => fab(a), a(...args));
 }

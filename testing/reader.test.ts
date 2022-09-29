@@ -3,7 +3,7 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 import * as R from "../reader.ts";
 import { pipe } from "../fns.ts";
 
-import * as AS from "./assert.ts";
+const add = (n: number) => n + 1;
 
 const n = null as unknown as never;
 
@@ -19,7 +19,7 @@ Deno.test("Reader ask", () => {
 });
 
 Deno.test("Reader asks", () => {
-  assertEqualsR(R.asks(AS.add), R.asks(AS.add));
+  assertEqualsR(R.asks(add), R.asks(add));
 });
 
 Deno.test("Reader of", () => {
@@ -28,11 +28,11 @@ Deno.test("Reader of", () => {
 });
 
 Deno.test("Reader ap", () => {
-  assertEquals(pipe(R.of(0), R.ap(R.of(AS.add)))(n), R.of(1)(n));
+  assertEquals(pipe(R.of(0), R.ap(R.of(add)))(n), R.of(1)(n));
 });
 
 Deno.test("Reader map", () => {
-  assertEquals(pipe(R.of(0), R.map(AS.add))(n), R.of(1)(n));
+  assertEquals(pipe(R.of(0), R.map(add))(n), R.of(1)(n));
 });
 
 Deno.test("Reader join", () => {
