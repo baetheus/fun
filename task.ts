@@ -1,12 +1,16 @@
-import type { Kind } from "./kind.ts";
-import type * as T from "./types.ts";
+import type { Kind, Monad, Out } from "./types.ts";
 
+import {
+  createApplySemigroup,
+  createSequenceStruct,
+  createSequenceTuple,
+} from "./apply.ts";
 import { handleThrow, resolve, wait } from "./fns.ts";
 
 export type Task<A> = () => Promise<A>;
 
 export interface URI extends Kind {
-  readonly type: Task<this[0]>;
+  readonly kind: Task<Out<this, 0>>;
 }
 
 export function of<A>(a: A): Task<A> {
@@ -39,11 +43,15 @@ export function map<A, I>(fai: (a: A) => I): (ta: Task<A>) => Task<I> {
   return (ta) => () => ta().then(fai);
 }
 
-export function ap<A, I>(tfai: Task<(a: A) => I>): (ta: Task<A>) => Task<I> {
+export function apParallel<A, I>(
+  tfai: Task<(a: A) => I>,
+): (ta: Task<A>) => Task<I> {
   return (ta) => () => Promise.all([tfai(), ta()]).then(([fai, a]) => fai(a));
 }
 
-export function apSeq<A, I>(tfai: Task<(a: A) => I>): (ta: Task<A>) => Task<I> {
+export function apSequential<A, I>(
+  tfai: Task<(a: A) => I>,
+): (ta: Task<A>) => Task<I> {
   return (ta) => async () => (await tfai())(await ta());
 }
 
@@ -55,20 +63,36 @@ export function chain<A, I>(fati: (a: A) => Task<I>): (ta: Task<A>) => Task<I> {
   return (ta) => () => ta().then((a) => fati(a)());
 }
 
-export const Functor: T.Functor<URI> = { map };
+export const MonadTaskParallel: Monad<URI> = {
+  of,
+  ap: apParallel,
+  map,
+  join,
+  chain,
+};
 
-export const Apply: T.Apply<URI> = { ap, map };
+export const MonadTaskSequential: Monad<URI> = {
+  of,
+  ap: apSequential,
+  map,
+  join,
+  chain,
+};
 
-export const Applicative: T.Applicative<URI> = { of, ap, map };
+export const getApplySemigroupParallel = createApplySemigroup(
+  MonadTaskParallel,
+);
 
-export const Chain: T.Chain<URI> = { ap, map, chain };
+export const getApplySemigroupSequential = createApplySemigroup(
+  MonadTaskSequential,
+);
 
-export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
+export const sequenceTupleParallel = createSequenceTuple(MonadTaskParallel);
 
-export const ApplySeq: T.Apply<URI> = { ap: apSeq, map };
+export const sequenceTupleSequential = createSequenceTuple(MonadTaskSequential);
 
-export const ApplicativeSeq: T.Applicative<URI> = { of, ap: apSeq, map };
+export const sequenceStructParallel = createSequenceStruct(MonadTaskParallel);
 
-export const ChainSeq: T.Chain<URI> = { ap: apSeq, map, chain };
-
-export const MonadSeq: T.Monad<URI> = { of, ap: apSeq, map, join, chain };
+export const sequenceStructSequential = createSequenceStruct(
+  MonadTaskSequential,
+);

@@ -1,12 +1,19 @@
-import type { Kind } from "./kind.ts";
-import type * as T from "./types.ts";
+import type {
+  Category,
+  Contravariant,
+  In,
+  Kind,
+  Monad,
+  Out,
+  Profunctor,
+} from "./types.ts";
 
-import { flow, pipe } from "./fns.ts";
+import { flow, identity, pipe } from "./fns.ts";
 
-export type Reader<B, A> = (b: B) => A;
+export type Reader<D, A> = (d: D) => A;
 
 export interface URI extends Kind {
-  readonly type: Reader<this[1], this[0]>;
+  readonly kind: Reader<In<this, 0>, Out<this, 0>>;
 }
 
 export function ask<A>(): Reader<A, A> {
@@ -47,12 +54,33 @@ export function join<A, B>(
   return (...b) => tta(...b)(...b);
 }
 
-export const Functor: T.Functor<URI> = { map };
+export function promap<A, I, L, D>(
+  fai: (a: A) => I,
+  fld: (l: L) => D,
+): (ta: Reader<D, A>) => Reader<L, I> {
+  return (ta) => flow(fld, ta, fai);
+}
 
-export const Apply: T.Apply<URI> = { ap, map };
+export function contramap<L, D>(
+  fld: (l: L) => D,
+): <A>(ta: Reader<D, A>) => Reader<L, A> {
+  return (ta) => flow(fld, ta);
+}
 
-export const Applicative: T.Applicative<URI> = { of, ap, map };
+export function id<A>(): Reader<A, A> {
+  return identity;
+}
 
-export const Chain: T.Chain<URI> = { ap, map, chain };
+export function compose<A, I>(
+  second: Reader<A, I>,
+): <B>(first: Reader<B, A>) => Reader<B, I> {
+  return (first) => flow(first, second);
+}
 
-export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
+export const ProfunctorReader: Profunctor<URI> = { promap };
+
+export const MonadReader: Monad<URI> = { of, ap, map, join, chain };
+
+export const ContravariantReader: Contravariant<URI> = { contramap };
+
+export const CategoryReader: Category<URI> = { id, compose };

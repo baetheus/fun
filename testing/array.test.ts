@@ -4,13 +4,13 @@ import {
   assertStrictEquals,
 } from "https://deno.land/std/testing/asserts.ts";
 
+import type { Ord } from "../types.ts";
+
 import * as A from "../array.ts";
 import * as O from "../option.ts";
-import { Setoid as setoidBoolean } from "../boolean.ts";
-import { type Ord, ordNumber } from "../ord.ts";
+import * as N from "../number.ts";
+import { SetoidBoolean } from "../boolean.ts";
 import { lessThanOrEqual, pipe, strictEquals } from "../fns.ts";
-
-import * as AS from "./assert.ts";
 
 Deno.test("Array empty", () => assertEquals(A.empty(), []));
 
@@ -59,93 +59,8 @@ Deno.test("Array isEmpty", () => {
   assertEquals(A.isEmpty(t2), false);
 });
 
-Deno.test("Array Functor", () => {
-  AS.assertFunctor(
-    A.Functor,
-    {
-      ta: [1, 2, 3],
-      fai: (n: number) => n + 1,
-      fij: (n: number) => n + 2,
-    },
-  );
-});
-
-Deno.test("Array Apply", () => {
-  AS.assertApply(A.Apply, {
-    ta: A.of(1),
-    fai: AS.add,
-    fij: AS.multiply,
-    tfai: [AS.add, AS.multiply],
-    tfij: [AS.multiply, AS.add],
-  });
-});
-
-Deno.test("Array Applicative", () => {
-  AS.assertApplicative(A.Applicative, {
-    a: 1,
-    ta: A.of(1),
-    fai: AS.add,
-    fij: AS.multiply,
-    tfai: [AS.add, AS.multiply],
-    tfij: [AS.multiply, AS.add],
-  });
-});
-
-Deno.test("Array Chain", () => {
-  AS.assertChain(A.Chain, {
-    a: 1,
-    ta: A.of(1),
-    fai: AS.add,
-    fij: AS.multiply,
-    tfai: [AS.add, AS.multiply],
-    tfij: [AS.multiply, AS.add],
-    fati: AS.wrapAdd(A.Applicative),
-    fitj: AS.wrapMultiply(A.Applicative),
-  });
-});
-
-Deno.test("Array Monad", () => {
-  AS.assertMonad(A.Monad, {
-    a: 1,
-    ta: A.of(1),
-    fai: AS.add,
-    fij: AS.multiply,
-    tfai: [AS.add, AS.multiply],
-    tfij: [AS.multiply, AS.add],
-    fati: AS.wrapAdd(A.Applicative),
-    fitj: AS.wrapMultiply(A.Applicative),
-  });
-});
-
-Deno.test("Array Alt", () => {
-  AS.assertAlt(A.Alt, {
-    ta: A.of(1),
-    tb: [],
-    tc: [1, 2, 3],
-    fai: AS.add,
-    fij: AS.multiply,
-  });
-});
-
-Deno.test("Array Filterable", () => {
-  AS.assertFilterable(A.Filterable, {
-    a: [1, 2, 3, 4, 5],
-    b: [5, 4, 3, 2, 1],
-    f: (n: number): boolean => n < 2,
-    g: (n: number): boolean => n > 4,
-  });
-});
-
-Deno.test("Array Foldable", () => {
-  AS.assertFoldable(A.Foldable, {
-    a: 1,
-    tb: [1, 2, 3],
-    faia: (a: number, i: number) => a + i,
-  });
-});
-
 Deno.test("Array traverse", () => {
-  const traverseOption = A.traverse(O.Applicative);
+  const traverseOption = A.traverse(O.MonadThrowOption);
 
   assertEquals(typeof traverseOption, "function");
 
@@ -162,7 +77,7 @@ Deno.test("Array traverse", () => {
 });
 
 Deno.test("Array getSetoid", () => {
-  const setoid = A.getSetoid(setoidBoolean);
+  const setoid = A.getSetoid(SetoidBoolean);
 
   assertEquals(setoid.equals([])([]), true);
   assertEquals(setoid.equals([true])([]), false);
@@ -172,7 +87,7 @@ Deno.test("Array getSetoid", () => {
 });
 
 Deno.test("Array getOrd", () => {
-  const ord = A.getOrd(ordNumber);
+  const ord = A.getOrd(N.OrdNumber);
 
   assertEquals(ord.lte([])([]), true);
   assertEquals(ord.lte([1])([]), true);
@@ -232,7 +147,7 @@ Deno.test("Array reduce", () => {
 });
 
 Deno.test("Array traverse", () => {
-  const traverse = A.traverse(A.Applicative);
+  const traverse = A.traverse(A.MonadArray);
 
   assertEquals(pipe([1, 2, 3], traverse((n) => [n])), [[1, 2, 3]]);
 });
@@ -246,7 +161,7 @@ Deno.test("Array indexedReduce", () => {
 });
 
 Deno.test("Array indexedTraverse", () => {
-  const traverse = A.traverse(A.Applicative);
+  const traverse = A.traverse(A.MonadArray);
 
   assertEquals(pipe([1, 2, 3], traverse((n, i) => [n + i])), [[1, 3, 5]]);
 });
@@ -257,7 +172,7 @@ Deno.test("Array filter", () => {
 });
 
 Deno.test("Array createSequence", () => {
-  const sequence = A.createSequence(A.Applicative);
+  const sequence = A.createSequence(A.MonadArray);
   assertEquals(sequence([]), [[]]);
   assertEquals(sequence([[1]]), [[1]]);
   assertEquals(sequence([[], [1]]), []);
@@ -343,17 +258,17 @@ Deno.test("Array sort", () => {
   assertNotStrictEquals(r1, t1);
 
   const t2 = [1];
-  const r2 = pipe(t2, A.sort(ordNumber));
+  const r2 = pipe(t2, A.sort(N.OrdNumber));
   assertEquals(r2, t2);
   assertNotStrictEquals(r2, t2);
 
   const t3 = [3, 1, 2];
-  const r3 = pipe(t3, A.sort(ordNumber));
+  const r3 = pipe(t3, A.sort(N.OrdNumber));
   assertEquals(r3, [1, 2, 3]);
   assertEquals(t3, [3, 1, 2]);
 
   const t4 = A.range(0, 1_000);
-  const r4 = pipe(t4, A.sort(ordNumber));
+  const r4 = pipe(t4, A.sort(N.OrdNumber));
   assertEquals(r4, t4);
   assertNotStrictEquals(r4, t4);
 });

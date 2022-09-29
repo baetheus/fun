@@ -1,33 +1,6 @@
-import type { Setoid } from "./setoid.ts";
+import type { Compare, Ord } from "./types.ts";
 
-import { flow, lessThanOrEqual, strictEquals } from "./fns.ts";
-
-/**
- * Ord
- * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#ord
- */
-export type Ord<T> = Setoid<T> & {
-  readonly lte: (a: T) => (b: T) => boolean;
-};
-
-export type Ordering = -1 | 0 | 1;
-
-export type Compare<A> = (left: A, right: A) => Ordering;
-
-export const ordString: Ord<string> = {
-  equals: strictEquals,
-  lte: lessThanOrEqual,
-};
-
-export const ordNumber: Ord<number> = {
-  equals: strictEquals,
-  lte: lessThanOrEqual,
-};
-
-export const ordBoolean: Ord<boolean> = {
-  equals: strictEquals,
-  lte: lessThanOrEqual,
-};
+import { flow } from "./fns.ts";
 
 export function toCompare<A>(O: Ord<A>): Compare<A> {
   return (a, b) => {
@@ -126,26 +99,6 @@ export function getOrdUtilities<A>(O: Ord<A>) {
 
 /**
  * Derives an `Ord` instance from a `compare` function for the same type.
- *
- * @example
- * ```ts
- * import { type Compare, fromCompare, ordString, toCompare } from "./ord.ts";
- * const compareFoo: Compare<{ foo: string }> = (a, b) =>
- *   toCompare(ordString)(a.foo, b.foo);
- * const a = { foo: "bar" };
- * const b = { foo: "bar" };
- * const c = { foo: "baz" };
- *
- * const ordFoo = fromCompare(compareFoo);
- *
- * ordFoo.equals(a)(a); // true
- * ordFoo.equals(a)(b); // true
- * ordFoo.equals(a)(c); // false
- * ordFoo.lte(c)(b); // true
- * ordFoo.lte(b)(c); // false
- * ```
- *
- * @category constructors
  */
 export function fromCompare<A>(compare: Compare<A>): Ord<A> {
   return {
@@ -156,22 +109,6 @@ export function fromCompare<A>(compare: Compare<A>): Ord<A> {
 
 /**
  * Derives an `Ord` instance for tuple type using a tuple of `Ord` instances.
- *
- * @example
- * ```ts
- * import { createOrdTuple, ordNumber, ordString, toCompare } from "./ord.ts";
- *
- * const ordTuple = createOrdTuple(ordString, ordNumber);
- * // Ord<readonly [string, number, boolean]>
- *
- * toCompare(ordTuple)(["y", 1], ["z", 1]); // -1
- * toCompare(ordTuple)(["y", 1], ["y", 2]); // -1
- * toCompare(ordTuple)(["y", 1], ["y", 1]); // 0
- * toCompare(ordTuple)(["y", 1], ["y", 0]); // 1
- * toCompare(ordTuple)(["y", 1], ["x", 1]); // 1
- * ```
- *
- * @category combinators
  */
 export function createOrdTuple<T extends ReadonlyArray<unknown>>(
   ...ords: { [K in keyof T]: Ord<T[K]> }
@@ -189,18 +126,6 @@ export function createOrdTuple<T extends ReadonlyArray<unknown>>(
 /**
  * Derives an instance of `Ord<A>` using a function from `A` to `B` and an
  * instance of `Ord<B>`.
- *
- * @example
- * ```ts
- * import { contramap, ordNumber, toCompare } from "./ord.ts";
- * const ordFoo = contramap((foo: { foo: number }) => foo.foo)(ordNumber);
- *
- * toCompare(ordFoo)({ foo: 1 }, { foo: 0 }); // 1
- * toCompare(ordFoo)({ foo: 1 }, { foo: 1 }); // 0
- * toCompare(ordFoo)({ foo: 1 }, { foo: 2 }); // -1
- * ```
- *
- * @category contravariant
  */
 export function contramap<A, B>(fab: (a: A) => B): (ordB: Ord<B>) => Ord<A> {
   return (ordB) => fromCompare((a1, a2) => toCompare(ordB)(fab(a1), fab(a2)));

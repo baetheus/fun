@@ -3,9 +3,9 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 import * as T from "../these.ts";
 import * as O from "../option.ts";
 import { _ } from "../fns.ts";
-import { SemigroupSum } from "../number.ts";
+import { SemigroupNumberSum } from "../number.ts";
 
-import * as AS from "./assert.ts";
+const add = (n: number) => n + 1;
 
 Deno.test("These left", () => {
   assertEquals(T.left(1), { tag: "Left", left: 1 });
@@ -20,7 +20,7 @@ Deno.test("These both", () => {
 });
 
 Deno.test("These fold", () => {
-  const fold = T.fold(AS.add, AS.add, (a, b) => a + b);
+  const fold = T.fold(add, add, (a, b) => a + b);
   assertEquals(fold(T.left(1)), 2);
   assertEquals(fold(T.right(2)), 3);
   assertEquals(fold(T.both(2, 2)), 4);
@@ -53,7 +53,7 @@ Deno.test("These getShow", () => {
 });
 
 Deno.test("These getSemigroup", () => {
-  const Semigroup = T.getSemigroup(SemigroupSum, SemigroupSum);
+  const Semigroup = T.getSemigroup(SemigroupNumberSum, SemigroupNumberSum);
   const concat = Semigroup.concat;
   const cl = concat(T.left(1));
   const cr = concat(T.right(1));
@@ -69,48 +69,22 @@ Deno.test("These getSemigroup", () => {
   assertEquals(cb(T.both(1, 1)), T.both(2, 2));
 });
 
-Deno.test("These Functor", () => {
-  AS.assertFunctor(T.Functor, {
-    ta: T.right(1),
-    fai: AS.add,
-    fij: AS.multiply,
-  });
-});
-
-Deno.test("These Bifunctor", () => {
-  AS.assertBifunctor(T.Bifunctor, {
-    tab: T.both(1, 1),
-    fai: AS.add,
-    fij: AS.multiply,
-    fbx: AS.multiply,
-    fxy: AS.add,
-  });
-});
-
-Deno.test("These Foldable", () => {
-  AS.assertFoldable(T.Foldable, {
-    a: 0,
-    tb: T.right(1),
-    faia: (a: number, i: number) => a + i,
-  });
-});
-
 Deno.test("These bimap", () => {
-  const bimap = T.bimap(AS.add, AS.add);
+  const bimap = T.bimap(add, add);
   assertEquals(bimap(T.left(1)), T.left(2));
   assertEquals(bimap(T.right(1)), T.right(2));
   assertEquals(bimap(T.both(1, 1)), T.both(2, 2));
 });
 
 Deno.test("These mapLeft", () => {
-  const mapLeft = T.mapLeft(AS.add);
+  const mapLeft = T.mapLeft(add);
   assertEquals(mapLeft(T.left(1)), T.left(2));
   assertEquals(mapLeft(T.right(1)), T.right(1));
   assertEquals(mapLeft(T.both(1, 1)), T.both(2, 1));
 });
 
 Deno.test("These map", () => {
-  const map = T.map(AS.add);
+  const map = T.map(add);
   assertEquals(map(T.left(1)), T.left(1));
   assertEquals(map(T.right(1)), T.right(2));
   assertEquals(map(T.both(1, 1)), T.both(1, 2));
@@ -124,7 +98,7 @@ Deno.test("These reduce", () => {
 });
 
 Deno.test("These traverse", () => {
-  const t1 = T.traverse(O.Applicative);
+  const t1 = T.traverse(O.MonadThrowOption);
   const t2 = t1((n: number) => n === 0 ? O.none : O.some(n));
   assertEquals(t2(T.left(1)), O.some(T.left(1)));
   assertEquals(t2(T.right(0)), O.none);

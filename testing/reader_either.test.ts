@@ -4,7 +4,9 @@ import * as R from "../reader_either.ts";
 import * as E from "../either.ts";
 import { _, pipe } from "../fns.ts";
 
-import * as AS from "./assert.ts";
+const add = (n: number) => n + 1;
+
+const multiply = (n: number) => n * n;
 
 const n = undefined as unknown as never;
 
@@ -87,13 +89,13 @@ Deno.test("ReaderEither throwError", () => {
 });
 
 Deno.test("ReaderEither bimap", () => {
-  const bimap = R.bimap(AS.add, AS.multiply);
+  const bimap = R.bimap(add, multiply);
   assertEqualsRE(bimap(R.left(0)), R.left(1));
   assertEqualsRE(bimap(R.right(2)), R.right(4));
 });
 
 Deno.test("ReaderEither mapLeft", () => {
-  const mapLeft = R.mapLeft(AS.add);
+  const mapLeft = R.mapLeft(add);
   assertEqualsRE(mapLeft(R.left(0)), R.left(1));
   assertEqualsRE(mapLeft(R.right(0)), R.right(0));
 });

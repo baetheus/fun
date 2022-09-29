@@ -3,7 +3,7 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 import * as N from "../nilable.ts";
 import { _, pipe } from "../fns.ts";
 
-import * as AS from "./assert.ts";
+const add = (n: number) => n + 1;
 
 Deno.test("Nilable nil", () => {
   assertEquals(N.nil, undefined);
@@ -73,57 +73,6 @@ Deno.test("Nilable isNotNil", () => {
   assertEquals(N.isNotNil(""), true);
 });
 
-Deno.test("Nilable Functor", () => {
-  AS.assertFunctor(N.Functor, { ta: 1, fai: AS.add, fij: AS.multiply });
-});
-
-Deno.test("Nilable Apply", () => {
-  AS.assertApply(N.Apply, {
-    ta: N.make(1),
-    fai: AS.add,
-    fij: AS.multiply,
-    tfai: N.make(AS.add),
-    tfij: N.make(AS.multiply),
-  });
-});
-
-Deno.test("Nilable Applicative", () => {
-  AS.assertApplicative(N.Applicative, {
-    a: 1,
-    ta: N.make(1),
-    fai: AS.add,
-    fij: AS.multiply,
-    tfai: N.make(AS.add),
-    tfij: N.make(AS.multiply),
-  });
-});
-
-Deno.test("Nilable Chain", () => {
-  AS.assertChain(N.Chain, {
-    a: 1,
-    ta: N.make(1),
-    fai: AS.add,
-    fij: AS.multiply,
-    tfai: N.make(AS.add),
-    tfij: N.make(AS.multiply),
-    fati: (n: number) => n === 0 ? N.nil : n,
-    fitj: (n: number) => n === 0 ? N.nil : n + 1,
-  });
-});
-
-Deno.test("Nilable Monad", () => {
-  AS.assertMonad(N.Monad, {
-    a: 1,
-    ta: N.make(1),
-    fai: AS.add,
-    fij: AS.multiply,
-    tfai: N.make(AS.add),
-    tfij: N.make(AS.multiply),
-    fati: (n: number) => n === 0 ? N.nil : n,
-    fitj: (n: number) => n === 0 ? N.nil : n + 1,
-  });
-});
-
 Deno.test("Nilable getShow", () => {
   const { show } = N.getShow({ show: (n: number) => n.toString() });
   assertEquals(show(undefined), "nil");
@@ -140,8 +89,8 @@ Deno.test("Nilable throwError", () => {
 });
 
 Deno.test("Nilable ap", () => {
-  const ap1 = N.ap(N.make(AS.add));
-  const ap2 = N.ap(N.constNil<typeof AS.add>());
+  const ap1 = N.ap(N.make(add));
+  const ap2 = N.ap(N.constNil<typeof add>());
 
   assertEquals(ap1(null), N.nil);
   assertEquals(ap1(undefined), N.nil);
@@ -152,7 +101,7 @@ Deno.test("Nilable ap", () => {
 });
 
 Deno.test("Nilable map", () => {
-  const map = N.map(AS.add);
+  const map = N.map(add);
   assertEquals(map(null), N.nil);
   assertEquals(map(undefined), N.nil);
   assertEquals(map(1), 2);

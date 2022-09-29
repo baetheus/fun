@@ -1,9 +1,6 @@
-import type * as T from "./types.ts";
-import type { $, Kind } from "./kind.ts";
+import type { $, Kind, Predicate, Refinement, Traversable } from "./types.ts";
 import type { Either } from "./either.ts";
 import type { Option } from "./option.ts";
-import type { Predicate } from "./predicate.ts";
-import type { Refinement } from "./refinement.ts";
 
 import type { Optic } from "./optic.ts";
 import type { Lens } from "./lens.ts";
@@ -195,9 +192,9 @@ export function prop<A, P extends keyof A>(
 }
 
 export function traverse<U extends Kind>(
-  T: T.Traversable<U>,
-): <S, A, B = never, C = never, D = never>(
-  sa: Iso<S, $<U, [A, B, C, D]>>,
+  T: Traversable<U>,
+): <S, A, B = never, C = never, D = never, E = never>(
+  sa: Iso<S, $<U, [A, B, C], [D], [E]>>,
 ) => Traversal<S, A> {
   const _traversal = toTraversal(T);
   return (sa) => composeTraversal(sa, _traversal());

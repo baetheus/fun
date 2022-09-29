@@ -1,7 +1,5 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
-import * as AS from "./assert.ts";
-
 import * as M from "../map.ts";
 import * as O from "../option.ts";
 import * as N from "../number.ts";
@@ -19,24 +17,6 @@ Deno.test("Map singleton", () => {
   assertEquals(M.singleton(1, 1), new Map([[1, 1]]));
 });
 
-Deno.test("Map Functor", () => {
-  AS.assertFunctor(M.Functor, {
-    ta: M.singleton(1, 1) as Map<never, number>,
-    fai: AS.add,
-    fij: AS.multiply,
-  });
-});
-
-Deno.test("Map Bifunctor", () => {
-  AS.assertBifunctor(M.Bifunctor, {
-    tab: M.singleton(1, 1),
-    fai: AS.add,
-    fij: AS.multiply,
-    fbx: AS.add,
-    fxy: AS.multiply,
-  });
-});
-
 Deno.test("Map getShow", () => {
   const showNumber = { show: (n: number) => n.toString() };
   const Show = M.getShow(showNumber, showNumber);
@@ -44,26 +24,9 @@ Deno.test("Map getShow", () => {
   assertEquals(Show.show(M.singleton(1, 1)), "new ReadonlyMap([[1, 1]])");
 });
 
-Deno.test("Map getSetoid", () => {
-  const Setoid = M.getSetoid(N.Setoid, N.Setoid);
-
-  AS.assertSetoid(Setoid, {
-    a: M.singleton(1, 1),
-    b: M.singleton(1, 1),
-    c: M.singleton(1, 1),
-    z: M.singleton(2, 2),
-  });
-});
-
 Deno.test("Map getMonoid", () => {
-  const Monoid = M.getMonoid(N.Setoid, N.SemigroupSum);
+  const Monoid = M.getMonoid(N.SetoidNumber, N.SemigroupNumberSum);
   const { concat, empty } = Monoid;
-
-  AS.assertMonoid(Monoid, {
-    a: M.singleton(1, 1),
-    b: M.singleton(2, 2),
-    c: M.singleton(3, 3),
-  });
 
   assertEquals(pipe(empty(), concat(M.singleton(1, 1))), M.singleton(1, 1));
   assertEquals(pipe(M.singleton(1, 1), concat(empty())), M.singleton(1, 1));
@@ -109,35 +72,35 @@ Deno.test("Map isEmpty", () => {
 });
 
 Deno.test("Map lookupWithKey", () => {
-  const lookupWithKey = M.lookupWithKey(N.Setoid);
+  const lookupWithKey = M.lookupWithKey(N.SetoidNumber);
 
   assertEquals(pipe(M.singleton(1, 1), lookupWithKey(1)), O.some([1, 1]));
   assertEquals(pipe(M.singleton(2, 2), lookupWithKey(1)), O.none);
 });
 
 Deno.test("Map lookup", () => {
-  const lookup = M.lookup(N.Setoid);
+  const lookup = M.lookup(N.SetoidNumber);
 
   assertEquals(pipe(M.singleton(1, 1), lookup(1)), O.some(1));
   assertEquals(pipe(M.singleton(1, 1), lookup(2)), O.none);
 });
 
 Deno.test("Map member", () => {
-  const member = M.member(N.Setoid);
+  const member = M.member(N.SetoidNumber);
 
   assertEquals(pipe(M.singleton(1, 1), member(1)), true);
   assertEquals(pipe(M.singleton(1, 1), member(2)), false);
 });
 
 Deno.test("Map elem", () => {
-  const elem = M.elem(N.Setoid);
+  const elem = M.elem(N.SetoidNumber);
 
   assertEquals(pipe(M.singleton(1, 1), elem(1)), true);
   assertEquals(pipe(M.singleton(1, 1), elem(2)), false);
 });
 
 Deno.test("Map keys", () => {
-  const keys = M.keys(N.Ord);
+  const keys = M.keys(N.OrdNumber);
 
   const ta = new Map<number, number>([[1, 1], [2, 2], [3, 3]]);
   const tb = M.empty<number, number>();
@@ -147,7 +110,7 @@ Deno.test("Map keys", () => {
 });
 
 Deno.test("Map values", () => {
-  const values = M.values(N.Ord);
+  const values = M.values(N.OrdNumber);
 
   const ta = new Map<number, number>([[1, 1], [2, 2], [3, 3]]);
   const tb = M.empty<number, number>();
@@ -157,7 +120,7 @@ Deno.test("Map values", () => {
 });
 
 Deno.test("Map collect", () => {
-  const collect = M.collect(N.Ord);
+  const collect = M.collect(N.OrdNumber);
   const c = collect((k: number, v: number) => k + v);
 
   const ta = new Map<number, number>([[1, 1], [2, 2], [3, 3]]);
@@ -168,7 +131,7 @@ Deno.test("Map collect", () => {
 });
 
 Deno.test("Map insertAt", () => {
-  const insertAt = M.insertAt(N.Setoid);
+  const insertAt = M.insertAt(N.SetoidNumber);
 
   assertEquals(pipe(M.singleton(1, 1), insertAt(1)(2)), M.singleton(1, 2));
   assertEquals(
@@ -186,14 +149,14 @@ Deno.test("Map insertAt", () => {
 });
 
 Deno.test("Map deleteAt", () => {
-  const deleteAt = M.deleteAt(N.Setoid);
+  const deleteAt = M.deleteAt(N.SetoidNumber);
 
   assertEquals(pipe(M.empty<number, number>(), deleteAt(1)), M.zero());
   assertEquals(pipe(M.singleton(1, 1), deleteAt(1)), M.zero());
 });
 
 Deno.test("Map updateAt", () => {
-  const updateAt = M.updateAt(N.Setoid);
+  const updateAt = M.updateAt(N.SetoidNumber);
 
   assertEquals(
     pipe(M.singleton(1, 1), updateAt(1)(2)),
@@ -203,7 +166,7 @@ Deno.test("Map updateAt", () => {
 });
 
 Deno.test("Map modifyAt", () => {
-  const modifyAt = M.modifyAt(N.Setoid);
+  const modifyAt = M.modifyAt(N.SetoidNumber);
 
   assertEquals(
     pipe(M.singleton(1, 1), modifyAt(1)((n) => n + 1)),
@@ -216,14 +179,14 @@ Deno.test("Map modifyAt", () => {
 });
 
 Deno.test("Map pop", () => {
-  const pop = M.pop(N.Setoid);
+  const pop = M.pop(N.SetoidNumber);
 
   assertEquals(pipe(M.singleton(1, 1), pop(1)), O.some([1, M.empty()]));
   assertEquals(pipe(M.singleton(1, 1), pop(2)), O.none);
 });
 
 Deno.test("Map isSubmap", () => {
-  const isSubmap = M.isSubmap(N.Setoid, N.Setoid);
+  const isSubmap = M.isSubmap(N.SetoidNumber, N.SetoidNumber);
 
   assertEquals(pipe(M.singleton(1, 1), isSubmap(M.empty())), true);
   assertEquals(pipe(M.singleton(1, 1), isSubmap(M.singleton(2, 2))), false);

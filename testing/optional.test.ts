@@ -28,7 +28,7 @@ Deno.test("Optional make", () => {
 
 Deno.test("Optional asTraversal", () => {
   const traversal = M.asTraversal(optional);
-  const t1 = traversal.traverse(O.Applicative);
+  const t1 = traversal.traverse(O.MonadThrowOption);
   const t2 = t1((n) => n === 0 ? O.none : O.some(n));
   assertEquals(t2(0), O.none);
   assertEquals(t2(1), O.some(1));
@@ -111,7 +111,7 @@ Deno.test("Optional composeTraversal", () => {
     optional,
     M.asTraversal(M.id<number>()),
   );
-  const t1 = traverse(O.Applicative);
+  const t1 = traverse(O.MonadThrowOption);
   const t2 = t1((n) => n === 0 ? O.none : O.some(n));
 
   assertEquals(t2(undefined), O.some(undefined));
@@ -140,9 +140,9 @@ Deno.test("Optional traverse", () => {
       (a: E.Either<number, number>) => (_: number) =>
         pipe(a, E.fold((n) => n, (n) => n)),
     ),
-    M.traverse(E.Traversable),
+    M.traverse(E.TraversableEither),
   );
-  const t1 = traverse(O.Applicative);
+  const t1 = traverse(O.MonadThrowOption);
   const t2 = t1((n) => n === 0 ? O.none : O.some(n));
 
   assertEquals(t2(0), O.some(0));

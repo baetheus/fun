@@ -1,5 +1,13 @@
-import type { $, Kind } from "./kind.ts";
-import type * as T from "./types.ts";
+import type {
+  $,
+  Applicative,
+  Foldable,
+  Functor,
+  Kind,
+  Out,
+  Show,
+  Traversable,
+} from "./types.ts";
 
 import type { Option } from "./option.ts";
 
@@ -9,7 +17,7 @@ import { has, pipe } from "./fns.ts";
 export type ReadonlyRecord<A> = Readonly<Record<string, A>>;
 
 export interface URI extends Kind {
-  readonly type: ReadonlyRecord<this[0]>;
+  readonly kind: ReadonlyRecord<Out<this, 0>>;
 }
 
 /**
@@ -47,11 +55,11 @@ export function reduce<A, O>(
 }
 
 export function traverse<V extends Kind>(
-  A: T.Applicative<V>,
+  A: Applicative<V>,
 ) {
-  return <A, I, J, K, L>(
-    favi: (a: A, i: string) => $<V, [I, J, K, L]>,
-  ): (ta: ReadonlyRecord<A>) => $<V, [ReadonlyRecord<I>, J, K, L]> =>
+  return <A, I, J, K, L, M>(
+    favi: (a: A, i: string) => $<V, [I, J, K], [L], [M]>,
+  ): (ta: ReadonlyRecord<A>) => $<V, [ReadonlyRecord<I>, J, K], [L], [M]> =>
     reduce(
       (fbs, a, index) =>
         pipe(
@@ -214,17 +222,17 @@ export function zipFirst<A, Q, I>(
     map((a: A, key) => fabi(key, a, right[key]));
 }
 
-export const Functor: T.Functor<URI> = { map };
+export const FunctorRecord: Functor<URI> = { map };
 
-export const Foldable: T.Foldable<URI> = { reduce };
+export const FoldableRecord: Foldable<URI> = { reduce };
 
-export const Traversable: T.Traversable<URI> = {
+export const TraversableRecord: Traversable<URI> = {
   map,
   reduce,
   traverse,
 };
 
-export function getShow<A>(SA: T.Show<A>): T.Show<ReadonlyRecord<A>> {
+export function getShow<A>(SA: Show<A>): Show<ReadonlyRecord<A>> {
   return ({
     show: (ta) =>
       `{${

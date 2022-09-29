@@ -31,7 +31,7 @@ Deno.test("Newtype prism", () => {
 
 Deno.test("Newtype getSetoid", () => {
   const isoReal = N.iso<Real>();
-  const { equals } = N.getSetoid<Real>(Num.Setoid);
+  const { equals } = N.getSetoid<Real>(Num.SetoidNumber);
   const int1 = isoReal.get(1);
   const int2 = isoReal.get(2);
 
@@ -41,7 +41,7 @@ Deno.test("Newtype getSetoid", () => {
 
 Deno.test("Newtype getOrd", () => {
   const isoReal = N.iso<Real>();
-  const { equals, lte } = N.getOrd<Real>(Num.Ord);
+  const { equals, lte } = N.getOrd<Real>(Num.OrdNumber);
   const int1 = isoReal.get(1);
   const int2 = isoReal.get(2);
 
@@ -54,7 +54,7 @@ Deno.test("Newtype getOrd", () => {
 
 Deno.test("Newtype getSemigroup", () => {
   const isoReal = N.iso<Real>();
-  const { concat } = N.getSemigroup<Real>(Num.SemigroupSum);
+  const { concat } = N.getSemigroup<Real>(Num.SemigroupNumberSum);
   const int1 = isoReal.get(1);
   const int2 = isoReal.get(2);
 
@@ -63,7 +63,7 @@ Deno.test("Newtype getSemigroup", () => {
 
 Deno.test("Newtype getMonoid", () => {
   const isoReal = N.iso<Real>();
-  const { concat, empty } = N.getMonoid<Real>(Num.MonoidSum);
+  const { concat, empty } = N.getMonoid<Real>(Num.MonoidNumberSum);
   const int0 = isoReal.get(0);
   const int1 = isoReal.get(1);
   const int2 = isoReal.get(2);

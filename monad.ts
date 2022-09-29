@@ -1,33 +1,14 @@
-import type { $, Kind, TypeClass } from "./kind.ts";
-import type { Applicative } from "./applicative.ts";
-import type { Chain } from "./chain.ts";
+import type { $, Do, Kind, Monad } from "./types.ts";
 
 import { identity, pipe } from "./fns.ts";
 
 /**
- * Monad
- * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#monad
- *
- * Here we extend Monad with a join function. Other names for join
- * are flatten or flat.
- */
-export interface Monad<U extends Kind>
-  extends Applicative<U>, Chain<U>, TypeClass<U> {
-  readonly join: <A, B, C, D>(
-    tta: $<U, [$<U, [A, B, C, D]>, B, C, D]>,
-  ) => $<U, [A, B, C, D]>;
-}
-
-/**
- * MonadThrow
- * https://github.com/gcanti/fp-ts/blob/master/src/MonadThrow.ts
- */
-export interface MonadThrow<U extends Kind> extends Monad<U> {
-  readonly throwError: <A, B, C, D>(b: B) => $<U, [A, B, C, D]>;
-}
-
-/**
  * Derive Monad module from of and chain
+ *
+ * TODO: rename to fromOfAndChain
+ * TODO: add another
+ *
+ * @experimental
  */
 export function createMonad<U extends Kind>(
   { of, chain }: Pick<Monad<U>, "of" | "chain">,
@@ -42,64 +23,37 @@ export function createMonad<U extends Kind>(
   return Monad;
 }
 
-// Following is an initial implementation of Do notation that is incomplete
-
-// export type Do<U extends Kind> = <B = never, C = never, D = never>() => $<
-//   U,
-//   // deno-lint-ignore ban-types
-//   [{}, B, C, D]
-// >;
-
-// export type Bind<U extends Kind> = <
-//   N extends string,
-//   A,
-//   I,
-//   B = never,
-//   C = never,
-//   D = never,
-// >(
-//   name: Exclude<N, keyof A>,
-//   fati: (a: A) => $<U, [I, B, C, D]>,
-// ) => (ta: $<U, [A, B, C, D]>) => $<
-//   U,
-//   [
-//     { readonly [K in keyof A | N]: K extends keyof A ? A[K] : I },
-//     B,
-//     C,
-//     D,
-//   ]
-// >;
-
-// export type BindTo<U extends Kind> = <N extends string>(
-//   name: N,
-// ) => <A, B = never, C = never, D = never>(
-//   ta: $<U, [A, B, C, D]>,
-// ) => $<U, [{ [K in N]: A }, B, C, D]>;
-
-// function makeDo<U extends Kind>(M: T.Monad<U>): Do<U> {
-//   return () => M.of({});
-// }
-
-// function makeBind<U extends Kind>(M: T.Monad<U>): Bind<U> {
-//   return (name, fati) =>
-//     M.chain((a) => {
-//       const ti = fati(a);
-//       // deno-lint-ignore no-explicit-any
-//       return pipe(ti, M.map((i) => Object.assign({}, a, { [name]: i }))) as any;
-//     });
-// }
-
-// function makeBindTo<U extends Kind>(M: T.Monad<U>): BindTo<U> {
-//   // deno-lint-ignore no-explicit-any
-//   return (name) => M.map((a) => ({ [name]: a })) as any;
-// }
-
-// export function createDo<U extends Kind>(
-//   M: T.Monad<U>,
-// ) {
-//   return {
-//     Do: makeDo(M),
-//     bind: makeBind(M),
-//     bindTo: makeBindTo(M),
-//   };
-// }
+/**
+ * Derive Do notation from Monad
+ *
+ * @experimental
+ */
+export function createDo<U extends Kind>(
+  M: Monad<U>,
+): Do<U> {
+  return {
+    Do: () => M.of({}),
+    bind: <N extends string, A, I, B, C, D, E>(
+      name: Exclude<N, keyof A>,
+      fati: (a: A) => $<U, [I, B, C], [D], [E]>,
+    ): (
+      ta: $<U, [A, B, C], [D], [E]>,
+    ) => $<U, [A & { readonly [K in N]: I }, B, C], [D], [E]> =>
+      M.chain((a: A) =>
+        pipe(
+          fati(a),
+          M.map((i) => ({ ...a, [name as N]: i })),
+        ) as $<U, [A & { readonly [K in N]: I }, B, C], [D], [E]>
+      ),
+    bindTo: <N extends string>(name: N) =>
+    <A, B, C, D, E>(
+      ta: $<U, [A, B, C], [D], [E]>,
+    ): $<U, [{ readonly [K in N]: A }, B, C], [D], [E]> =>
+      pipe(ta, M.map((a) => ({ [name]: a }))) as $<
+        U,
+        [{ readonly [K in N]: A }, B, C],
+        [D],
+        [E]
+      >,
+  };
+}

@@ -3,24 +3,13 @@ import {
   assertExists,
 } from "https://deno.land/std/testing/asserts.ts";
 
-import * as AS from "./assert.ts";
+import type { Compare } from "../types.ts";
 
 import * as O from "../ord.ts";
-
-Deno.test("Ord ordString", () => {
-  AS.assertOrd(O.ordString, { a: "a", b: "b" });
-});
-
-Deno.test("Ord ordNumber", () => {
-  AS.assertOrd(O.ordNumber, { a: 0, b: 1 });
-});
-
-Deno.test("Ord ordBoolean", () => {
-  AS.assertOrd(O.ordBoolean, { a: true, b: false });
-});
+import * as N from "../number.ts";
 
 Deno.test("Ord toCompare", () => {
-  const compare = O.toCompare(O.ordNumber);
+  const compare = O.toCompare(N.OrdNumber);
   assertEquals(typeof compare, "function");
   assertEquals(compare(0, 0), 0);
   assertEquals(compare(0, 1), -1);
@@ -28,56 +17,56 @@ Deno.test("Ord toCompare", () => {
 });
 
 Deno.test("Ord lt", () => {
-  const lt = O.lt(O.ordNumber);
+  const lt = O.lt(N.OrdNumber);
   assertEquals(lt(0)(0), false);
   assertEquals(lt(0)(1), false);
   assertEquals(lt(1)(0), true);
 });
 
 Deno.test("Ord gt", () => {
-  const gt = O.gt(O.ordNumber);
+  const gt = O.gt(N.OrdNumber);
   assertEquals(gt(0)(0), false);
   assertEquals(gt(0)(1), true);
   assertEquals(gt(1)(0), false);
 });
 
 Deno.test("Ord lte", () => {
-  const lte = O.lte(O.ordNumber);
+  const lte = O.lte(N.OrdNumber);
   assertEquals(lte(0)(0), true);
   assertEquals(lte(0)(1), false);
   assertEquals(lte(1)(0), true);
 });
 
 Deno.test("Ord gte", () => {
-  const gte = O.gte(O.ordNumber);
+  const gte = O.gte(N.OrdNumber);
   assertEquals(gte(0)(0), true);
   assertEquals(gte(1)(0), false);
   assertEquals(gte(0)(1), true);
 });
 
 Deno.test("Ord eq", () => {
-  const eq = O.eq(O.ordNumber);
+  const eq = O.eq(N.OrdNumber);
   assertEquals(eq(0)(0), true);
   assertEquals(eq(0)(1), false);
   assertEquals(eq(1)(0), false);
 });
 
 Deno.test("Ord min", () => {
-  const min = O.min(O.ordNumber);
+  const min = O.min(N.OrdNumber);
   assertEquals(min(0)(0), 0);
   assertEquals(min(0)(1), 0);
   assertEquals(min(1)(0), 0);
 });
 
 Deno.test("Ord max", () => {
-  const max = O.max(O.ordNumber);
+  const max = O.max(N.OrdNumber);
   assertEquals(max(0)(0), 0);
   assertEquals(max(0)(1), 1);
   assertEquals(max(1)(0), 1);
 });
 
 Deno.test("Ord clamp", () => {
-  const clamp = O.clamp(O.ordNumber);
+  const clamp = O.clamp(N.OrdNumber);
   assertEquals(clamp(0, 2)(-1), 0);
   assertEquals(clamp(0, 2)(0), 0);
   assertEquals(clamp(0, 2)(1), 1);
@@ -86,7 +75,7 @@ Deno.test("Ord clamp", () => {
 });
 
 Deno.test("Ord between", () => {
-  const between = O.between(O.ordNumber);
+  const between = O.between(N.OrdNumber);
   assertEquals(between(0, 2)(-1), false);
   assertEquals(between(0, 2)(0), false);
   assertEquals(between(0, 2)(1), true);
@@ -96,37 +85,39 @@ Deno.test("Ord between", () => {
 });
 
 Deno.test("Ord getOrdUtilities", () => {
-  assertExists(O.getOrdUtilities(O.ordNumber));
+  assertExists(O.getOrdUtilities(N.OrdNumber));
 });
 
 Deno.test("Ord fromCompare", () => {
-  const compareFoo: O.Compare<{ foo: string }> = (a, b) =>
-    O.toCompare(O.ordString)(a.foo, b.foo);
-  const a = { foo: "bar" };
-  const b = { foo: "bar" };
-  const c = { foo: "baz" };
+  type Foo = { foo: number };
+  const compareFoo: Compare<Foo> = (left, right) =>
+    left.foo < right.foo ? -1 : left.foo > right.foo ? 1 : 0;
 
-  const ordFoo = O.fromCompare(compareFoo);
+  const a = { foo: 0 };
+  const b = { foo: 0 };
+  const c = { foo: 2 };
 
-  assertEquals(ordFoo.equals(a)(a), true);
-  assertEquals(ordFoo.equals(a)(b), true);
-  assertEquals(ordFoo.equals(a)(c), false);
-  assertEquals(ordFoo.lte(c)(b), true);
-  assertEquals(ordFoo.lte(b)(c), false);
+  const { equals, lte } = O.fromCompare(compareFoo);
+
+  assertEquals(equals(a)(a), true);
+  assertEquals(equals(a)(b), true);
+  assertEquals(equals(a)(c), false);
+  assertEquals(lte(c)(b), true);
+  assertEquals(lte(b)(c), false);
 });
 
 Deno.test("Ord createOrdTuple", () => {
-  const ordTuple = O.createOrdTuple(O.ordString, O.ordNumber);
+  const ordTuple = O.createOrdTuple(N.OrdNumber, N.OrdNumber);
 
-  assertEquals(O.toCompare(ordTuple)(["y", 1], ["z", 1]), -1);
-  assertEquals(O.toCompare(ordTuple)(["y", 1], ["y", 2]), -1);
-  assertEquals(O.toCompare(ordTuple)(["y", 1], ["y", 1]), 0);
-  assertEquals(O.toCompare(ordTuple)(["y", 1], ["y", 0]), 1);
-  assertEquals(O.toCompare(ordTuple)(["y", 1], ["x", 1]), 1);
+  assertEquals(O.toCompare(ordTuple)([1, 1], [2, 1]), -1);
+  assertEquals(O.toCompare(ordTuple)([1, 1], [1, 2]), -1);
+  assertEquals(O.toCompare(ordTuple)([1, 1], [1, 1]), 0);
+  assertEquals(O.toCompare(ordTuple)([1, 1], [1, 0]), 1);
+  assertEquals(O.toCompare(ordTuple)([1, 1], [0, 1]), 1);
 });
 
 Deno.test("Ord contramap", () => {
-  const ordFoo = O.contramap((foo: { foo: number }) => foo.foo)(O.ordNumber);
+  const ordFoo = O.contramap((foo: { foo: number }) => foo.foo)(N.OrdNumber);
 
   assertEquals(O.toCompare(ordFoo)({ foo: 1 }, { foo: 0 }), 1);
   assertEquals(O.toCompare(ordFoo)({ foo: 1 }, { foo: 1 }), 0);

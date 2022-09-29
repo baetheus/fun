@@ -1,9 +1,24 @@
-import type { $, Kind } from "./kind.ts";
-import type * as T from "./types.ts";
+import type {
+  $,
+  Alternative,
+  Applicative,
+  Kind,
+  MonadThrow,
+  Monoid,
+  Ord,
+  Out,
+  Semigroup,
+  Setoid,
+  Show,
+  Traversable,
+} from "./types.ts";
 
-import { isNotNil } from "./nilable.ts";
-import { apply, flow, identity, pipe } from "./fns.ts";
+import { apply, flow, identity, isNotNil, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
+
+/**
+ * TODO: Lets get a monoid in here for tracking progress.
+ */
 
 export type Initial = {
   readonly tag: "Initial";
@@ -32,7 +47,7 @@ export type Some<A> = Refresh<A> | Replete<A>;
 export type Loading<A> = Pending | Refresh<A>;
 
 export interface URI extends Kind {
-  readonly type: Datum<this[0]>;
+  readonly kind: Datum<Out<this, 0>>;
 }
 
 export const initial: Initial = { tag: "Initial" };
@@ -135,6 +150,10 @@ export function of<A>(a: A): Datum<A> {
   return replete(a);
 }
 
+export function throwError<A = never>(): Datum<A> {
+  return initial;
+}
+
 export function map<A, I>(fai: (a: A) => I): (ta: Datum<A>) => Datum<I> {
   return fold(
     constInitial,
@@ -177,10 +196,10 @@ export function reduce<A, O>(
 }
 
 export function traverse<V extends Kind>(
-  A: T.Applicative<V>,
-): <A, I, J, K, L>(
-  favi: (a: A) => $<V, [I, J, K, L]>,
-) => (ta: Datum<A>) => $<V, [Datum<I>, J, K, L]> {
+  A: Applicative<V>,
+): <A, I, J, K, L, M>(
+  favi: (a: A) => $<V, [I, J, K], [L], [M]>,
+) => (ta: Datum<A>) => $<V, [Datum<I>, J, K], [L], [M]> {
   return (favi) =>
     fold(
       () => A.of(constInitial()),
@@ -190,7 +209,7 @@ export function traverse<V extends Kind>(
     );
 }
 
-export function getShow<A>({ show }: T.Show<A>): T.Show<Datum<A>> {
+export function getShow<A>({ show }: Show<A>): Show<Datum<A>> {
   return ({
     show: fold(
       () => `Initial`,
@@ -202,8 +221,8 @@ export function getShow<A>({ show }: T.Show<A>): T.Show<Datum<A>> {
 }
 
 export function getSemigroup<A>(
-  S: T.Semigroup<A>,
-): T.Semigroup<Datum<A>> {
+  S: Semigroup<A>,
+): Semigroup<Datum<A>> {
   return ({
     concat: (mx) =>
       fold(
@@ -220,14 +239,14 @@ export function getSemigroup<A>(
   });
 }
 
-export function getMonoid<A>(S: T.Semigroup<A>): T.Monoid<Datum<A>> {
+export function getMonoid<A>(S: Semigroup<A>): Monoid<Datum<A>> {
   return ({
     ...getSemigroup(S),
     empty: constInitial,
   });
 }
 
-export function getSetoid<A>(S: T.Setoid<A>): T.Setoid<Datum<A>> {
+export function getSetoid<A>(S: Setoid<A>): Setoid<Datum<A>> {
   return ({
     equals: (b) =>
       fold(
@@ -239,7 +258,7 @@ export function getSetoid<A>(S: T.Setoid<A>): T.Setoid<Datum<A>> {
   });
 }
 
-export function getOrd<A>(O: T.Ord<A>): T.Ord<Datum<A>> {
+export function getOrd<A>(O: Ord<A>): Ord<Datum<A>> {
   return ({
     ...getSetoid(O),
     lte: (tb) =>
@@ -252,17 +271,16 @@ export function getOrd<A>(O: T.Ord<A>): T.Ord<Datum<A>> {
   });
 }
 
-export const Functor: T.Functor<URI> = { map };
+export const MonadThrowDatum: MonadThrow<URI> = {
+  of,
+  ap,
+  map,
+  join,
+  chain,
+  throwError,
+};
 
-export const Apply: T.Apply<URI> = { ap, map };
-
-export const Applicative: T.Applicative<URI> = { of, ap, map };
-
-export const Chain: T.Chain<URI> = { ap, map, chain };
-
-export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
-
-export const Alternative: T.Alternative<URI> = {
+export const AlternativeDatum: Alternative<URI> = {
   of,
   ap,
   map,
@@ -270,10 +288,8 @@ export const Alternative: T.Alternative<URI> = {
   alt,
 };
 
-export const Foldable: T.Foldable<URI> = { reduce };
+export const TraversableDatum: Traversable<URI> = { map, reduce, traverse };
 
-export const Traversable: T.Traversable<URI> = { map, reduce, traverse };
+export const sequenceTuple = createSequenceTuple(MonadThrowDatum);
 
-export const sequenceTuple = createSequenceTuple(Apply);
-
-export const sequenceStruct = createSequenceStruct(Apply);
+export const sequenceStruct = createSequenceStruct(MonadThrowDatum);

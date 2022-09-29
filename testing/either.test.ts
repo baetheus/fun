@@ -5,8 +5,6 @@ import * as O from "../option.ts";
 import * as N from "../number.ts";
 import { pipe } from "../fns.ts";
 
-import * as AS from "./assert.ts";
-
 Deno.test("Either left", () => {
   assertEquals(E.left(1), { tag: "Left", left: 1 });
 });
@@ -116,16 +114,9 @@ Deno.test("Either getShow", () => {
 });
 
 Deno.test("Either getSetoid", () => {
-  const Setoid = E.getSetoid(N.Setoid, N.Setoid);
+  const Setoid = E.getSetoid(N.SetoidNumber, N.SetoidNumber);
   const right = Setoid.equals(E.right(1));
   const left = Setoid.equals(E.left(1));
-
-  AS.assertSetoid(Setoid, {
-    a: E.right(1),
-    b: E.right(1),
-    c: E.right(1),
-    z: E.left(1),
-  });
 
   assertEquals(right(E.right(1)), true);
   assertEquals(right(E.right(2)), false);
@@ -139,11 +130,9 @@ Deno.test("Either getSetoid", () => {
 });
 
 Deno.test("Either getOrd", () => {
-  const Ord = E.getOrd(N.Ord, N.Ord);
+  const Ord = E.getOrd(N.OrdNumber, N.OrdNumber);
   const right = Ord.lte(E.right(2));
   const left = Ord.lte(E.left(2));
-
-  AS.assertOrd(Ord, { a: E.right(1), b: E.left(1) });
 
   assertEquals(right(E.right(1)), true);
   assertEquals(right(E.right(2)), true);
@@ -161,12 +150,9 @@ Deno.test("Either getOrd", () => {
 });
 
 Deno.test("Either getLeftSemigroup", () => {
-  const Semigroup = E.getLeftSemigroup<number, number>(N.SemigroupSum);
+  const Semigroup = E.getLeftSemigroup<number, number>(N.SemigroupNumberSum);
   const right = Semigroup.concat(E.right(1));
   const left = Semigroup.concat(E.left(1));
-
-  AS.assertSemigroup(Semigroup, { a: E.left(1), b: E.left(1), c: E.left(1) });
-  AS.assertSemigroup(Semigroup, { a: E.right(1), b: E.left(1), c: E.left(1) });
 
   assertEquals(right(E.right(1)), E.right(1));
   assertEquals(right(E.left(1)), E.right(1));
@@ -175,17 +161,9 @@ Deno.test("Either getLeftSemigroup", () => {
 });
 
 Deno.test("Either getRightSemigroup", () => {
-  const Semigroup = E.getRightSemigroup<number, number>(N.SemigroupSum);
+  const Semigroup = E.getRightSemigroup<number, number>(N.SemigroupNumberSum);
   const right = Semigroup.concat(E.right(1));
   const left = Semigroup.concat(E.left(1));
-
-  AS.assertSemigroup(Semigroup, {
-    a: E.right(1),
-    b: E.right(1),
-    c: E.right(1),
-  });
-  AS.assertSemigroup(Semigroup, { a: E.left(1), b: E.left(1), c: E.left(1) });
-  AS.assertSemigroup(Semigroup, { a: E.right(1), b: E.left(1), c: E.left(1) });
 
   assertEquals(right(E.right(1)), E.right(2));
   assertEquals(right(E.left(1)), E.left(1));
@@ -194,120 +172,9 @@ Deno.test("Either getRightSemigroup", () => {
 });
 
 Deno.test("Either getRightMonoid", () => {
-  const Monoid = E.getRightMonoid<number, number>(N.MonoidSum);
+  const Monoid = E.getRightMonoid<number, number>(N.MonoidNumberSum);
 
-  AS.assertMonoid(Monoid, { a: E.right(1), b: E.right(1), c: E.right(1) });
-  AS.assertMonoid(Monoid, { a: E.left(1), b: E.left(1), c: E.left(1) });
-
-  assertEquals(Monoid.empty(), E.right(N.MonoidSum.empty()));
-});
-
-Deno.test("Either getRightMonad", () => {
-  const Monad = E.getRightMonad(N.SemigroupSum);
-
-  AS.assertMonad(Monad, {
-    a: 1,
-    ta: E.right(1),
-    fai: (n: number) => n + 1,
-    fij: (n: number) => n + 1,
-    fati: (n: number) => E.right(n / 2),
-    fitj: (n: number) => E.right(n / 2),
-    tfai: E.right((n: number) => n + 1),
-    tfij: E.right((n: number) => n + 1),
-  });
-});
-
-Deno.test("Either Functor", () => {
-  AS.assertFunctor(E.Functor, {
-    ta: E.right(1),
-    fai: (n: number) => n + 1,
-    fij: (n: number) => n + 1,
-  });
-});
-
-Deno.test("Either Apply", () => {
-  AS.assertApply(E.Apply, {
-    ta: E.right(1),
-    fai: AS.add,
-    fij: AS.multiply,
-    tfai: E.right(AS.add),
-    tfij: E.right(AS.multiply),
-  });
-});
-
-Deno.test("Either Applicative", () => {
-  AS.assertApplicative(E.Applicative, {
-    a: 1,
-    ta: E.right(1),
-    fai: AS.add,
-    fij: AS.multiply,
-    tfai: E.right(AS.add),
-    tfij: E.right(AS.multiply),
-  });
-});
-
-Deno.test("Either Chain", () => {
-  AS.assertChain(E.Chain, {
-    a: 1,
-    ta: E.right(1),
-    fai: AS.add,
-    fij: AS.multiply,
-    tfai: E.right(AS.add),
-    tfij: E.right(AS.multiply),
-    fati: (n: number) => E.right(n),
-    fitj: (n: number) => E.right(n),
-  });
-});
-
-Deno.test("Either Monad", () => {
-  AS.assertMonad(E.Monad, {
-    a: 1,
-    ta: E.right(1),
-    fai: AS.add,
-    fij: AS.multiply,
-    tfai: E.right(AS.add),
-    tfij: E.right(AS.multiply),
-    fati: (n: number) => E.right(n),
-    fitj: (n: number) => E.right(n),
-  });
-});
-
-Deno.test("Either Bifunctor", () => {
-  AS.assertBifunctor(E.Bifunctor, {
-    tab: E.right(1),
-    fai: AS.add,
-    fij: AS.multiply,
-    fbx: AS.add,
-    fxy: AS.multiply,
-  });
-});
-
-Deno.test("Either Alt", () => {
-  AS.assertAlt(E.Alt, {
-    ta: E.right(1),
-    tb: E.right(2),
-    tc: E.right(3),
-    fai: AS.add,
-    fij: AS.multiply,
-  });
-});
-
-Deno.test("Either Extend", () => {
-  AS.assertExtend(E.Extend, {
-    ta: E.right(1),
-    fai: AS.add,
-    fij: AS.multiply,
-    ftai: E.fold(AS.add, AS.multiply),
-    ftij: E.fold(AS.multiply, AS.add),
-  });
-});
-
-Deno.test("Either Foldable", () => {
-  AS.assertFoldable<E.URI, number, number, number, number, number>(E.Foldable, {
-    a: 0,
-    tb: E.right(1),
-    faia: AS.add,
-  });
+  assertEquals(Monoid.empty(), E.right(N.MonoidNumberSum.empty()));
 });
 
 Deno.test("Either reduce", () => {

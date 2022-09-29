@@ -1,12 +1,10 @@
-import type { Kind } from "./kind.ts";
-import type * as T from "./types.ts";
-import type { Predicate } from "./predicate.ts";
+import type { Filterable, Kind, Monad, Out, Predicate } from "./types.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 import { wait } from "./fns.ts";
 
 export interface URI extends Kind {
-  readonly type: AsyncIterable<this[0]>;
+  readonly kind: AsyncIterable<Out<this, 0>>;
 }
 
 const isAsyncIterator = <A>(
@@ -232,18 +230,10 @@ export function take(n: number): <A>(ta: AsyncIterable<A>) => AsyncIterable<A> {
     });
 }
 
-export const Functor: T.Functor<URI> = { map };
+export const MonadAsyncIterable: Monad<URI> = { of, ap, map, join, chain };
 
-export const Apply: T.Apply<URI> = { ap, map };
+export const FilterableAsyncIterable: Filterable<URI> = { filter };
 
-export const Applicative: T.Applicative<URI> = { of, ap, map };
+export const sequenceTuple = createSequenceTuple(MonadAsyncIterable);
 
-export const Chain: T.Chain<URI> = { ap, map, chain };
-
-export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
-
-export const Filterable: T.Filterable<URI> = { filter };
-
-export const sequenceTuple = createSequenceTuple(Apply);
-
-export const sequenceStruct = createSequenceStruct(Apply);
+export const sequenceStruct = createSequenceStruct(MonadAsyncIterable);

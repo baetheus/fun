@@ -1,10 +1,9 @@
-import type { Kind } from "./kind.ts";
-import type * as T from "./types.ts";
+import type { Kind, Monad, Out } from "./types.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
 export interface URI extends Kind {
-  readonly type: Iterable<this[0]>;
+  readonly kind: Iterable<Out<this, 0>>;
 }
 
 const isIterator = <A>(
@@ -99,16 +98,8 @@ export function forEach<A>(fa: (a: A) => void): (ta: Iterable<A>) => void {
   };
 }
 
-export const Functor: T.Functor<URI> = { map };
+export const MonadIterable: Monad<URI> = { of, ap, map, join, chain };
 
-export const Apply: T.Apply<URI> = { ap, map };
+export const sequenceTuple = createSequenceTuple(MonadIterable);
 
-export const Applicative: T.Applicative<URI> = { of, ap, map };
-
-export const Chain: T.Chain<URI> = { ap, map, chain };
-
-export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
-
-export const sequenceTuple = createSequenceTuple(Apply);
-
-export const sequenceStruct = createSequenceStruct(Apply);
+export const sequenceStruct = createSequenceStruct(MonadIterable);

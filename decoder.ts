@@ -1,5 +1,4 @@
-import type { Kind } from "./kind.ts";
-import type * as T from "./types.ts";
+import type { In, Kind, Out } from "./types.ts";
 import type { Either } from "./either.ts";
 import type { DecodeError } from "./decode_error.ts";
 
@@ -34,13 +33,11 @@ export function extract<A>(ta: Decoded<A>): Either<string, A> {
   return pipe(ta, E.mapLeft(DE.draw));
 }
 
-const MonadDecoded = E.getRightMonad(DE.Semigroup);
+export const MonadDecoded = E.getRightMonad(DE.SemigroupDecodeError);
 
-const ApplicativeDecoded: T.Applicative<E.RightURI<DecodeError>> = MonadDecoded;
+const traverseRecord = R.traverse(MonadDecoded);
 
-const traverseRecord = R.traverse(ApplicativeDecoded);
-
-const traverseArray = A.traverse(ApplicativeDecoded);
+const traverseArray = A.traverse(MonadDecoded);
 
 // ---
 // Decoder
@@ -53,7 +50,7 @@ export type From<T> = T extends Decoder<infer _, infer A> ? A : never;
 export type To<T> = T extends Decoder<infer B, infer _> ? B : never;
 
 export interface URI extends Kind {
-  readonly type: Decoder<unknown, this[0]>;
+  readonly kind: Decoder<In<this, 0>, Out<this, 0>>;
 }
 
 // Internal Helpers
@@ -315,12 +312,15 @@ export function lazy<A, B>(id: string, fn: () => Decoder<B, A>): Decoder<B, A> {
   return (u) => pipe(get()(u), E.mapLeft((e) => DE.wrap(`lazy type ${id}`, e)));
 }
 
-export const Schemable: S.Schemable<URI> = {
+export interface UnknownDecoderURI extends Kind {
+  readonly kind: Decoder<unknown, Out<this, 0>>;
+}
+
+export const Schemable: S.Schemable<UnknownDecoderURI> = {
   unknown: () => unknown,
   string: () => string,
   number: () => number,
   boolean: () => boolean,
-  date: () => date,
   literal,
   nullable,
   undefinable,

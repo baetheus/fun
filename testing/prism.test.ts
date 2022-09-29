@@ -45,7 +45,7 @@ Deno.test("Prism asOptional", () => {
 
 Deno.test("Prism asTraversal", () => {
   const { traverse } = P.asTraversal(P.id<number>());
-  const t1 = traverse(O.Applicative);
+  const t1 = traverse(O.MonadThrowOption);
   const t2 = t1((n: number) => n === 0 ? O.none : O.some(n));
   assertEquals(t2(0), O.none);
   assertEquals(t2(1), O.some(1));
@@ -127,7 +127,7 @@ Deno.test("Prism composeTraversal", () => {
     P.id<number>(),
     P.asTraversal(P.fromPredicate(positiveGuard)),
   );
-  const t1 = traverse(O.Applicative);
+  const t1 = traverse(O.MonadThrowOption);
   const t2 = t1((n) => n === 0 ? O.none : O.some(n));
   assertEquals(t2(0), O.some(0));
   assertEquals(t2(1), O.some(1));
@@ -146,9 +146,9 @@ Deno.test("Prism filter", () => {
 Deno.test("Prism traverse", () => {
   const { traverse } = pipe(
     P.id<E.Either<number, number>>(),
-    P.traverse(E.Traversable),
+    P.traverse(E.TraversableEither),
   );
-  const t1 = traverse(O.Applicative);
+  const t1 = traverse(O.MonadThrowOption);
   const t2 = t1((n) => n > 0 ? O.some(n) : O.none);
   assertEquals(t2(E.left(0)), O.some(E.left(0)));
   assertEquals(t2(E.right(0)), O.none);

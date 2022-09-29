@@ -4,7 +4,7 @@
  * TypeScript.
  */
 
-import type { $, Kind, TypeClass } from "./kind.ts";
+import type { $, Kind, TypeClass } from "./types.ts";
 
 import { memoize } from "./fns.ts";
 
@@ -23,7 +23,7 @@ export type Literal = string | number | boolean | null | undefined;
  * @since 2.0.0
  */
 export type UnknownSchemable<U extends Kind> = TypeClass<U> & {
-  readonly unknown: () => $<U, [unknown]>;
+  readonly unknown: <B, C, D, E>() => $<U, [unknown, B, C], [D], [E]>;
 };
 
 /**
@@ -32,7 +32,7 @@ export type UnknownSchemable<U extends Kind> = TypeClass<U> & {
  * @since 2.0.0
  */
 export type StringSchemable<U extends Kind> = TypeClass<U> & {
-  readonly string: () => $<U, [string]>;
+  readonly string: <B, C, D, E>() => $<U, [string, B, C], [D], [E]>;
 };
 
 /**
@@ -41,7 +41,7 @@ export type StringSchemable<U extends Kind> = TypeClass<U> & {
  * @since 2.0.0
  */
 export type NumberSchemable<U extends Kind> = TypeClass<U> & {
-  readonly number: () => $<U, [number]>;
+  readonly number: <B, C, D, E>() => $<U, [number, B, C], [D], [E]>;
 };
 
 /**
@@ -50,16 +50,7 @@ export type NumberSchemable<U extends Kind> = TypeClass<U> & {
  * @since 2.0.0
  */
 export type BooleanSchemable<U extends Kind> = TypeClass<U> & {
-  readonly boolean: () => $<U, [boolean]>;
-};
-
-/**
- * Wraps a boolean type in Schemable.
- *
- * @since 2.0.0
- */
-export type DateSchemable<U extends Kind> = TypeClass<U> & {
-  readonly date: () => $<U, [Date]>;
+  readonly boolean: <B, C, D, E>() => $<U, [boolean, B, C], [D], [E]>;
 };
 
 /**
@@ -68,9 +59,9 @@ export type DateSchemable<U extends Kind> = TypeClass<U> & {
  * @since 2.0.0
  */
 export type LiteralSchemable<U extends Kind> = TypeClass<U> & {
-  readonly literal: <A extends [Literal, ...Literal[]]>(
+  readonly literal: <A extends [Literal, ...Literal[]], B, C, D, E>(
     ...s: A
-  ) => $<U, [A[number]]>;
+  ) => $<U, [A[number], B, C], [D], [E]>;
 };
 
 /**
@@ -79,7 +70,9 @@ export type LiteralSchemable<U extends Kind> = TypeClass<U> & {
  * @since 2.0.0
  */
 export type NullableSchemable<U extends Kind> = TypeClass<U> & {
-  readonly nullable: <A>(or: $<U, [A]>) => $<U, [A | null]>;
+  readonly nullable: <A, B, C, D, E>(
+    or: $<U, [A, B, C], [D], [E]>,
+  ) => $<U, [A | null, B, C], [D], [E]>;
 };
 
 /**
@@ -88,7 +81,9 @@ export type NullableSchemable<U extends Kind> = TypeClass<U> & {
  * @since 2.0.0
  */
 export type UndefinableSchemable<U extends Kind> = TypeClass<U> & {
-  readonly undefinable: <A>(or: $<U, [A]>) => $<U, [A | undefined]>;
+  readonly undefinable: <A, B, C, D, E>(
+    or: $<U, [A, B, C], [D], [E]>,
+  ) => $<U, [A | undefined, B, C], [D], [E]>;
 };
 
 /**
@@ -97,9 +92,9 @@ export type UndefinableSchemable<U extends Kind> = TypeClass<U> & {
  * @since 2.0.0
  */
 export type RecordSchemable<U extends Kind> = TypeClass<U> & {
-  readonly record: <A>(
-    codomain: $<U, [A]>,
-  ) => $<U, [Readonly<Record<string, A>>]>;
+  readonly record: <A, B, C, D, E>(
+    codomain: $<U, [A, B, C], [D], [E]>,
+  ) => $<U, [Readonly<Record<string, A>>, B, C], [D], [E]>;
 };
 
 /**
@@ -108,7 +103,9 @@ export type RecordSchemable<U extends Kind> = TypeClass<U> & {
  * @since 2.0.0
  */
 export type ArraySchemable<U extends Kind> = TypeClass<U> & {
-  readonly array: <A>(item: $<U, [A]>) => $<U, [ReadonlyArray<A>]>;
+  readonly array: <A, B, C, D, E>(
+    item: $<U, [A, B, C], [D], [E]>,
+  ) => $<U, [ReadonlyArray<A>, B, C], [D], [E]>;
 };
 
 /**
@@ -123,9 +120,9 @@ export type ArraySchemable<U extends Kind> = TypeClass<U> & {
  */
 export type TupleSchemable<U extends Kind> = TypeClass<U> & {
   // deno-lint-ignore no-explicit-any
-  readonly tuple: <A extends any[]>(
-    ...items: { [K in keyof A]: $<U, [A[K]]> }
-  ) => $<U, [{ [K in keyof A]: A[K] }]>;
+  readonly tuple: <A extends any[], B, C, D, E>(
+    ...items: { [K in keyof A]: $<U, [A[K], B, C], [D], [E]> }
+  ) => $<U, [{ [K in keyof A]: A[K] }, B, C], [D], [E]>;
 };
 
 /**
@@ -139,9 +136,9 @@ export type TupleSchemable<U extends Kind> = TypeClass<U> & {
  * @since 2.0.0
  */
 export type StructSchemable<U extends Kind> = TypeClass<U> & {
-  readonly struct: <A>(
-    items: { [K in keyof A]: $<U, [A[K]]> },
-  ) => $<U, [{ [K in keyof A]: A[K] }]>;
+  readonly struct: <A, B, C, D, E>(
+    items: { [K in keyof A]: $<U, [A[K], B, C], [D], [E]> },
+  ) => $<U, [{ [K in keyof A]: A[K] }, B, C], [D], [E]>;
 };
 
 /**
@@ -155,9 +152,9 @@ export type StructSchemable<U extends Kind> = TypeClass<U> & {
  * @since 2.0.0
  */
 export type PartialSchemable<U extends Kind> = TypeClass<U> & {
-  readonly partial: <A>(
-    items: { [K in keyof A]: $<U, [A[K]]> },
-  ) => $<U, [{ [K in keyof A]?: A[K] | null }]>;
+  readonly partial: <A, B, C, D, E>(
+    items: { [K in keyof A]: $<U, [A[K], B, C], [D], [E]> },
+  ) => $<U, [{ [K in keyof A]?: A[K] | null }, B, C], [D], [E]>;
 };
 
 /**
@@ -168,9 +165,9 @@ export type PartialSchemable<U extends Kind> = TypeClass<U> & {
  * @since 2.0.0
  */
 export type IntersectSchemable<U extends Kind> = TypeClass<U> & {
-  readonly intersect: <I>(
-    right: $<U, [I]>,
-  ) => <A>(left: $<U, [A]>) => $<U, [A & I]>;
+  readonly intersect: <I, B, C, D, E>(
+    right: $<U, [I, B, C], [D], [E]>,
+  ) => <A>(left: $<U, [A, B, C], [D], [E]>) => $<U, [A & I, B, C], [D], [E]>;
 };
 
 /**
@@ -181,9 +178,9 @@ export type IntersectSchemable<U extends Kind> = TypeClass<U> & {
  * @since 2.0.0
  */
 export type UnionSchemable<U extends Kind> = TypeClass<U> & {
-  readonly union: <I>(
-    right: $<U, [I]>,
-  ) => <A>(left: $<U, [A]>) => $<U, [A | I]>;
+  readonly union: <I, B, C, D, E>(
+    right: $<U, [I, B, C], [D], [E]>,
+  ) => <A>(left: $<U, [A, B, C], [D], [E]>) => $<U, [A | I, B, C], [D], [E]>;
 };
 
 /**
@@ -195,7 +192,10 @@ export type UnionSchemable<U extends Kind> = TypeClass<U> & {
  * @since 2.0.0
  */
 export type LazySchemable<U extends Kind> = TypeClass<U> & {
-  readonly lazy: <A>(id: string, f: () => $<U, [A]>) => $<U, [A]>;
+  readonly lazy: <A, B, C, D, E>(
+    id: string,
+    f: () => $<U, [A, B, C], [D], [E]>,
+  ) => $<U, [A, B, C], [D], [E]>;
 };
 
 /**
@@ -214,7 +214,6 @@ export type Schemable<U extends Kind> =
   & StringSchemable<U>
   & NumberSchemable<U>
   & BooleanSchemable<U>
-  & DateSchemable<U>
   & LiteralSchemable<U>
   & NullableSchemable<U>
   & UndefinableSchemable<U>
@@ -233,19 +232,21 @@ export type Schemable<U extends Kind> =
  *
  * @since 2.0.0
  */
-export type Schema<A> = <U extends Kind>(S: Schemable<U>) => $<U, [A]>;
+export type Schema<A, B = unknown, C = unknown, D = unknown, E = unknown> = <
+  U extends Kind,
+>(S: Schemable<U>) => $<U, [A, B, C], [D], [E]>;
 
 /**
  * Extracts the inner type of a Schema
  *
  * @since 2.0.0
  */
-export type TypeOf<T> = T extends Schema<infer A> ? A : never;
+export type TypeOf<T> = T extends Schema<infer A> ? A : unknown;
 
 // Helps inference in the schema function
-type InferSchema<U extends Kind, A> =
+type InferSchema<U extends Kind, A, B, C, D, E> =
   & TypeClass<U>
-  & ((S: Schemable<U>) => $<U, [A]>);
+  & ((S: Schemable<U>) => $<U, [A, B, C], [D], [E]>);
 
 /**
  * A helper function to build a generic Schema that can be used
@@ -265,7 +266,6 @@ type InferSchema<U extends Kind, A> =
  *     age: s.number(),
  *   }),
  *   s.intersect(s.partial({
- *     birthdate: s.date(),
  *     interests: s.array(s.string()),
  *   }))
  * ));
@@ -303,8 +303,15 @@ type InferSchema<U extends Kind, A> =
  *
  * @since 2.0.0
  */
-export function schema<A, U extends Kind = Kind>(
-  s: InferSchema<U, A>,
-): Schema<A> {
+export function schema<
+  A,
+  B = unknown,
+  C = unknown,
+  D = unknown,
+  E = unknown,
+  U extends Kind = Kind,
+>(
+  s: InferSchema<U, A, B, C, D, E>,
+): Schema<A, B, C, D, E> {
   return memoize(s) as Schema<A>;
 }
