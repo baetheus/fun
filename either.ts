@@ -1,11 +1,25 @@
-import type { $, Kind } from "./kind.ts";
-import type * as T from "./types.ts";
-import type { Predicate } from "./predicate.ts";
-import type { Refinement } from "./refinement.ts";
+import type {
+  $,
+  Alt,
+  Applicative,
+  Bifunctor,
+  Extend,
+  Kind,
+  Monad,
+  MonadThrow,
+  Monoid,
+  Ord,
+  Out,
+  Predicate,
+  Refinement,
+  Semigroup,
+  Setoid,
+  Show,
+  Traversable,
+} from "./types.ts";
 
 import * as O from "./option.ts";
-import { isNotNil } from "./nilable.ts";
-import { flow, pipe } from "./fns.ts";
+import { flow, isNotNil, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
 export type Left<L> = { tag: "Left"; left: L };
@@ -15,11 +29,11 @@ export type Right<R> = { tag: "Right"; right: R };
 export type Either<L, R> = Left<L> | Right<R>;
 
 export interface URI extends Kind {
-  readonly type: Either<this[1], this[0]>;
+  readonly kind: Either<Out<this, 1>, Out<this, 0>>;
 }
 
 export interface RightURI<B> extends Kind {
-  readonly type: Either<B, this[0]>;
+  readonly kind: Either<B, Out<this, 0>>;
 }
 
 export function left<E = never, A = never>(left: E): Either<E, A> {
@@ -113,9 +127,9 @@ export function isRight<L, R>(m: Either<L, R>): m is Right<R> {
 }
 
 export function getShow<A, B>(
-  SB: T.Show<B>,
-  SA: T.Show<A>,
-): T.Show<Either<B, A>> {
+  SB: Show<B>,
+  SA: Show<A>,
+): Show<Either<B, A>> {
   return ({
     show: fold(
       (left) => `Left(${SB.show(left)})`,
@@ -125,9 +139,9 @@ export function getShow<A, B>(
 }
 
 export function getSetoid<A, B>(
-  SB: T.Setoid<B>,
-  SA: T.Setoid<A>,
-): T.Setoid<Either<B, A>> {
+  SB: Setoid<B>,
+  SA: Setoid<A>,
+): Setoid<Either<B, A>> {
   return ({
     equals: (b) => (a) => {
       if (isLeft(a)) {
@@ -146,9 +160,9 @@ export function getSetoid<A, B>(
 }
 
 export function getOrd<A, B>(
-  OB: T.Ord<B>,
-  OA: T.Ord<A>,
-): T.Ord<Either<B, A>> {
+  OB: Ord<B>,
+  OA: Ord<A>,
+): Ord<Either<B, A>> {
   return ({
     ...getSetoid(OB, OA),
     lte: (b) => (a) => {
@@ -168,8 +182,8 @@ export function getOrd<A, B>(
 }
 
 export function getLeftSemigroup<E = never, A = never>(
-  SE: T.Semigroup<E>,
-): T.Semigroup<Either<E, A>> {
+  SE: Semigroup<E>,
+): Semigroup<Either<E, A>> {
   return ({
     concat: (x) => (y) =>
       isRight(x) ? x : isRight(y) ? y : left(SE.concat(x.left)(y.left)),
@@ -177,8 +191,8 @@ export function getLeftSemigroup<E = never, A = never>(
 }
 
 export function getRightSemigroup<E = never, A = never>(
-  SA: T.Semigroup<A>,
-): T.Semigroup<Either<E, A>> {
+  SA: Semigroup<A>,
+): Semigroup<Either<E, A>> {
   return ({
     concat: (x) => (y) =>
       isLeft(x) ? x : isLeft(y) ? y : right(SA.concat(x.right)(y.right)),
@@ -186,8 +200,8 @@ export function getRightSemigroup<E = never, A = never>(
 }
 
 export function getRightMonoid<E = never, A = never>(
-  MA: T.Monoid<A>,
-): T.Monoid<Either<E, A>> {
+  MA: Monoid<A>,
+): Monoid<Either<E, A>> {
   return ({
     ...getRightSemigroup(MA),
     empty: () => right(MA.empty()),
@@ -195,8 +209,8 @@ export function getRightMonoid<E = never, A = never>(
 }
 
 export function getRightMonad<E>(
-  { concat }: T.Semigroup<E>,
-): T.Monad<RightURI<E>> {
+  { concat }: Semigroup<E>,
+): Monad<RightURI<E>> {
   return ({
     of,
     ap: (tfai) => (ta) =>
@@ -282,36 +296,31 @@ export function reduce<A, O>(
 }
 
 export function traverse<V extends Kind>(
-  A: T.Applicative<V>,
-): <A, I, J, K, L>(
-  faui: (a: A) => $<V, [I, J, K, L]>,
-) => <B>(ta: Either<B, A>) => $<V, [Either<B, I>, J, K, L]> {
+  A: Applicative<V>,
+): <A, I, J, K, L, M>(
+  faui: (a: A) => $<V, [I, J, K], [L], [M]>,
+) => <B>(ta: Either<B, A>) => $<V, [Either<B, I>, J, K], [L], [M]> {
   return (faui) =>
     fold((l) => A.of(left(l)), flow(faui, A.map((r) => right(r))));
 }
 
-export const Functor: T.Functor<URI> = { map };
+export const MonadThrowEither: MonadThrow<URI> = {
+  of,
+  ap,
+  map,
+  join,
+  chain,
+  throwError,
+};
 
-export const Apply: T.Apply<URI> = { ap, map };
+export const BifunctorEither: Bifunctor<URI> = { bimap, mapLeft };
 
-export const Applicative: T.Applicative<URI> = { of, ap, map };
+export const AltEither: Alt<URI> = { alt, map };
 
-export const Chain: T.Chain<URI> = { ap, map, chain };
+export const ExtendEither: Extend<URI> = { map, extend };
 
-export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
+export const TraversableEither: Traversable<URI> = { map, reduce, traverse };
 
-export const MonadThrow: T.MonadThrow<URI> = { ...Monad, throwError };
+export const sequenceTuple = createSequenceTuple(MonadThrowEither);
 
-export const Bifunctor: T.Bifunctor<URI> = { bimap, mapLeft };
-
-export const Alt: T.Alt<URI> = { alt, map };
-
-export const Extend: T.Extend<URI> = { map, extend };
-
-export const Foldable: T.Foldable<URI> = { reduce };
-
-export const Traversable: T.Traversable<URI> = { map, reduce, traverse };
-
-export const sequenceTuple = createSequenceTuple(Apply);
-
-export const sequenceStruct = createSequenceStruct(Apply);
+export const sequenceStruct = createSequenceStruct(MonadThrowEither);

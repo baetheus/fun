@@ -1,23 +1,40 @@
-import type { $, Kind } from "./kind.ts";
-import type * as T from "./types.ts";
+import type {
+  $,
+  Alternative,
+  Applicative,
+  Filterable,
+  Kind,
+  Monad,
+  Monoid,
+  Ord,
+  Out,
+  Predicate,
+  Refinement,
+  Semigroup,
+  Setoid,
+  Show,
+  Traversable,
+} from "./types.ts";
 import type { Separated } from "./separated.ts";
 import type { Option } from "./option.ts";
-import type { Predicate } from "./predicate.ts";
-import type { Refinement } from "./refinement.ts";
 
 import { separated } from "./separated.ts";
 import { none, some } from "./option.ts";
 import { apply, flow, identity, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
-import { Ord, toCompare } from "./ord.ts";
+import { toCompare } from "./ord.ts";
 
 export interface URI extends Kind {
-  readonly type: ReadonlyArray<this[0]>;
+  readonly kind: ReadonlyArray<Out<this, 0>>;
 }
 
 export type TypeOf<T> = T extends ReadonlyArray<infer A> ? A : never;
 
 export function empty<A = never>(): ReadonlyArray<A> {
+  return [];
+}
+
+export function zero<A = never>(): ReadonlyArray<A> {
   return [];
 }
 
@@ -201,10 +218,10 @@ export function filter<A>(
 }
 
 export function traverse<V extends Kind>(
-  A: T.Applicative<V>,
-): <A, I, J, K, L>(
-  favi: (a: A, i: number) => $<V, [I, J, K, L]>,
-) => (ta: ReadonlyArray<A>) => $<V, [ReadonlyArray<I>, J, K, L]> {
+  A: Applicative<V>,
+): <A, I, J, K, L, M>(
+  favi: (a: A, i: number) => $<V, [I, J, K], [L], [M]>,
+) => (ta: ReadonlyArray<A>) => $<V, [ReadonlyArray<I>, J, K], [L], [M]> {
   return (favi) =>
     reduce(
       (vis, a, index) =>
@@ -425,37 +442,33 @@ export function partition<A>(
   };
 }
 
-export const Functor: T.Functor<URI> = { map };
+export const MonadArray: Monad<URI> = { of, ap, map, join, chain };
 
-export const Apply: T.Apply<URI> = { ap, map };
+export const AlternativeArray: Alternative<URI> = { of, ap, alt, map, zero };
 
-export const Applicative: T.Applicative<URI> = { of, ap, map };
+export const FilterableArray: Filterable<URI> = { filter };
 
-export const Chain: T.Chain<URI> = { ap, map, chain };
-
-export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
-
-export const Alt: T.Alt<URI> = { alt, map };
-
-export const Filterable: T.Filterable<URI> = { filter };
-
-export const Foldable: T.Foldable<URI> = { reduce };
-
-export const Traversable: T.Traversable<URI> = {
+export const TraversableArray: Traversable<URI> = {
   map,
   reduce,
   traverse,
 };
 
-export function getSetoid<A>(S: T.Setoid<A>): T.Setoid<ReadonlyArray<A>> {
+export function getSetoid<A>(S: Setoid<A>): Setoid<ReadonlyArray<A>> {
   return ({
-    equals: (a) => (b) =>
-      a === b ||
-      (a.length === b.length && a.every((v, i) => S.equals(v)(b[i]))),
+    equals: (a) => (b) => {
+      if (a === b) {
+        return true;
+      } else if (a.length !== b.length) {
+        return false;
+      } else {
+        return a.every((v, i) => S.equals(v)(b[i]));
+      }
+    },
   });
 }
 
-export function getOrd<A>(O: T.Ord<A>): T.Ord<ReadonlyArray<A>> {
+export function getOrd<A>(O: Ord<A>): Ord<ReadonlyArray<A>> {
   const { equals } = getSetoid(O);
   return ({
     equals,
@@ -472,17 +485,17 @@ export function getOrd<A>(O: T.Ord<A>): T.Ord<ReadonlyArray<A>> {
   });
 }
 
-export function getSemigroup<A>(): T.Semigroup<ReadonlyArray<A>> {
+export function getSemigroup<A>(): Semigroup<ReadonlyArray<A>> {
   return ({ concat });
 }
 
-export function getShow<A>({ show }: T.Show<A>): T.Show<ReadonlyArray<A>> {
+export function getShow<A>({ show }: Show<A>): Show<ReadonlyArray<A>> {
   return ({
     show: (ta) => `ReadonlyArray[${ta.map(show).join(", ")}]`,
   });
 }
 
-export function getMonoid<A = never>(): T.Monoid<ReadonlyArray<A>> {
+export function getMonoid<A = never>(): Monoid<ReadonlyArray<A>> {
   return ({
     empty,
     concat,
@@ -490,14 +503,13 @@ export function getMonoid<A = never>(): T.Monoid<ReadonlyArray<A>> {
 }
 
 export const createSequence = <V extends Kind>(
-  A: T.Applicative<V>,
-): <A, B, C, D>(
-  ta: $<V, [A, B, C, D]>[],
-) => $<V, [ReadonlyArray<A>, B, C, D]> => {
-  // deno-lint-ignore no-explicit-any
-  return pipe(A.map(identity), traverse(A)) as any;
+  A: Applicative<V>,
+): <A, B, C, D, E>(
+  ta: $<V, [A, B, C], [D], [E]>[],
+) => $<V, [ReadonlyArray<A>, B, C], [D], [E]> => {
+  return traverse(A)(A.map(identity));
 };
 
-export const sequenceTuple = createSequenceTuple(Apply);
+export const sequenceTuple = createSequenceTuple(MonadArray);
 
-export const sequenceStruct = createSequenceStruct(Apply);
+export const sequenceStruct = createSequenceStruct(MonadArray);

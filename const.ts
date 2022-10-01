@@ -1,16 +1,28 @@
-import type { Kind } from "./kind.ts";
-import type * as T from "./types.ts";
+import type {
+  Applicative,
+  Apply,
+  Bifunctor,
+  Contravariant,
+  Functor,
+  Kind,
+  Monoid,
+  Ord,
+  Out,
+  Semigroup,
+  Setoid,
+  Show,
+} from "./types.ts";
 
 import { identity } from "./fns.ts";
 
 export type Const<E, _ = never> = E;
 
 export interface URI extends Kind {
-  readonly type: Const<this[1], this[0]>;
+  readonly kind: Const<Out<this, 1>, Out<this, 0>>;
 }
 
 export interface RightURI<B> extends Kind {
-  readonly type: Const<B, this[0]>;
+  readonly kind: Const<B, Out<this, 0>>;
 }
 
 export function make<E, A = never>(e: E): Const<E, A> {
@@ -42,42 +54,40 @@ export function mapLeft<B, J>(
   return bimap(fbj, identity);
 }
 
-export const getShow = <E, A>(S: T.Show<E>): T.Show<Const<E, A>> => ({
+export const getShow = <E, A>(S: Show<E>): Show<Const<E, A>> => ({
   show: (c) => `Const(${S.show(c)})`,
 });
 
 export const getSetoid: <E, A>(
-  E: T.Setoid<E>,
-) => T.Setoid<Const<E, A>> = identity;
+  E: Setoid<E>,
+) => Setoid<Const<E, A>> = identity;
 
-export const getOrd: <E, A>(O: T.Ord<E>) => T.Ord<Const<E, A>> = identity;
+export const getOrd: <E, A>(O: Ord<E>) => Ord<Const<E, A>> = identity;
 
 export const getSemigroup: <E, A>(
-  S: T.Semigroup<E>,
-) => T.Semigroup<Const<E, A>> = identity;
+  S: Semigroup<E>,
+) => Semigroup<Const<E, A>> = identity;
 
 export const getMonoid: <E, A>(
-  M: T.Monoid<E>,
-) => T.Monoid<Const<E, A>> = identity;
+  M: Monoid<E>,
+) => Monoid<Const<E, A>> = identity;
 
 export const getApply = <E>(
-  S: T.Semigroup<E>,
-): T.Apply<RightURI<E>> => ({
+  S: Semigroup<E>,
+): Apply<RightURI<E>> => ({
   map: (_) => (ta) => ta,
-  // deno-lint-ignore no-explicit-any
-  ap: (tfai) => (ta): Const<any, any> => make(S.concat(ta)(tfai)),
+  ap: (tfai) => (ta) => make(S.concat(ta)(tfai)),
 });
 
 export const getApplicative = <E>(
-  M: T.Monoid<E>,
-): T.Applicative<RightURI<E>> => ({
-  // deno-lint-ignore no-explicit-any
-  of: (): Const<any, any> => make(M.empty()),
+  M: Monoid<E>,
+): Applicative<RightURI<E>> => ({
+  of: () => make(M.empty()),
   ...getApply(M),
 });
 
-export const Functor: T.Functor<URI> = { map };
+export const FunctorConst: Functor<URI> = { map };
 
-export const Contravariant: T.Contravariant<URI> = { contramap };
+export const ContravariantConst: Contravariant<URI> = { contramap };
 
-export const Bifunctor: T.Bifunctor<URI> = { bimap, mapLeft };
+export const BifunctorConst: Bifunctor<URI> = { bimap, mapLeft };

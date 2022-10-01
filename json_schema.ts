@@ -5,15 +5,14 @@
  * for describing a Schema to an external system.
  */
 
-import type * as T from "./types.ts";
+import type { Kind, Monad, NonEmptyArray, Out, Semigroup } from "./types.ts";
 import type * as S from "./schemable.ts";
-import type { Kind } from "./kind.ts";
 import type { State } from "./state.ts";
-import type { NonEmptyArray } from "./nonempty_array.ts";
 import type { ReadonlyRecord } from "./record.ts";
 
-import * as M from "./state.ts";
+import { MonadState } from "./state.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
+import { createSequence } from "./array.ts";
 import { pipe } from "./fns.ts";
 
 // --
@@ -189,25 +188,31 @@ export type TypeOf<T> = T extends JsonBuilder<infer A> ? A : never;
  * The Kind substitution scheme for JsonBuilder.
  */
 export interface URI extends Kind {
-  readonly type: JsonBuilder<this[0]>;
+  readonly kind: JsonBuilder<Out<this, 0>>;
 }
 
-// Rebranding of State Applicative as JsonBuilder Applicative
-const Apply = M.Apply as unknown as T.Apply<URI>;
-
-// Sequence tuples of JsonBuilder
-const sequenceTuple = createSequenceTuple(Apply);
-
-// Sequence structs of JsonBuilder
-const sequenceStruct = createSequenceStruct(Apply);
-
 // Concat JsonSchemaDefinitions
-const { concat }: T.Semigroup<JsonSchemaDefinitions> = {
+const { concat }: Semigroup<JsonSchemaDefinitions> = {
   concat: (a) => (b) => Object.assign({}, a, b),
 };
 
-// Internally, represent JsonBuilder as a State
-const of = <A = never>(t: JsonSchema): JsonBuilder<A> => M.of(t);
+export const MonadJsonBuilder = MonadState as Monad<URI>;
+
+export const sequenceTuple = createSequenceTuple(MonadJsonBuilder);
+
+export const sequenceStruct = createSequenceStruct(MonadJsonBuilder);
+
+export const sequenceArray = createSequence(MonadJsonBuilder);
+
+export const of = MonadJsonBuilder.of;
+
+export const ap = MonadJsonBuilder.ap;
+
+export const map = MonadJsonBuilder.map;
+
+export const join = MonadJsonBuilder.join;
+
+export const chain = MonadJsonBuilder.chain;
 
 /**
  * Creates a JsonBuilder of an unknown type
@@ -340,7 +345,7 @@ export function literal<A extends [S.Literal, ...S.Literal[]]>(
 export function nullable<A>(or: JsonBuilder<A>): JsonBuilder<A | null> {
   return pipe(
     sequenceTuple(or, of({ type: "null" })),
-    M.map((anyOf) => ({ anyOf })),
+    map((anyOf) => ({ anyOf })),
   );
 }
 
@@ -362,7 +367,7 @@ export function nullable<A>(or: JsonBuilder<A>): JsonBuilder<A | null> {
 export function undefinable<A>(or: JsonBuilder<A>): JsonBuilder<A | undefined> {
   return pipe(
     sequenceTuple(or, of({})),
-    M.map((anyOf) => ({ anyOf })),
+    map((anyOf) => ({ anyOf })),
   );
 }
 
@@ -386,7 +391,7 @@ export function record<A>(
 ): JsonBuilder<Record<string, A>> {
   return pipe(
     codomain,
-    M.map((additionalProperties) => ({
+    map((additionalProperties) => ({
       type: "object",
       properties: {},
       additionalProperties,
@@ -410,7 +415,7 @@ export function record<A>(
  * @since 2.0.0
  */
 export function array<A>(item: JsonBuilder<A>): JsonBuilder<ReadonlyArray<A>> {
-  return pipe(item, M.map((items) => ({ type: "array", items })));
+  return pipe(item, map((items) => ({ type: "array", items })));
 }
 
 /**
@@ -436,8 +441,8 @@ export function tuple<A extends any[]>(
   ...items: { [K in keyof A]: JsonBuilder<A[K]> }
 ): JsonBuilder<{ [K in keyof A]: A[K] }> {
   return pipe(
-    M.sequenceArray(items),
-    M.map((items) => ({ type: "array", items })),
+    sequenceArray(items),
+    map((items) => ({ type: "array", items })),
   ) as JsonBuilder<{ [K in keyof A]: A[K] }>;
 }
 
@@ -469,7 +474,7 @@ export function struct<A>(
   return pipe(
     items as Record<string, JsonBuilder<unknown>>,
     sequenceStruct,
-    M.map((properties) => ({
+    map((properties) => ({
       type: "object",
       properties,
       required: Object.keys(properties).sort(),
@@ -504,7 +509,7 @@ export function partial<A>(
   return pipe(
     items as Record<string, JsonBuilder<unknown>>,
     sequenceStruct,
-    M.map((properties) => ({ type: "object", properties })),
+    map((properties) => ({ type: "object", properties })),
   ) as JsonBuilder<{ [K in keyof A]: A[K] }>;
 }
 
@@ -555,7 +560,7 @@ export function intersect<I>(
   return <A>(ta: JsonBuilder<A>) =>
     pipe(
       sequenceTuple(ta, and),
-      M.map((allOf) => ({ allOf })),
+      map((allOf) => ({ allOf })),
     );
 }
 
@@ -606,7 +611,7 @@ export function union<I>(
   return <A>(ta: JsonBuilder<A>) =>
     pipe(
       sequenceTuple(ta, or),
-      M.map((anyOf) => ({ anyOf })),
+      map((anyOf) => ({ anyOf })),
     );
 }
 
@@ -774,7 +779,6 @@ export const Schemable: S.Schemable<URI> = {
   string,
   number,
   boolean,
-  date,
   literal,
   nullable,
   undefinable,

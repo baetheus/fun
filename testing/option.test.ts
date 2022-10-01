@@ -1,10 +1,10 @@
 import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
-import * as AS from "./assert.ts";
-
 import * as O from "../option.ts";
 import * as N from "../number.ts";
 import { _, pipe } from "../fns.ts";
+
+const add = (n: number) => n + 1;
 
 Deno.test("Option none", () => {
   assertEquals(O.none, { tag: "None" });
@@ -76,145 +76,15 @@ Deno.test("Option isSome", () => {
   assertEquals(O.isSome(O.some(1)), true);
 });
 
-Deno.test("Option Functor", () => {
-  AS.assertFunctor(O.Functor, { ta: O.some(1), fai: AS.add, fij: AS.multiply });
-});
-
-Deno.test("Option Apply", () => {
-  AS.assertApply(O.Apply, {
-    ta: O.some(1),
-    fai: AS.add,
-    fij: AS.multiply,
-    tfai: O.some(AS.add),
-    tfij: O.some(AS.multiply),
-  });
-});
-
-Deno.test("Option Applicative", () => {
-  AS.assertApplicative(O.Applicative, {
-    a: 1,
-    ta: O.some(1),
-    fai: AS.add,
-    fij: AS.multiply,
-    tfai: O.some(AS.add),
-    tfij: O.some(AS.multiply),
-  });
-});
-
-Deno.test("Option Chain", () => {
-  AS.assertChain(O.Chain, {
-    a: 1,
-    ta: O.some(1),
-    fai: AS.add,
-    fij: AS.multiply,
-    tfai: O.some(AS.add),
-    tfij: O.some(AS.multiply),
-    fati: (n: number) => O.some(n + 1),
-    fitj: (n: number) => O.some(n * n),
-  });
-});
-
-Deno.test("Option Monad", () => {
-  AS.assertMonad(O.Monad, {
-    a: 1,
-    ta: O.some(1),
-    fai: AS.add,
-    fij: AS.multiply,
-    tfai: O.some(AS.add),
-    tfij: O.some(AS.multiply),
-    fati: (n: number) => O.some(n + 1),
-    fitj: (n: number) => O.some(n * n),
-  });
-});
-
-Deno.test("Option Alt", () => {
-  AS.assertAlt(O.Alt, {
-    ta: O.some(1),
-    tb: O.some(2),
-    tc: O.some(3),
-    fai: AS.add,
-    fij: AS.multiply,
-  });
-  AS.assertAlt(O.Alt, {
-    ta: O.none,
-    tb: O.some(2),
-    tc: O.some(3),
-    fai: AS.add,
-    fij: AS.multiply,
-  });
-});
-
-Deno.test("Option Alternative", () => {
-  AS.assertAlternative(O.Alternative, {
-    a: 1,
-    ta: O.some(1),
-    tb: O.some(2),
-    tc: O.some(3),
-    fai: AS.add,
-    fij: AS.multiply,
-    tfai: O.some(AS.add),
-    tfij: O.some(AS.multiply),
-  });
-});
-
-Deno.test("Option Extends", () => {
-  AS.assertExtend(O.Extends, {
-    ta: O.some(1),
-    fai: AS.add,
-    fij: AS.multiply,
-    ftai: O.getOrElse(() => 0),
-    ftij: O.getOrElse(() => -1),
-  });
-});
-
-Deno.test("Option Filterable", () => {
-  AS.assertFilterable(O.Filterable, {
-    a: O.some(0),
-    b: O.some(1),
-    f: (n: number) => n > 0,
-    g: (n: number) => n < 2,
-  });
-});
-
-Deno.test("Option Foldable", () => {
-  AS.assertFoldable(O.Foldable, {
-    a: 0,
-    tb: O.some(1),
-    faia: (n: number, o: number) => n + o,
-  });
-});
-
-Deno.test("Option Plus", () => {
-  AS.assertPlus(O.Plus, {
-    ta: O.some(1),
-    tb: O.some(2),
-    tc: O.some(3),
-    fai: AS.add,
-    fij: AS.multiply,
-  });
-});
-
 Deno.test("Option getShow", () => {
   const { show } = O.getShow({ show: (n: number) => n.toString() });
   assertEquals(show(O.none), "None");
   assertEquals(show(O.some(1)), "Some(1)");
 });
 
-Deno.test("Option getSetoid", () => {
-  const Setoid = O.getSetoid(N.Setoid);
-  AS.assertSetoid(Setoid, {
-    a: O.some(1),
-    b: O.some(1),
-    c: O.some(1),
-    z: O.none,
-  });
-});
-
 Deno.test("Option getOrd", () => {
-  const Ord = O.getOrd(N.Ord);
+  const Ord = O.getOrd(N.OrdNumber);
   const { lte } = Ord;
-  AS.assertOrd(Ord, { a: O.none, b: O.some(1) });
-  AS.assertOrd(Ord, { a: O.some(2), b: O.some(1) });
   assertEquals(lte(O.none)(O.none), true);
   assertEquals(lte(O.none)(O.some(1)), false);
   assertEquals(lte(O.some(1))(O.none), true);
@@ -223,32 +93,22 @@ Deno.test("Option getOrd", () => {
   assertEquals(lte(O.some(2))(O.some(1)), true);
 });
 
-Deno.test("Option getSemigroup", () => {
-  const Semigroup = O.getSemigroup(N.SemigroupSum);
-  AS.assertSemigroup(Semigroup, { a: O.some(1), b: O.some(2), c: O.some(3) });
-});
-
-Deno.test("Option getMonoid", () => {
-  const Monoid = O.getMonoid(N.MonoidSum);
-  AS.assertMonoid(Monoid, { a: O.some(1), b: O.some(2), c: O.some(3) });
-});
-
 Deno.test("Option of", () => {
   assertEquals(O.of(1), O.some(1));
 });
 
 Deno.test("Option ap", () => {
-  assertEquals(pipe(O.some(1), O.ap(O.some(AS.add))), O.some(2));
+  assertEquals(pipe(O.some(1), O.ap(O.some(add))), O.some(2));
   assertEquals(pipe(O.some(1), O.ap(O.none)), O.none);
-  assertEquals(pipe(O.none, O.ap(O.some(AS.add))), O.none);
+  assertEquals(pipe(O.none, O.ap(O.some(add))), O.none);
   assertEquals(pipe(O.none, O.ap(O.none)), O.none);
 });
 
 Deno.test("Option map", () => {
-  const f1 = O.map(AS.add);
+  const f1 = O.map(add);
   assertEquals(typeof f1, "function");
-  assertEquals(pipe(O.some(1), O.map(AS.add)), O.some(2));
-  assertEquals(pipe(O.none, O.map(AS.add)), O.none);
+  assertEquals(pipe(O.some(1), O.map(add)), O.some(2));
+  assertEquals(pipe(O.none, O.map(add)), O.none);
 });
 
 Deno.test("Option join", () => {
@@ -271,7 +131,7 @@ Deno.test("Option reduce", () => {
 });
 
 Deno.test("Option traverse", () => {
-  const t1 = O.traverse(O.Applicative);
+  const t1 = O.traverse(O.MonadThrowOption);
   const t2 = t1((n: number) => n === 0 ? O.none : O.some(1));
   assertEquals(t2(O.none), O.some(O.none));
   assertEquals(t2(O.some(0)), O.none);

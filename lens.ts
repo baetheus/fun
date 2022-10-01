@@ -1,9 +1,13 @@
-import type * as T from "./types.ts";
-import type { $, Kind } from "./kind.ts";
+import type {
+  $,
+  Kind,
+  Predicate,
+  Refinement,
+  Setoid,
+  Traversable,
+} from "./types.ts";
 import type { Either } from "./either.ts";
 import type { Option } from "./option.ts";
-import type { Predicate } from "./predicate.ts";
-import type { Refinement } from "./refinement.ts";
 
 import type { Optic } from "./optic.ts";
 import type { Iso } from "./iso.ts";
@@ -63,7 +67,7 @@ export function atRecord<A = never>(): At<
 }
 
 export function atMap<A, B>(
-  setoid: T.Setoid<B>,
+  setoid: Setoid<B>,
 ): At<ReadonlyMap<B, A>, B, Option<A>> {
   const _lookup = M.lookup(setoid);
   const _deleteAt = M.deleteAt(setoid);
@@ -220,9 +224,9 @@ export function map<A, B>(
 }
 
 export function traverse<U extends Kind>(
-  T: T.Traversable<U>,
-): <S, A, B = never, C = never, D = never>(
-  sa: Lens<S, $<U, [A, B, C, D]>>,
+  T: Traversable<U>,
+): <S, A, B = never, C = never, D = never, E = never>(
+  sa: Lens<S, $<U, [A, B, C], [D], [E]>>,
 ) => Traversal<S, A> {
   const _traversal = toTraversal(T);
   return (sa) => composeTraversal(sa, _traversal());

@@ -22,7 +22,6 @@ type BigType = {
   string: string;
   number: number;
   boolean: boolean;
-  date: Date;
   literal: 1 | "hello";
   nullable: number | null;
   undefinable: number | undefined;
@@ -38,7 +37,6 @@ const big = (): BigType => ({
   string: "hello",
   number: 1,
   boolean: true,
-  date: new Date(Date.now()),
   literal: 1,
   nullable: null,
   undefinable: undefined,
@@ -67,7 +65,6 @@ Deno.test("Schemable schema", () => {
         string: s.string(),
         number: s.number(),
         boolean: s.boolean(),
-        date: s.date(),
         literal: s.literal(1, "hello"),
         nullable: s.nullable(s.number()),
         undefinable: s.undefinable(s.number()),

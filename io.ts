@@ -1,5 +1,13 @@
-import type { $, Kind } from "./kind.ts";
-import type * as T from "./types.ts";
+import type {
+  $,
+  Applicative,
+  Extend,
+  Kind,
+  Monad,
+  Monoid,
+  Out,
+  Traversable,
+} from "./types.ts";
 
 import {
   createApplySemigroup,
@@ -11,7 +19,7 @@ import { apply, constant, flow, pipe } from "./fns.ts";
 export type IO<A> = () => A;
 
 export interface URI extends Kind {
-  readonly type: IO<this[0]>;
+  readonly kind: IO<Out<this, 0>>;
 }
 
 export function of<A>(a: A): IO<A> {
@@ -46,36 +54,26 @@ export function reduce<A, O>(
 }
 
 export function traverse<V extends Kind>(
-  A: T.Applicative<V>,
-): <A, I, J, K, L>(
-  faui: (a: A) => $<V, [I, J, K, L]>,
-) => (ta: IO<A>) => $<V, [IO<I>, J, K, L]> {
+  A: Applicative<V>,
+): <A, I, J, K, L, M>(
+  faui: (a: A) => $<V, [I, J, K], [L], [M]>,
+) => (ta: IO<A>) => $<V, [IO<I>, J, K], [L], [M]> {
   return (faui) => (ta) => pipe(faui(ta()), A.map(of));
 }
 
-export const Functor: T.Functor<URI> = { map };
+export const MonadIO: Monad<URI> = { of, ap, map, join, chain };
 
-export const Apply: T.Apply<URI> = { ap, map };
+export const ExtendsIO: Extend<URI> = { map, extend };
 
-export const Applicative: T.Applicative<URI> = { of, ap, map };
+export const TraversableIO: Traversable<URI> = { map, reduce, traverse };
 
-export const Chain: T.Chain<URI> = { ap, map, chain };
+export const getApplySemigroup = createApplySemigroup(MonadIO);
 
-export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
-
-export const Extends: T.Extend<URI> = { map, extend };
-
-export const Foldable: T.Foldable<URI> = { reduce };
-
-export const Traversable: T.Traversable<URI> = { map, reduce, traverse };
-
-export const getSemigroup = createApplySemigroup(Apply);
-
-export const getMonoid = <A>(M: T.Monoid<A>): T.Monoid<IO<A>> => ({
-  ...getSemigroup(M),
+export const getMonoid = <A>(M: Monoid<A>): Monoid<IO<A>> => ({
+  ...getApplySemigroup(M),
   empty: constant(M.empty),
 });
 
-export const sequenceTuple = createSequenceTuple(Apply);
+export const sequenceTuple = createSequenceTuple(MonadIO);
 
-export const sequenceStruct = createSequenceStruct(Apply);
+export const sequenceStruct = createSequenceStruct(MonadIO);

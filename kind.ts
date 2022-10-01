@@ -1,33 +1,88 @@
 /**
- * Kind is an interface that can be extended
- * to retrieve inner types using "this"
+ * Splits the different type level substitutions into tuples
+ * based on variance.
  */
-export interface Kind {
-  readonly [index: number]: unknown;
-  readonly type?: unknown;
-}
-
-declare const PhantomType: unique symbol;
+export type Substitutions = {
+  // Covariant Substitutions
+  readonly ["covariant"]: ReadonlyArray<unknown>;
+  // Contravariant Substitutions
+  readonly ["contravariant"]: ReadonlyArray<unknown>;
+  // Invariant Substitutions
+  readonly ["invariant"]: ReadonlyArray<unknown>;
+};
 
 /**
- * @experimental
+ * Kind is an interface that can be extended
+ * to retrieve inner types using "this".
+ */
+export interface Kind extends Substitutions {
+  readonly kind?: unknown;
+}
+
+/**
+ * Substitute is a substitution type, taking a Kind implementation T and
+ * substituting it with types passed in S.
+ */
+export type Substitute<T extends Kind, S extends Substitutions> = T extends
+  { readonly kind: unknown } ? (T & S)["kind"]
+  : {
+    readonly T: T;
+    readonly ["covariant"]: (_: S["covariant"]) => void;
+    readonly ["contravariant"]: () => S["contravariant"];
+    readonly ["invariant"]: (_: S["invariant"]) => S["invariant"];
+  };
+
+/**
+ * $ is an alias of Substitute, lifting out, in, and inout
+ * substitutions to positional type parameters.
+ */
+export type $<
+  T extends Kind,
+  Out extends ReadonlyArray<unknown>,
+  In extends ReadonlyArray<unknown>,
+  InOut extends ReadonlyArray<unknown>,
+> = Substitute<T, {
+  ["covariant"]: Out;
+  ["contravariant"]: In;
+  ["invariant"]: InOut;
+}>;
+
+/**
+ * Access the Covariant substitution type at index N
+ */
+export type Out<T extends Kind, N extends keyof T["covariant"]> =
+  T["covariant"][N];
+
+/**
+ * Access the Contravariant substitution type at index N
+ */
+export type In<T extends Kind, N extends keyof T["contravariant"]> =
+  T["contravariant"][N];
+
+/**
+ * Access the Invariant substitution type at index N
+ */
+export type InOut<T extends Kind, N extends keyof T["invariant"]> =
+  T["invariant"][N];
+
+/**
+ * This declared symbol is used to create
+ * phantom concrete types that do not exist
+ * but are useful for carrying type data around
+ * for inferrence.
+ */
+export declare const PhantomType: unique symbol;
+
+/**
+ * Holds a type level value in a concrete position
+ * in order to keep a type around for better inference.
  */
 export interface Hold<A> {
   readonly [PhantomType]?: A;
 }
 
 /**
- * Typeclass is a type holder that is useful for inference
- *
- * @experimental
+ * Typeclass is a type constrained Hold type, specifically constrained
+ * to a "Kind" (ie. type level type)
  */
 export type TypeClass<U extends Kind> = Hold<U>;
-
-/**
- * $ is a substitution type, takeing a Kind implementation T and
- * substituting inenr types as defined by the evaluation of T
- * with the values in S
- */
-export type $<T extends Kind, S extends unknown[]> = T extends
-  { readonly type: unknown } ? (T & S)["type"]
-  : { readonly T: T; readonly S: () => S };

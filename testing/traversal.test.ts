@@ -8,7 +8,7 @@ import * as P from "../prism.ts";
 import * as O from "../option.ts";
 import * as E from "../either.ts";
 import * as A from "../array.ts";
-import { MonoidSum } from "../number.ts";
+import { MonoidNumberSum } from "../number.ts";
 import { pipe } from "../fns.ts";
 
 const iso = I.iso((n: number) => n.toString(), (s: string) => parseFloat(s));
@@ -64,7 +64,7 @@ Deno.test("Traversal modify", () => {
 Deno.test("Traversal filter", () => {
   const getAll = pipe(
     T.id<ReadonlyArray<number>>(),
-    T.traverse(A.Traversable),
+    T.traverse(A.TraversableArray),
     T.filter((n: number) => n > 0),
     T.getAll,
   );
@@ -121,7 +121,7 @@ Deno.test("Traversal atKey", () => {
 Deno.test("Traversal traverse", () => {
   const getAll = pipe(
     T.id<ReadonlyArray<number>>(),
-    T.traverse(A.Traversable),
+    T.traverse(A.TraversableArray),
     T.getAll,
   );
   assertEquals(getAll([1, 2, 3]), [1, 2, 3]);
@@ -129,8 +129,8 @@ Deno.test("Traversal traverse", () => {
 });
 
 Deno.test("Traversal foldMap", () => {
-  const foldMapSum = T.foldMap(MonoidSum);
-  const traverseNumberArray = pipe(T.traverse(A.Traversable));
+  const foldMapSum = T.foldMap(MonoidNumberSum);
+  const traverseNumberArray = pipe(T.traverse(A.TraversableArray));
   const foldMap = pipe(
     T.id<ReadonlyArray<number>>(),
     traverseNumberArray,
@@ -143,7 +143,7 @@ Deno.test("Traversal foldMap", () => {
 Deno.test("Traversal getAll", () => {
   const getAll = pipe(
     T.id<ReadonlyArray<number>>(),
-    T.traverse(A.Traversable),
+    T.traverse(A.TraversableArray),
     T.getAll,
   );
   assertEquals(getAll([]), []);

@@ -1,8 +1,19 @@
-import type { $, Kind } from "./kind.ts";
-import type * as T from "./types.ts";
+import type {
+  $,
+  Applicative,
+  Kind,
+  Monad,
+  Out,
+  Show,
+  Traversable,
+} from "./types.ts";
 
 import * as A from "./array.ts";
-import * as AP from "./apply.ts";
+import {
+  createApplySemigroup,
+  createSequenceStruct,
+  createSequenceTuple,
+} from "./apply.ts";
 import { apply, flow, identity, pipe } from "./fns.ts";
 
 export type Forest<A> = ReadonlyArray<Tree<A>>;
@@ -13,7 +24,7 @@ export type Tree<A> = {
 };
 
 export interface URI extends Kind {
-  readonly type: Tree<this[0]>;
+  readonly kind: Tree<Out<this, 0>>;
 }
 
 function draw(indentation: string, forest: Forest<string>): string {
@@ -66,20 +77,21 @@ export function reduce<A, O>(
 }
 
 export function traverse<V extends Kind>(
-  V: T.Applicative<V>,
-): <A, I, J, K, L>(
-  favi: (a: A) => $<V, [I, J, K, L]>,
-) => (ta: Tree<A>) => $<V, [Tree<I>, J, K, L]> {
+  V: Applicative<V>,
+): <A, I, J, K, L, M>(
+  favi: (a: A) => $<V, [I, J, K], [L], [M]>,
+) => (ta: Tree<A>) => $<V, [Tree<I>, J, K], [L], [M]> {
   const traverseV = A.traverse(V);
   return (favi) => {
-    const out =
-      <A, I, J, K, L>(_favi: (a: A) => $<V, [I, J, K, L]>) =>
-      (ta: Tree<A>): $<V, [Tree<I>, J, K, L]> =>
-        pipe(
-          ta.forest,
-          traverseV(out(_favi)),
-          V.ap(pipe(_favi(ta.value), V.map(_make))),
-        );
+    const out = <A, I, J, K, L, M>(
+      _favi: (a: A) => $<V, [I, J, K], [L], [M]>,
+    ) =>
+    (ta: Tree<A>): $<V, [Tree<I>, J, K], [L], [M]> =>
+      pipe(
+        ta.forest,
+        traverseV(out(_favi)),
+        V.ap(pipe(_favi(ta.value), V.map(_make))),
+      );
     return out(favi);
   };
 }
@@ -97,19 +109,11 @@ export function fold<A, I>(fai: (a: A, is: Array<I>) => I): (ta: Tree<A>) => I {
   return go;
 }
 
-export const Functor: T.Functor<URI> = { map };
+export const MonadTree: Monad<URI> = { of, ap, map, join, chain };
 
-export const Apply: T.Apply<URI> = { ap, map };
+export const TraversableTree: Traversable<URI> = { map, reduce, traverse };
 
-export const Applicative: T.Applicative<URI> = { of, ap, map };
-
-export const Chain: T.Chain<URI> = { ap, map, chain };
-
-export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
-
-export const Traversable: T.Traversable<URI> = { map, reduce, traverse };
-
-export const getShow = <A>(S: T.Show<A>): T.Show<Tree<A>> => {
+export const getShow = <A>(S: Show<A>): Show<Tree<A>> => {
   const show = (ta: Tree<A>): string =>
     ta.forest.length === 0
       ? `Tree(${S.show(ta.value)})`
@@ -117,8 +121,8 @@ export const getShow = <A>(S: T.Show<A>): T.Show<Tree<A>> => {
   return ({ show });
 };
 
-export const getApplySemigroup = AP.createApplySemigroup(Apply);
+export const getApplySemigroup = createApplySemigroup(MonadTree);
 
-export const sequenceStruct = AP.createSequenceStruct(Apply);
+export const sequenceStruct = createSequenceStruct(MonadTree);
 
-export const sequenceTuple = AP.createSequenceTuple(Apply);
+export const sequenceTuple = createSequenceTuple(MonadTree);

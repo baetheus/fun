@@ -1,5 +1,13 @@
-import type { Kind } from "./kind.ts";
-import type * as T from "./types.ts";
+import type {
+  Alt,
+  Bifunctor,
+  In,
+  Kind,
+  Monad,
+  MonadThrow,
+  Out,
+  Semigroup,
+} from "./types.ts";
 
 import * as E from "./either.ts";
 import * as R from "./reader.ts";
@@ -11,11 +19,11 @@ export type ReaderEither<S, L, R> = R.Reader<
 >;
 
 export interface URI extends Kind {
-  readonly type: ReaderEither<this[2], this[1], this[0]>;
+  readonly kind: ReaderEither<In<this, 0>, Out<this, 1>, Out<this, 0>>;
 }
 
 export interface RightURI<B> extends Kind {
-  readonly type: ReaderEither<this[1], B, this[0]>;
+  readonly kind: ReaderEither<In<this, 0>, B, Out<this, 0>>;
 }
 
 export function ask<A, B = never>(): ReaderEither<A, B, A> {
@@ -140,8 +148,8 @@ export function compose<A, I, J>(
 }
 
 export function getRightMonad<B>(
-  { concat }: T.Semigroup<B>,
-): T.Monad<RightURI<B>> {
+  { concat }: Semigroup<B>,
+): Monad<RightURI<B>> {
   return ({
     of,
     ap: (tfai) => (ta) => (c) => {
@@ -157,29 +165,9 @@ export function getRightMonad<B>(
   });
 }
 
-export const Functor: T.Functor<URI> = { map };
+export const BifunctorReaderEither: Bifunctor<URI> = { bimap, mapLeft };
 
-export const Apply: T.Apply<URI> = { ap, map };
-
-export const Applicative: T.Applicative<URI> = {
-  of,
-  ap,
-  map,
-};
-
-export const Chain: T.Chain<URI> = { ap, map, chain };
-
-export const Monad: T.Monad<URI> = {
-  of,
-  ap,
-  map,
-  join,
-  chain,
-};
-
-export const Bifunctor: T.Bifunctor<URI> = { bimap, mapLeft };
-
-export const MonadThrow: T.MonadThrow<URI> = {
+export const MonadThrowReaderEither: MonadThrow<URI> = {
   of,
   ap,
   map,
@@ -188,4 +176,4 @@ export const MonadThrow: T.MonadThrow<URI> = {
   throwError,
 };
 
-export const Alt: T.Alt<URI> = { alt, map };
+export const AltReaderEither: Alt<URI> = { alt, map };

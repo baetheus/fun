@@ -6,9 +6,14 @@
  * Nilable is a type like Maybe/Option that uses undefined/null in lieu of tagged unions.
  * *****************************************************************************/
 
-import type { Kind } from "./kind.ts";
-import type * as T from "./types.ts";
-import type { Predicate } from "./predicate.ts";
+import type {
+  Alternative,
+  Kind,
+  MonadThrow,
+  Out,
+  Predicate,
+  Show,
+} from "./types.ts";
 
 import { identity, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
@@ -18,7 +23,7 @@ export type Nil = undefined | null;
 export type Nilable<A> = Nil | A;
 
 export interface URI extends Kind {
-  readonly type: Nilable<this[0]>;
+  readonly kind: Nilable<Out<this, 0>>;
 }
 
 export const nil: Nil = undefined;
@@ -104,24 +109,27 @@ export function alt<A>(tb: Nilable<A>): (ta: Nilable<A>) => Nilable<A> {
   return (ta) => isNil(ta) ? tb : ta;
 }
 
-export const Functor: T.Functor<URI> = { map };
+export const MonadThrowNilable: MonadThrow<URI> = {
+  of,
+  ap,
+  map,
+  join,
+  chain,
+  throwError,
+};
 
-export const Apply: T.Apply<URI> = { ap, map };
+export const AltNilable: Alternative<URI> = {
+  of,
+  ap,
+  alt,
+  map,
+  zero: constNil,
+};
 
-export const Applicative: T.Applicative<URI> = { of, ap, map };
-
-export const Chain: T.Chain<URI> = { ap, map, chain };
-
-export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
-
-export const MonadThrow: T.MonadThrow<URI> = { ...Monad, throwError };
-
-export const Alt: T.Alt<URI> = { alt, map };
-
-export const getShow = <A>({ show }: T.Show<A>): T.Show<Nilable<A>> => ({
+export const getShow = <A>({ show }: Show<A>): Show<Nilable<A>> => ({
   show: (ma) => (isNil(ma) ? "nil" : show(ma)),
 });
 
-export const sequenceStruct = createSequenceStruct(Apply);
+export const sequenceStruct = createSequenceStruct(MonadThrowNilable);
 
-export const sequenceTuple = createSequenceTuple(Apply);
+export const sequenceTuple = createSequenceTuple(MonadThrowNilable);

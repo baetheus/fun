@@ -1,10 +1,24 @@
-import type * as T from "./types.ts";
-import type { $, Kind } from "./kind.ts";
-import type { Predicate } from "./predicate.ts";
+import type {
+  $,
+  Alternative,
+  Applicative,
+  Extend,
+  Filterable,
+  Foldable,
+  Kind,
+  MonadThrow,
+  Monoid,
+  Ord,
+  Out,
+  Predicate,
+  Semigroup,
+  Setoid,
+  Show,
+  Traversable,
+} from "./types.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
-import { isNotNil } from "./nilable.ts";
-import { flow, identity, pipe } from "./fns.ts";
+import { flow, identity, isNotNil, pipe } from "./fns.ts";
 
 /**
  * The None type represents the non-existence of a value.
@@ -23,7 +37,7 @@ export type Some<V> = { tag: "Some"; value: V };
 export type Option<A> = Some<A> | None;
 
 export interface URI extends Kind {
-  readonly type: Option<this[0]>;
+  readonly kind: Option<Out<this, 0>>;
 }
 
 /**
@@ -67,6 +81,8 @@ export function fromNullable<A>(a: A): Option<NonNullable<A>> {
  * the predicate evaluates to false then the function will return a None,
  * otherwise the value wrapped in Some
  *
+ * TODO: Overload with refinement
+ *
  * @example
  *     const fromPositiveNumber = fromPredicate((n: number) => n > 0);
  *     const a = fromPositiveNumber(-1); // None
@@ -80,6 +96,8 @@ export function fromPredicate<A>(predicate: Predicate<A>) {
  * tryCatch takes a thunk that can potentially throw and wraps it
  * in a try/catch statement. If the thunk throws then tryCatch returns
  * None, otherwise it returns the result of the thunk wrapped in a Some.
+ *
+ * TODO: implement like taskEither tryCatch
  */
 export function tryCatch<A>(fa: () => A): Option<A> {
   try {
@@ -234,10 +252,10 @@ export function reduce<A, O>(
   return (ta) => isSome(ta) ? foao(o, ta.value) : o;
 }
 
-export function traverse<V extends Kind>(A: T.Applicative<V>) {
-  return <A, I, J, K, L>(
-    favi: (a: A) => $<V, [I, J, K, L]>,
-  ): (ta: Option<A>) => $<V, [Option<I>, J, K, L]> =>
+export function traverse<V extends Kind>(A: Applicative<V>) {
+  return <A, I, J, K, L, M>(
+    favi: (a: A) => $<V, [I, J, K], [L], [M]>,
+  ): (ta: Option<A>) => $<V, [Option<I>, J, K], [L], [M]> =>
     fold(
       () => A.of(constNone()),
       (a) => pipe(favi(a), A.map((i) => some(i))),
@@ -252,31 +270,30 @@ export function tap<A>(fa: (a: A) => void): (ta: Option<A>) => void {
   };
 }
 
-export const Functor: T.Functor<URI> = { map };
+export const MonadThrowOption: MonadThrow<URI> = {
+  of,
+  ap,
+  map,
+  join,
+  chain,
+  throwError,
+};
 
-export const Apply: T.Apply<URI> = { ap, map };
+export const AlternativeOption: Alternative<URI> = {
+  of,
+  ap,
+  map,
+  alt,
+  zero,
+};
 
-export const Applicative: T.Applicative<URI> = { of, ap, map };
+export const ExtendsOption: Extend<URI> = { map, extend };
 
-export const Chain: T.Chain<URI> = { ap, map, chain };
+export const FilterableOption: Filterable<URI> = { filter };
 
-export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
+export const FoldableOption: Foldable<URI> = { reduce };
 
-export const MonadThrow: T.MonadThrow<URI> = { ...Monad, throwError };
-
-export const Alt: T.Alt<URI> = { map, alt };
-
-export const Alternative: T.Alternative<URI> = { ...Applicative, alt, zero };
-
-export const Extends: T.Extend<URI> = { map, extend };
-
-export const Filterable: T.Filterable<URI> = { filter };
-
-export const Foldable: T.Foldable<URI> = { reduce };
-
-export const Plus: T.Plus<URI> = { alt, map, zero };
-
-export const Traversable: T.Traversable<URI> = { map, reduce, traverse };
+export const TraversableOption: Traversable<URI> = { map, reduce, traverse };
 
 /**
  * Generates a Show module for an option with inner type of A.
@@ -286,7 +303,7 @@ export const Traversable: T.Traversable<URI> = { map, reduce, traverse };
  *     const a = Show.show(some(1)); // "Some(1)"
  *     const b = Show.show(none); // "None"
  */
-export function getShow<A>({ show }: T.Show<A>): T.Show<Option<A>> {
+export function getShow<A>({ show }: Show<A>): Show<Option<A>> {
   return ({
     show: (ma) => (isNone(ma) ? "None" : `${"Some"}(${show(ma.value)})`),
   });
@@ -302,7 +319,7 @@ export function getShow<A>({ show }: T.Show<A>): T.Show<Option<A>> {
  *     const c = Setoid.equals(none, none); // true
  *     const d = Setoid.equals(some(1), none); // false
  */
-export function getSetoid<A>(S: T.Setoid<A>): T.Setoid<Option<A>> {
+export function getSetoid<A>(S: Setoid<A>): Setoid<Option<A>> {
   return ({
     equals: (a) => (b) =>
       a === b ||
@@ -312,7 +329,7 @@ export function getSetoid<A>(S: T.Setoid<A>): T.Setoid<Option<A>> {
   });
 }
 
-export function getOrd<A>(O: T.Ord<A>): T.Ord<Option<A>> {
+export function getOrd<A>(O: Ord<A>): Ord<Option<A>> {
   return ({
     ...getSetoid(O),
     lte: (b) => (a) => {
@@ -331,21 +348,21 @@ export function getOrd<A>(O: T.Ord<A>): T.Ord<Option<A>> {
 }
 
 export function getSemigroup<A>(
-  S: T.Semigroup<A>,
-): T.Semigroup<Option<A>> {
+  S: Semigroup<A>,
+): Semigroup<Option<A>> {
   return ({
     concat: (x) => (y) =>
       isNone(x) ? y : isNone(y) ? x : of(S.concat(x.value)(y.value)),
   });
 }
 
-export function getMonoid<A>(M: T.Monoid<A>): T.Monoid<Option<A>> {
+export function getMonoid<A>(M: Monoid<A>): Monoid<Option<A>> {
   return ({
     ...getSemigroup(M),
     empty: constNone,
   });
 }
 
-export const sequenceTuple = createSequenceTuple(Apply);
+export const sequenceTuple = createSequenceTuple(MonadThrowOption);
 
-export const sequenceStruct = createSequenceStruct(Apply);
+export const sequenceStruct = createSequenceStruct(MonadThrowOption);

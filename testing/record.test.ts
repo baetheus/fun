@@ -4,30 +4,14 @@ import * as R from "../record.ts";
 import * as O from "../option.ts";
 import { pipe } from "../fns.ts";
 
-import * as AS from "./assert.ts";
+const add = (n: number) => n + 1;
 
 Deno.test("Record reduce", () => {
   assertEquals(
     pipe({ a: 1, b: 2 }, R.reduce((a: number, b: number) => a + b, 0)),
     3,
   );
-  assertEquals(pipe({}, R.reduce(AS.add, 0)), 0);
-});
-
-Deno.test("Record Functor", () => {
-  AS.assertFunctor(R.Functor, {
-    ta: { a: 1, b: 2 },
-    fai: AS.add,
-    fij: AS.multiply,
-  });
-});
-
-Deno.test("Record Foldable", () => {
-  AS.assertFoldable(R.Foldable, {
-    a: 0,
-    tb: { a: 1, b: 2 },
-    faia: (a: number, i: number) => a + i,
-  });
+  assertEquals(pipe({}, R.reduce(add, 0)), 0);
 });
 
 Deno.test("Record getShow", () => {
@@ -37,7 +21,7 @@ Deno.test("Record getShow", () => {
 });
 
 Deno.test("Record traverse", () => {
-  const t1 = R.traverse(O.Applicative);
+  const t1 = R.traverse(O.MonadThrowOption);
   const t2 = t1((n: number) => n === 0 ? O.none : O.some(n));
   assertEquals(t2({}), O.some({}));
   assertEquals(t2({ a: 0, b: 1 }), O.none);
@@ -51,15 +35,15 @@ Deno.test("Record reduce", () => {
 });
 
 Deno.test("Record map", () => {
-  assertEquals(pipe({ a: 1, b: 2 }, R.map(AS.add)), { a: 2, b: 3 });
-  assertEquals(pipe({}, R.map(AS.add)), {});
+  assertEquals(pipe({ a: 1, b: 2 }, R.map(add)), { a: 2, b: 3 });
+  assertEquals(pipe({}, R.map(add)), {});
 
   assertEquals(
     pipe({ a: [1, 2, 3] }, R.map((numbers) => numbers.slice())),
     { a: [1, 2, 3] },
   );
 
-  const map = R.map(AS.add);
+  const map = R.map(add);
   assertEquals(map({}), {});
   assertEquals(map({ a: 1, b: 2 }), { a: 2, b: 3 });
 
@@ -71,7 +55,7 @@ Deno.test("Record map", () => {
 });
 
 Deno.test("Record indexedTraverse", () => {
-  const t1 = R.traverse(O.Applicative);
+  const t1 = R.traverse(O.MonadThrowOption);
   const t2 = t1((a: number, i: string) =>
     a === 0 ? O.some(i) : O.some(a.toString())
   );

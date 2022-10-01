@@ -1,4 +1,6 @@
-import type * as T from "./types.ts";
+import type { Monoid, Ord, Semigroup, Setoid } from "./types.ts";
+
+// TODO; Implement newtypes for natural, integer, rational
 
 export function equals(second: number): (first: number) => boolean {
   return (first) => first === second;
@@ -24,45 +26,45 @@ export function emptyOne(): number {
   return 1;
 }
 
-export const Setoid: T.Setoid<number> = { equals };
+export const SetoidNumber: Setoid<number> = { equals };
 
-export const Ord: T.Ord<number> = {
+export const OrdNumber: Ord<number> = {
   equals,
   lte,
 };
 
-export const SemigroupProduct: T.Semigroup<number> = {
+export const SemigroupNumberProduct: Semigroup<number> = {
   concat: multiply,
 };
 
-export const SemigroupSum: T.Semigroup<number> = {
+export const SemigroupNumberSum: Semigroup<number> = {
   concat: add,
 };
 
-export const SemigroupMax: T.Semigroup<number> = {
+export const SemigroupNumberMax: Semigroup<number> = {
   concat: (right) => (left) => right > left ? right : left,
 };
 
-export const SemigroupMin: T.Semigroup<number> = {
+export const SemigroupNumberMin: Semigroup<number> = {
   concat: (right) => (left) => right < left ? right : left,
 };
 
-export const MonoidProduct: T.Monoid<number> = {
+export const MonoidNumberProduct: Monoid<number> = {
   concat: multiply,
   empty: emptyOne,
 };
 
-export const MonoidSum: T.Monoid<number> = {
+export const MonoidNumberSum: Monoid<number> = {
   concat: add,
   empty: emptyZero,
 };
 
-export const MonoidMax: T.Monoid<number> = {
-  concat: SemigroupMax.concat,
+export const MonoidNumberMax: Monoid<number> = {
+  concat: SemigroupNumberMax.concat,
   empty: () => Number.NEGATIVE_INFINITY,
 };
 
-export const MonoidMin: T.Monoid<number> = {
-  concat: SemigroupMin.concat,
+export const MonoidNumberMin: Monoid<number> = {
+  concat: SemigroupNumberMax.concat,
   empty: () => Number.POSITIVE_INFINITY,
 };

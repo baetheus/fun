@@ -1,7 +1,8 @@
 import type { Option } from "./option.ts";
 import type { Either } from "./either.ts";
+import type { Refinement } from "./types.ts";
 
-export type Refinement<A, B extends A> = (a: A) => a is B;
+// TODO merge guard and refinement
 
 export function fromOption<A, B extends A>(
   faob: (a: A) => Option<B>,

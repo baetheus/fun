@@ -1,14 +1,17 @@
-import type { Kind } from "./kind.ts";
-import type * as T from "./types.ts";
+import type { InOut, Kind, Monad, Out } from "./types.ts";
 
 import { traverse } from "./array.ts";
 import { flow, identity, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
-export type State<S, A> = (s: S) => [A, S];
+export type State<E, A> = (e: E) => [A, E];
 
 export interface URI extends Kind {
-  readonly type: State<this[1], this[0]>;
+  readonly kind: State<InOut<this, 1>, Out<this, 0>>;
+}
+
+export interface RightURI<E> extends Kind {
+  readonly kind: State<E, Out<this, 0>>;
 }
 
 export function get<S>(): State<S, S> {
@@ -27,7 +30,7 @@ export function modify<S>(fss: (s: S) => S): State<S, void> {
   return (s: S) => [undefined, fss(s)];
 }
 
-export function make<S, A>(a: A, s: S): State<S, A> {
+export function state<S, A>(a: A, s: S): State<S, A> {
   return () => [a, s];
 }
 
@@ -64,7 +67,7 @@ export function join<A, B>(tta: State<B, State<B, A>>): State<B, A> {
 export function traverseArray<A, S, I>(
   fati: (a: A, i: number) => State<S, I>,
 ): (ta: ReadonlyArray<A>) => State<S, ReadonlyArray<I>> {
-  return pipe(fati, traverse(Applicative));
+  return pipe(fati, traverse(MonadState));
 }
 
 export function sequenceArray<A, B>(
@@ -81,16 +84,8 @@ export function execute<S>(s: S): <A>(ta: State<S, A>) => S {
   return (ta) => ta(s)[1];
 }
 
-export const Functor: T.Functor<URI> = { map };
+export const MonadState: Monad<URI> = { of, ap, map, join, chain };
 
-export const Apply: T.Apply<URI> = { ap, map };
+export const sequenceTuple = createSequenceTuple(MonadState);
 
-export const Applicative: T.Applicative<URI> = { of, ap, map };
-
-export const Chain: T.Chain<URI> = { ap, map, chain };
-
-export const Monad: T.Monad<URI> = { of, ap, map, join, chain };
-
-export const sequenceTuple = createSequenceTuple(Apply);
-
-export const sequenceStruct = createSequenceStruct(Apply);
+export const sequenceStruct = createSequenceStruct(MonadState);
