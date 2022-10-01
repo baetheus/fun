@@ -1,6 +1,6 @@
 import type {
   $,
-  Alternative,
+  Alt,
   Applicative,
   Kind,
   MonadThrow,
@@ -280,13 +280,7 @@ export const MonadThrowDatum: MonadThrow<URI> = {
   throwError,
 };
 
-export const AlternativeDatum: Alternative<URI> = {
-  of,
-  ap,
-  map,
-  zero: constInitial,
-  alt,
-};
+export const AltDatum: Alt<URI> = { alt, map };
 
 export const TraversableDatum: Traversable<URI> = { map, reduce, traverse };
 

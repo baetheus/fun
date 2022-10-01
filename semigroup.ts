@@ -143,7 +143,9 @@ export function dual<A>(S: Semigroup<A>): Semigroup<A> {
 // deno-lint-ignore no-explicit-any
 export function tuple<T extends ReadonlyArray<Semigroup<any>>>(
   ...semigroups: T
-): Semigroup<{ [K in keyof T]: T[K] extends Semigroup<infer A> ? A : never }> {
+): Semigroup<
+  { readonly [K in keyof T]: T[K] extends Semigroup<infer A> ? A : never }
+> {
   type Return = { [K in keyof T]: T[K] extends Semigroup<infer A> ? A : never };
   return ({
     concat: (right) => (left): Return =>

@@ -1,3 +1,5 @@
+export type Pair<A, B> = readonly [A, B];
+
 export type Ordering = -1 | 0 | 1;
 
 export type Compare<A> = (left: A, right: A) => Ordering;
@@ -211,13 +213,6 @@ export interface Alt<U extends Kind> extends TypeClass<U>, Functor<U> {
 }
 
 /**
- * Alternative
- * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#alternative
- */
-export interface Alternative<U extends Kind>
-  extends TypeClass<U>, Applicative<U>, Plus<U> {}
-
-/**
  * Applicative
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#applicative
  */
@@ -383,14 +378,6 @@ export interface Monoid<T> extends Semigroup<T> {
  */
 export interface Ord<T> extends Setoid<T> {
   readonly lte: (a: T) => (b: T) => boolean;
-}
-
-/**
- * Plus
- * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#plus
- */
-export interface Plus<U extends Kind> extends TypeClass<U>, Alt<U> {
-  readonly zero: <A, B, C, D, E>() => $<U, [A, B, C], [D], [E]>;
 }
 
 /**

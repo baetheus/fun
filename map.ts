@@ -21,10 +21,6 @@ export interface URI extends Kind {
   readonly kind: ReadonlyMap<Out<this, 1>, Out<this, 0>>;
 }
 
-export function zero(): ReadonlyMap<never, never> {
-  return new Map<never, never>();
-}
-
 export function empty<K, A>(): ReadonlyMap<K, A> {
   return new Map();
 }

@@ -6,7 +6,9 @@ import * as S from "./semigroup.ts";
 // deno-lint-ignore no-explicit-any
 export function tuple<T extends ReadonlyArray<Monoid<any>>>(
   ...monoids: T
-): Monoid<{ [K in keyof T]: T[K] extends Semigroup<infer A> ? A : never }> {
+): Monoid<
+  { readonly [K in keyof T]: T[K] extends Semigroup<infer A> ? A : never }
+> {
   const concat = S.tuple(...monoids).concat;
   return (({
     concat,
