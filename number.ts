@@ -1,4 +1,4 @@
-import type { Monoid, Ord, Semigroup, Setoid } from "./types.ts";
+import type { Monoid, Ord, Semigroup, Setoid, Show } from "./types.ts";
 
 // TODO; Implement newtypes for natural, integer, rational
 
@@ -67,4 +67,8 @@ export const MonoidNumberMax: Monoid<number> = {
 export const MonoidNumberMin: Monoid<number> = {
   concat: SemigroupNumberMax.concat,
   empty: () => Number.POSITIVE_INFINITY,
+};
+
+export const ShowNumber: Show<number> = {
+  show: String,
 };

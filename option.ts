@@ -1,11 +1,15 @@
 import type {
   $,
-  Alternative,
+  Alt,
   Applicative,
+  Apply,
+  Chain,
   Extend,
   Filterable,
   Foldable,
+  Functor,
   Kind,
+  Monad,
   MonadThrow,
   Monoid,
   Ord,
@@ -171,10 +175,6 @@ export function isSome<A>(m: Option<A>): m is Some<A> {
   return m.tag === "Some";
 }
 
-export function zero<A = never>(): Option<A> {
-  return none;
-}
-
 export function empty<A = never>(): Option<A> {
   return none;
 }
@@ -270,6 +270,16 @@ export function tap<A>(fa: (a: A) => void): (ta: Option<A>) => void {
   };
 }
 
+export const FunctorOption: Functor<URI> = { map };
+
+export const ApplyOption: Apply<URI> = { ap, map };
+
+export const ApplicativeOption: Applicative<URI> = { of, ap, map };
+
+export const ChainOption: Chain<URI> = { ap, map, chain };
+
+export const MonadOption: Monad<URI> = { of, ap, map, join, chain };
+
 export const MonadThrowOption: MonadThrow<URI> = {
   of,
   ap,
@@ -279,13 +289,7 @@ export const MonadThrowOption: MonadThrow<URI> = {
   throwError,
 };
 
-export const AlternativeOption: Alternative<URI> = {
-  of,
-  ap,
-  map,
-  alt,
-  zero,
-};
+export const AltOption: Alt<URI> = { alt, map };
 
 export const ExtendsOption: Extend<URI> = { map, extend };
 

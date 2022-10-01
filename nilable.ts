@@ -6,14 +6,7 @@
  * Nilable is a type like Maybe/Option that uses undefined/null in lieu of tagged unions.
  * *****************************************************************************/
 
-import type {
-  Alternative,
-  Kind,
-  MonadThrow,
-  Out,
-  Predicate,
-  Show,
-} from "./types.ts";
+import type { Alt, Kind, MonadThrow, Out, Predicate, Show } from "./types.ts";
 
 import { identity, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
@@ -118,13 +111,7 @@ export const MonadThrowNilable: MonadThrow<URI> = {
   throwError,
 };
 
-export const AltNilable: Alternative<URI> = {
-  of,
-  ap,
-  alt,
-  map,
-  zero: constNil,
-};
+export const AltNilable: Alt<URI> = { alt, map };
 
 export const getShow = <A>({ show }: Show<A>): Show<Nilable<A>> => ({
   show: (ma) => (isNil(ma) ? "nil" : show(ma)),

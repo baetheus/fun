@@ -21,10 +21,6 @@ export interface URI extends Kind {
   readonly kind: ReadonlySet<Out<this, 0>>;
 }
 
-export function zero(): ReadonlySet<never> {
-  return new Set();
-}
-
 export function empty<A = never>(): ReadonlySet<A> {
   return new Set();
 }

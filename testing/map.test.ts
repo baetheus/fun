@@ -5,10 +5,6 @@ import * as O from "../option.ts";
 import * as N from "../number.ts";
 import { pipe } from "../fns.ts";
 
-Deno.test("Map zero", () => {
-  assertEquals(M.zero(), new Map() as unknown as ReadonlyMap<never, never>);
-});
-
 Deno.test("Map empty", () => {
   assertEquals(M.empty(), new Map());
 });
@@ -62,7 +58,6 @@ Deno.test("Map bimap", () => {
 });
 
 Deno.test("Map size", () => {
-  assertEquals(M.size(M.zero()), 0);
   assertEquals(M.size(M.singleton(1, 1)), 1);
 });
 
@@ -151,8 +146,8 @@ Deno.test("Map insertAt", () => {
 Deno.test("Map deleteAt", () => {
   const deleteAt = M.deleteAt(N.SetoidNumber);
 
-  assertEquals(pipe(M.empty<number, number>(), deleteAt(1)), M.zero());
-  assertEquals(pipe(M.singleton(1, 1), deleteAt(1)), M.zero());
+  assertEquals(pipe(M.empty<number, number>(), deleteAt(1)), M.empty());
+  assertEquals(pipe(M.singleton(1, 1), deleteAt(1)), M.empty());
 });
 
 Deno.test("Map updateAt", () => {
