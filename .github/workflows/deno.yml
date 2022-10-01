@@ -53,11 +53,8 @@ jobs:
         with:
           deno-version: ${{ matrix.deno }}
 
-      - name: Run Deno Doc Tests
-        run: deno test --doc
-
       - name: Run Deno Tests
-        run: deno test -A --unstable --coverage=coverage
+        run: deno test --doc --parallel --coverage=coverage
 
       - name: Generate Coverage
         run: deno coverage --unstable ./coverage --lcov > ./coverage/lcov.info
