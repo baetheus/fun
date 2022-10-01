@@ -138,10 +138,6 @@ Deno.test("Option traverse", () => {
   assertEquals(t2(O.some(1)), O.some(O.some(1)));
 });
 
-Deno.test("Option zero", () => {
-  assertEquals(O.zero(), O.none);
-});
-
 Deno.test("Option empty", () => {
   assertEquals(O.empty(), O.none);
 });

@@ -1,6 +1,6 @@
 import type {
   $,
-  Alternative,
+  Alt,
   Applicative,
   Filterable,
   Kind,
@@ -15,10 +15,10 @@ import type {
   Show,
   Traversable,
 } from "./types.ts";
-import type { Separated } from "./separated.ts";
+import type { Pair } from "./pair.ts";
 import type { Option } from "./option.ts";
 
-import { separated } from "./separated.ts";
+import { pair } from "./pair.ts";
 import { none, some } from "./option.ts";
 import { apply, flow, identity, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
@@ -31,10 +31,6 @@ export interface URI extends Kind {
 export type TypeOf<T> = T extends ReadonlyArray<infer A> ? A : never;
 
 export function empty<A = never>(): ReadonlyArray<A> {
-  return [];
-}
-
-export function zero<A = never>(): ReadonlyArray<A> {
   return [];
 }
 
@@ -411,19 +407,19 @@ export function sort<B>(
 
 export function partition<A, B extends A>(
   refinement: (a: A, index: number) => a is B,
-): (ta: ReadonlyArray<A>) => Separated<ReadonlyArray<A>, ReadonlyArray<B>>;
+): (ta: ReadonlyArray<A>) => Pair<ReadonlyArray<A>, ReadonlyArray<B>>;
 export function partition<A, B extends A>(
   refinement: Refinement<A, B>,
-): (ta: ReadonlyArray<A>) => Separated<ReadonlyArray<A>, ReadonlyArray<B>>;
+): (ta: ReadonlyArray<A>) => Pair<ReadonlyArray<A>, ReadonlyArray<B>>;
 export function partition<A>(
   predicate: (a: A, index: number) => boolean,
-): (ta: ReadonlyArray<A>) => Separated<ReadonlyArray<A>, ReadonlyArray<A>>;
+): (ta: ReadonlyArray<A>) => Pair<ReadonlyArray<A>, ReadonlyArray<A>>;
 export function partition<A>(
   predicate: Predicate<A>,
-): (ta: ReadonlyArray<A>) => Separated<ReadonlyArray<A>, ReadonlyArray<A>>;
+): (ta: ReadonlyArray<A>) => Pair<ReadonlyArray<A>, ReadonlyArray<A>>;
 export function partition<A>(
   refinement: (a: A, index: number) => boolean,
-): (ta: ReadonlyArray<A>) => Separated<ReadonlyArray<A>, ReadonlyArray<A>> {
+): (ta: ReadonlyArray<A>) => Pair<ReadonlyArray<A>, ReadonlyArray<A>> {
   return (ta) => {
     const left: Array<A> = [];
     const right: Array<A> = [];
@@ -438,13 +434,13 @@ export function partition<A>(
         left.push(value);
       }
     }
-    return separated(left, right);
+    return pair(left, right);
   };
 }
 
 export const MonadArray: Monad<URI> = { of, ap, map, join, chain };
 
-export const AlternativeArray: Alternative<URI> = { of, ap, alt, map, zero };
+export const AltArray: Alt<URI> = { alt, map };
 
 export const FilterableArray: Filterable<URI> = { filter };
 
