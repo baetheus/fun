@@ -15,7 +15,6 @@ import type {
   Monad,
   Monoid,
   Out,
-  Pair,
   Show,
   Traversable,
 } from "./types.ts";
@@ -23,7 +22,22 @@ import type {
 import { createMonad } from "./monad.ts";
 import { pipe } from "./fns.ts";
 
-export type { Pair };
+/**
+ * Pair represents a pair of values. This is
+ * equivalent to a Tuple of length two, the
+ * Separated type in fp-ts, and any other type
+ * that contains exactly two covariant other
+ * types.
+ *
+ * The primary use fo Pair in this library
+ * is the target of a partition, where some
+ * type A is partitioned, either into
+ * [A, A], or [A, B] where B extends A.
+ *
+ * Other uses will likely come when Arrows
+ * are implemented in fun.
+ */
+export type Pair<A, B> = readonly [A, B];
 
 /**
  * Specifies Pair as a High Kinded Type, with covariant

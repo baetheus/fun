@@ -121,7 +121,7 @@ export type ArraySchemable<U extends Kind> = TypeClass<U> & {
 export type TupleSchemable<U extends Kind> = TypeClass<U> & {
   // deno-lint-ignore no-explicit-any
   readonly tuple: <A extends any[], B, C, D, E>(
-    ...items: { [K in keyof A]: $<U, [A[K], B, C], [D], [E]> }
+    ...items: { readonly [K in keyof A]: $<U, [A[K], B, C], [D], [E]> }
   ) => $<U, [{ [K in keyof A]: A[K] }, B, C], [D], [E]>;
 };
 
@@ -137,8 +137,8 @@ export type TupleSchemable<U extends Kind> = TypeClass<U> & {
  */
 export type StructSchemable<U extends Kind> = TypeClass<U> & {
   readonly struct: <A, B, C, D, E>(
-    items: { [K in keyof A]: $<U, [A[K], B, C], [D], [E]> },
-  ) => $<U, [{ [K in keyof A]: A[K] }, B, C], [D], [E]>;
+    items: { readonly [K in keyof A]: $<U, [A[K], B, C], [D], [E]> },
+  ) => $<U, [{ readonly [K in keyof A]: A[K] }, B, C], [D], [E]>;
 };
 
 /**
@@ -153,8 +153,8 @@ export type StructSchemable<U extends Kind> = TypeClass<U> & {
  */
 export type PartialSchemable<U extends Kind> = TypeClass<U> & {
   readonly partial: <A, B, C, D, E>(
-    items: { [K in keyof A]: $<U, [A[K], B, C], [D], [E]> },
-  ) => $<U, [{ [K in keyof A]?: A[K] | null }, B, C], [D], [E]>;
+    items: { readonly [K in keyof A]: $<U, [A[K], B, C], [D], [E]> },
+  ) => $<U, [{ readonly [K in keyof A]?: A[K] | null }, B, C], [D], [E]>;
 };
 
 /**

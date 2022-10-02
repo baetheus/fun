@@ -24,6 +24,8 @@ import { apply, flow, identity, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 import { toCompare } from "./ord.ts";
 
+export type NonEmptyArray<A> = readonly [A, ...A[]];
+
 export interface URI extends Kind {
   readonly kind: ReadonlyArray<Out<this, 0>>;
 }
