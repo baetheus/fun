@@ -9,12 +9,35 @@ import type {
   Traversable,
 } from "./types.ts";
 
+import type { Setoid } from "./setoid.ts";
 import type { Option } from "./option.ts";
 
 import { none, some } from "./option.ts";
 import { has, pipe } from "./fns.ts";
 
 export type ReadonlyRecord<A> = Readonly<Record<string, A>>;
+
+/**
+ * NonEmptyRecord<R> is a bounding type that will will
+ * return a type level never if the type value of R is
+ * either not a record is is a record without any
+ * index or key values.
+ *
+ * @example
+ * ```
+ * import type { NonEmptyRecord } from "./types.ts";
+ *
+ * function doSomething<R>(_: NonEmptyRecord<R>): void {
+ *   return undefined;
+ * }
+ *
+ * const result = doSomething({ one: 1 }); // This is ok
+ * // const result2 = doSomethign({}); // This is a type error
+ * ```
+ *
+ * @since 2.0.0
+ */
+export type NonEmptyRecord<R> = keyof R extends never ? never : R;
 
 export interface URI extends Kind {
   readonly kind: ReadonlyRecord<Out<this, 0>>;
@@ -151,6 +174,19 @@ export function lookup(key: string) {
       return some(record[key]);
     }
     return none;
+  };
+}
+
+export function isSubrecord<A>(
+  S: Setoid<A>,
+): (second: ReadonlyRecord<A>) => (first: ReadonlyRecord<A>) => boolean {
+  return (second) => (first) => {
+    for (const key in first) {
+      if (!Object.hasOwn(second, key) || !S.equals(second[key])(first[key])) {
+        return false;
+      }
+    }
+    return true;
   };
 }
 
