@@ -1,11 +1,13 @@
-import type { $, Kind, Predicate, Refinement, Traversable } from "./types.ts";
+import type { $, Kind } from "./kind.ts";
 import type { Either } from "./either.ts";
-import type { Option } from "./option.ts";
-
-import type { Optic } from "./optic.ts";
 import type { Lens } from "./lens.ts";
+import type { Optic } from "./optic.ts";
+import type { Option } from "./option.ts";
 import type { Optional } from "./optional.ts";
+import type { Predicate } from "./predicate.ts";
 import type { Prism } from "./prism.ts";
+import type { Refinement } from "./refinement.ts";
+import type { Traversable } from "./traversable.ts";
 import type { Traversal } from "./traversal.ts";
 
 import { toTraversal } from "./traversable.ts";

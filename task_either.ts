@@ -1,6 +1,9 @@
-import type { Alt, Bifunctor, Kind, MonadThrow, Out } from "./types.ts";
-import type { Task } from "./task.ts";
+import type { Kind, Out } from "./kind.ts";
+import type { Alt } from "./alt.ts";
+import type { Bifunctor } from "./bifunctor.ts";
 import type { Either } from "./either.ts";
+import type { MonadThrow } from "./monad.ts";
+import type { Task } from "./task.ts";
 
 import * as E from "./either.ts";
 import * as T from "./task.ts";

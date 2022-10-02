@@ -1,13 +1,9 @@
-import type {
-  $,
-  Applicative,
-  Extend,
-  Kind,
-  Monad,
-  Monoid,
-  Out,
-  Traversable,
-} from "./types.ts";
+import type { $, Kind, Out } from "./kind.ts";
+import type { Applicative } from "./applicative.ts";
+import type { Extend } from "./extend.ts";
+import type { Monad } from "./monad.ts";
+import type { Monoid } from "./monoid.ts";
+import type { Traversable } from "./traversable.ts";
 
 import {
   createApplySemigroup,

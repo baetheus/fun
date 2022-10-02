@@ -1,16 +1,17 @@
-import type { $, Kind, Predicate, Refinement, Traversable } from "./types.ts";
-
-import type { Optic } from "./optic.ts";
+import type { $, Kind } from "./kind.ts";
 import type { Iso } from "./iso.ts";
 import type { Lens } from "./lens.ts";
+import type { Optic } from "./optic.ts";
 import type { Optional } from "./optional.ts";
+import type { Predicate } from "./predicate.ts";
+import type { Refinement } from "./refinement.ts";
+import type { Traversable } from "./traversable.ts";
 import type { Traversal } from "./traversal.ts";
-
-import { toTraversal } from "./traversable.ts";
-import { optional } from "./optional.ts";
 
 import * as O from "./option.ts";
 import * as E from "./either.ts";
+import { toTraversal } from "./traversable.ts";
+import { optional } from "./optional.ts";
 import { apply, constant, flow, identity, pipe } from "./fns.ts";
 
 import {

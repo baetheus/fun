@@ -1,13 +1,8 @@
-import type {
-  Alt,
-  Bifunctor,
-  In,
-  Kind,
-  Monad,
-  MonadThrow,
-  Out,
-  Semigroup,
-} from "./types.ts";
+import type { In, Kind, Out } from "./kind.ts";
+import type { Alt } from "./alt.ts";
+import type { Bifunctor } from "./bifunctor.ts";
+import type { Monad, MonadThrow } from "./monad.ts";
+import type { Semigroup } from "./semigroup.ts";
 
 import * as E from "./either.ts";
 import * as R from "./reader.ts";

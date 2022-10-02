@@ -1,6 +1,16 @@
-import type { $, Functor, Kind, TypeClass } from "./types.ts";
+import type { $, Kind, TypeClass } from "./kind.ts";
 
 import { pipe } from "./fns.ts";
+
+/**
+ * Functor
+ * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#functor
+ */
+export interface Functor<U extends Kind> extends TypeClass<U> {
+  readonly map: <A, I>(
+    fai: (a: A) => I,
+  ) => <B, C, D, E>(ta: $<U, [A, B, C], [D], [E]>) => $<U, [I, B, C], [D], [E]>;
+}
 
 export interface FunctorComposition<U extends Kind, V extends Kind>
   extends TypeClass<U> {

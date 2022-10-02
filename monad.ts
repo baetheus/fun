@@ -1,7 +1,70 @@
-import type { $, Do, Kind, Monad } from "./types.ts";
+import type { $, Kind, TypeClass } from "./kind.ts";
+import type { Applicative } from "./applicative.ts";
+import type { Chain } from "./chain.ts";
 
 import { identity, pipe } from "./fns.ts";
 
+/**
+ * Monad
+ * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#monad
+ *
+ * Here we extend Monad with a join function. Other names for join
+ * are flatten or flat.
+ */
+export interface Monad<U extends Kind>
+  extends Applicative<U>, Chain<U>, TypeClass<U> {
+  readonly join: <A, B, C, D, E>(
+    tta: $<U, [$<U, [A, B, C], [D], [E]>, B, C], [D], [E]>,
+  ) => $<U, [A, B, C], [D], [E]>;
+}
+
+/**
+ * MonadThrow
+ * https://github.com/gcanti/fp-ts/blob/master/src/MonadThrow.ts
+ */
+export interface MonadThrow<U extends Kind> extends Monad<U> {
+  readonly throwError: <A, B, C, D, E>(b: B) => $<U, [A, B, C], [D], [E]>;
+}
+
+/**
+ * Do notation
+ * @experimental
+ */
+export interface Do<U extends Kind> extends TypeClass<U> {
+  Do: <B = never, C = never, D = never, E = never>() => $<
+    U,
+    // deno-lint-ignore ban-types
+    [{}, B, C],
+    [D],
+    [E]
+  >;
+  bind: <
+    N extends string,
+    A,
+    I,
+    B = never,
+    C = never,
+    D = never,
+    E = never,
+  >(
+    name: Exclude<N, keyof A>,
+    fati: (a: A) => $<U, [I, B, C], [D], [E]>,
+  ) => (ta: $<U, [A, B, C], [D], [E]>) => $<
+    U,
+    [
+      A & { readonly [K in N]: I },
+      B,
+      C,
+    ],
+    [D],
+    [E]
+  >;
+  bindTo: <N extends string>(
+    name: N,
+  ) => <A, B = never, C = never, D = never, E = never>(
+    ta: $<U, [A, B, C], [D], [E]>,
+  ) => $<U, [{ [K in N]: A }, B, C], [D], [E]>;
+}
 /**
  * Derive Monad module from of and chain
  *

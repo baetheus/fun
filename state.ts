@@ -1,4 +1,5 @@
-import type { InOut, Kind, Monad, Out } from "./types.ts";
+import type { InOut, Kind, Out } from "./kind.ts";
+import type { Monad } from "./monad.ts";
 
 import { traverse } from "./array.ts";
 import { flow, identity, pipe } from "./fns.ts";

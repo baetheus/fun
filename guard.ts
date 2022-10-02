@@ -1,4 +1,4 @@
-import type { In, Kind, Out } from "./types.ts";
+import type { In, Kind, Out } from "./kind.ts";
 
 import * as S from "./schemable.ts";
 import { isNil } from "./fns.ts";

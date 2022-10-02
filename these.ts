@@ -1,15 +1,11 @@
-import type {
-  $,
-  Applicative,
-  Bifunctor,
-  Foldable,
-  Functor,
-  Kind,
-  Out,
-  Semigroup,
-  Show,
-  Traversable,
-} from "./types.ts";
+import type { $, Kind, Out } from "./kind.ts";
+import type { Applicative } from "./applicative.ts";
+import type { Bifunctor } from "./bifunctor.ts";
+import type { Foldable } from "./foldable.ts";
+import type { Functor } from "./functor.ts";
+import type { Semigroup } from "./semigroup.ts";
+import type { Show } from "./show.ts";
+import type { Traversable } from "./traversable.ts";
 
 import * as E from "./either.ts";
 import { identity, pipe } from "./fns.ts";

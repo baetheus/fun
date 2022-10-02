@@ -4,7 +4,7 @@
  * TypeScript.
  */
 
-import type { $, Kind, TypeClass } from "./types.ts";
+import type { $, Kind, TypeClass } from "./kind.ts";
 
 import { memoize } from "./fns.ts";
 

@@ -1,14 +1,11 @@
-import type {
-  $,
-  Applicative,
-  Kind,
-  Monoid,
-  Predicate,
-  Refinement,
-  Traversable,
-} from "./types.ts";
+import type { $, Kind } from "./kind.ts";
+import type { Applicative } from "./applicative.ts";
 import type { Either } from "./either.ts";
+import type { Monoid } from "./monoid.ts";
 import type { Option } from "./option.ts";
+import type { Predicate } from "./predicate.ts";
+import type { Refinement } from "./refinement.ts";
+import type { Traversable } from "./traversable.ts";
 
 import type { Optic } from "./optic.ts";
 import type { Iso } from "./iso.ts";

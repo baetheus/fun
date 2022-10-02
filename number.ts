@@ -1,4 +1,8 @@
-import type { Monoid, Ord, Semigroup, Setoid, Show } from "./types.ts";
+import type { Monoid } from "./monoid.ts";
+import type { Ord } from "./ord.ts";
+import type { Semigroup } from "./semigroup.ts";
+import type { Setoid } from "./setoid.ts";
+import type { Show } from "./show.ts";
 
 // TODO; Implement newtypes for natural, integer, rational
 

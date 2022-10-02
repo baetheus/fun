@@ -1,18 +1,14 @@
-import type {
-  $,
-  Applicative,
-  Apply,
-  Filterable,
-  Foldable,
-  Functor,
-  Kind,
-  Monoid,
-  Out,
-  Predicate,
-  Setoid,
-  Show,
-  Traversable,
-} from "./types.ts";
+import type { $, Kind, Out } from "./kind.ts";
+import type { Applicative } from "./applicative.ts";
+import type { Apply } from "./apply.ts";
+import type { Filterable } from "./filterable.ts";
+import type { Foldable } from "./foldable.ts";
+import type { Functor } from "./functor.ts";
+import type { Monoid } from "./monoid.ts";
+import type { Predicate } from "./predicate.ts";
+import type { Setoid } from "./setoid.ts";
+import type { Show } from "./show.ts";
+import type { Traversable } from "./traversable.ts";
 
 import { flow, pipe } from "./fns.ts";
 import { fromEquals } from "./setoid.ts";
