@@ -1,12 +1,8 @@
-import type {
-  Category,
-  Contravariant,
-  In,
-  Kind,
-  Monad,
-  Out,
-  Profunctor,
-} from "./types.ts";
+import type { In, Kind, Out } from "./kind.ts";
+import type { Category } from "./category.ts";
+import type { Contravariant } from "./contravariant.ts";
+import type { Monad } from "./monad.ts";
+import type { Profunctor } from "./profunctor.ts";
 
 import { flow, identity, pipe } from "./fns.ts";
 

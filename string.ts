@@ -1,4 +1,7 @@
-import type { Monoid, Ord, Semigroup, Setoid } from "./types.ts";
+import type { Monoid } from "./monoid.ts";
+import type { Ord } from "./ord.ts";
+import type { Semigroup } from "./semigroup.ts";
+import type { Setoid } from "./setoid.ts";
 
 export function equals(second: string): (first: string) => boolean {
   return (first) => first === second;

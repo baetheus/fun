@@ -1,4 +1,4 @@
-import type { Semigroup } from "./types.ts";
+import type { Semigroup } from "./semigroup.ts";
 import type { Forest } from "./tree.ts";
 
 import * as TR from "./tree.ts";

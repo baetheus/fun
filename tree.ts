@@ -1,12 +1,8 @@
-import type {
-  $,
-  Applicative,
-  Kind,
-  Monad,
-  Out,
-  Show,
-  Traversable,
-} from "./types.ts";
+import type { $, Kind, Out } from "./kind.ts";
+import type { Traversable } from "./traversable.ts";
+import type { Show } from "./show.ts";
+import type { Applicative } from "./applicative.ts";
+import type { Monad } from "./monad.ts";
 
 import * as A from "./array.ts";
 import {

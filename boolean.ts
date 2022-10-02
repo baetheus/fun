@@ -1,4 +1,6 @@
-import type { Monoid, Semigroup, Setoid } from "./types.ts";
+import type { Monoid } from "./monoid.ts";
+import type { Semigroup } from "./semigroup.ts";
+import type { Setoid } from "./setoid.ts";
 
 export const constTrue = () => true;
 

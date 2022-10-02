@@ -1,12 +1,9 @@
-import type {
-  Alt,
-  Bifunctor,
-  Extend,
-  Foldable,
-  Kind,
-  MonadThrow,
-  Out,
-} from "./types.ts";
+import type { Alt } from "./alt.ts";
+import type { Bifunctor } from "./bifunctor.ts";
+import type { Extend } from "./extend.ts";
+import type { Foldable } from "./foldable.ts";
+import type { Kind, Out } from "./kind.ts";
+import type { MonadThrow } from "./monad.ts";
 
 import * as E from "./either.ts";
 import * as I from "./io.ts";

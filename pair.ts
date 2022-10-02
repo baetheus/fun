@@ -3,21 +3,17 @@
  * of two, or first and second, or separated values.
  */
 
-import type {
-  $,
-  Applicative,
-  Bifunctor,
-  Comonad,
-  Extend,
-  Foldable,
-  Functor,
-  Kind,
-  Monad,
-  Monoid,
-  Out,
-  Show,
-  Traversable,
-} from "./types.ts";
+import type { $, Kind, Out } from "./kind.ts";
+import type { Applicative } from "./applicative.ts";
+import type { Bifunctor } from "./bifunctor.ts";
+import type { Comonad } from "./comonad.ts";
+import type { Extend } from "./extend.ts";
+import type { Foldable } from "./foldable.ts";
+import type { Functor } from "./functor.ts";
+import type { Monad } from "./monad.ts";
+import type { Monoid } from "./monoid.ts";
+import type { Show } from "./show.ts";
+import type { Traversable } from "./traversable.ts";
 
 import { createMonad } from "./monad.ts";
 import { pipe } from "./fns.ts";
@@ -355,7 +351,8 @@ export function traverse<V extends Kind>(A: Applicative<V>) {
  *
  * @example
  * ```ts
- * import type { Kind, Out, Functor } from "./types.ts";
+ * import type { Kind, Out } from "./kind.ts";
+ * import type { Functor } from "./functor.ts";
  * import { compose } from "./functor.ts"
  * import { FunctorOption, Option, some } from "./option.ts";
  * import { FunctorPair, Pair, pair } from "./pair.ts";

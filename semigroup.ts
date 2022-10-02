@@ -7,12 +7,36 @@
  * instance getters, and some utilities around Semigroups.
  */
 
-import type { Ord, Semigroup } from "./types.ts";
+import type { Ord } from "./ord.ts";
 
 import * as Or from "./ord.ts";
 import { pipe } from "./fns.ts";
 
-export type { Semigroup };
+/**
+ * A Semigroup<T> is an algebra with a notion of concatenation. This
+ * means that it's used to merge two Ts into one T. The only rule
+ * that this merging must follow is that if you merge A, B, and C,
+ * that it doesn't matter if you start by merging A and B or start
+ * by merging B and C. There are many ways to merge values that
+ * follow these rules. A simple example is addition for numbers.
+ * It doesn't matter if you add (A + B) + C or if you add A + (B + C).
+ * The resulting sum will be the same. Thus, (number, +) can be
+ * used to make a Semigroup<number> (see [SemigroupNumberSum](./number.ts)
+ * for this exact instance).
+ *
+ * An instance of concat must obey the following laws:
+ *
+ * 1. Associativity:
+ *    pipe(a, concat(b), concat(c)) === pipe(a, concat(pipe(b, concat(c))))
+ *
+ * The original type came from
+ * [static-land](https://github.com/fantasyland/static-land/blob/master/docs/spec.md#semigroup)
+ *
+ * @since 2.0.0
+ */
+export interface Semigroup<T> {
+  readonly concat: (right: T) => (left: T) => T;
+}
 
 /**
  * Get an Semigroup over A that always returns the first
@@ -162,7 +186,7 @@ export function tuple<T extends ReadonlyArray<Semigroup<any>>>(
  *
  * @example
  * ```ts
- * import type { Semigroup } from "./types.ts";
+ * import type { Semigroup } from "./semigroup.ts";
  * import * as SG from "./semigroup.ts";
  * import * as N from "./number.ts";
  * import { pipe } from "./fns.ts";

@@ -4,7 +4,7 @@ import {
   assertStrictEquals,
 } from "https://deno.land/std/testing/asserts.ts";
 
-import type { Ord } from "../types.ts";
+import type { Ord } from "../ord.ts";
 
 import * as A from "../array.ts";
 import * as O from "../option.ts";

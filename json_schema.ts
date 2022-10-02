@@ -5,10 +5,13 @@
  * for describing a Schema to an external system.
  */
 
-import type { Kind, Monad, NonEmptyArray, Out, Semigroup } from "./types.ts";
 import type * as S from "./schemable.ts";
-import type { State } from "./state.ts";
+import type { Kind, Out } from "./kind.ts";
+import type { Monad } from "./monad.ts";
+import type { NonEmptyArray } from "./array.ts";
 import type { ReadonlyRecord } from "./record.ts";
+import type { Semigroup } from "./semigroup.ts";
+import type { State } from "./state.ts";
 
 import { MonadState } from "./state.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";

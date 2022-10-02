@@ -1,22 +1,17 @@
-import type {
-  $,
-  Alt,
-  Applicative,
-  Bifunctor,
-  Extend,
-  Kind,
-  Monad,
-  MonadThrow,
-  Monoid,
-  Ord,
-  Out,
-  Predicate,
-  Refinement,
-  Semigroup,
-  Setoid,
-  Show,
-  Traversable,
-} from "./types.ts";
+import type { $, Kind, Out } from "./kind.ts";
+import type { Alt } from "./alt.ts";
+import type { Applicative } from "./applicative.ts";
+import type { Bifunctor } from "./bifunctor.ts";
+import type { Extend } from "./extend.ts";
+import type { Monad, MonadThrow } from "./monad.ts";
+import type { Monoid } from "./monoid.ts";
+import type { Ord } from "./ord.ts";
+import type { Predicate } from "./predicate.ts";
+import type { Refinement } from "./refinement.ts";
+import type { Semigroup } from "./semigroup.ts";
+import type { Setoid } from "./setoid.ts";
+import type { Show } from "./show.ts";
+import type { Traversable } from "./traversable.ts";
 
 import * as O from "./option.ts";
 import { flow, isNotNil, pipe } from "./fns.ts";
@@ -37,17 +32,11 @@ export interface RightURI<B> extends Kind {
 }
 
 export function left<E = never, A = never>(left: E): Either<E, A> {
-  return ({
-    tag: "Left",
-    left,
-  });
+  return ({ tag: "Left", left });
 }
 
 export function right<E = never, A = never>(right: A): Either<E, A> {
-  return ({
-    tag: "Right",
-    right,
-  });
+  return ({ tag: "Right", right });
 }
 
 export function of<A = never, B = never>(a: A): Either<B, A> {

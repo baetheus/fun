@@ -1,22 +1,18 @@
-import type {
-  $,
-  Alt,
-  Applicative,
-  Filterable,
-  Kind,
-  Monad,
-  Monoid,
-  Ord,
-  Out,
-  Predicate,
-  Refinement,
-  Semigroup,
-  Setoid,
-  Show,
-  Traversable,
-} from "./types.ts";
-import type { Pair } from "./pair.ts";
+import type { $, Kind, Out } from "./kind.ts";
+import type { Alt } from "./alt.ts";
+import type { Applicative } from "./applicative.ts";
+import type { Filterable } from "./filterable.ts";
+import type { Monad } from "./monad.ts";
+import type { Monoid } from "./monoid.ts";
 import type { Option } from "./option.ts";
+import type { Ord } from "./ord.ts";
+import type { Pair } from "./pair.ts";
+import type { Predicate } from "./predicate.ts";
+import type { Refinement } from "./refinement.ts";
+import type { Semigroup } from "./semigroup.ts";
+import type { Setoid } from "./setoid.ts";
+import type { Show } from "./show.ts";
+import type { Traversable } from "./traversable.ts";
 
 import { pair } from "./pair.ts";
 import { none, some } from "./option.ts";

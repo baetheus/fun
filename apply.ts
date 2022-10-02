@@ -1,7 +1,23 @@
 //deno-lint-ignore-file no-explicit-any
-import type { $, Apply, Kind, NonEmptyRecord, Semigroup } from "./types.ts";
+import type { $, Kind, TypeClass } from "./kind.ts";
+import type { Functor } from "./functor.ts";
+import type { Semigroup } from "./semigroup.ts";
+import type { NonEmptyRecord } from "./record.ts";
+import type { NonEmptyArray } from "./array.ts";
 
 import { pipe } from "./fns.ts";
+
+/**
+ * Apply
+ * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#apply
+ */
+export interface Apply<U extends Kind> extends Functor<U>, TypeClass<U> {
+  readonly ap: <A, I, B, C, D, E>(
+    tfai: $<U, [(a: A) => I, B, C], [D], [E]>,
+  ) => (
+    ta: $<U, [A, B, C], [D], [E]>,
+  ) => $<U, [I, B, C], [D], [E]>;
+}
 
 // TODO: Look into cleaning up this code to have better types
 
@@ -18,8 +34,6 @@ function _loopRecord<K extends string>(
     ? init
     : (a: unknown) => _loopRecord(keys, i + 1, { ...init, [keys[i]]: a });
 }
-
-type NonEmptyArray<A> = readonly [A, ...A[]];
 
 // deno-fmt-ignore
 type SequenceTuple<U extends Kind, R extends NonEmptyArray<$<U, any[], any[], any[]>>> = $<U, [

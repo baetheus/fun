@@ -1,15 +1,12 @@
-import type {
-  Bifunctor,
-  Functor,
-  Kind,
-  Monoid,
-  Ord,
-  Out,
-  Semigroup,
-  Setoid,
-  Show,
-} from "./types.ts";
+import type { Bifunctor } from "./bifunctor.ts";
+import type { Functor } from "./functor.ts";
+import type { Kind, Out } from "./kind.ts";
+import type { Monoid } from "./monoid.ts";
 import type { Option } from "./option.ts";
+import type { Ord } from "./ord.ts";
+import type { Semigroup } from "./semigroup.ts";
+import type { Setoid } from "./setoid.ts";
+import type { Show } from "./show.ts";
 
 import * as O from "./option.ts";
 import * as A from "./array.ts";
