@@ -1,6 +1,10 @@
-import type { Compare, Ord } from "./types.ts";
+import type { Compare, Setoid } from "./types.ts";
 
 import { flow } from "./fns.ts";
+
+export interface Ord<T> extends Setoid<T> {
+  readonly lte: (a: T) => (b: T) => boolean;
+}
 
 export function toCompare<A>(O: Ord<A>): Compare<A> {
   return (a, b) => {

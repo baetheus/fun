@@ -1,4 +1,19 @@
-export type Pair<A, B> = readonly [A, B];
+/**
+ * Pair represents a pair of values. This is
+ * equivalent to a Tuple of length two, the
+ * Separated type in fp-ts, and any other type
+ * that contains exactly two covariant other
+ * types.
+ *
+ * The primary use fo Pair in this library
+ * is the target of a partition, where some
+ * type A is partitioned, either into
+ * [A, A], or [A, B] where B extends A.
+ *
+ * Other uses will likely come when Arrows
+ * are implemented in fun.
+ */
+export type { Pair } from "./pair.ts";
 
 export type Ordering = -1 | 0 | 1;
 
@@ -276,15 +291,7 @@ export interface Comonad<U extends Kind> extends Extend<U>, TypeClass<U> {
   readonly extract: <A, B, C, D, E>(ta: $<U, [A, B, C], [D], [E]>) => A;
 }
 
-/**
- * Contravariant
- * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#contravariant
- */
-export interface Contravariant<U extends Kind> extends TypeClass<U> {
-  readonly contramap: <L, D>(
-    fia: (l: L) => D,
-  ) => <A, B, C, E>(ua: $<U, [A, B, C], [D], [E]>) => $<U, [A, B, C], [L], [E]>;
-}
+export type { Contravariant } from "./contravariant.ts";
 
 /**
  * Extend
@@ -376,9 +383,7 @@ export interface Monoid<T> extends Semigroup<T> {
  * Ord
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#ord
  */
-export interface Ord<T> extends Setoid<T> {
-  readonly lte: (a: T) => (b: T) => boolean;
-}
+export type { Ord } from "./ord.ts";
 
 /**
  * Profunctor
@@ -430,12 +435,23 @@ export interface Semigroupoid<U extends Kind> extends TypeClass<U> {
 }
 
 /**
- * Setoid
- * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#setoid
+ * A Setoid<T> is an algebra with a notion of equality. Specifically,
+ * a Setoid for a type T has an equal method that determines if the
+ * two objects are the same. Setoids can be combined, like many
+ * algebraic structures. The combinators for Setoid in fun can be found
+ * in [setoid.ts](./setoid.ts).
+ *
+ * An instance of a Setoid must obey the following laws:
+ *
+ * 1. Reflexivity: equals(a)(a) === true
+ * 2. Symmetry: equals(a)(b) === equals(b)(a)
+ * 3. Transitivity: if equals(a)(b) and equals(b)(c), then equals(a)(c)
+ *
+ * The original type came from [static-land](https://github.com/fantasyland/static-land/blob/master/docs/spec.md#setoid)
+ *
+ * @since 2.0.0
  */
-export interface Setoid<T> {
-  readonly equals: (a: T) => (b: T) => boolean;
-}
+export type { Setoid } from "./setoid.ts";
 
 /**
  * Show is the "fun" version of JavaScripts toString

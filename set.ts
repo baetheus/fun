@@ -227,7 +227,9 @@ export function getShow<A>(S: Show<A>): Show<ReadonlySet<A>> {
 
 export function getSetoid<A>(S: Setoid<A>): Setoid<ReadonlySet<A>> {
   const subset = isSubset(S);
-  return fromEquals((x) => (y) => subset(x)(y) && subset(y)(x));
+  return fromEquals((first, second) =>
+    subset(first)(second) && subset(second)(first)
+  );
 }
 
 export function getUnionMonoid<A>(S: Setoid<A>): Monoid<ReadonlySet<A>> {

@@ -8,6 +8,14 @@ export function isNotNil<A>(a: A): a is NonNullable<A> {
   return !isNil(a);
 }
 
+export function tryCatch<A>(thunk: () => A, onError: (e: unknown) => A): A {
+  try {
+    return thunk();
+  } catch (err) {
+    return onError(err);
+  }
+}
+
 /**
  * handleThrow
  *

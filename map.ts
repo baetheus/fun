@@ -310,7 +310,9 @@ export function getSetoid<K, A>(
   SA: Setoid<A>,
 ): Setoid<ReadonlyMap<K, A>> {
   const submap = isSubmap(SK, SA);
-  return fromEquals((x) => (y) => submap(x)(y) && submap(y)(x));
+  return fromEquals((first, second) =>
+    submap(second)(first) && submap(first)(second)
+  );
 }
 
 export function getMonoid<K, A>(
