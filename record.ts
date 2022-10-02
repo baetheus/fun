@@ -1,13 +1,9 @@
-import type {
-  $,
-  Applicative,
-  Foldable,
-  Functor,
-  Kind,
-  Out,
-  Show,
-  Traversable,
-} from "./types.ts";
+import type { $, Kind, Out } from "./kind.ts";
+import type { Applicative } from "./applicative.ts";
+import type { Foldable } from "./foldable.ts";
+import type { Functor } from "./functor.ts";
+import type { Show } from "./show.ts";
+import type { Traversable } from "./traversable.ts";
 
 import type { Setoid } from "./setoid.ts";
 import type { Option } from "./option.ts";
@@ -25,7 +21,7 @@ export type ReadonlyRecord<A> = Readonly<Record<string, A>>;
  *
  * @example
  * ```
- * import type { NonEmptyRecord } from "./types.ts";
+ * import type { NonEmptyRecord } from "./record.ts";
  *
  * function doSomething<R>(_: NonEmptyRecord<R>): void {
  *   return undefined;

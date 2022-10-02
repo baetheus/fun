@@ -1,7 +1,15 @@
-import type { Monoid, Semigroup } from "./types.ts";
+import type { Semigroup } from "./semigroup.ts";
 
 import { pipe } from "./fns.ts";
 import * as S from "./semigroup.ts";
+
+/**
+ * Monoid
+ * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#monoid
+ */
+export interface Monoid<T> extends Semigroup<T> {
+  readonly empty: () => T;
+}
 
 // deno-lint-ignore no-explicit-any
 export function tuple<T extends ReadonlyArray<Monoid<any>>>(

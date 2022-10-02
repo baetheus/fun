@@ -1,6 +1,7 @@
-import type { Identity, Kind, Monad, Out } from "./types.ts";
+import type { Kind, Out } from "./kind.ts";
+import type { Monad } from "./monad.ts";
 
-export type { Identity };
+export type Identity<A> = A;
 
 export interface URI extends Kind {
   readonly kind: Identity<Out<this, 0>>;

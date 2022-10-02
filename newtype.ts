@@ -8,9 +8,13 @@
  * specified.
  */
 
-import type { Monoid, Ord, Predicate, Semigroup, Setoid } from "./types.ts";
 import type { Iso } from "./iso.ts";
+import type { Monoid } from "./monoid.ts";
+import type { Ord } from "./ord.ts";
+import type { Predicate } from "./predicate.ts";
 import type { Prism } from "./prism.ts";
+import type { Semigroup } from "./semigroup.ts";
+import type { Setoid } from "./setoid.ts";
 
 import * as I from "./iso.ts";
 import * as P from "./prism.ts";

@@ -1,25 +1,20 @@
-import type {
-  $,
-  Alt,
-  Applicative,
-  Apply,
-  Chain,
-  Extend,
-  Filterable,
-  Foldable,
-  Functor,
-  Kind,
-  Monad,
-  MonadThrow,
-  Monoid,
-  Ord,
-  Out,
-  Predicate,
-  Semigroup,
-  Setoid,
-  Show,
-  Traversable,
-} from "./types.ts";
+import type { $, Kind, Out } from "./kind.ts";
+import type { Alt } from "./alt.ts";
+import type { Applicative } from "./applicative.ts";
+import type { Apply } from "./apply.ts";
+import type { Chain } from "./chain.ts";
+import type { Extend } from "./extend.ts";
+import type { Filterable } from "./filterable.ts";
+import type { Foldable } from "./foldable.ts";
+import type { Functor } from "./functor.ts";
+import type { Monad, MonadThrow } from "./monad.ts";
+import type { Monoid } from "./monoid.ts";
+import type { Ord } from "./ord.ts";
+import type { Predicate } from "./predicate.ts";
+import type { Semigroup } from "./semigroup.ts";
+import type { Setoid } from "./setoid.ts";
+import type { Show } from "./show.ts";
+import type { Traversable } from "./traversable.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 import { flow, identity, isNotNil, pipe } from "./fns.ts";

@@ -105,7 +105,6 @@ module at the `HEAD` of the `main` branch can be found here:
 - [traversable.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/traversable.ts)
 - [traversal.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/traversal.ts)
 - [tree.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/tree.ts)
-- [types.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/types.ts)
 
 In general, you can take any specific module url and put it into
 [https://doc.deno.land/](https://doc.deno.land/) to get a decent rendering of

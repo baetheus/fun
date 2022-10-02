@@ -1,17 +1,13 @@
-import type {
-  $,
-  Alt,
-  Applicative,
-  Kind,
-  MonadThrow,
-  Monoid,
-  Ord,
-  Out,
-  Semigroup,
-  Setoid,
-  Show,
-  Traversable,
-} from "./types.ts";
+import type { $, Kind, Out } from "./kind.ts";
+import type { Alt } from "./alt.ts";
+import type { Applicative } from "./applicative.ts";
+import type { MonadThrow } from "./monad.ts";
+import type { Monoid } from "./monoid.ts";
+import type { Ord } from "./ord.ts";
+import type { Semigroup } from "./semigroup.ts";
+import type { Setoid } from "./setoid.ts";
+import type { Show } from "./show.ts";
+import type { Traversable } from "./traversable.ts";
 
 import { apply, flow, identity, isNotNil, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";

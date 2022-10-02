@@ -1,4 +1,4 @@
-import type { In, Kind, Out } from "./types.ts";
+import type { In, Kind, Out } from "./kind.ts";
 import type { Either } from "./either.ts";
 import type { DecodeError } from "./decode_error.ts";
 

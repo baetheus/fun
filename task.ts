@@ -1,4 +1,5 @@
-import type { Kind, Monad, Out } from "./types.ts";
+import type { Kind, Out } from "./kind.ts";
+import type { Monad } from "./monad.ts";
 
 import {
   createApplySemigroup,

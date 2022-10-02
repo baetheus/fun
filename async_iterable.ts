@@ -1,4 +1,7 @@
-import type { Filterable, Kind, Monad, Out, Predicate } from "./types.ts";
+import type { Filterable } from "./filterable.ts";
+import type { Kind, Out } from "./kind.ts";
+import type { Monad } from "./monad.ts";
+import type { Predicate } from "./predicate.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 import { wait } from "./fns.ts";

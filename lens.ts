@@ -1,20 +1,16 @@
-import type {
-  $,
-  Kind,
-  Predicate,
-  Refinement,
-  Setoid,
-  Traversable,
-} from "./types.ts";
+import type { $, Kind } from "./kind.ts";
 import type { Either } from "./either.ts";
-import type { Option } from "./option.ts";
-
-import type { Optic } from "./optic.ts";
 import type { Iso } from "./iso.ts";
-import type { Prism } from "./prism.ts";
-import type { Traversal } from "./traversal.ts";
+import type { Optic } from "./optic.ts";
+import type { Option } from "./option.ts";
 import type { Optional } from "./optional.ts";
+import type { Predicate } from "./predicate.ts";
+import type { Prism } from "./prism.ts";
 import type { ReadonlyRecord } from "./record.ts";
+import type { Refinement } from "./refinement.ts";
+import type { Setoid } from "./setoid.ts";
+import type { Traversable } from "./traversable.ts";
+import type { Traversal } from "./traversal.ts";
 
 import { toTraversal } from "./traversable.ts";
 import { prism } from "./prism.ts";

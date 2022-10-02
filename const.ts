@@ -1,17 +1,14 @@
-import type {
-  Applicative,
-  Apply,
-  Bifunctor,
-  Contravariant,
-  Functor,
-  Kind,
-  Monoid,
-  Ord,
-  Out,
-  Semigroup,
-  Setoid,
-  Show,
-} from "./types.ts";
+import type { Applicative } from "./applicative.ts";
+import type { Apply } from "./apply.ts";
+import type { Bifunctor } from "./bifunctor.ts";
+import type { Contravariant } from "./contravariant.ts";
+import type { Functor } from "./functor.ts";
+import type { Kind, Out } from "./kind.ts";
+import type { Monoid } from "./monoid.ts";
+import type { Ord } from "./ord.ts";
+import type { Semigroup } from "./semigroup.ts";
+import type { Setoid } from "./setoid.ts";
+import type { Show } from "./show.ts";
 
 import { identity } from "./fns.ts";
 

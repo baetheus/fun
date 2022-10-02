@@ -1,10 +1,20 @@
-import type { Compare, Setoid } from "./types.ts";
+import type { In, Kind } from "./kind.ts";
+import type { Setoid } from "./setoid.ts";
+import type { Contravariant } from "./contravariant.ts";
 
 import { flow } from "./fns.ts";
 
 export interface Ord<T> extends Setoid<T> {
   readonly lte: (a: T) => (b: T) => boolean;
 }
+
+export interface URI extends Kind {
+  readonly kind: Ord<In<this, 0>>;
+}
+
+export type Ordering = -1 | 0 | 1;
+
+export type Compare<A> = (left: A, right: A) => Ordering;
 
 export function toCompare<A>(O: Ord<A>): Compare<A> {
   return (a, b) => {
@@ -134,3 +144,7 @@ export function createOrdTuple<T extends ReadonlyArray<unknown>>(
 export function contramap<A, B>(fab: (a: A) => B): (ordB: Ord<B>) => Ord<A> {
   return (ordB) => fromCompare((a1, a2) => toCompare(ordB)(fab(a1), fab(a2)));
 }
+
+export const ContravariantOrd: Contravariant<URI> = {
+  contramap,
+};

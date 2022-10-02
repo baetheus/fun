@@ -1,4 +1,5 @@
-import type { Kind, Out, Semigroup } from "./types.ts";
+import type { Kind, Out } from "./kind.ts";
+import type { Semigroup } from "./semigroup.ts";
 
 // TODO: Implement any algebraic structures you can
 

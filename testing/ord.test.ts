@@ -3,7 +3,7 @@ import {
   assertExists,
 } from "https://deno.land/std/testing/asserts.ts";
 
-import type { Compare } from "../types.ts";
+import type { Compare } from "../ord.ts";
 
 import * as O from "../ord.ts";
 import * as N from "../number.ts";

@@ -6,7 +6,11 @@
  * Nilable is a type like Maybe/Option that uses undefined/null in lieu of tagged unions.
  * *****************************************************************************/
 
-import type { Alt, Kind, MonadThrow, Out, Predicate, Show } from "./types.ts";
+import type { Alt } from "./alt.ts";
+import type { Kind, Out } from "./kind.ts";
+import type { MonadThrow } from "./monad.ts";
+import type { Predicate } from "./predicate.ts";
+import type { Show } from "./show.ts";
 
 import { identity, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
