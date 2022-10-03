@@ -15,10 +15,10 @@ import type { Show } from "./show.ts";
 import type { Traversable } from "./traversable.ts";
 
 import { pair } from "./pair.ts";
+import { fromCompare, sign } from "./ord.ts";
 import { none, some } from "./option.ts";
 import { apply, flow, identity, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
-import { toCompare } from "./ord.ts";
 
 export type NonEmptyArray<A> = readonly [A, ...A[]];
 
@@ -399,8 +399,7 @@ export const unzip = <A, B>(
 export function sort<B>(
   O: Ord<B>,
 ): <A extends B>(as: ReadonlyArray<A>) => ReadonlyArray<A> {
-  const _compare = toCompare(O);
-  return (as) => as.slice().sort(_compare);
+  return (as) => as.slice().sort(O.compare);
 }
 
 export function partition<A, B extends A>(
@@ -463,19 +462,16 @@ export function getSetoid<A>(S: Setoid<A>): Setoid<ReadonlyArray<A>> {
 }
 
 export function getOrd<A>(O: Ord<A>): Ord<ReadonlyArray<A>> {
-  const { equals } = getSetoid(O);
-  return ({
-    equals,
-    lte: (b) => (a) => {
-      const length = Math.min(a.length, b.length);
-      let index = -1;
-      while (++index < length) {
-        if (!O.equals(a[index])(b[index])) {
-          return O.lte(b[index])(a[index]);
-        }
-      }
-      return a.length <= b.length;
-    },
+  return fromCompare((fst, snd) => {
+    const length = Math.min(fst.length, snd.length);
+    let index = -1;
+    // Compare all elements that exist in both arrays
+    while (++index < length) {
+      const ordering = O.compare(fst[index], snd[index]);
+      if (ordering !== 0) return ordering;
+    }
+    // If all compared elements are equal, longest array is greater
+    return sign(fst.length - snd.length);
   });
 }
 

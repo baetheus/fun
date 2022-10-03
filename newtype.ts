@@ -8,6 +8,7 @@
  * specified.
  */
 
+import type { Hold } from "./kind.ts";
 import type { Iso } from "./iso.ts";
 import type { Monoid } from "./monoid.ts";
 import type { Ord } from "./ord.ts";
@@ -30,13 +31,6 @@ import { unsafeCoerce } from "./fns.ts";
  */
 // deno-lint-ignore no-explicit-any
 const anyIso = I.iso<any, any>(unsafeCoerce, unsafeCoerce);
-
-/**
- * We use non-existing, non-exported symbols to keep
- * the
- */
-declare const Brand: unique symbol;
-declare const Representation: unique symbol;
 
 // ---
 // Types
@@ -68,10 +62,7 @@ declare const Representation: unique symbol;
  *
  * @since 2.0.0
  */
-export type Newtype<Brand, Representation> = {
-  readonly [Brand]: Brand;
-  readonly [Representation]: Representation;
-};
+export type Newtype<Brand, Representation> = Hold<Brand> & Representation;
 
 /**
  * Extracts the inner type value from a Newtype.

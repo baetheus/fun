@@ -9,7 +9,6 @@
 
 import type { Ord } from "./ord.ts";
 
-import * as Or from "./ord.ts";
 import { pipe } from "./fns.ts";
 
 /**
@@ -256,7 +255,7 @@ export function struct<O extends Readonly<Record<string, unknown>>>(
  * @since 2.0.0
  */
 export function max<A>(O: Ord<A>): Semigroup<A> {
-  return { concat: Or.max(O) };
+  return { concat: O.max };
 }
 
 /**
@@ -285,7 +284,7 @@ export function max<A>(O: Ord<A>): Semigroup<A> {
  * @since 2.0.0
  */
 export function min<A>(O: Ord<A>): Semigroup<A> {
-  return { concat: Or.min(O) };
+  return { concat: O.min };
 }
 
 /**

@@ -16,6 +16,7 @@ import type { Setoid } from "./setoid.ts";
 import type { Show } from "./show.ts";
 import type { Traversable } from "./traversable.ts";
 
+import { fromCompare } from "./ord.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 import { flow, identity, isNotNil, pipe } from "./fns.ts";
 
@@ -329,21 +330,13 @@ export function getSetoid<A>(S: Setoid<A>): Setoid<Option<A>> {
 }
 
 export function getOrd<A>(O: Ord<A>): Ord<Option<A>> {
-  return ({
-    ...getSetoid(O),
-    lte: (b) => (a) => {
-      if (a === b) {
-        return true;
-      }
-      if (isNone(a)) {
-        return true;
-      }
-      if (isNone(b)) {
-        return false;
-      }
-      return O.lte(b.value)(a.value);
-    },
-  });
+  return fromCompare((fst, snd) =>
+    isNone(fst)
+      ? isNone(snd) ? 0 : -1
+      : isNone(snd)
+      ? 1
+      : O.compare(fst.value, snd.value)
+  );
 }
 
 export function getSemigroup<A>(

@@ -9,7 +9,8 @@ import type { Setoid } from "./setoid.ts";
 import type { Show } from "./show.ts";
 import type { Traversable } from "./traversable.ts";
 
-import { apply, flow, identity, isNotNil, pipe } from "./fns.ts";
+import { fromCompare } from "./ord.ts";
+import { apply, flow, identity, isNotNil, pipe, todo } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
 /**
@@ -255,16 +256,18 @@ export function getSetoid<A>(S: Setoid<A>): Setoid<Datum<A>> {
 }
 
 export function getOrd<A>(O: Ord<A>): Ord<Datum<A>> {
-  return ({
-    ...getSetoid(O),
-    lte: (tb) =>
+  return fromCompare((fst, snd) =>
+    pipe(
+      fst,
       fold(
-        () => true,
-        () => isPending(tb) || isSome(tb),
-        (v) => isNone(tb) ? false : isRefresh(tb) ? true : O.lte(tb.value)(v),
-        (v) => isNone(tb) || isReplete(tb) ? false : O.lte(tb.value)(v),
+        () => isInitial(snd) ? 0 : -1,
+        () => isInitial(snd) ? 1 : isPending(snd) ? 0 : -1,
+        (value) =>
+          isNone(snd) ? 1 : isReplete(snd) ? O.compare(value, snd.value) : -1,
+        (value) => isRefresh(snd) ? O.compare(value, snd.value) : 1,
       ),
-  });
+    )
+  );
 }
 
 export const MonadThrowDatum: MonadThrow<URI> = {
