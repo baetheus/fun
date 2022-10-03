@@ -10,7 +10,6 @@ import type { Show } from "./show.ts";
 
 import * as O from "./option.ts";
 import * as A from "./array.ts";
-import { toCompare } from "./ord.ts";
 import { fromEquals } from "./setoid.ts";
 import { flow, pipe } from "./fns.ts";
 
@@ -125,19 +124,16 @@ export function elem<A>(
 export function entries<B>(
   O: Ord<B>,
 ): <A>(ta: ReadonlyMap<B, A>) => ReadonlyArray<[B, A]> {
-  const _compare = toCompare(O);
   return (ta) =>
-    Array.from(ta.entries()).sort(([left], [right]) => _compare(left, right));
+    Array.from(ta.entries()).sort(([left], [right]) => O.compare(left, right));
 }
 
 export function keys<K>(O: Ord<K>): <A>(ta: ReadonlyMap<K, A>) => K[] {
-  const _compare = toCompare(O);
-  return (ta) => Array.from(ta.keys()).sort(_compare);
+  return (ta) => Array.from(ta.keys()).sort(O.compare);
 }
 
 export function values<A>(O: Ord<A>): <K>(ta: ReadonlyMap<K, A>) => A[] {
-  const _compare = toCompare(O);
-  return (ta) => Array.from(ta.values()).sort(_compare);
+  return (ta) => Array.from(ta.values()).sort(O.compare);
 }
 
 export function collect<B>(

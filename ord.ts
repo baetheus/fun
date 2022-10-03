@@ -1,150 +1,303 @@
+/**
+ * This file contains all of the tools for creating and
+ * composing Ords. Since an Ord encapsulates partial
+ * equality, the tools in this file should concern
+ * itself with sorting according to an Ordering as well
+ */
+
+import type { Contravariant } from "./contravariant.ts";
 import type { In, Kind } from "./kind.ts";
 import type { Setoid } from "./setoid.ts";
-import type { Contravariant } from "./contravariant.ts";
 
-import { flow } from "./fns.ts";
+import { and } from "./predicate.ts";
+import { flow, pipe } from "./fns.ts";
 
-export interface Ord<T> extends Setoid<T> {
-  readonly lte: (a: T) => (b: T) => boolean;
+/**
+ * The ordering type is the expected output of any
+ * Compare function. The canonical example is the output
+ * of the Array.sort function. For any two values `first`
+ * and `second`, Ordering means the following:
+ *
+ * * -1 : first < second
+ * * 0  : first = second
+ * * 1  : first > second
+ *
+ * @since 2.0.0
+ */
+export type Ordering = -1 | 0 | 1;
+
+/**
+ * The Compare function takes to values of the same
+ * type and returns an ordering, indicating whether
+ * `first` is less than, equal to, or greater than
+ * `second.
+ *
+ * @since 2.0.0
+ */
+export type Compare<A> = (first: A, second: A) => Ordering;
+
+/**
+ * An Ord<T> is an algebra with a notion of equality and
+ * order. Specifically, Ord extends Setoid and thus
+ * inherites an `equals` method. It also implements
+ * a handful of curried methods that are useful in
+ * various situations. These include:
+ *
+ * * lt: less than
+ * * lte: less than or equal to
+ * * gte: greater than or equal to
+ * * gt: greater than
+ * * min: the minimum of two values
+ * * max: the maximum of two values
+ * * clamp: returns a value in a range or at the min
+ *   or max of that range (inclusive)
+ * * between: returns predicate indicating if a number
+ *   is within a range (exclusive)
+ *
+ * An instance of Ord must obey the following laws:
+ *
+ * 1. Totality: lte(a)(b) || lte(b)(a) === true
+ * 2. Antisymmetry: lte(a)(b) && lte(b)(a) -> equals(a)(b)
+ * 3. Transitivity: lte(b)(a) && lte(c)(b) -> lte(c)(a)
+ *
+ * The original type came from
+ * [static-land](https://github.com/fantasyland/static-land/blob/master/docs/spec.md#ord)
+ *
+ * @since 2.0.0
+ */
+export interface Ord<A> extends Setoid<A> {
+  readonly lt: (second: A) => (first: A) => boolean;
+  readonly lte: (second: A) => (first: A) => boolean;
+  readonly equals: (second: A) => (first: A) => boolean;
+  readonly gte: (second: A) => (first: A) => boolean;
+  readonly gt: (second: A) => (first: A) => boolean;
+  readonly min: (second: A) => (first: A) => A;
+  readonly max: (second: A) => (first: A) => A;
+  readonly clamp: (low: A, high: A) => (value: A) => A;
+  readonly between: (low: A, high: A) => (value: A) => boolean;
+  readonly compare: Compare<A>;
 }
 
+/**
+ * Specifies Ord as a Higher Kinded Type, with
+ * contravariant parameter D corresponding to the 0th
+ * index of any Substitutions.
+ *
+ * @since 2.0.0
+ */
 export interface URI extends Kind {
   readonly kind: Ord<In<this, 0>>;
 }
 
-export type Ordering = -1 | 0 | 1;
-
-export type Compare<A> = (left: A, right: A) => Ordering;
-
-export function toCompare<A>(O: Ord<A>): Compare<A> {
-  return (a, b) => {
-    if (O.equals(b)(a)) {
-      return 0;
-    } else if (O.lte(b)(a)) {
-      return -1;
-    } else {
-      return 1;
-    }
-  };
-}
-
-export function lt<A>(O: Ord<A>): (b: A) => (a: A) => boolean {
-  return (b) => {
-    const _lte = O.lte(b);
-    const _equals = O.equals(b);
-    return (a) => _lte(a) && !_equals(a);
-  };
-}
-
-export function gt<A>(O: Ord<A>): (b: A) => (a: A) => boolean {
-  return (b) => {
-    const _lte = O.lte(b);
-    return (a) => !_lte(a);
-  };
-}
-
-export function lte<A>(O: Ord<A>): (b: A) => (a: A) => boolean {
-  return O.lte;
-}
-
-export function gte<A>(O: Ord<A>): (b: A) => (a: A) => boolean {
-  return (b) => {
-    const _lte = O.lte(b);
-    const _equals = O.equals(b);
-    return (a) => !_lte(a) || _equals(a);
-  };
-}
-
-export function eq<A>(O: Ord<A>): (b: A) => (a: A) => boolean {
-  return (b) => {
-    const _equals = O.equals(b);
-    return (a) => _equals(a);
-  };
-}
-
-export function min<A>(O: Ord<A>): (b: A) => (a: A) => A {
-  return (b) => {
-    const _lte = O.lte(b);
-    return (a) => _lte(a) ? a : b;
-  };
-}
-
-export function max<A>(O: Ord<A>): (b: A) => (a: A) => A {
-  return (b) => {
-    const _lte = O.lte(b);
-    return (a) => _lte(a) ? b : a;
-  };
-}
-
-export function clamp<A>(O: Ord<A>): (low: A, high: A) => (a: A) => A {
-  const _max = max(O);
-  const _min = min(O);
-  return (low, high) => {
-    const _low = _max(low);
-    const _high = _min(high);
-    return flow(_low, _high);
-  };
-}
-
-export function between<A>(O: Ord<A>): (low: A, high: A) => (a: A) => boolean {
-  const _lt = lt(O);
-  const _gt = gt(O);
-  return (low, high) => {
-    const _lower = _lt(high);
-    const _higher = _gt(low);
-    return (a) => _lower(a) && _higher(a);
-  };
-}
-
-export function getOrdUtilities<A>(O: Ord<A>) {
-  return ({
-    lt: lt(O),
-    gt: gt(O),
-    lte: lte(O),
-    gte: gte(O),
-    eq: eq(O),
-    min: min(O),
-    max: max(O),
-    clamp: clamp(O),
-    between: between(O),
-    compare: toCompare(O),
-  });
+/**
+ * Returns an Ordering from any number according
+ * to its relationship with 0.
+ *
+ * @example
+ * ```ts
+ * import { sign } from "./ord.ts";
+ *
+ * const result1 = sign(-9586); // -1
+ * const result2 = sign(-0.005); // -1
+ * const result3 = sign(1000); // 1
+ * const result4 = sign(Number.NEGATIVE_INFINITY); // -1
+ * const result5 = sign(0); // 0
+ * ```
+ *
+ * @since 2.0.0
+ */
+export function sign(n: number): Ordering {
+  return n < 0 ? -1 : n > 0 ? 1 : 0;
 }
 
 /**
- * Derives an `Ord` instance from a `compare` function for the same type.
+ * Derives an Ord from a Compare function.
+ *
+ * @example
+ * ```ts
+ * import { fromCompare, sign } from "./ord.ts";
+ * import { pipe } from "./fns.ts";
+ *
+ * const date = fromCompare<Date>(
+ *   (fst, snd) => sign(fst.valueOf() - snd.valueOf())
+ * );
+ *
+ * const now = new Date();
+ * const later = new Date(Date.now() + 60 * 60 * 1000);
+ * const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+ *
+ * const result1 = pipe(now, date.lte(later)); // true
+ * const result2 = pipe(tomorrow, date.clamp(now, later)); // later
+ * const result3 = pipe(tomorrow, date.min(now)); // now
+ * ```
+ *
+ * @since 2.0.0
  */
 export function fromCompare<A>(compare: Compare<A>): Ord<A> {
-  return {
-    equals: (b) => (a) => a === b || compare(a, b) === 0,
-    lte: (b) => (a) => compare(a, b) <= 0,
+  const ord: Ord<A> = {
+    lt: (snd) => (fst) => compare(fst, snd) === -1,
+    lte: (snd) => (fst) => compare(fst, snd) !== 1,
+    equals: (snd) => (fst) => compare(fst, snd) === 0,
+    gte: (snd) => (fst) => compare(fst, snd) !== -1,
+    gt: (snd) => (fst) => compare(fst, snd) === 1,
+    min: (snd) => (fst) => compare(fst, snd) !== 1 ? fst : snd,
+    max: (snd) => (fst) => compare(fst, snd) !== -1 ? fst : snd,
+    clamp: (low, high) => flow(ord.max(low), ord.min(high)),
+    between: (low, high) => pipe(ord.gt(low), and(ord.lt(high))),
+    compare,
   };
+  return ord;
 }
 
 /**
- * Derives an `Ord` instance for tuple type using a tuple of `Ord` instances.
+ * Create a trivial Ord, where all values of A are considered equal.
+ *
+ * @example
+ * ```ts
+ * import { trivial } from "./ord.ts";
+ * import { pipe } from "./fns.ts";
+ *
+ * const date = trivial<Date>();
+ * const now = new Date();
+ * const later = new Date(Date.now() + 60 * 60 * 1000);
+ *
+ * const result1 = pipe(now, date.lt(later)); // false
+ * const result2 = pipe(later, date.lt(now)); // false
+ * const result3 = pipe(now, date.equals(later)); // true
+ * ```
+ *
+ * @since 2.0.0
  */
-export function createOrdTuple<T extends ReadonlyArray<unknown>>(
+export function trivial<A>(): Ord<A> {
+  return fromCompare(() => 0);
+}
+
+/**
+ * Derive an Ord with the reverse ordering of an existing Ord.
+ *
+ * @example
+ * ```ts
+ * import { reverse } from "./ord.ts";
+ * import { OrdNumber } from "./number.ts";
+ * import { pipe } from "./fns.ts";
+ *
+ * const rev = reverse(OrdNumber);
+ *
+ * const result1 = pipe(1, rev.lt(2)); // false
+ * const result2 = pipe(2, rev.lt(1)); // true
+ * ```
+ *
+ * @since 2.0.0
+ */
+export function reverse<A>(ord: Ord<A>): Ord<A> {
+  return fromCompare((first, second) => ord.compare(second, first));
+}
+
+/**
+ * Derives an Ord from a tuple of Ords. The derived Ord will compare
+ * two tuples starting at index 0 and return the first ordering
+ * that is non-zero, otherwise the two tuples are equal.
+ *
+ * @example
+ * ```ts
+ * import { tuple } from "./ord.ts"
+ * import { OrdNumber } from "./number.ts";
+ * import { OrdString } from "./string.ts";
+ * import { pipe } from "./fns.ts";
+ *
+ * const tup = tuple(OrdNumber, OrdString);
+ *
+ * const result1 = pipe([1, "a"], tup.lt([2, "b"])); // true
+ * const result2 = pipe([1, "a"], tup.lt([1, "b"])); // true
+ * const result3 = pipe([1, "a"], tup.lt([1, "a"])); // false
+ * ```
+ *
+ * @since 2.0.0
+ */
+export function tuple<T extends ReadonlyArray<unknown>>(
   ...ords: { [K in keyof T]: Ord<T[K]> }
 ): Ord<Readonly<T>> {
-  const compares = ords.map(toCompare);
   return fromCompare((a, b) => {
     for (let i = 0; i < ords.length; i++) {
-      const ordering = compares[i](a[i], b[i]);
-      if (ordering) return ordering;
+      const ordering = ords[i].compare(a[i], b[i]);
+      if (ordering !== 0) return ordering;
     }
     return 0;
   });
 }
 
 /**
- * Derives an instance of `Ord<A>` using a function from `A` to `B` and an
- * instance of `Ord<B>`.
+ * Derives an Ord from a structs of Ords. The derived Ord will compare
+ * two structs starting with the first defined key and return the first
+ * ordering that is non-zero, otherwise the two structs are equal.
+ *
+ * @example
+ * ```ts
+ * import { struct } from "./ord.ts"
+ * import { OrdNumber } from "./number.ts";
+ * import { OrdString } from "./string.ts";
+ * import { pipe } from "./fns.ts";
+ *
+ * const ord = struct({ num: OrdNumber, str: OrdString });
+ *
+ * const result1 = pipe(
+ *   { num: 1, str: "a" },
+ *   ord.lt({ str: "b", num: 2 })
+ * ); // true
+ * const result2 = pipe(
+ *   { num: 1, str: "a" },
+ *   ord.lt({ str: "b", num: 1 })
+ * ); // true
+ * const result3 = pipe(
+ *   { num: 1, str: "a" },
+ *   ord.lt({ str: "a", num: 1 })
+ * ); // false
+ *
+ * ```
+ *
+ * @since 2.0.0
  */
-export function contramap<A, B>(fab: (a: A) => B): (ordB: Ord<B>) => Ord<A> {
-  return (ordB) => fromCompare((a1, a2) => toCompare(ordB)(fab(a1), fab(a2)));
+export function struct<A>(
+  ords: { readonly [K in keyof A]: Ord<A[K]> },
+): Ord<{ readonly [K in keyof A]: A[K] }> {
+  return fromCompare((fst, snd) => {
+    for (const key in ords) {
+      const ordering = ords[key].compare(fst[key], snd[key]);
+      if (ordering !== 0) return ordering;
+    }
+    return 0;
+  });
 }
 
+/**
+ * Derives an instance of Ord by take an existing Ord over D and
+ * a function that turns an L into D and returns an Ord over L.
+ *
+ * @example
+ * ```ts
+ * import { contramap } from "./ord.ts";
+ * import { OrdNumber } from "./number.ts";
+ * import { pipe } from "./fns.ts";
+ *
+ * const date = pipe(
+ *   OrdNumber,
+ *   contramap((d: Date) => d.valueOf()),
+ * );
+ * ```
+ *
+ * @since 2.0.0
+ */
+export function contramap<L, D>(fld: (l: L) => D): (ord: Ord<D>) => Ord<L> {
+  return ({ compare }) =>
+    fromCompare((fst, snd) => compare(fld(fst), fld(snd)));
+}
+
+/**
+ * The canonical implementation of Contravariant for Ord. It contains
+ * the method contramap.
+ *
+ * @since 2.0.0
+ */
 export const ContravariantOrd: Contravariant<URI> = {
   contramap,
 };

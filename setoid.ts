@@ -106,8 +106,8 @@ export function fromEquals<A>(
  *
  * @since 2.0.0
  */
-export function readonly<A>(Setoid: Setoid<A>): Setoid<Readonly<A>> {
-  return Setoid;
+export function readonly<A>(setoid: Setoid<A>): Setoid<Readonly<A>> {
+  return setoid;
 }
 
 /**
@@ -212,12 +212,12 @@ export function literal<A extends NonEmptyArray<Literal>>(
  *
  * @since 2.0.0
  */
-export function nullable<A>(Setoid: Setoid<A>): Setoid<A | null> {
+export function nullable<A>(setoid: Setoid<A>): Setoid<A | null> {
   return {
     equals: (second) => (first) =>
       (isNil(first) || isNil(second))
         ? first === second
-        : Setoid.equals(second)(first),
+        : setoid.equals(second)(first),
   };
 }
 
@@ -237,12 +237,12 @@ export function nullable<A>(Setoid: Setoid<A>): Setoid<A | null> {
  *
  * @since 2.0.0
  */
-export function undefinable<A>(Setoid: Setoid<A>): Setoid<A | undefined> {
+export function undefinable<A>(setoid: Setoid<A>): Setoid<A | undefined> {
   return {
     equals: (second) => (first) =>
       (isNil(first) || isNil(second))
         ? first === second
-        : Setoid.equals(second)(first),
+        : setoid.equals(second)(first),
   };
 }
 
@@ -262,8 +262,8 @@ export function undefinable<A>(Setoid: Setoid<A>): Setoid<A | undefined> {
  *
  * @since 2.0.0
  */
-export function record<A>(Setoid: Setoid<A>): Setoid<ReadonlyRecord<A>> {
-  const isSub = isSubrecord(Setoid);
+export function record<A>(setoid: Setoid<A>): Setoid<ReadonlyRecord<A>> {
+  const isSub = isSubrecord(setoid);
   return {
     equals: (second) => (first) => isSub(second)(first) && isSub(first)(second),
   };
@@ -285,11 +285,11 @@ export function record<A>(Setoid: Setoid<A>): Setoid<ReadonlyRecord<A>> {
  *
  * @since 2.0.0
  */
-export function array<A>(Setoid: Setoid<A>): Setoid<ReadonlyArray<A>> {
+export function array<A>(setoid: Setoid<A>): Setoid<ReadonlyArray<A>> {
   return {
     equals: (second) => (first) =>
       first.length === second.length &&
-      first.every((value, index) => Setoid.equals(second[index])(value)),
+      first.every((value, index) => setoid.equals(second[index])(value)),
   };
 }
 
@@ -338,9 +338,9 @@ export function tuple<T extends ReadonlyArray<Setoid<any>>>(
  * @since 2.0.0
  */
 export function struct<A>(
-  Setoids: { readonly [K in keyof A]: Setoid<A[K]> },
+  setoids: { readonly [K in keyof A]: Setoid<A[K]> },
 ): Setoid<{ readonly [K in keyof A]: A[K] }> {
-  const eqs = Object.entries(Setoids) as [keyof A, Setoid<A[keyof A]>][];
+  const eqs = Object.entries(setoids) as [keyof A, Setoid<A[keyof A]>][];
   return fromEquals((first, second) =>
     eqs.every(([key, { equals }]) => equals(second[key])(first[key]))
   );
@@ -471,7 +471,7 @@ export function union<I>(
  * type Person = { name: string, child?: Person };
  *
  * // Annotating the type is required for recursion
- * const person: Setoid<Person> = lazy("Person", () => pipe(
+ * const person: Setoid<Person> = lazy('Person', () => pipe(
  *   struct({ name: string }),
  *   intersect(partial({ child: person }))
  * ));

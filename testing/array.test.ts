@@ -4,13 +4,11 @@ import {
   assertStrictEquals,
 } from "https://deno.land/std/testing/asserts.ts";
 
-import type { Ord } from "../ord.ts";
-
 import * as A from "../array.ts";
 import * as O from "../option.ts";
 import * as N from "../number.ts";
 import { SetoidBoolean } from "../boolean.ts";
-import { lessThanOrEqual, pipe, strictEquals } from "../fns.ts";
+import { pipe } from "../fns.ts";
 
 Deno.test("Array empty", () => assertEquals(A.empty(), []));
 
@@ -248,12 +246,8 @@ Deno.test("Array unzip", () => {
 });
 
 Deno.test("Array sort", () => {
-  const ordNever: Ord<never> = {
-    equals: strictEquals,
-    lte: lessThanOrEqual,
-  };
-  const t1 = [] as const;
-  const r1 = pipe(t1, A.sort(ordNever));
+  const t1 = [] as number[];
+  const r1 = pipe(t1, A.sort(N.OrdNumber));
   assertEquals(r1, t1);
   assertNotStrictEquals(r1, t1);
 

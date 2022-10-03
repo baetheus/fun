@@ -14,6 +14,7 @@ import type { Show } from "./show.ts";
 import type { Traversable } from "./traversable.ts";
 
 import * as O from "./option.ts";
+import { fromCompare } from "./ord.ts";
 import { flow, isNotNil, pipe } from "./fns.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
@@ -152,22 +153,13 @@ export function getOrd<A, B>(
   OB: Ord<B>,
   OA: Ord<A>,
 ): Ord<Either<B, A>> {
-  return ({
-    ...getSetoid(OB, OA),
-    lte: (b) => (a) => {
-      if (isLeft(a)) {
-        if (isLeft(b)) {
-          return OB.lte(b.left)(a.left);
-        }
-        return true;
-      }
-
-      if (isLeft(b)) {
-        return false;
-      }
-      return OA.lte(b.right)(a.right);
-    },
-  });
+  return fromCompare((fst, snd) =>
+    isLeft(fst)
+      ? isLeft(snd) ? OB.compare(fst.left, snd.left) : -1
+      : isLeft(snd)
+      ? 1
+      : OA.compare(fst.right, snd.right)
+  );
 }
 
 export function getLeftSemigroup<E = never, A = never>(
