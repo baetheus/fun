@@ -67,6 +67,22 @@ export function pair<A, B>(first: A, second: B): Pair<A, B> {
 }
 
 /**
+ * Creates a pair from a single type
+ *
+ * @example
+ * ```ts
+ * import { dual } from "./pair.ts";
+ *
+ * const result = dual(1); // [1, 1]
+ * ```
+ *
+ * @since 2.0.0
+ */
+export function dual<A>(a: A): Pair<A, A> {
+  return pair(a, a);
+}
+
+/**
  * Extracts the first value from a Pair.
  *
  * @example

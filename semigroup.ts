@@ -33,8 +33,8 @@ import { pipe } from "./fns.ts";
  *
  * @since 2.0.0
  */
-export interface Semigroup<T> {
-  readonly concat: (right: T) => (left: T) => T;
+export interface Semigroup<D> {
+  readonly concat: (right: D) => (left: D) => D;
 }
 
 /**

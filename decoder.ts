@@ -1,8 +1,10 @@
 import type { In, Kind, Out } from "./kind.ts";
 import type { Either } from "./either.ts";
 import type { DecodeError } from "./decode_error.ts";
+import type { ReaderEither } from "./reader_either.ts";
 
 import * as DE from "./decode_error.ts";
+import * as RE from "./reader_either.ts";
 import * as E from "./either.ts";
 import * as A from "./array.ts";
 import * as R from "./record.ts";
@@ -43,7 +45,7 @@ const traverseArray = A.traverse(MonadDecoded);
 // Decoder
 // ---
 
-export type Decoder<B, A> = (b: B) => Decoded<A>;
+export type Decoder<D, A> = ReaderEither<D, DecodeError, A>;
 
 export type From<T> = T extends Decoder<infer _, infer A> ? A : never;
 
@@ -76,7 +78,20 @@ const compactRecord = <A>(
 export function compose<B, C>(
   dbc: Decoder<B, C>,
 ): <A>(dab: Decoder<A, B>) => Decoder<A, C> {
-  return (dab) => flow(dab, E.chain(dbc));
+  return RE.compose(dbc);
+}
+
+export function contramap<L, D>(
+  fld: (l: L) => D,
+): <A>(ua: Decoder<D, A>) => Decoder<L, A> {
+  return RE.contramap(fld);
+}
+
+export function dimap<A, I, L, D>(
+  fld: (l: L) => D,
+  fai: (a: A) => I,
+): (ua: Decoder<D, A>) => Decoder<L, I> {
+  return RE.dimap(fld, fai);
 }
 
 export function refine<A, B extends A>(

@@ -11,6 +11,10 @@ Deno.test("Pair pair", () => {
   assertEquals(P.pair(1, 2), [1, 2]);
 });
 
+Deno.test("Pair dual", () => {
+  assertEquals(P.dual(1), [1, 1]);
+});
+
 Deno.test("Pair first", () => {
   assertEquals(P.first(P.pair(1, 2)), 1);
 });

@@ -3,14 +3,18 @@ import type { Alt } from "./alt.ts";
 import type { Bifunctor } from "./bifunctor.ts";
 import type { Monad, MonadThrow } from "./monad.ts";
 import type { Semigroup } from "./semigroup.ts";
+import type { Contravariant } from "./contravariant.ts";
+import type { Profunctor, Strong } from "./profunctor.ts";
+import type { Pair } from "./pair.ts";
 
 import * as E from "./either.ts";
 import * as R from "./reader.ts";
+import * as P from "./pair.ts";
 import { flow, handleThrow, identity, pipe } from "./fns.ts";
 
-export type ReaderEither<S, L, R> = R.Reader<
-  S,
-  E.Either<L, R>
+export type ReaderEither<D, B, A> = R.Reader<
+  D,
+  E.Either<B, A>
 >;
 
 export interface URI extends Kind {
@@ -134,6 +138,31 @@ export function chainLeft<A, B, C, J>(
   return (ta) => pipe(ta, R.chain(E.fold(fbtj, right)));
 }
 
+export function contramap<L, D>(
+  fld: (l: L) => D,
+): <A, B>(ua: ReaderEither<D, B, A>) => ReaderEither<L, B, A> {
+  return (ua) => flow(fld, ua);
+}
+
+export function dimap<A, I, L, D>(
+  fld: (l: L) => D,
+  fai: (a: A) => I,
+): <B>(ua: ReaderEither<D, B, A>) => ReaderEither<L, B, I> {
+  return flow(contramap(fld), map(fai));
+}
+
+export function first<A, B, D, Q = never>(
+  ua: ReaderEither<D, B, A>,
+): ReaderEither<Pair<D, Q>, B, Pair<A, Q>> {
+  return ([d, q]) => pipe(ua(d), E.map(P.fromSecond(q)));
+}
+
+export function second<A, B, D, Q = never>(
+  ua: ReaderEither<D, B, A>,
+): ReaderEither<Pair<Q, D>, B, Pair<Q, A>> {
+  return ([q, d]) => pipe(ua(d), E.map(P.fromFirst(q)));
+}
+
 export function compose<A, I, J>(
   right: ReaderEither<A, J, I>,
 ): <B, C>(
@@ -172,3 +201,9 @@ export const MonadThrowReaderEither: MonadThrow<URI> = {
 };
 
 export const AltReaderEither: Alt<URI> = { alt, map };
+
+export const ContravariantReaderEither: Contravariant<URI> = { contramap };
+
+export const ProfunctorReaderEither: Profunctor<URI> = { dimap };
+
+export const StrongReaderEither: Strong<URI> = { dimap, first, second };
