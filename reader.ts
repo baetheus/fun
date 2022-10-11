@@ -10,10 +10,10 @@ import * as P from "./pair.ts";
 import * as E from "./either.ts";
 import { flow, identity, pipe } from "./fns.ts";
 
-export type Reader<D, A> = (d: D) => A;
+export type Reader<D extends unknown[], A> = (...d: D) => A;
 
 export interface URI extends Kind {
-  readonly kind: Reader<In<this, 0>, Out<this, 0>>;
+  readonly kind: Reader<this['contravariant'], Out<this, 0>>;
 }
 
 export function ask<A>(): Reader<A, A> {
