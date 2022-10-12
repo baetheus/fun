@@ -1,8 +1,8 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
 import * as D from "../decoder.ts";
-import * as G from "../guard.ts";
-import * as R from "../decode_error.ts";
+import * as R from "../refinement.ts";
+import * as DE from "../decode_error.ts";
 import * as E from "../either.ts";
 import { flow, pipe } from "../fn.ts";
 
@@ -16,11 +16,11 @@ Deno.test("Decoder success", () => {
 });
 
 Deno.test("Decoder failure", () => {
-  assertEquals(D.failure(1, "1"), E.left(R.leaf(1, "1")));
+  assertEquals(D.failure(1, "1"), E.left(DE.leaf(1, "1")));
 });
 
-Deno.test("Decoder fromGuard", () => {
-  const decoder = D.fromGuard(G.number, "number");
+Deno.test("Decoder fromRefinement", () => {
+  const decoder = D.fromRefinement(R.number, "number");
   assertEquals(typeof decoder, "function");
   assertEquals(decoder(0), D.success(0));
   assertEquals(decoder(true), D.failure(true, "number"));

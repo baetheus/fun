@@ -2,7 +2,7 @@ import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
 import * as S from "../schemable.ts";
 import * as D from "../decoder.ts";
-import * as G from "../guard.ts";
+import * as R from "../refinement.ts";
 import * as J from "../json_schema.ts";
 import * as E from "../either.ts";
 import { pipe } from "../fn.ts";
@@ -80,7 +80,7 @@ Deno.test("Schemable schema", () => {
   );
 
   const decode = BigSchema(D.Schemable);
-  const guard = BigSchema(G.Schemable);
+  const refine = BigSchema(R.Schemable);
 
   // Shouldn't throw
   BigSchema(J.Schemable);
@@ -90,6 +90,6 @@ Deno.test("Schemable schema", () => {
 
   assertEquals(decode(shouldPass), E.right(shouldPass));
   assertEquals(E.isLeft(decode(shouldFail)), true);
-  assertEquals(guard(shouldPass), true);
-  assertEquals(guard(shouldFail), false);
+  assertEquals(refine(shouldPass), true);
+  assertEquals(refine(shouldFail), false);
 });

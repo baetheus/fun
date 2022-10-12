@@ -2,6 +2,7 @@ import type { In, Kind, Out } from "./kind.ts";
 import type { Either } from "./either.ts";
 import type { DecodeError } from "./decode_error.ts";
 import type { FnEither } from "./fn_either.ts";
+import type { Refinement } from "./refinement.ts";
 
 import * as DE from "./decode_error.ts";
 import * as RE from "./fn_either.ts";
@@ -11,7 +12,7 @@ import * as R from "./record.ts";
 import { flow, memoize, pipe } from "./fn.ts";
 
 import * as S from "./schemable.ts";
-import * as G from "./guard.ts";
+import * as G from "./refinement.ts";
 
 // ---
 // Decoded
@@ -98,11 +99,11 @@ export function refine<A, B extends A>(
   refinement: (a: A) => a is B,
   id: string,
 ): <I>(from: Decoder<I, A>) => Decoder<I, B> {
-  return compose(fromGuard(refinement, id));
+  return compose(fromRefinement(refinement, id));
 }
 
-export function fromGuard<B, A extends B>(
-  guard: G.Guard<B, A>,
+export function fromRefinement<B, A extends B>(
+  guard: Refinement<B, A>,
   expected: string,
 ): Decoder<B, A> {
   return (b: B) => guard(b) ? success(b) : failure(b, expected);
@@ -111,19 +112,19 @@ export function fromGuard<B, A extends B>(
 export function literal<A extends [S.Literal, ...S.Literal[]]>(
   ...literals: A
 ): Decoder<unknown, A[number]> {
-  return fromGuard(
+  return fromRefinement(
     G.literal(...literals),
     literals.map(literalToString).join(", "),
   );
 }
 
-export const unknown = fromGuard(G.unknown, "unknown");
+export const unknown = fromRefinement(G.unknown, "unknown");
 
-export const string = fromGuard(G.string, "string");
+export const string = fromRefinement(G.string, "string");
 
-export const number = fromGuard(G.number, "number");
+export const number = fromRefinement(G.number, "number");
 
-export const boolean = fromGuard(G.boolean, "boolean");
+export const boolean = fromRefinement(G.boolean, "boolean");
 
 export function date(a: unknown): Decoded<Date> {
   try {
@@ -139,14 +140,14 @@ const _null = literal(null);
 
 const _undefined = literal(undefined);
 
-const _record = fromGuard(G.isRecord, "record");
+const _record = fromRefinement(G.isRecord, "record");
 
-const _array = fromGuard(G.isArray, "array");
+const _array = fromRefinement(G.isArray, "array");
 
 export function arrayN<N extends number>(
   n: N,
 ): Decoder<unknown, Array<unknown> & { length: N }> {
-  return fromGuard(G.isArrayN(n), `tuple of length ${n}`);
+  return fromRefinement(G.isArrayN(n), `tuple of length ${n}`);
 }
 
 export function json<A>(decoder: Decoder<unknown, A>): Decoder<unknown, A> {
