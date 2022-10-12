@@ -446,17 +446,24 @@ export function union<I>(
   ui: Setoid<I>,
 ): <A>(first: Setoid<A>) => Setoid<A | I> {
   return (ua) => ({
-    equals: (second) => (first) =>
-      first === second ||
-      (
-        typeof first === typeof second &&
-        (
+    equals: (second) => (first) => {
+      if (first === second) {
+        return true;
+      } else if (typeof first === typeof second) {
+        return tryCatch(
           // deno-lint-ignore no-explicit-any
-          tryCatch(() => ua.equals(second as any)(first as any), () => false) ||
-          // deno-lint-ignore no-explicit-any
-          tryCatch(() => ui.equals(second as any)(first as any), () => false)
-        )
-      ),
+          () => ua.equals(second as any)(first as any),
+          () => false,
+        ) ||
+          tryCatch(
+            // deno-lint-ignore no-explicit-any
+            () => ui.equals(second as any)(first as any),
+            () => false,
+          );
+      } else {
+        return false;
+      }
+    },
   });
 }
 

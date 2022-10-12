@@ -5,6 +5,7 @@ import type { Setoid } from "./setoid.ts";
 import type { Show } from "./show.ts";
 
 import { fromCompare, sign } from "./ord.ts";
+import { map, pipe } from "./fn.ts";
 
 // TODO; Implement newtypes for natural, integer, rational
 
@@ -22,6 +23,14 @@ export function multiply(right: number): (left: number) => number {
 
 export function add(right: number): (left: number) => number {
   return (left) => left + right;
+}
+
+export function mod(second: number): (first: number) => number {
+  return (first) => ((first % second) + second) % second;
+}
+
+export function divides(second: number): (first: number) => boolean {
+  return pipe(mod(second), map(equals(0)));
 }
 
 export function compare(first: number, second: number): Ordering {

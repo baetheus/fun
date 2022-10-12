@@ -6,6 +6,10 @@ export const constTrue = () => true;
 
 export const constFalse = () => false;
 
+export function not(ua: boolean): boolean {
+  return !ua;
+}
+
 export function equals(right: boolean): (left: boolean) => boolean {
   return (left) => left === right;
 }
