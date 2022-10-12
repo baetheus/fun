@@ -507,7 +507,7 @@ export function lazy<A>(_: string, f: () => Setoid<A>): Setoid<A> {
  * @example
  * ```ts
  * import { struct, io, number } from "./setoid.ts";
- * import { constant } from "./fn.ts";
+ * import { of as constant } from "./fn.ts";
  *
  * const { equals } = struct({ asNumber: io(number) });
  *

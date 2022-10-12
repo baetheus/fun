@@ -7,6 +7,7 @@
  * instance getters, and some utilities around Semigroups.
  */
 
+import type { ReadonlyRecord } from "./record.ts";
 import type { Ord } from "./ord.ts";
 
 import { pipe } from "./fn.ts";
@@ -36,6 +37,23 @@ import { pipe } from "./fn.ts";
 export interface Semigroup<D> {
   readonly concat: (right: D) => (left: D) => D;
 }
+
+/**
+ * A type for Semigroup over any, useful as an extension target for
+ * functions that take any Semigroup and do not need to
+ * extract the type.
+ *
+ * @since 2.0.0
+ */
+// deno-lint-ignore no-explicit-any
+export type AnySemigroup = Semigroup<any>;
+
+/**
+ * A type level extractor, used to pull the inner type from a Semigroup.
+ *
+ * @since 2.0.0
+ */
+export type TypeOf<T> = T extends Semigroup<infer A> ? A : never;
 
 /**
  * Get an Semigroup over A that always returns the first
@@ -163,13 +181,10 @@ export function dual<A>(S: Semigroup<A>): Semigroup<A> {
  *
  * @since 2.0.0
  */
-// deno-lint-ignore no-explicit-any
-export function tuple<T extends ReadonlyArray<Semigroup<any>>>(
+export function tuple<T extends AnySemigroup[]>(
   ...semigroups: T
-): Semigroup<
-  { readonly [K in keyof T]: T[K] extends Semigroup<infer A> ? A : never }
-> {
-  type Return = { [K in keyof T]: T[K] extends Semigroup<infer A> ? A : never };
+): Semigroup<{ readonly [K in keyof T]: TypeOf<T[K]> }> {
+  type Return = { [K in keyof T]: TypeOf<T[K]> };
   return ({
     concat: (right) => (left): Return =>
       semigroups.map((s, i) =>
@@ -214,7 +229,8 @@ export function tuple<T extends ReadonlyArray<Semigroup<any>>>(
  *
  * @since 2.0.0
  */
-export function struct<O extends Readonly<Record<string, unknown>>>(
+// deno-lint-ignore no-explicit-any
+export function struct<O extends ReadonlyRecord<any>>(
   semigroups: { [K in keyof O]: Semigroup<O[K]> },
 ): Semigroup<O> {
   type Entries = [keyof O, typeof semigroups[keyof O]][];

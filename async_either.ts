@@ -29,7 +29,7 @@ export interface URI extends Kind {
  *
  * ```ts
  * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
- * import * as TE from "./task_either.ts";
+ * import * as TE from "./async_either.ts";
  * import * as E from "./either.ts";
  *
  * const computation = TE.left<number, number>(1);
@@ -48,7 +48,7 @@ export function left<A = never, B = never>(left: B): AsyncEither<B, A> {
  *
  * ```ts
  * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
- * import * as TE from "./task_either.ts";
+ * import * as TE from "./async_either.ts";
  * import * as E from "./either.ts";
  *
  * const computation = TE.right<number, number>(1);
@@ -67,7 +67,7 @@ export function right<A = never, B = never>(right: A): AsyncEither<B, A> {
  *
  * ```ts
  * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
- * import * as TE from "./task_either.ts";
+ * import * as TE from "./async_either.ts";
  * import * as E from "./either.ts";
  *
  * const _fetch = TE.tryCatch(
@@ -176,7 +176,7 @@ export function apSequential<A, I, B>(
  *
  * ```ts
  * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
- * import * as TE from "./task_either.ts";
+ * import * as TE from "./async_either.ts";
  * import * as E from "./either.ts";
  * import { pipe } from "./fn.ts";
  *
@@ -218,7 +218,7 @@ export function chainFirst<A, I, J>(
  *
  * ```ts
  * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
- * import * as TE from "./task_either.ts";
+ * import * as TE from "./async_either.ts";
  * import * as E from "./either.ts";
  * import { pipe } from "./fn.ts";
  *
@@ -245,7 +245,7 @@ export function chainLeft<B, J, I>(
  *
  * ```ts
  * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
- * import * as TE from "./task_either.ts";
+ * import * as TE from "./async_either.ts";
  * import * as E from "./either.ts";
  * import { pipe } from "./fn.ts";
  *
@@ -271,7 +271,7 @@ export function join<A, B>(
  *
  * ```ts
  * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
- * import * as TE from "./task_either.ts";
+ * import * as TE from "./async_either.ts";
  * import * as E from "./either.ts";
  * import { pipe } from "./fn.ts";
  *
@@ -298,8 +298,8 @@ export function alt<I, J>(
  *
  * ```ts
  * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
- * import * as TE from "./task_either.ts";
- * import * as T from "./task.ts";
+ * import * as TE from "./async_either.ts";
+ * import * as T from "./async.ts";
  * import { flow, identity } from "./fn.ts";
  *
  * const hello = flow(

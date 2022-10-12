@@ -203,7 +203,7 @@ export function getSemigroupAny<A = never>(): Semigroup<Predicate<A>> {
  *
  * const betweenZeroAndFifty = pipe(
  *   greaterThanZero,
- *   SemigroupAny.concat(lessThanFifty),
+ *   SemigroupAll.concat(lessThanFifty),
  * );
  *
  * const result1 = betweenZeroAndFifty(10); // true
@@ -223,7 +223,7 @@ export function getSemigroupAll<A = never>(): Semigroup<Predicate<A>> {
  *
  * @example
  * ```ts
- * import { getSemigroupAny } from "./predicate.ts";
+ * import { getMonoidAny } from "./predicate.ts";
  * import { equals } from "./number.ts";
  * import { pipe } from "./fn.ts";
  * import * as T from "./traversal.ts";
@@ -263,7 +263,7 @@ export function getMonoidAny<A = never>(): Monoid<Predicate<A>> {
  *
  * @example
  * ```ts
- * import { getSemigroupAll } from "./predicate.ts";
+ * import { getMonoidAll } from "./predicate.ts";
  * import { divides } from "./number.ts";
  * import { pipe } from "./fn.ts";
  * import * as T from "./traversal.ts";
