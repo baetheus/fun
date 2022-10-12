@@ -5,11 +5,21 @@ import type { Chain } from "./chain.ts";
 import { identity, pipe } from "./fn.ts";
 
 /**
- * Monad
- * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#monad
+ * A Monad<T> is an algebra with a notion of join(aka flatten or flat) for
+ * a given algebraic data type T. A Monad<T> must also extend Functor<T>,
+ * Apply<T>, Applicative<T>, and Chain<T>. This means a Monad<T> has
+ * the following methods: of, ap, map, join, and chain. An intuition for
+ * Monad can be found by thinking about how Promise.then handles functions
+ * that return a new Promise.
  *
- * Here we extend Monad with a join function. Other names for join
- * are flatten or flat.
+ * An instance of a Monad must obey the following laws:
+ *
+ * 1. Left identity: chain(f)(of(a)) === f(a)
+ * 2. Right identity: chain(of)(ua) === ua
+ *
+ * The original type came from [static-land](https://github.com/fantasyland/static-land/blob/master/docs/spec.md#monad)
+ *
+ * @since 2.0.0
  */
 export interface Monad<U extends Kind>
   extends Applicative<U>, Chain<U>, TypeClass<U> {
@@ -19,59 +29,41 @@ export interface Monad<U extends Kind>
 }
 
 /**
- * MonadThrow
- * https://github.com/gcanti/fp-ts/blob/master/src/MonadThrow.ts
- */
-export interface MonadThrow<U extends Kind> extends Monad<U> {
-  readonly throwError: <A, B, C, D, E>(b: B) => $<U, [A, B, C], [D], [E]>;
-}
-
-/**
- * Do notation
- * @experimental
- */
-export interface Do<U extends Kind> extends TypeClass<U> {
-  Do: <B = never, C = never, D = never, E = never>() => $<
-    U,
-    // deno-lint-ignore ban-types
-    [{}, B, C],
-    [D],
-    [E]
-  >;
-  bind: <
-    N extends string,
-    A,
-    I,
-    B = never,
-    C = never,
-    D = never,
-    E = never,
-  >(
-    name: Exclude<N, keyof A>,
-    fati: (a: A) => $<U, [I, B, C], [D], [E]>,
-  ) => (ta: $<U, [A, B, C], [D], [E]>) => $<
-    U,
-    [
-      A & { readonly [K in N]: I },
-      B,
-      C,
-    ],
-    [D],
-    [E]
-  >;
-  bindTo: <N extends string>(
-    name: N,
-  ) => <A, B = never, C = never, D = never, E = never>(
-    ta: $<U, [A, B, C], [D], [E]>,
-  ) => $<U, [{ [K in N]: A }, B, C], [D], [E]>;
-}
-/**
- * Derive Monad module from of and chain
+ * Derive a Monad instance from of, chain, and a Kind URI. This is
+ * the simplest way to get a Monad instance when one has a
+ * creation function (of) and a chain function (aka flatMap or
+ * bind).
  *
- * TODO: rename to fromOfAndChain
- * TODO: add another
+ * @example
+ * ```ts
+ * import type { Kind, Out } from "./kind.ts";
+ * import { createMonad } from "./monad.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * // Create a URI for Promise<A>
+ * interface URI extends Kind {
+ *   readonly kind: Promise<Out<this, 0>>;
+ * };
+ *
+ * // Create an of and chain function for Promise<A>
+ * const of = <A>(a: A): Promise<A> => Promise.resolve(a);
+ * const chain = <A, I>(faui: (a: A) => Promise<I>) =>
+ *   (ua: Promise<A>): Promise<I> => ua.then(faui);
+ *
+ * // Derive a Monad for Promise
+ * const M = createMonad<URI>({ of, chain });
+ *
+ * const result = await pipe(
+ *   M.of(1),
+ *   M.map(n => n + 1),
+ *   M.ap(M.of((n: number) => n - 1)),
+ *   M.chain(n => M.of(n + 1)),
+ * ); // 2
+ * ```
  *
  * @experimental
+ *
+ * @since 2.0.0
  */
 export function createMonad<U extends Kind>(
   { of, chain }: Pick<Monad<U>, "of" | "chain">,
@@ -84,39 +76,4 @@ export function createMonad<U extends Kind>(
     join: chain(identity),
   };
   return Monad;
-}
-
-/**
- * Derive Do notation from Monad
- *
- * @experimental
- */
-export function createDo<U extends Kind>(
-  M: Monad<U>,
-): Do<U> {
-  return {
-    Do: () => M.of({}),
-    bind: <N extends string, A, I, B, C, D, E>(
-      name: Exclude<N, keyof A>,
-      fati: (a: A) => $<U, [I, B, C], [D], [E]>,
-    ): (
-      ta: $<U, [A, B, C], [D], [E]>,
-    ) => $<U, [A & { readonly [K in N]: I }, B, C], [D], [E]> =>
-      M.chain((a: A) =>
-        pipe(
-          fati(a),
-          M.map((i) => ({ ...a, [name as N]: i })),
-        ) as $<U, [A & { readonly [K in N]: I }, B, C], [D], [E]>
-      ),
-    bindTo: <N extends string>(name: N) =>
-    <A, B, C, D, E>(
-      ta: $<U, [A, B, C], [D], [E]>,
-    ): $<U, [{ readonly [K in N]: A }, B, C], [D], [E]> =>
-      pipe(ta, M.map((a) => ({ [name]: a }))) as $<
-        U,
-        [{ readonly [K in N]: A }, B, C],
-        [D],
-        [E]
-      >,
-  };
 }

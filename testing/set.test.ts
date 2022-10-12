@@ -78,7 +78,7 @@ Deno.test("Set reduce", () => {
 });
 
 Deno.test("Set traverse", () => {
-  const t1 = S.traverse(O.MonadThrowOption);
+  const t1 = S.traverse(O.MonadOption);
   const t2 = t1((n: number) => n === 0 ? O.none : O.some(n));
   assertEquals(t2(S.empty()), O.some(S.empty()));
   assertEquals(t2(S.set(1, 2, 3)), O.some(S.set(1, 2, 3)));

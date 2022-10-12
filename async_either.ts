@@ -2,7 +2,7 @@ import type { Kind, Out } from "./kind.ts";
 import type { Alt } from "./alt.ts";
 import type { Bifunctor } from "./bifunctor.ts";
 import type { Either } from "./either.ts";
-import type { MonadThrow } from "./monad.ts";
+import type { Monad } from "./monad.ts";
 import type { Async } from "./async.ts";
 
 import * as E from "./either.ts";
@@ -325,38 +325,36 @@ export function fold<L, R, B>(
 
 export const BifunctorAsyncEither: Bifunctor<URI> = { bimap, mapLeft };
 
-export const MonadThrowAsyncEitherParallel: MonadThrow<URI> = {
+export const MonadAsyncEitherParallel: Monad<URI> = {
   of,
   ap: apParallel,
   map,
   join,
   chain,
-  throwError,
 };
 
 export const AltAsyncEither: Alt<URI> = { alt, map };
 
-export const MonadThrowAsyncEitherSequential: MonadThrow<URI> = {
+export const MonadAsyncEitherSequential: Monad<URI> = {
   of,
   ap: apSequential,
   map,
   join,
   chain,
-  throwError,
 };
 
 export const sequenceTupleParallel = createSequenceTuple(
-  MonadThrowAsyncEitherParallel,
+  MonadAsyncEitherParallel,
 );
 
 export const sequenceStructParallel = createSequenceStruct(
-  MonadThrowAsyncEitherParallel,
+  MonadAsyncEitherParallel,
 );
 
 export const sequenceTupleSequential = createSequenceTuple(
-  MonadThrowAsyncEitherSequential,
+  MonadAsyncEitherSequential,
 );
 
 export const sequenceStructSequential = createSequenceStruct(
-  MonadThrowAsyncEitherSequential,
+  MonadAsyncEitherSequential,
 );

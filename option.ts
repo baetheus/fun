@@ -7,7 +7,7 @@ import type { Extend } from "./extend.ts";
 import type { Filterable } from "./filterable.ts";
 import type { Foldable } from "./foldable.ts";
 import type { Functor } from "./functor.ts";
-import type { Monad, MonadThrow } from "./monad.ts";
+import type { Monad } from "./monad.ts";
 import type { Monoid } from "./monoid.ts";
 import type { Ord } from "./ord.ts";
 import type { Predicate } from "./predicate.ts";
@@ -277,15 +277,6 @@ export const ChainOption: Chain<URI> = { ap, map, chain };
 
 export const MonadOption: Monad<URI> = { of, ap, map, join, chain };
 
-export const MonadThrowOption: MonadThrow<URI> = {
-  of,
-  ap,
-  map,
-  join,
-  chain,
-  throwError,
-};
-
 export const AltOption: Alt<URI> = { alt, map };
 
 export const ExtendsOption: Extend<URI> = { map, extend };
@@ -356,6 +347,6 @@ export function getMonoid<A>(M: Monoid<A>): Monoid<Option<A>> {
   });
 }
 
-export const sequenceTuple = createSequenceTuple(MonadThrowOption);
+export const sequenceTuple = createSequenceTuple(MonadOption);
 
-export const sequenceStruct = createSequenceStruct(MonadThrowOption);
+export const sequenceStruct = createSequenceStruct(MonadOption);

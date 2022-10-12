@@ -58,7 +58,7 @@ Deno.test("Array isEmpty", () => {
 });
 
 Deno.test("Array traverse", () => {
-  const traverseOption = A.traverse(O.MonadThrowOption);
+  const traverseOption = A.traverse(O.MonadOption);
 
   assertEquals(typeof traverseOption, "function");
 

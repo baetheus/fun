@@ -3,7 +3,7 @@ import type { Alt } from "./alt.ts";
 import type { Applicative } from "./applicative.ts";
 import type { Bifunctor } from "./bifunctor.ts";
 import type { Extend } from "./extend.ts";
-import type { Monad, MonadThrow } from "./monad.ts";
+import type { Monad } from "./monad.ts";
 import type { Monoid } from "./monoid.ts";
 import type { Ord } from "./ord.ts";
 import type { Predicate } from "./predicate.ts";
@@ -286,13 +286,12 @@ export function traverse<V extends Kind>(
     fold((l) => A.of(left(l)), flow(faui, A.map((r) => right(r))));
 }
 
-export const MonadThrowEither: MonadThrow<URI> = {
+export const MonadEither: Monad<URI> = {
   of,
   ap,
   map,
   join,
   chain,
-  throwError,
 };
 
 export const BifunctorEither: Bifunctor<URI> = { bimap, mapLeft };
@@ -303,6 +302,6 @@ export const ExtendEither: Extend<URI> = { map, extend };
 
 export const TraversableEither: Traversable<URI> = { map, reduce, traverse };
 
-export const sequenceTuple = createSequenceTuple(MonadThrowEither);
+export const sequenceTuple = createSequenceTuple(MonadEither);
 
-export const sequenceStruct = createSequenceStruct(MonadThrowEither);
+export const sequenceStruct = createSequenceStruct(MonadEither);

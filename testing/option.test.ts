@@ -131,7 +131,7 @@ Deno.test("Option reduce", () => {
 });
 
 Deno.test("Option traverse", () => {
-  const t1 = O.traverse(O.MonadThrowOption);
+  const t1 = O.traverse(O.MonadOption);
   const t2 = t1((n: number) => n === 0 ? O.none : O.some(1));
   assertEquals(t2(O.none), O.some(O.none));
   assertEquals(t2(O.some(0)), O.none);

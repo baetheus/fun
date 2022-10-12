@@ -46,7 +46,7 @@ Deno.test("Lens asOptional", () => {
 
 Deno.test("Lens asTraveral", () => {
   const { traverse } = L.asTraversal(lens);
-  const t0 = traverse(O.MonadThrowOption);
+  const t0 = traverse(O.MonadOption);
   const t1 = t0((n) => n === 0 ? O.none : O.some(n));
 
   assertEquals(t1(test), O.some(test));
@@ -110,7 +110,7 @@ Deno.test("Lens composeOptional", () => {
 Deno.test("Lens composeTraversal", () => {
   const { traverse } = L.composeTraversal(L.id<Test>(), L.asTraversal(lens));
 
-  const t1 = traverse(O.MonadThrowOption);
+  const t1 = traverse(O.MonadOption);
   const t2 = t1((n) => n === 0 ? O.none : O.some(n));
 
   assertEquals(t2(makeTest(0)), O.none);

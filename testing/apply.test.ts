@@ -4,7 +4,7 @@ import * as A from "../apply.ts";
 import * as O from "../option.ts";
 
 Deno.test("Sequence createSequenceTuple", () => {
-  const f1 = A.createSequenceTuple(O.MonadThrowOption);
+  const f1 = A.createSequenceTuple(O.MonadOption);
   assertEquals(typeof f1, "function");
   assertEquals(f1(O.some(1)), O.some([1]));
   assertEquals(f1(O.none), O.none);
@@ -13,7 +13,7 @@ Deno.test("Sequence createSequenceTuple", () => {
 });
 
 Deno.test("Sequence createSequenceStruct", () => {
-  const f1 = A.createSequenceStruct(O.MonadThrowOption);
+  const f1 = A.createSequenceStruct(O.MonadOption);
   assertEquals(typeof f1, "function");
   assertEquals(f1({ one: O.some(1) }), O.some({ one: 1 }));
   assertEquals(

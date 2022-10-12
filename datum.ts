@@ -1,7 +1,7 @@
 import type { $, Kind, Out } from "./kind.ts";
 import type { Alt } from "./alt.ts";
 import type { Applicative } from "./applicative.ts";
-import type { MonadThrow } from "./monad.ts";
+import type { Monad } from "./monad.ts";
 import type { Monoid } from "./monoid.ts";
 import type { Ord } from "./ord.ts";
 import type { Semigroup } from "./semigroup.ts";
@@ -271,19 +271,12 @@ export function getOrd<A>(O: Ord<A>): Ord<Datum<A>> {
   );
 }
 
-export const MonadThrowDatum: MonadThrow<URI> = {
-  of,
-  ap,
-  map,
-  join,
-  chain,
-  throwError,
-};
+export const MonadDatum: Monad<URI> = { of, ap, map, join, chain };
 
 export const AltDatum: Alt<URI> = { alt, map };
 
 export const TraversableDatum: Traversable<URI> = { map, reduce, traverse };
 
-export const sequenceTuple = createSequenceTuple(MonadThrowDatum);
+export const sequenceTuple = createSequenceTuple(MonadDatum);
 
-export const sequenceStruct = createSequenceStruct(MonadThrowDatum);
+export const sequenceStruct = createSequenceStruct(MonadDatum);

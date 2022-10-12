@@ -21,7 +21,7 @@ Deno.test("Record getShow", () => {
 });
 
 Deno.test("Record traverse", () => {
-  const t1 = R.traverse(O.MonadThrowOption);
+  const t1 = R.traverse(O.MonadOption);
   const t2 = t1((n: number) => n === 0 ? O.none : O.some(n));
   assertEquals(t2({}), O.some({}));
   assertEquals(t2({ a: 0, b: 1 }), O.none);
@@ -55,7 +55,7 @@ Deno.test("Record map", () => {
 });
 
 Deno.test("Record indexedTraverse", () => {
-  const t1 = R.traverse(O.MonadThrowOption);
+  const t1 = R.traverse(O.MonadOption);
   const t2 = t1((a: number, i: string) =>
     a === 0 ? O.some(i) : O.some(a.toString())
   );

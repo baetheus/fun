@@ -49,7 +49,7 @@ Deno.test("Iso asOptional", () => {
 
 Deno.test("Iso asTraversal", () => {
   const { traverse } = I.asTraversal(iso);
-  const t0 = traverse(O.MonadThrowOption);
+  const t0 = traverse(O.MonadOption);
   const t1 = t0((s) => s === "0" ? O.none : O.some(s));
 
   assertEquals(t1(0), O.none);
@@ -102,7 +102,7 @@ Deno.test("Iso composeOptional", () => {
 Deno.test("Iso composeTraversal", () => {
   const { traverse } = I.composeTraversal(I.id<number>(), I.asTraversal(iso));
 
-  const t0 = traverse(O.MonadThrowOption);
+  const t0 = traverse(O.MonadOption);
   const t1 = t0(O.some);
 
   assertEquals(t1(0), O.some(0));
@@ -133,7 +133,7 @@ Deno.test("Iso reverse", () => {
 
 Deno.test("Iso traverse", () => {
   const { traverse } = pipe(i0, I.traverse(O.TraversableOption));
-  const t0 = traverse(O.MonadThrowOption);
+  const t0 = traverse(O.MonadOption);
   const t1 = t0((n) => n === 0 ? O.none : O.some(n));
 
   assertEquals(t1(0), O.some(0));

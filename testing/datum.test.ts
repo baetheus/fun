@@ -286,7 +286,7 @@ Deno.test("Datum reduce", () => {
 });
 
 Deno.test("Datum traverse", () => {
-  const traverse = D.traverse(O.MonadThrowOption);
+  const traverse = D.traverse(O.MonadOption);
   const add = traverse(O.fromPredicate((n: number) => n > 0));
 
   assertEquals(add(D.initial), O.some(D.initial));

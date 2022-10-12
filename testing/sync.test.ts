@@ -54,7 +54,7 @@ Deno.test("Sync reduce", () => {
 
 Deno.test("Sync traverse", () => {
   const fold = O.fold(() => -1, (n: S.Sync<number>) => n());
-  const t0 = S.traverse(O.MonadThrowOption);
+  const t0 = S.traverse(O.MonadOption);
   const t1 = t0((n: number) => n === 0 ? O.none : O.some(n));
   const t2 = fold(t1(S.of(0)));
   const t3 = fold(t1(S.of(1)));

@@ -1,7 +1,7 @@
 import type { In, Kind, Out } from "./kind.ts";
 import type { Alt } from "./alt.ts";
 import type { Bifunctor } from "./bifunctor.ts";
-import type { Monad, MonadThrow } from "./monad.ts";
+import type { Monad } from "./monad.ts";
 import type { Semigroup } from "./semigroup.ts";
 import type { Contravariant } from "./contravariant.ts";
 import type { Profunctor, Strong } from "./profunctor.ts";
@@ -188,15 +188,6 @@ export function getRightMonad<B>(
 export const BifunctorFnEither: Bifunctor<URI> = { bimap, mapLeft };
 
 export const MonadFnEither: Monad<URI> = { of, ap, map, join, chain };
-
-export const MonadThrowFnEither: MonadThrow<URI> = {
-  of,
-  ap,
-  map,
-  join,
-  chain,
-  throwError,
-};
 
 export const AltFnEither: Alt<URI> = { alt, map };
 

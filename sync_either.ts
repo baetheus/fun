@@ -3,7 +3,7 @@ import type { Bifunctor } from "./bifunctor.ts";
 import type { Extend } from "./extend.ts";
 import type { Foldable } from "./foldable.ts";
 import type { Kind, Out } from "./kind.ts";
-import type { MonadThrow } from "./monad.ts";
+import type { Monad } from "./monad.ts";
 import type { Sync } from "./sync.ts";
 import type { Either } from "./either.ts";
 
@@ -123,13 +123,12 @@ export function reduce<A, O>(
 
 export const BifunctorSyncEither: Bifunctor<URI> = { bimap, mapLeft };
 
-export const MonadThrowSyncEither: MonadThrow<URI> = {
+export const MonadSyncEither: Monad<URI> = {
   of,
   ap,
   map,
   join,
   chain,
-  throwError,
 };
 
 export const AltSyncEither: Alt<URI> = { alt, map };
@@ -138,8 +137,8 @@ export const ExtendsSyncEither: Extend<URI> = { map, extend };
 
 export const FoldableSyncEither: Foldable<URI> = { reduce };
 
-export const getApplySemigroup = createApplySemigroup(MonadThrowSyncEither);
+export const getApplySemigroup = createApplySemigroup(MonadSyncEither);
 
-export const sequenceTuple = createSequenceTuple(MonadThrowSyncEither);
+export const sequenceTuple = createSequenceTuple(MonadSyncEither);
 
-export const sequenceStruct = createSequenceStruct(MonadThrowSyncEither);
+export const sequenceStruct = createSequenceStruct(MonadSyncEither);

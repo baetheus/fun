@@ -8,7 +8,7 @@
 
 import type { Alt } from "./alt.ts";
 import type { Kind, Out } from "./kind.ts";
-import type { MonadThrow } from "./monad.ts";
+import type { Monad } from "./monad.ts";
 import type { Predicate } from "./predicate.ts";
 import type { Show } from "./show.ts";
 
@@ -106,14 +106,7 @@ export function alt<A>(tb: Nilable<A>): (ta: Nilable<A>) => Nilable<A> {
   return (ta) => isNil(ta) ? tb : ta;
 }
 
-export const MonadThrowNilable: MonadThrow<URI> = {
-  of,
-  ap,
-  map,
-  join,
-  chain,
-  throwError,
-};
+export const MonadNilable: Monad<URI> = { of, ap, map, join, chain };
 
 export const AltNilable: Alt<URI> = { alt, map };
 
@@ -121,6 +114,6 @@ export const getShow = <A>({ show }: Show<A>): Show<Nilable<A>> => ({
   show: (ma) => (isNil(ma) ? "nil" : show(ma)),
 });
 
-export const sequenceStruct = createSequenceStruct(MonadThrowNilable);
+export const sequenceStruct = createSequenceStruct(MonadNilable);
 
-export const sequenceTuple = createSequenceTuple(MonadThrowNilable);
+export const sequenceTuple = createSequenceTuple(MonadNilable);

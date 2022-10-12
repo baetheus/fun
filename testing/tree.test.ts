@@ -53,7 +53,7 @@ Deno.test("Tree reduce", () => {
 });
 
 Deno.test("Tree traverse", () => {
-  const t1 = T.traverse(O.MonadThrowOption);
+  const t1 = T.traverse(O.MonadOption);
   const t2 = t1((n: number) => n === 0 ? O.none : O.some(n));
   assertEquals(t2(T.of(0)), O.none);
   assertEquals(t2(T.of(1)), O.some(T.of(1)));
