@@ -9,7 +9,7 @@ import type { Setoid } from "./setoid.ts";
 import type { Option } from "./option.ts";
 
 import { none, some } from "./option.ts";
-import { has, pipe } from "./fns.ts";
+import { pipe } from "./fn.ts";
 
 export type ReadonlyRecord<A> = Readonly<Record<string, A>>;
 
@@ -104,35 +104,35 @@ export function insertAt(key: string) {
 
 export function modify<A>(modifyFn: (a: A) => A) {
   return (key: string) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
-    has(rec, key) ? { ...rec, [key]: modifyFn(rec[key]) } : rec;
+    Object.hasOwn(rec, key) ? { ...rec, [key]: modifyFn(rec[key]) } : rec;
 }
 
 export function modifyAt(key: string) {
   return <A>(modifyFn: (a: A) => A) =>
   (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
-    has(rec, key) ? { ...rec, [key]: modifyFn(rec[key]) } : rec;
+    Object.hasOwn(rec, key) ? { ...rec, [key]: modifyFn(rec[key]) } : rec;
 }
 
 export function update<A>(value: A) {
   return (key: string) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
-    has(rec, key) ? { ...rec, [key]: value } : rec;
+    Object.hasOwn(rec, key) ? { ...rec, [key]: value } : rec;
 }
 
 export function updateAt(key: string) {
   return <A>(value: A) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
-    has(rec, key) ? { ...rec, [key]: value } : rec;
+    Object.hasOwn(rec, key) ? { ...rec, [key]: value } : rec;
 }
 
 export function lookupAt(key: string) {
   return <A>(rec: ReadonlyRecord<A>): Option<A> =>
-    has(rec, key) ? some(rec[key]) : none;
+    Object.hasOwn(rec, key) ? some(rec[key]) : none;
 }
 
 export function deleteAtWithValue(key: string) {
   return <A>(
     rec: ReadonlyRecord<A>,
   ): Option<[A, ReadonlyRecord<A>]> => {
-    if (has(rec, key)) {
+    if (Object.hasOwn(rec, key)) {
       const out = { ...rec };
       const value = rec[key];
       delete out[key];
@@ -146,7 +146,7 @@ export function deleteAt(key: string) {
   return <A>(
     rec: ReadonlyRecord<A>,
   ): ReadonlyRecord<A> => {
-    if (has(rec, key)) {
+    if (Object.hasOwn(rec, key)) {
       const out = { ...rec };
       delete out[key];
       return out;
@@ -219,7 +219,7 @@ export function omit<T, K extends keyof any>(
  * utility type.
  *
  * @example
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  * import { pick } from "./record.ts";
  *
  * pipe({ a: 1, b: 2, c: 3 }, pick(["a", "b"]))

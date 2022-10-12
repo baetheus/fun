@@ -10,7 +10,7 @@ import type { Setoid } from "./setoid.ts";
 import type { Show } from "./show.ts";
 import type { Traversable } from "./traversable.ts";
 
-import { flow, pipe } from "./fns.ts";
+import { flow, pipe } from "./fn.ts";
 import { fromEquals } from "./setoid.ts";
 
 export interface URI extends Kind {

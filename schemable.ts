@@ -6,7 +6,7 @@
 
 import type { $, Kind, TypeClass } from "./kind.ts";
 
-import { memoize } from "./fns.ts";
+import { memoize } from "./fn.ts";
 
 /**
  * These are the super-types that a Literal schema must extent.
@@ -258,7 +258,7 @@ type InferSchema<U extends Kind, A, B, C, D, E> =
  * import * as D from "./decoder.ts";
  * import * as G from "./guard.ts";
  * import * as J from "./json_schema.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const mySchema = schema(s => pipe(
  *   s.struct({

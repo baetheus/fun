@@ -2,7 +2,7 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
 import * as D from "../monad.ts";
 import * as O from "../option.ts";
-import { pipe } from "../fns.ts";
+import { pipe } from "../fn.ts";
 
 Deno.test("Monad createMonad", () => {
   const M = D.createMonad<O.URI>({ of: O.of, chain: O.chain });

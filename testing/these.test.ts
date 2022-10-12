@@ -2,7 +2,6 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
 import * as T from "../these.ts";
 import * as O from "../option.ts";
-import { _ } from "../fns.ts";
 import { SemigroupNumberSum } from "../number.ts";
 
 const add = (n: number) => n + 1;

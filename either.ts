@@ -14,8 +14,9 @@ import type { Show } from "./show.ts";
 import type { Traversable } from "./traversable.ts";
 
 import * as O from "./option.ts";
+import { isNotNil } from "./nilable.ts";
 import { fromCompare } from "./ord.ts";
-import { flow, isNotNil, pipe } from "./fns.ts";
+import { flow, pipe } from "./fn.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
 export type Left<L> = { tag: "Left"; left: L };

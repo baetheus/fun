@@ -6,7 +6,7 @@ import * as L from "../lens.ts";
 import * as P from "../prism.ts";
 import * as O from "../option.ts";
 import * as E from "../either.ts";
-import { pipe } from "../fns.ts";
+import { pipe } from "../fn.ts";
 
 type T1 = { one: number };
 

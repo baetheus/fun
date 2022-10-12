@@ -4,7 +4,7 @@ import type { Monad } from "./monad.ts";
 import type { Predicate } from "./predicate.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
-import { wait } from "./fns.ts";
+import { wait } from "./promise.ts";
 
 export interface URI extends Kind {
   readonly kind: AsyncIterable<Out<this, 0>>;

@@ -1,14 +1,14 @@
 import type { In, Kind, Out } from "./kind.ts";
 import type { Either } from "./either.ts";
 import type { DecodeError } from "./decode_error.ts";
-import type { ReaderEither } from "./reader_either.ts";
+import type { FnEither } from "./fn_either.ts";
 
 import * as DE from "./decode_error.ts";
-import * as RE from "./reader_either.ts";
+import * as RE from "./fn_either.ts";
 import * as E from "./either.ts";
 import * as A from "./array.ts";
 import * as R from "./record.ts";
-import { flow, intersect as merge, memoize, pipe } from "./fns.ts";
+import { flow, memoize, pipe } from "./fn.ts";
 
 import * as S from "./schemable.ts";
 import * as G from "./guard.ts";
@@ -45,7 +45,7 @@ const traverseArray = A.traverse(MonadDecoded);
 // Decoder
 // ---
 
-export type Decoder<D, A> = ReaderEither<D, DecodeError, A>;
+export type Decoder<D, A> = FnEither<[D], DecodeError, A>;
 
 export type From<T> = T extends Decoder<infer _, infer A> ? A : never;
 
@@ -171,7 +171,7 @@ export function intersect<B, I>(
     const _right = right(a);
 
     if (E.isRight(_left) && E.isRight(_right)) {
-      return success(merge(_left.right, _right.right));
+      return success(Object.assign({}, _left.right, _right.right));
     }
 
     if (E.isLeft(_left)) {

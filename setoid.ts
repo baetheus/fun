@@ -12,7 +12,8 @@ import type { NonEmptyArray } from "./array.ts";
 import type { ReadonlyRecord } from "./record.ts";
 import type { Literal, Schemable } from "./schemable.ts";
 
-import { isNil, memoize, tryCatch } from "./fns.ts";
+import { isNil } from "./nilable.ts";
+import { memoize, tryCatch } from "./fn.ts";
 import { isSubrecord } from "./record.ts";
 
 /**
@@ -64,7 +65,7 @@ export interface URIContravariant extends Kind {
  * @example
  * ```ts
  * import { fromEquals } from "./setoid.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const SetoidNumber = fromEquals<number>(
  *   (first, second) => first === second
@@ -390,7 +391,7 @@ export function partial<A>(
  * @example
  * ```ts
  * import { intersect, struct, partial, string } from "./setoid.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const { equals } = pipe(
  *   struct({ firstName: string }),
@@ -431,7 +432,7 @@ export function intersect<I>(
  * @example
  * ```ts
  * import { union, number, string } from "./setoid.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const { equals } = pipe(number, union(string));
  *
@@ -466,7 +467,7 @@ export function union<I>(
  * @example
  * ```ts
  * import { lazy, intersect, struct, partial, string, Setoid } from "./setoid.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * type Person = { name: string, child?: Person };
  *
@@ -499,7 +500,7 @@ export function lazy<A>(_: string, f: () => Setoid<A>): Setoid<A> {
  * @example
  * ```ts
  * import { struct, io, number } from "./setoid.ts";
- * import { constant } from "./fns.ts";
+ * import { constant } from "./fn.ts";
  *
  * const { equals } = struct({ asNumber: io(number) });
  *
@@ -559,7 +560,7 @@ export function method<M extends string, A>(
  * @example
  * ```ts
  * import { contramap, number } from "./setoid.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const dateToNumber = (d: Date): number => d.valueOf();
  * const date = pipe(number, contramap(dateToNumber));
@@ -580,7 +581,7 @@ export function method<M extends string, A>(
  * @example
  * ```ts
  * import { contramap, string } from "./setoid.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const lowercase = (s: string) => s.toLowerCase();
  * const insensitive = pipe(

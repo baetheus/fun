@@ -10,7 +10,8 @@ import type { Show } from "./show.ts";
 import type { Traversable } from "./traversable.ts";
 
 import { fromCompare } from "./ord.ts";
-import { apply, flow, identity, isNotNil, pipe } from "./fns.ts";
+import { isNotNil } from "./nilable.ts";
+import { apply, flow, identity, pipe } from "./fn.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
 /**

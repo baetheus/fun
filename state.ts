@@ -2,7 +2,7 @@ import type { InOut, Kind, Out } from "./kind.ts";
 import type { Monad } from "./monad.ts";
 
 import { traverse } from "./array.ts";
-import { flow, identity, pipe } from "./fns.ts";
+import { flow, identity, pipe } from "./fn.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
 export type State<E, A> = (e: E) => [A, E];

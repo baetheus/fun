@@ -10,7 +10,7 @@ import type { In, Kind } from "./kind.ts";
 import type { Setoid } from "./setoid.ts";
 
 import { and } from "./predicate.ts";
-import { flow, pipe } from "./fns.ts";
+import { flow, pipe } from "./fn.ts";
 
 /**
  * The ordering type is the expected output of any
@@ -116,7 +116,7 @@ export function sign(n: number): Ordering {
  * @example
  * ```ts
  * import { fromCompare, sign } from "./ord.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const date = fromCompare<Date>(
  *   (fst, snd) => sign(fst.valueOf() - snd.valueOf())
@@ -155,7 +155,7 @@ export function fromCompare<A>(compare: Compare<A>): Ord<A> {
  * @example
  * ```ts
  * import { trivial } from "./ord.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const date = trivial<Date>();
  * const now = new Date();
@@ -179,7 +179,7 @@ export function trivial<A>(): Ord<A> {
  * ```ts
  * import { reverse } from "./ord.ts";
  * import { OrdNumber } from "./number.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const rev = reverse(OrdNumber);
  *
@@ -203,7 +203,7 @@ export function reverse<A>(ord: Ord<A>): Ord<A> {
  * import { tuple } from "./ord.ts"
  * import { OrdNumber } from "./number.ts";
  * import { OrdString } from "./string.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const tup = tuple(OrdNumber, OrdString);
  *
@@ -236,7 +236,7 @@ export function tuple<T extends ReadonlyArray<unknown>>(
  * import { struct } from "./ord.ts"
  * import { OrdNumber } from "./number.ts";
  * import { OrdString } from "./string.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const ord = struct({ num: OrdNumber, str: OrdString });
  *
@@ -277,7 +277,7 @@ export function struct<A>(
  * ```ts
  * import { contramap } from "./ord.ts";
  * import { OrdNumber } from "./number.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const date = pipe(
  *   OrdNumber,

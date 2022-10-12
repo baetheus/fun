@@ -5,7 +5,7 @@ import {
 
 import * as P from "../pair.ts";
 import { MonoidNumberSum, ShowNumber } from "../number.ts";
-import { pipe } from "../fns.ts";
+import { pipe } from "../fn.ts";
 
 Deno.test("Pair pair", () => {
   assertEquals(P.pair(1, 2), [1, 2]);

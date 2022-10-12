@@ -6,7 +6,7 @@ import {
 import * as O from "../ord.ts";
 import * as N from "../number.ts";
 import * as S from "../string.ts";
-import { pipe } from "../fns.ts";
+import { pipe } from "../fn.ts";
 
 Deno.test("Ord sign", () => {
   assertEquals(O.sign(Number.NEGATIVE_INFINITY), -1);

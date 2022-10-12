@@ -3,7 +3,7 @@ import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 import * as D from "../datum.ts";
 import * as O from "../option.ts";
 import * as N from "../number.ts";
-import { pipe } from "../fns.ts";
+import { pipe } from "../fn.ts";
 
 Deno.test("Datum initial", () => {
   assertEquals(D.initial, { tag: "Initial" });

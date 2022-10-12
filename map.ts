@@ -11,7 +11,7 @@ import type { Show } from "./show.ts";
 import * as O from "./option.ts";
 import * as A from "./array.ts";
 import { fromEquals } from "./setoid.ts";
-import { flow, pipe } from "./fns.ts";
+import { flow, pipe } from "./fn.ts";
 
 export interface URI extends Kind {
   readonly kind: ReadonlyMap<Out<this, 1>, Out<this, 0>>;

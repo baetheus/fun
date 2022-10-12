@@ -9,7 +9,7 @@ import * as O from "../option.ts";
 import * as E from "../either.ts";
 import * as A from "../array.ts";
 import { MonoidNumberSum } from "../number.ts";
-import { pipe } from "../fns.ts";
+import { pipe } from "../fn.ts";
 
 const iso = I.iso((n: number) => n.toString(), (s: string) => parseFloat(s));
 

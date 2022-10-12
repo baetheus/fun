@@ -2,7 +2,7 @@ import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
 import * as T from "../tree.ts";
 import * as O from "../option.ts";
-import { _, pipe } from "../fns.ts";
+import { pipe } from "../fn.ts";
 
 const add = (n: number) => n + 1;
 

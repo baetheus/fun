@@ -16,7 +16,7 @@ import type { Show } from "./show.ts";
 import type { Traversable } from "./traversable.ts";
 
 import { createMonad } from "./monad.ts";
-import { pipe } from "./fns.ts";
+import { pipe } from "./fn.ts";
 
 /**
  * Pair represents a pair of values. This is
@@ -88,7 +88,7 @@ export function dual<A>(a: A): Pair<A, A> {
  * @example
  * ```ts
  * import * as P from "./pair.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const shouldBe1 = pipe(
  *   P.pair(1, 2),
@@ -108,7 +108,7 @@ export function first<A, B>([first]: Pair<A, B>): A {
  * @example
  * ```ts
  * import * as P from "./pair.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const shouldBe2 = pipe(
  *   P.pair(1, 2),
@@ -129,7 +129,7 @@ export function second<A, B>([_, second]: Pair<A, B>): B {
  * @example
  * ```ts
  * import * as P from "./pair.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const result = pipe(
  *   37,
@@ -151,7 +151,7 @@ export function fromFirst<A>(first: A): <B>(second: B) => Pair<A, B> {
  * @example
  * ```ts
  * import * as P from "./pair.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const result = pipe(
  *   37,
@@ -172,7 +172,7 @@ export function fromSecond<B>(second: B): <A>(first: A) => Pair<A, B> {
  * @example
  * ```ts
  * import * as P from "./pair.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const shouldBe2 = pipe(
  *   P.pair(1, 2),
@@ -194,7 +194,7 @@ export function swap<A, B>([first, second]: Pair<A, B>): Pair<B, A> {
  * @example
  * ```ts
  * import * as P from "./pair.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const result = pipe(
  *   P.pair(1, 2),
@@ -217,7 +217,7 @@ export function map<A, I>(
  * @example
  * ```ts
  * import * as P from "./pair.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const result = pipe(
  *   P.pair(1, 2),
@@ -240,7 +240,7 @@ export function mapLeft<B, J>(
  * @example
  * ```ts
  * import * as P from "./pair.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const result = pipe(
  *   P.pair(1, 2),
@@ -283,7 +283,7 @@ export function extract<A, B>([first]: Pair<A, B>): A {
  * @example
  * ```ts
  * import { extend, pair } from "./pair.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const result = pipe(
  *   pair("Brandon", 37),
@@ -306,7 +306,7 @@ export function extend<A, B, I>(
  * @example
  * ```ts
  * import { pair, reduce } from "./pair.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const result = pipe(
  *   pair(10, 20),
@@ -330,7 +330,7 @@ export function reduce<A, B, O>(
  * ```ts
  * import { traverse, pair } from "./pair.ts";
  * import { some, ApplicativeOption, fromPredicate } from "./option.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const traverseOption = traverse(ApplicativeOption);
  * const startsWithB = fromPredicate(
@@ -372,7 +372,7 @@ export function traverse<V extends Kind>(A: Applicative<V>) {
  * import { compose } from "./functor.ts"
  * import { FunctorOption, Option, some } from "./option.ts";
  * import { FunctorPair, Pair, pair } from "./pair.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * export interface URI extends Kind {
  *   readonly kind: Option<Pair<Out<this, 0>, Out<this, 1>>>;
@@ -452,7 +452,7 @@ export interface RightPairURI<B> extends Kind {
  * ```ts
  * import { MonoidNumberSum } from "./number.ts";
  * import { getRightMonad, pair } from "./pair.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const Monad = getRightMonad(MonoidNumberSum);
  *

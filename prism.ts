@@ -12,7 +12,7 @@ import * as O from "./option.ts";
 import * as E from "./either.ts";
 import { toTraversal } from "./traversable.ts";
 import { optional } from "./optional.ts";
-import { apply, constant, flow, identity, pipe } from "./fns.ts";
+import { apply, flow, identity, of as constant, pipe } from "./fn.ts";
 
 import {
   atRecord,

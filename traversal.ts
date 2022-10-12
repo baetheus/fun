@@ -18,7 +18,7 @@ import * as O from "./option.ts";
 import * as E from "./either.ts";
 import * as C from "./const.ts";
 import * as A from "./array.ts";
-import { flow, identity, pipe } from "./fns.ts";
+import { flow, identity, pipe } from "./fn.ts";
 
 import { toTraversal } from "./traversable.ts";
 import { asTraversal as isoAsTraversal, iso } from "./iso.ts";

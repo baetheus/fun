@@ -3,7 +3,7 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 import * as I from "../iso.ts";
 import * as O from "../option.ts";
 import * as E from "../either.ts";
-import { pipe } from "../fns.ts";
+import { pipe } from "../fn.ts";
 
 const iso = I.iso(
   (n: number) => n.toString(),

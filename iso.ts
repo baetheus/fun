@@ -17,7 +17,7 @@ import { optional } from "./optional.ts";
 
 import * as O from "./option.ts";
 import * as E from "./either.ts";
-import { constant, flow, identity } from "./fns.ts";
+import { flow, identity, of as constant } from "./fn.ts";
 
 export type Iso<S, A> = {
   readonly tag: "Iso";

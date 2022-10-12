@@ -20,7 +20,7 @@ import * as O from "./option.ts";
 import * as E from "./either.ts";
 import * as R from "./record.ts";
 import * as M from "./map.ts";
-import { constant, flow, identity, pipe } from "./fns.ts";
+import { flow, identity, of as constant, pipe } from "./fn.ts";
 
 import { indexArray, indexRecord } from "./optional.ts";
 

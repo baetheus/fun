@@ -8,7 +8,7 @@ import * as A from "../array.ts";
 import * as O from "../option.ts";
 import * as N from "../number.ts";
 import { SetoidBoolean } from "../boolean.ts";
-import { pipe } from "../fns.ts";
+import { pipe } from "../fn.ts";
 
 Deno.test("Array empty", () => assertEquals(A.empty(), []));
 

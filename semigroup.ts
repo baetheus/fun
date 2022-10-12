@@ -9,7 +9,7 @@
 
 import type { Ord } from "./ord.ts";
 
-import { pipe } from "./fns.ts";
+import { pipe } from "./fn.ts";
 
 /**
  * A Semigroup<T> is an algebra with a notion of concatenation. This
@@ -46,7 +46,7 @@ export interface Semigroup<D> {
  * @example
  * ```ts
  * import { first } from "./semigroup.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * type Person = { name: string, age: number };
  *
@@ -78,7 +78,7 @@ export function first<A = never>(): Semigroup<A> {
  * @example
  * ```ts
  * import { last } from "./semigroup.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * type Person = { name: string, age: number };
  *
@@ -110,7 +110,7 @@ export function last<A = never>(): Semigroup<A> {
  * @example
  * ```ts
  * import * as SG from "./semigroup.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * type Person = { name: string, age: number };
  *
@@ -142,7 +142,7 @@ export function dual<A>(S: Semigroup<A>): Semigroup<A> {
  * @example
  * ```ts
  * import * as SG from "./semigroup.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * type Person = { name: string, age: number };
  *
@@ -188,7 +188,7 @@ export function tuple<T extends ReadonlyArray<Semigroup<any>>>(
  * import type { Semigroup } from "./semigroup.ts";
  * import * as SG from "./semigroup.ts";
  * import * as N from "./number.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * type Person = { name: string, age: number };
  * const person = (name: string, age: number): Person => ({ name, age });
@@ -238,7 +238,7 @@ export function struct<O extends Readonly<Record<string, unknown>>>(
  * ```ts
  * import * as SG from "./semigroup.ts";
  * import * as N from "./number.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const { concat } = SG.max(N.OrdNumber);
  *
@@ -267,7 +267,7 @@ export function max<A>(O: Ord<A>): Semigroup<A> {
  * ```ts
  * import * as SG from "./semigroup.ts";
  * import * as N from "./number.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const { concat } = SG.min(N.OrdNumber);
  *
@@ -297,7 +297,7 @@ export function min<A>(O: Ord<A>): Semigroup<A> {
  * ```ts
  * import * as SG from "./semigroup.ts";
  * import * as S from "./string.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const { concat: toList } = pipe(
  *   S.SemigroupString,
@@ -327,7 +327,7 @@ export function intercalcate<A>(middle: A) {
  * @example
  * ```ts
  * import * as SG from "./semigroup.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const { concat } = SG.constant("cake");
  *
@@ -355,7 +355,7 @@ export function constant<A>(a: A): Semigroup<A> {
  * ```ts
  * import * as SG from "./semigroup.ts";
  * import * as N from "./number.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const sumAll = SG.concatAll(N.SemigroupNumberSum);
  *

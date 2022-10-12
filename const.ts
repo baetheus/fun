@@ -10,7 +10,7 @@ import type { Semigroup } from "./semigroup.ts";
 import type { Setoid } from "./setoid.ts";
 import type { Show } from "./show.ts";
 
-import { identity } from "./fns.ts";
+import { identity } from "./fn.ts";
 
 export type Const<E, _ = never> = E;
 

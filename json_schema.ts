@@ -16,7 +16,7 @@ import type { State } from "./state.ts";
 import { MonadState } from "./state.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 import { createSequence } from "./array.ts";
-import { pipe } from "./fns.ts";
+import { pipe } from "./fn.ts";
 
 // --
 // JSON Schema Types
@@ -223,7 +223,7 @@ export const chain = MonadJsonBuilder.chain;
  * @example
  * ```ts
  * import * as J from "./json_schema.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const schema = J.print(J.unknown()); // schema === {}
  * ```
@@ -240,7 +240,7 @@ export function unknown(): JsonBuilder<unknown> {
  * @example
  * ```ts
  * import * as J from "./json_schema.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * // schema === { type: "string" }
  * const schema = J.print(J.string());
@@ -258,7 +258,7 @@ export function string(): JsonBuilder<string> {
  * @example
  * ```ts
  * import * as J from "./json_schema.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * // schema === { type: "number" }
  * const schema = J.print(J.number());
@@ -276,7 +276,7 @@ export function number(): JsonBuilder<number> {
  * @example
  * ```ts
  * import * as J from "./json_schema.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * // schema === { type: "boolean" }
  * const schema = J.print(J.boolean());
@@ -294,7 +294,7 @@ export function boolean(): JsonBuilder<boolean> {
  * @example
  * ```ts
  * import * as J from "./json_schema.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * // schema === { type: "string", format: "date" }
  * const schema = J.print(J.date());
@@ -312,7 +312,7 @@ export function date(): JsonBuilder<Date> {
  * @example
  * ```ts
  * import * as J from "./json_schema.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * // schema === { enum: [1, 2, "hello"] }
  * const schema = J.print(J.literal(1, 2, "hello"));
@@ -337,7 +337,7 @@ export function literal<A extends [S.Literal, ...S.Literal[]]>(
  * @example
  * ```ts
  * import * as J from "./json_schema.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * // schema === { anyOf: [ { enum: [ 1 ] }, { type: "null" } ] }
  * const schema = J.print(J.nullable(J.literal(1)));
@@ -359,7 +359,7 @@ export function nullable<A>(or: JsonBuilder<A>): JsonBuilder<A | null> {
  * @example
  * ```ts
  * import * as J from "./json_schema.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * // schema === { anyOf: [ { enum: [ 1 ] }, {} ] }
  * const schema = J.print(J.undefinable(J.literal(1)));
@@ -381,7 +381,7 @@ export function undefinable<A>(or: JsonBuilder<A>): JsonBuilder<A | undefined> {
  * @example
  * ```ts
  * import * as J from "./json_schema.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * // schema === { type: "object", properties: {}, additionalProperties: { type: "number" } }
  * const schema = J.print(J.record(J.number()));
@@ -409,7 +409,7 @@ export function record<A>(
  * @example
  * ```ts
  * import * as J from "./json_schema.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * // schema === { type: "array", items: { type: "number" } }
  * const schema = J.print(J.array(J.number()));
@@ -428,7 +428,7 @@ export function array<A>(item: JsonBuilder<A>): JsonBuilder<ReadonlyArray<A>> {
  * @example
  * ```ts
  * import * as J from "./json_schema.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * // schema === { type: "array", items: [
  * //   { type: "number" },
@@ -456,7 +456,7 @@ export function tuple<A extends any[]>(
  * @example
  * ```ts
  * import * as J from "./json_schema.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * // {
  * //   type: "object",
@@ -492,7 +492,7 @@ export function struct<A>(
  * @example
  * ```ts
  * import * as J from "./json_schema.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * // {
  * //   type: "object",
@@ -522,7 +522,7 @@ export function partial<A>(
  * @example
  * ```ts
  * import * as J from "./json_schema.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * // {
  * //   "allOf": [
@@ -573,7 +573,7 @@ export function intersect<I>(
  * @example
  * ```ts
  * import * as J from "./json_schema.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * // {
  * //   "anyOf": [
@@ -627,7 +627,7 @@ export function union<I>(
  * @example
  * ```ts
  * import * as J from "./json_schema.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * // {
  * //   "$ref": "#/definitions/Person",

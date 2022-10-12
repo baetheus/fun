@@ -1,6 +1,6 @@
 import type { $, Kind, TypeClass } from "./kind.ts";
 
-import { pipe } from "./fns.ts";
+import { pipe } from "./fn.ts";
 
 /**
  * Functor

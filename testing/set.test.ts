@@ -3,7 +3,7 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 import * as S from "../set.ts";
 import * as O from "../option.ts";
 import { SetoidNumber } from "../number.ts";
-import { pipe } from "../fns.ts";
+import { pipe } from "../fn.ts";
 
 const add = (n: number) => n + 1;
 

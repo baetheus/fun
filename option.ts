@@ -16,9 +16,10 @@ import type { Setoid } from "./setoid.ts";
 import type { Show } from "./show.ts";
 import type { Traversable } from "./traversable.ts";
 
+import { isNotNil } from "./nilable.ts";
 import { fromCompare } from "./ord.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
-import { flow, identity, isNotNil, pipe } from "./fns.ts";
+import { flow, identity, pipe } from "./fn.ts";
 
 /**
  * The None type represents the non-existence of a value.

@@ -19,7 +19,7 @@ import * as E from "./either.ts";
 import * as A from "./array.ts";
 import * as R from "./record.ts";
 import * as M from "./map.ts";
-import { apply, constant, flow, identity, pipe } from "./fns.ts";
+import { apply, flow, identity, of as constant, pipe } from "./fn.ts";
 
 import {
   atRecord,

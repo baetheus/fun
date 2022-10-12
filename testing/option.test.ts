@@ -2,7 +2,7 @@ import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
 import * as O from "../option.ts";
 import * as N from "../number.ts";
-import { _, pipe } from "../fns.ts";
+import { pipe, todo } from "../fn.ts";
 
 const add = (n: number) => n + 1;
 
@@ -31,7 +31,7 @@ Deno.test("Option fromPredicate", () => {
 });
 
 Deno.test("Option tryCatch", () => {
-  assertEquals(O.tryCatch(_), O.none);
+  assertEquals(O.tryCatch(todo), O.none);
   assertEquals(O.tryCatch(() => 1), O.some(1));
 });
 

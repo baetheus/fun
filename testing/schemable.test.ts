@@ -5,7 +5,7 @@ import * as D from "../decoder.ts";
 import * as G from "../guard.ts";
 import * as J from "../json_schema.ts";
 import * as E from "../either.ts";
-import { pipe } from "../fns.ts";
+import { pipe } from "../fn.ts";
 
 type Lazy = {
   foo: string;

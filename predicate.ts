@@ -3,7 +3,7 @@ import type { Contravariant } from "./contravariant.ts";
 import type { Monoid } from "./monoid.ts";
 import type { Semigroup } from "./semigroup.ts";
 
-import { flow } from "./fns.ts";
+import { flow } from "./fn.ts";
 
 // ---
 // Types

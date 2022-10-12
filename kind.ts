@@ -4,11 +4,11 @@
  */
 export type Substitutions = {
   // Covariant Substitutions
-  readonly ["covariant"]: ReadonlyArray<unknown>;
+  readonly ["covariant"]: unknown[];
   // Contravariant Substitutions
-  readonly ["contravariant"]: ReadonlyArray<unknown>;
+  readonly ["contravariant"]: unknown[];
   // Invariant Substitutions
-  readonly ["invariant"]: ReadonlyArray<unknown>;
+  readonly ["invariant"]: unknown[];
 };
 
 /**
@@ -38,9 +38,9 @@ export type Substitute<T extends Kind, S extends Substitutions> = T extends
  */
 export type $<
   T extends Kind,
-  Out extends ReadonlyArray<unknown>,
-  In extends ReadonlyArray<unknown>,
-  InOut extends ReadonlyArray<unknown>,
+  Out extends unknown[],
+  In extends unknown[],
+  InOut extends unknown[],
 > = Substitute<T, {
   ["covariant"]: Out;
   ["contravariant"]: In;

@@ -1,7 +1,7 @@
 import type { In, Kind, Out } from "./kind.ts";
 
 import * as S from "./schemable.ts";
-import { isNil } from "./fns.ts";
+import { isNil } from "./nilable.ts";
 
 export type Guard<A, B extends A> = (a: A) => a is B;
 

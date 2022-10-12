@@ -5,7 +5,7 @@ import type { Semigroup } from "./semigroup.ts";
 import type { NonEmptyRecord } from "./record.ts";
 import type { NonEmptyArray } from "./array.ts";
 
-import { pipe } from "./fns.ts";
+import { pipe } from "./fn.ts";
 
 /**
  * Apply

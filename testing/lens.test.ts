@@ -7,7 +7,7 @@ import * as O from "../option.ts";
 import * as E from "../either.ts";
 import * as A from "../array.ts";
 import * as T from "../traversal.ts";
-import { pipe } from "../fns.ts";
+import { pipe } from "../fn.ts";
 
 type Test = {
   one: number;

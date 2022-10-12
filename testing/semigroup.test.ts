@@ -4,7 +4,7 @@ import * as SG from "../semigroup.ts";
 import * as S from "../string.ts";
 import * as N from "../number.ts";
 import * as B from "../boolean.ts";
-import { pipe } from "../fns.ts";
+import { pipe } from "../fn.ts";
 
 // const toArray: (a: SG.Free<number>) => number[] = SG.Free.concatAll(
 //   (value: number) => [value],

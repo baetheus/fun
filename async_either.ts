@@ -3,27 +3,28 @@ import type { Alt } from "./alt.ts";
 import type { Bifunctor } from "./bifunctor.ts";
 import type { Either } from "./either.ts";
 import type { MonadThrow } from "./monad.ts";
-import type { Task } from "./task.ts";
+import type { Async } from "./async.ts";
 
 import * as E from "./either.ts";
-import * as T from "./task.ts";
+import * as T from "./async.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
-import { handleThrow, identity, pipe, resolve } from "./fns.ts";
+import { handleThrow, identity, pipe } from "./fn.ts";
+import { resolve } from "./promise.ts";
 
 /**
- * The TaskEither type can best be thought of as an asynchronous function that
+ * The AsyncEither type can best be thought of as an asynchronous function that
  * returns an `Either`. ie. `async () => Promise<Either<B, A>>`. This
  * forms the basis of most Promise based asynchronous communication in
  * TypeScript.
  */
-export type TaskEither<L, R> = Task<Either<L, R>>;
+export type AsyncEither<L, R> = Async<Either<L, R>>;
 
 export interface URI extends Kind {
-  readonly kind: TaskEither<Out<this, 1>, Out<this, 0>>;
+  readonly kind: AsyncEither<Out<this, 1>, Out<this, 0>>;
 }
 
 /**
- * Constructs a TaskEither from a value and wraps it in an inner *Left*.
+ * Constructs a AsyncEither from a value and wraps it in an inner *Left*.
  * Traditionally signaling a failure
  *
  * ```ts
@@ -37,12 +38,12 @@ export interface URI extends Kind {
  * assertEquals(result, E.left(1));
  * ```
  */
-export function left<A = never, B = never>(left: B): TaskEither<B, A> {
+export function left<A = never, B = never>(left: B): AsyncEither<B, A> {
   return T.of(E.left(left));
 }
 
 /**
- * Constructs a TaskEither from a value and wraps it in an inner *Right*.
+ * Constructs a AsyncEither from a value and wraps it in an inner *Right*.
  * Traditionally signaling a successful computation
  *
  * ```ts
@@ -56,12 +57,12 @@ export function left<A = never, B = never>(left: B): TaskEither<B, A> {
  * assertEquals(result, E.right(1));
  * ```
  */
-export function right<A = never, B = never>(right: A): TaskEither<B, A> {
+export function right<A = never, B = never>(right: A): AsyncEither<B, A> {
   return T.of(E.right(right));
 }
 
 /**
- * Wraps a Task of A in a try-catch block which upon failure returns B instead.
+ * Wraps a Async of A in a try-catch block which upon failure returns B instead.
  * Upon success returns a *Right<A>* and *Left<B>* for a failure.
  *
  * ```ts
@@ -84,7 +85,7 @@ export function right<A = never, B = never>(right: A): TaskEither<B, A> {
 export function tryCatch<AS extends unknown[], A, B>(
   fasr: (...as: AS) => A | PromiseLike<A>,
   onThrow: (e: unknown, as: AS) => B,
-): (...as: AS) => TaskEither<B, A> {
+): (...as: AS) => AsyncEither<B, A> {
   return (...as) => {
     const _onThrow = (e: unknown) => E.left(onThrow(e, as));
     return handleThrow(
@@ -96,59 +97,59 @@ export function tryCatch<AS extends unknown[], A, B>(
 }
 
 /**
- * Lift an always succeeding async computation (Task) into a TaskEither
+ * Lift an always succeeding async computation (Async) into a AsyncEither
  */
-export function fromTask<A, B = never>(ta: Task<A>): TaskEither<B, A> {
+export function fromAsync<A, B = never>(ta: Async<A>): AsyncEither<B, A> {
   return () => ta().then(E.right);
 }
 
 /**
- * Lifts an Either<B,A> into a TaskEither<B,A>
+ * Lifts an Either<B,A> into a AsyncEither<B,A>
  */
-export function fromEither<A, B>(ta: Either<B, A>): TaskEither<B, A> {
+export function fromEither<A, B>(ta: Either<B, A>): AsyncEither<B, A> {
   return () => resolve(ta);
 }
 
 /**
- * Pointed constructor of(A) => TaskEither<B,A>
+ * Pointed constructor of(A) => AsyncEither<B,A>
  */
-export function of<A, B = never>(a: A): TaskEither<B, A> {
+export function of<A, B = never>(a: A): AsyncEither<B, A> {
   return right(a);
 }
 
 /**
- * Pointed constructor throwError(B) => TaskEither<B, never>
+ * Pointed constructor throwError(B) => AsyncEither<B, never>
  */
-export function throwError<A = never, B = never>(b: B): TaskEither<B, A> {
+export function throwError<A = never, B = never>(b: B): AsyncEither<B, A> {
   return left(b);
 }
 
 /**
  * A dual map function that maps over both *Left* and *Right* side of
- * a TaskEither.
+ * a AsyncEither.
  */
 export function bimap<A, B, I, J>(
   fbj: (b: B) => J,
   fai: (a: A) => I,
-): (ta: TaskEither<B, A>) => TaskEither<J, I> {
+): (ta: AsyncEither<B, A>) => AsyncEither<J, I> {
   return (ta) => pipe(ta, T.map(E.bimap(fbj, fai)));
 }
 
 /**
- * Map a function over the *Right* side of a TaskEither
+ * Map a function over the *Right* side of a AsyncEither
  */
 export function map<A, I>(
   fai: (a: A) => I,
-): <B>(ta: TaskEither<B, A>) => TaskEither<B, I> {
+): <B>(ta: AsyncEither<B, A>) => AsyncEither<B, I> {
   return (ta) => pipe(ta, T.map(E.map(fai)));
 }
 
 /**
- * Map a function over the *Left* side of a TaskEither
+ * Map a function over the *Left* side of a AsyncEither
  */
 export function mapLeft<B, J>(
   fbj: (b: B) => J,
-): <A>(ta: TaskEither<B, A>) => TaskEither<J, A> {
+): <A>(ta: AsyncEither<B, A>) => AsyncEither<J, A> {
   return (ta) => pipe(ta, T.map(E.mapLeft(fbj)));
 }
 
@@ -156,8 +157,8 @@ export function mapLeft<B, J>(
  * Apply an argument to a function under the *Right* side.
  */
 export function apParallel<A, I, B>(
-  tfai: TaskEither<B, (a: A) => I>,
-): (ta: TaskEither<B, A>) => TaskEither<B, I> {
+  tfai: AsyncEither<B, (a: A) => I>,
+): (ta: AsyncEither<B, A>) => AsyncEither<B, I> {
   return pipe(tfai, T.map(E.ap), T.apParallel);
 }
 
@@ -165,19 +166,19 @@ export function apParallel<A, I, B>(
  * Sequentially apply arguments
  */
 export function apSequential<A, I, B>(
-  tfai: TaskEither<B, (a: A) => I>,
-): (ta: TaskEither<B, A>) => TaskEither<B, I> {
+  tfai: AsyncEither<B, (a: A) => I>,
+): (ta: AsyncEither<B, A>) => AsyncEither<B, I> {
   return pipe(tfai, T.map(E.ap), T.apSequential);
 }
 
 /**
- * Chain TaskEither based computations together in a pipeline
+ * Chain AsyncEither based computations together in a pipeline
  *
  * ```ts
  * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
  * import * as TE from "./task_either.ts";
  * import * as E from "./either.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const ta = pipe(
  *   TE.of(1),
@@ -189,8 +190,8 @@ export function apSequential<A, I, B>(
  * ```
  */
 export function chain<A, I, J>(
-  fati: (a: A) => TaskEither<J, I>,
-): <B>(ta: TaskEither<B, A>) => TaskEither<B | J, I> {
+  fati: (a: A) => AsyncEither<J, I>,
+): <B>(ta: AsyncEither<B, A>) => AsyncEither<B | J, I> {
   return (ta) => async () => {
     const ea = await ta();
     return E.isLeft(ea) ? ea : fati(ea.right)();
@@ -198,8 +199,8 @@ export function chain<A, I, J>(
 }
 
 export function chainFirst<A, I, J>(
-  fati: (a: A) => TaskEither<J, I>,
-): <B>(ta: TaskEither<B, A>) => TaskEither<B | J, A> {
+  fati: (a: A) => AsyncEither<J, I>,
+): <B>(ta: AsyncEither<B, A>) => AsyncEither<B | J, A> {
   return (ta) => async () => {
     const ea = await ta();
     if (E.isLeft(ea)) {
@@ -212,14 +213,14 @@ export function chainFirst<A, I, J>(
 }
 
 /**
- * Chain TaskEither based failures, *Left* sides, useful for recovering
+ * Chain AsyncEither based failures, *Left* sides, useful for recovering
  * from error conditions.
  *
  * ```ts
  * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
  * import * as TE from "./task_either.ts";
  * import * as E from "./either.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const ta = pipe(
  *   TE.throwError(1),
@@ -231,8 +232,8 @@ export function chainFirst<A, I, J>(
  * ```
  */
 export function chainLeft<B, J, I>(
-  fbtj: (b: B) => TaskEither<J, I>,
-): <A>(ta: TaskEither<B, A>) => TaskEither<J, A | I> {
+  fbtj: (b: B) => AsyncEither<J, I>,
+): <A>(ta: AsyncEither<B, A>) => AsyncEither<J, A | I> {
   return (ta) => async () => {
     const ea = await ta();
     return E.isLeft(ea) ? fbtj(ea.left)() : ea;
@@ -240,13 +241,13 @@ export function chainLeft<B, J, I>(
 }
 
 /**
- * Flatten a TaskEither wrapped in a TaskEither
+ * Flatten a AsyncEither wrapped in a AsyncEither
  *
  * ```ts
  * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
  * import * as TE from "./task_either.ts";
  * import * as E from "./either.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const ta = pipe(
  *   TE.of(1),
@@ -259,8 +260,8 @@ export function chainLeft<B, J, I>(
  * ```
  */
 export function join<A, B>(
-  tta: TaskEither<B, TaskEither<B, A>>,
-): TaskEither<B, A> {
+  tta: AsyncEither<B, AsyncEither<B, A>>,
+): AsyncEither<B, A> {
   return pipe(tta, chain(identity));
 }
 
@@ -272,7 +273,7 @@ export function join<A, B>(
  * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
  * import * as TE from "./task_either.ts";
  * import * as E from "./either.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const ta = pipe(
  *   TE.throwError(1),
@@ -283,8 +284,8 @@ export function join<A, B>(
  * ```
  */
 export function alt<I, J>(
-  ti: TaskEither<J, I>,
-): <A, B>(ta: TaskEither<B, A>) => TaskEither<B | J, A | I> {
+  ti: AsyncEither<J, I>,
+): <A, B>(ta: AsyncEither<B, A>) => AsyncEither<B | J, A | I> {
   return (ta) => async () => {
     const ea = await ta();
     return E.isLeft(ea) ? ti() : ea;
@@ -292,14 +293,14 @@ export function alt<I, J>(
 }
 
 /**
- * Fold away the inner Either from the `TaskEither` leaving us with the
- * result of our computation in the form of a `Task`
+ * Fold away the inner Either from the `AsyncEither` leaving us with the
+ * result of our computation in the form of a `Async`
  *
  * ```ts
  * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
  * import * as TE from "./task_either.ts";
  * import * as T from "./task.ts";
- * import { flow, identity } from "./fns.ts";
+ * import { flow, identity } from "./fn.ts";
  *
  * const hello = flow(
  *   TE.fold(() => "World", identity),
@@ -313,18 +314,18 @@ export function alt<I, J>(
 export function fold<L, R, B>(
   onLeft: (left: L) => B,
   onRight: (right: R) => B,
-): (ta: TaskEither<L, R>) => Task<B> {
+): (ta: AsyncEither<L, R>) => Async<B> {
   return (ta) => () => ta().then(E.fold<L, R, B>(onLeft, onRight));
 }
 
 // This leaks async ops so we cut it for now.
 //export const timeout = <E, A>(ms: number, onTimeout: () => E) =>
-//  (ta: TaskEither<E, A>): TaskEither<E, A> =>
+//  (ta: AsyncEither<E, A>): AsyncEither<E, A> =>
 //    () => Promise.race([ta(), wait(ms).then(flow(onTimeout, E.left))]);
 
-export const BifunctorTaskEither: Bifunctor<URI> = { bimap, mapLeft };
+export const BifunctorAsyncEither: Bifunctor<URI> = { bimap, mapLeft };
 
-export const MonadThrowTaskEitherParallel: MonadThrow<URI> = {
+export const MonadThrowAsyncEitherParallel: MonadThrow<URI> = {
   of,
   ap: apParallel,
   map,
@@ -333,9 +334,9 @@ export const MonadThrowTaskEitherParallel: MonadThrow<URI> = {
   throwError,
 };
 
-export const AltTaskEither: Alt<URI> = { alt, map };
+export const AltAsyncEither: Alt<URI> = { alt, map };
 
-export const MonadThrowTaskEitherSequential: MonadThrow<URI> = {
+export const MonadThrowAsyncEitherSequential: MonadThrow<URI> = {
   of,
   ap: apSequential,
   map,
@@ -345,17 +346,17 @@ export const MonadThrowTaskEitherSequential: MonadThrow<URI> = {
 };
 
 export const sequenceTupleParallel = createSequenceTuple(
-  MonadThrowTaskEitherParallel,
+  MonadThrowAsyncEitherParallel,
 );
 
 export const sequenceStructParallel = createSequenceStruct(
-  MonadThrowTaskEitherParallel,
+  MonadThrowAsyncEitherParallel,
 );
 
 export const sequenceTupleSequential = createSequenceTuple(
-  MonadThrowTaskEitherSequential,
+  MonadThrowAsyncEitherSequential,
 );
 
 export const sequenceStructSequential = createSequenceStruct(
-  MonadThrowTaskEitherSequential,
+  MonadThrowAsyncEitherSequential,
 );

@@ -10,7 +10,7 @@ import {
   createSequenceStruct,
   createSequenceTuple,
 } from "./apply.ts";
-import { apply, flow, identity, pipe } from "./fns.ts";
+import { apply, flow, identity, pipe } from "./fn.ts";
 
 export type Forest<A> = ReadonlyArray<Tree<A>>;
 

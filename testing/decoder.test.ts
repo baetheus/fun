@@ -4,7 +4,7 @@ import * as D from "../decoder.ts";
 import * as G from "../guard.ts";
 import * as R from "../decode_error.ts";
 import * as E from "../either.ts";
-import { flow, pipe } from "../fns.ts";
+import { flow, pipe } from "../fn.ts";
 
 const out = flow(
   D.extract,

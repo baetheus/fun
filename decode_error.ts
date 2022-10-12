@@ -4,7 +4,7 @@ import type { Forest } from "./tree.ts";
 import * as TR from "./tree.ts";
 import * as A from "./array.ts";
 import * as O from "./option.ts";
-import { pipe } from "./fns.ts";
+import { pipe } from "./fn.ts";
 
 export const required = "required" as const;
 

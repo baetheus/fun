@@ -19,7 +19,7 @@ import type { Setoid } from "./setoid.ts";
 
 import * as I from "./iso.ts";
 import * as P from "./prism.ts";
-import { unsafeCoerce } from "./fns.ts";
+import { unsafeCoerce } from "./fn.ts";
 
 // ---
 // Locals
@@ -123,7 +123,7 @@ export function iso<T extends AnyNewtype>(): Iso<From<T>, T> {
  * ```ts
  * import { Newtype, prism } from "./newtype.ts";
  * import * as O from "./option.ts";
- * import { pipe } from "./fns.ts";
+ * import { pipe } from "./fn.ts";
  *
  * type Integer = Newtype<'Integer', number>;
  * const prismInteger = prism<Integer>(Number.isInteger);

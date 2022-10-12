@@ -1,6 +1,6 @@
 import type { Semigroup } from "./semigroup.ts";
 
-import { pipe } from "./fns.ts";
+import { pipe } from "./fn.ts";
 import * as S from "./semigroup.ts";
 
 /**

@@ -3,7 +3,7 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 import * as M from "../map.ts";
 import * as O from "../option.ts";
 import * as N from "../number.ts";
-import { pipe } from "../fns.ts";
+import { pipe } from "../fn.ts";
 
 Deno.test("Map empty", () => {
   assertEquals(M.empty(), new Map());

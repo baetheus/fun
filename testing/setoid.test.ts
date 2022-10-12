@@ -1,7 +1,7 @@
 import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
 import * as S from "../setoid.ts";
-import { constant, pipe } from "../fns.ts";
+import { of, pipe } from "../fn.ts";
 
 Deno.test("Setoid fromEquals", () => {
   type HasId = { id: number };
@@ -198,8 +198,8 @@ Deno.test("Setoid lazy", () => {
 Deno.test("Setoid io", () => {
   const { equals } = S.io(S.string);
 
-  const one = constant("one");
-  const two = constant("two");
+  const one = of("one");
+  const two = of("two");
 
   assertEquals(equals(one)(two), false);
   assertEquals(equals(one)(one), true);

@@ -1,8 +1,11 @@
 import * as AI from "../async_iterable.ts";
 import * as E from "../either.ts";
-import { isNil, pipe, resolve, then } from "../fns.ts";
+import { pipe } from "../fn.ts";
+import { resolve, then } from "../promise.ts";
+import { isNil } from "../nilable.ts";
 
 const decoder = new TextDecoder();
+
 const extractBodyAsText = (res: Response): Promise<E.Either<string, string>> =>
   isNil(res.body) ? resolve(E.left("No Body!")) : pipe(
     res.body,

@@ -12,7 +12,7 @@ import type { MonadThrow } from "./monad.ts";
 import type { Predicate } from "./predicate.ts";
 import type { Show } from "./show.ts";
 
-import { identity, pipe } from "./fns.ts";
+import { identity, pipe } from "./fn.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
 export type Nil = undefined | null;

@@ -1,7 +1,7 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
 import * as N from "../nilable.ts";
-import { _, pipe } from "../fns.ts";
+import { pipe, todo } from "../fn.ts";
 
 const add = (n: number) => n + 1;
 
@@ -29,7 +29,7 @@ Deno.test("Nilable fromPredicate", () => {
 });
 
 Deno.test("Nilable tryCatch", () => {
-  assertEquals(N.tryCatch(_), N.nil);
+  assertEquals(N.tryCatch(todo), N.nil);
   assertEquals(N.tryCatch(() => 1), 1);
 });
 

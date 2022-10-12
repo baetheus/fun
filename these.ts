@@ -8,7 +8,7 @@ import type { Show } from "./show.ts";
 import type { Traversable } from "./traversable.ts";
 
 import * as E from "./either.ts";
-import { identity, pipe } from "./fns.ts";
+import { identity, pipe } from "./fn.ts";
 
 export type Left<B> = E.Left<B>;
 

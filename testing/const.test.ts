@@ -3,7 +3,7 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 import * as C from "../const.ts";
 import * as B from "../boolean.ts";
 import * as N from "../number.ts";
-import { pipe } from "../fns.ts";
+import { pipe } from "../fn.ts";
 
 Deno.test("Const make", () => {
   assertEquals(C.make(1), 1);

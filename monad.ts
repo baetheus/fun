@@ -2,7 +2,7 @@ import type { $, Kind, TypeClass } from "./kind.ts";
 import type { Applicative } from "./applicative.ts";
 import type { Chain } from "./chain.ts";
 
-import { identity, pipe } from "./fns.ts";
+import { identity, pipe } from "./fn.ts";
 
 /**
  * Monad

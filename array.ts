@@ -17,7 +17,7 @@ import type { Traversable } from "./traversable.ts";
 import { pair } from "./pair.ts";
 import { fromCompare, sign } from "./ord.ts";
 import { none, some } from "./option.ts";
-import { apply, flow, identity, pipe } from "./fns.ts";
+import { apply, flow, identity, pipe } from "./fn.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
 export type NonEmptyArray<A> = readonly [A, ...A[]];
@@ -318,7 +318,7 @@ export const range = (
  *
  * @example
  * import { zipWith } from 'https://deno.land/x/fun/array.ts'
- * import { pipe } from 'https://deno.land/x/fun/fns.ts'
+ * import { pipe } from 'https://deno.land/x/fun/fn.ts'
  *
  * pipe([1, 2, 3], zipWith(['a', 'b', 'c', 'd'], (n, s) => s + n)))
  * // ['a1', 'b2', 'c3']
@@ -348,7 +348,7 @@ export const zipWith =
  *
  * @example
  * import { zip } from 'https://deno.land/x/fun/array.ts'
- * import { pipe } from 'https://deno.land/x/fun/fns.ts'
+ * import { pipe } from 'https://deno.land/x/fun/fn.ts'
  *
  * pipe([1, 2, 3], zip(['a', 'b', 'c', 'd'])))
  * // [[1, 'a'], [2, 'b'], [3, 'c']]
@@ -364,7 +364,7 @@ export const zip: <B>(
  * `unzip` function is reverse of `zip`. Takes an array of pairs and return two corresponding arrays
  *
  * @example
- * import { unzip } from 'https://deno.land/x/fun/fns.ts'
+ * import { unzip } from 'https://deno.land/x/fun/fn.ts'
  *
  * unzip([[1, 'a'], [2, 'b'], [3, 'c']])
  * // [[1, 2, 3], ['a', 'b', 'c']]
