@@ -36,6 +36,10 @@ export function of<A>(a: A): ReadonlyArray<A> {
   return [a];
 }
 
+export function isNonEmpty<A>(a: ReadonlyArray<A>): a is NonEmptyArray<A> {
+  return a.length > 0;
+}
+
 export function isOutOfBounds<A>(index: number, ta: ReadonlyArray<A>): boolean {
   return index < 0 || index >= ta.length;
 }
