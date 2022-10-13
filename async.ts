@@ -8,7 +8,7 @@ import {
   createSequenceTuple,
 } from "./apply.ts";
 import { resolve, wait } from "./promise.ts";
-import { handleThrow, of as constant } from "./fn.ts";
+import { handleThrow } from "./fn.ts";
 
 export type Async<A> = Sync<Promise<A>>;
 

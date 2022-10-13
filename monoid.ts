@@ -28,6 +28,8 @@ export interface Monoid<T> extends Semigroup<T> {
  * A type for Monoid over any, useful as an extension target for
  * functions that take any Monoid and do not need to
  * extract the type.
+ *
+ * @since 2.0.0
  */
 // deno-lint-ignore no-explicit-any
 export type AnyMonoid = Monoid<any>;
