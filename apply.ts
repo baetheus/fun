@@ -35,26 +35,53 @@ function _loopRecord<K extends string>(
     : (a: unknown) => _loopRecord(keys, i + 1, { ...init, [keys[i]]: a });
 }
 
-// deno-fmt-ignore
-type SequenceTuple<U extends Kind, R extends NonEmptyArray<$<U, any[], any[], any[]>>> = $<U, [
-  { [K in keyof R]: R[K] extends $<U, [infer A, infer _, infer _], any[], any[]> ? A : never },
-  { [K in keyof R]: R[K] extends $<U, [infer _, infer B, infer _], any[], any[]> ? B : never }[number],
-  { [K in keyof R]: R[K] extends $<U, [infer _, infer _, infer C], any[], any[]> ? C : never }[number],
-],
-[
-  { [K in keyof R]: R[K] extends $<U, any[], [infer D], any[]> ? D : never }[number],
-],
-[
-  { [K in keyof R]: R[K] extends $<U, any[], any[], [infer E]> ? E : never }[number],
-]
->;
+type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends
+  ((k: infer I) => void) ? I : never;
+
+type SequenceTuple<
+  U extends Kind,
+  R extends NonEmptyArray<$<U, any[], any[], any[]>>,
+> = $<U, [
+  // Covariant A
+  {
+    [K in keyof R]: R[K] extends $<U, [infer A, infer _, infer _], any[], any[]>
+      ? A
+      : never;
+  },
+  // Covariant B
+  {
+    [K in keyof R]: R[K] extends $<U, [infer _, infer B, infer _], any[], any[]>
+      ? B
+      : never;
+  }[number],
+  // Covariant C
+  {
+    [K in keyof R]: R[K] extends $<U, [infer _, infer _, infer C], any[], any[]>
+      ? C
+      : never;
+  }[number],
+], [
+  // Contravariant D
+  UnionToIntersection<
+    {
+      [K in keyof R]: R[K] extends $<U, any[], [infer D], any[]> ? D : never;
+    }[number]
+  >,
+], [
+  // Invariant E
+  UnionToIntersection<
+    {
+      [K in keyof R]: R[K] extends $<U, any[], any[], [infer E]> ? E : never;
+    }[number]
+  >,
+]>;
 
 /**
  * Create a sequence over tuple function from Apply
  */
 export function createSequenceTuple<U extends Kind>(
   A: Apply<U>,
-): <R extends NonEmptyArray<$<U, unknown[], unknown[], unknown[]>>>(
+): <R extends NonEmptyArray<$<U, any[], any[], any[]>>>(
   ...r: R
 ) => SequenceTuple<U, R> {
   const reducer = (acc: any, cur: any) => pipe(cur, A.ap(acc)) as any;
@@ -67,29 +94,51 @@ export function createSequenceTuple<U extends Kind>(
   };
 }
 
-// deno-fmt-ignore
-type SequenceStruct<U extends Kind, R extends Record<string, $<U, any[], any[], any[]>>> = $<U, [
-  { [K in keyof R]: R[K] extends $<U, [infer A, infer _, infer _], any[], any[]> ? A : never },
-  { [K in keyof R]: R[K] extends $<U, [infer _, infer B, infer _], any[], any[]> ? B : never }[keyof R],
-  { [K in keyof R]: R[K] extends $<U, [infer _, infer _, infer C], any[], any[]> ? C : never }[keyof R],
-],
-[
-  { [K in keyof R]: R[K] extends $<U, any[], [infer D], any[]> ? D : never }[keyof R],
-],
-[
-  { [K in keyof R]: R[K] extends $<U, any[], any[], [infer E]> ? E : never }[keyof R],
-]
->
+type SequenceStruct<
+  U extends Kind,
+  R extends Record<string, $<U, any[], any[], any[]>>,
+> = $<U, [
+  // Covariant A
+  {
+    [K in keyof R]: R[K] extends $<U, [infer A, infer _, infer _], any[], any[]>
+      ? A
+      : never;
+  },
+  // Covariant B
+  {
+    [K in keyof R]: R[K] extends $<U, [infer _, infer B, infer _], any[], any[]>
+      ? B
+      : never;
+  }[keyof R],
+  // Covariant C
+  {
+    [K in keyof R]: R[K] extends $<U, [infer _, infer _, infer C], any[], any[]>
+      ? C
+      : never;
+  }[keyof R],
+], [
+  // Contravariant D
+  UnionToIntersection<
+    {
+      [K in keyof R]: R[K] extends $<U, any[], [infer D], any[]> ? D : never;
+    }[keyof R]
+  >,
+], [
+  // Invariant E
+  UnionToIntersection<
+    {
+      [K in keyof R]: R[K] extends $<U, any[], any[], [infer E]> ? E : never;
+    }[keyof R]
+  >,
+]>;
 
 export function createSequenceStruct<U extends Kind>(
   A: Apply<U>,
-): <R extends Record<string, $<U, unknown[], unknown[], unknown[]>>>(
+): <R extends Record<string, $<U, any[], any[], any[]>>>(
   r: NonEmptyRecord<R>,
 ) => SequenceStruct<U, R> {
   return (r) => {
-    // Sort included to make apply ordering explicit and consistent
-    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
-    const keys: ((keyof typeof r) & string)[] = Object.keys(r).sort();
+    const keys: ((keyof typeof r) & string)[] = Object.keys(r);
     const [head, ...tail] = keys;
     return tail.reduce(
       (f: any, key: keyof typeof r) => pipe(r[key], A.ap(f) as any),
@@ -101,7 +150,7 @@ export function createSequenceStruct<U extends Kind>(
 export function createApplySemigroup<U extends Kind>(
   A: Apply<U>,
 ) {
-  return <A, B, C, D, E>(
+  return <A, B = never, C = never, D = never, E = never>(
     S: Semigroup<A>,
   ): Semigroup<$<U, [A, B, C], [E], [D]>> => ({
     concat: (a) => A.ap(pipe(a, A.map(S.concat))),

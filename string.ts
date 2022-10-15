@@ -337,6 +337,36 @@ export function trimEnd(a: string): string {
 }
 
 /**
+ * A simple curried pluralizing function. Takes the singular and plural
+ * forms of a word and returns a function that takes a count and returns
+ * the correct word for the count.
+ *
+ * @example
+ * ```ts
+ * import { plural } from "./string.ts";
+ * import { pipe, ap } from "./fn.ts";
+ *
+ * const are = plural("is", "are");
+ * const rabbit = pipe(
+ *   plural("rabbit", "rabbits"),
+ *   ap((n: number) => s => `There ${are(n)} ${n} ${s}`),
+ * );
+ *
+ * const result1 = rabbit(1); // "There is 1 rabbit"
+ * const result2 = rabbit(4); // "There are 4 rabbits"
+ * const result3 = rabbit(0); // "There are 0 rabbits"
+ * ```
+ *
+ * @since 2.0.0
+ */
+export function plural(
+  singular: string,
+  plural: string,
+): (count: number) => string {
+  return (count) => count === 1 ? singular : plural;
+}
+
+/**
  * Create a substring of a string based on 0 based indices.
  *
  * @example

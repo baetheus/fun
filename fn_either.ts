@@ -67,6 +67,21 @@ export function of<A, B = never, D extends unknown[] = never[]>(
   return right(a);
 }
 
+export function ap<A, I, B, D extends unknown[] = never[]>(
+  tfai: FnEither<D, B, (a: A) => I>,
+): (ua: FnEither<D, B, A>) => FnEither<D, B, I> {
+  return (ua) => (...d) => F.pipe(ua(...d), E.ap(tfai(...d)));
+}
+
+export function alt<A, B, D extends unknown[]>(
+  ub: FnEither<D, B, A>,
+): (ua: FnEither<D, B, A>) => FnEither<D, B, A> {
+  return (ua) => (...d) => {
+    const e = ua(...d);
+    return E.isLeft(e) ? ub(...d) : e;
+  };
+}
+
 export function throwError<A = never, B = never, D extends unknown[] = never[]>(
   b: B,
 ): FnEither<D, B, A> {
@@ -98,12 +113,11 @@ export function mapLeft<B, J>(
   return bimap(fbj, F.identity);
 }
 
-export function ap<A, I, B, D extends unknown[] = never[]>(
-  tfai: FnEither<D, B, (a: A) => I>,
-): (ua: FnEither<D, B, A>) => FnEither<D, B, I> {
-  return (ua) => (...d) => F.pipe(ua(...d), E.ap(tfai(...d)));
+export function join<A, B, D extends unknown[]>(
+  tua: FnEither<D, B, FnEither<D, B, A>>,
+): FnEither<D, B, A> {
+  return F.pipe(tua, chain(F.identity));
 }
-
 export function chain<A, D extends unknown[], I, J>(
   fati: (a: A) => FnEither<D, J, I>,
 ): <B>(ua: FnEither<D, B, A>) => FnEither<D, B | J, I> {
@@ -113,24 +127,9 @@ export function chain<A, D extends unknown[], I, J>(
   };
 }
 
-export function join<A, B, D extends unknown[]>(
-  tua: FnEither<D, B, FnEither<D, B, A>>,
-): FnEither<D, B, A> {
-  return F.pipe(tua, chain(F.identity));
-}
-
-export function alt<A, B, D extends unknown[]>(
-  ub: FnEither<D, B, A>,
-): (ua: FnEither<D, B, A>) => FnEither<D, B, A> {
-  return (ua) => (...d) => {
-    const e = ua(...d);
-    return E.isLeft(e) ? ub(...d) : e;
-  };
-}
-
-export function chainLeft<A, B, D extends unknown[], J>(
-  fbtj: (b: B) => FnEither<D, J, A>,
-): (ua: FnEither<D, B, A>) => FnEither<D, J, A> {
+export function chainLeft<A, B, L, J>(
+  fbtj: (b: B) => FnEither<[L], J, A>,
+): <D>(ua: FnEither<[D], B, A>) => FnEither<[D & L], J, A> {
   return (ua) => F.pipe(ua, F.chain(E.fold(fbtj, right)));
 }
 
@@ -150,13 +149,13 @@ export function dimap<A, I, L, D>(
 export function first<A, B, D, Q = never>(
   ua: FnEither<[D], B, A>,
 ): FnEither<[Pair<D, Q>], B, Pair<A, Q>> {
-  return ([d, q]) => F.pipe(ua(d), E.map(P.fromSecond(q)));
+  return ([d, q]) => F.pipe(ua(d), E.map(P.second(q)));
 }
 
 export function second<A, B, D, Q = never>(
   ua: FnEither<[D], B, A>,
 ): FnEither<[Pair<Q, D>], B, Pair<Q, A>> {
-  return ([q, d]) => F.pipe(ua(d), E.map(P.fromFirst(q)));
+  return ([q, d]) => F.pipe(ua(d), E.map(P.first(q)));
 }
 
 export function compose<A, I, J>(

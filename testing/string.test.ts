@@ -2,7 +2,7 @@ import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
 import * as S from "../string.ts";
 import * as O from "../option.ts";
-import { pipe } from "../fn.ts";
+import { ap, pipe } from "../fn.ts";
 
 Deno.test("String equals", () => {
   const hello = "Hello";
@@ -121,6 +121,18 @@ Deno.test("String trimEnds", () => {
   assertEquals(S.trimEnd("  Hello World"), "  Hello World");
   assertEquals(S.trimEnd("Hello World  "), "Hello World");
   assertEquals(S.trimEnd("  Hello World  "), "  Hello World");
+});
+
+Deno.test("String plural", () => {
+  const are = S.plural("is", "are");
+  const rabbit = pipe(
+    S.plural("rabbit", "rabbits"),
+    ap((n: number) => (s) => `There ${are(n)} ${n} ${s}`),
+  );
+
+  assertEquals(rabbit(1), "There is 1 rabbit");
+  assertEquals(rabbit(4), "There are 4 rabbits");
+  assertEquals(rabbit(0), "There are 0 rabbits");
 });
 
 Deno.test("String slice", () => {

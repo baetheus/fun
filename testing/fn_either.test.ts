@@ -115,13 +115,6 @@ Deno.test("FnEither alt", () => {
   assertEquals(pipe(FE.left(0), FE.alt(FE.left(1)))(n), FE.left(1)(n));
 });
 
-Deno.test("FnEither chainLeft", () => {
-  const chainLeft = FE.chainLeft((n) => n === 0 ? FE.left(n) : FE.right(n));
-  assertEquals(chainLeft(FE.right(0))(n), FE.right(0)(n));
-  assertEquals(chainLeft(FE.left(1))(n), FE.right(1)(n));
-  assertEquals(chainLeft(FE.left(0))(n), FE.left(0)(n));
-});
-
 Deno.test("FnEither compose", () => {
   assertEquals(
     pipe(FE.ask<number>(), FE.compose(FE.asks((n) => n + 1)))(0),

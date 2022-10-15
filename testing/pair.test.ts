@@ -11,24 +11,24 @@ Deno.test("Pair pair", () => {
   assertEquals(P.pair(1, 2), [1, 2]);
 });
 
-Deno.test("Pair dual", () => {
-  assertEquals(P.dual(1), [1, 1]);
+Deno.test("Pair double", () => {
+  assertEquals(P.double(1), [1, 1]);
+});
+
+Deno.test("Pair getFirst", () => {
+  assertEquals(P.getFirst(P.pair(1, 2)), 1);
+});
+
+Deno.test("Pair getSecond", () => {
+  assertEquals(P.getSecond(P.pair(1, 2)), 2);
 });
 
 Deno.test("Pair first", () => {
-  assertEquals(P.first(P.pair(1, 2)), 1);
+  assertEquals(pipe(1, P.first(2)), [2, 1]);
 });
 
 Deno.test("Pair second", () => {
-  assertEquals(P.second(P.pair(1, 2)), 2);
-});
-
-Deno.test("Pair fromFirst", () => {
-  assertEquals(pipe(1, P.fromFirst(2)), [2, 1]);
-});
-
-Deno.test("Pair fromSecond", () => {
-  assertEquals(pipe(1, P.fromSecond(2)), [1, 2]);
+  assertEquals(pipe(1, P.second(2)), [1, 2]);
 });
 
 Deno.test("Pair swap", () => {

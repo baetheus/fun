@@ -71,14 +71,14 @@ export function pair<A, B>(first: A, second: B): Pair<A, B> {
  *
  * @example
  * ```ts
- * import { dual } from "./pair.ts";
+ * import { double } from "./pair.ts";
  *
- * const result = dual(1); // [1, 1]
+ * const result = double(1); // [1, 1]
  * ```
  *
  * @since 2.0.0
  */
-export function dual<A>(a: A): Pair<A, A> {
+export function double<A>(a: A): Pair<A, A> {
   return pair(a, a);
 }
 
@@ -92,13 +92,13 @@ export function dual<A>(a: A): Pair<A, A> {
  *
  * const shouldBe1 = pipe(
  *   P.pair(1, 2),
- *   P.first
+ *   P.getFirst
  * ); // 1
  * ```
  *
  * @since 2.0.0
  */
-export function first<A, B>([first]: Pair<A, B>): A {
+export function getFirst<A, B>([first]: Pair<A, B>): A {
   return first;
 }
 
@@ -112,13 +112,13 @@ export function first<A, B>([first]: Pair<A, B>): A {
  *
  * const shouldBe2 = pipe(
  *   P.pair(1, 2),
- *   P.second
+ *   P.getSecond
  * ); // 2
  * ```
  *
  * @since 2.0.0
  */
-export function second<A, B>([_, second]: Pair<A, B>): B {
+export function getSecond<A, B>([_, second]: Pair<A, B>): B {
   return second;
 }
 
@@ -133,14 +133,14 @@ export function second<A, B>([_, second]: Pair<A, B>): B {
  *
  * const result = pipe(
  *   37,
- *   P.fromFirst("Brandon"),
+ *   P.first("Brandon"),
  *   P.mapLeft(n => n + 1),
  * ); // ["Brandon", 38]
  * ```
  *
  * @since 2.0.0
  */
-export function fromFirst<A>(first: A): <B>(second: B) => Pair<A, B> {
+export function first<A>(first: A): <B>(second: B) => Pair<A, B> {
   return (second) => pair(first, second);
 }
 
@@ -155,14 +155,14 @@ export function fromFirst<A>(first: A): <B>(second: B) => Pair<A, B> {
  *
  * const result = pipe(
  *   37,
- *   P.fromSecond("Brandon"),
+ *   P.second("Brandon"),
  *   P.map(n => n + 1),
  * ); // [38, "Brandon"]
  * ```
  *
  * @since 2.0.0
  */
-export function fromSecond<B>(second: B): <A>(first: A) => Pair<A, B> {
+export function second<B>(second: B): <A>(first: A) => Pair<A, B> {
   return (first) => pair(first, second);
 }
 
@@ -354,10 +354,10 @@ export function traverse<V extends Kind>(A: Applicative<V>) {
   return <A, I, J, K, L, M>(
     favi: (a: A) => $<V, [I, J, K], [L], [M]>,
   ): <B>(ua: Pair<A, B>) => $<V, [Pair<I, B>, J, K], [L], [M]> =>
-  ([first, second]) =>
+  ([fst, snd]) =>
     pipe(
-      favi(first),
-      A.map(fromSecond(second)),
+      favi(fst),
+      A.map(second(snd)),
     );
 }
 
