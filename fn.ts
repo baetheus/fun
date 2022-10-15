@@ -228,7 +228,7 @@ export function apply<D extends unknown[], A>(
  *
  * @example
  * ```ts
- * import { ask, todo, pipe } from "./fn.ts";
+ * import { todo } from "./fn.ts";
  *
  * type InOut = {
  *   read: () => Promise<string>,
@@ -526,6 +526,7 @@ export function of<A>(a: A): Fn<[], A> {
  * @example
  * ```ts
  * import * as F from "./fn.ts";
+ * import { ap, pipe } from "./fn.ts";
  *
  * type Person = { name: string; age: number };
  * type Parent = { parent: Person };
@@ -559,6 +560,7 @@ export function of<A>(a: A): Fn<[], A> {
  * @example
  * ```ts
  * import * as F from "./fn.ts";
+ * import { ap, pipe } from "./fn.ts";
  *
  * const average = pipe(
  *   (n: number[]) => n.reduce((a, b) => a + b, 0),
@@ -634,7 +636,7 @@ export function join<A, D = void>(
  * const add = (n: number) => (m: number) => n + m;
  *
  * const chainer = pipe(
- *   id<number>(),
+ *   (n: number) => n,
  *   chain(add),
  *   chain(add),
  *   chain(add),
@@ -671,8 +673,8 @@ export function chain<A, I, L = void>(
  *   contramap(strLength),
  * );
  *
- * const result = isEmpty(""); // true
- * const result = isEmpty("Hello"); // false
+ * const result1 = isEmpty(""); // true
+ * const result2 = isEmpty("Hello"); // false
  * ```
  *
  * @since 2.0.0
@@ -705,9 +707,9 @@ export function contramap<L, D>(
  *   dimap(toWords, describe),
  * );
  *
- * const result1 = fromString("Hello World")); // "There are 2 words"
- * const result2 = fromString("Hi")); // "There is 1 word"
- * const result3 = fromString("This   is    a    test")); // "There are 4 words"
+ * const result1 = fromString("Hello World"); // "There are 2 words"
+ * const result2 = fromString("Hi"); // "There is 1 word"
+ * const result3 = fromString("This   is    a    test"); // "There are 4 words"
  * ```
  *
  * @since 2.0.0
@@ -794,8 +796,8 @@ export function compose<A, I>(
  *
  * @example
  * ```ts
- * import { id, first, pipe, map } from "./fn.ts":
- * import { double } from "./pair.ts":
+ * import { id, first, pipe, map } from "./fn.ts";
+ * import { double } from "./pair.ts";
  *
  * const addOne = (n: number) => n + 1;
  * const power = (x: number) => (n: number) => Math.pow(n, x);
@@ -828,8 +830,8 @@ export function first<A, D, Q = never>(
  *
  * @example
  * ```ts
- * import { id, second, pipe, map } from "./fn.ts":
- * import { double } from "./pair.ts":
+ * import { id, second, pipe, map } from "./fn.ts";
+ * import { double } from "./pair.ts";
  *
  * const addOne = (n: number) => n + 1;
  * const power = (x: number) => (n: number) => Math.pow(n, x);
@@ -859,8 +861,8 @@ export function second<A, D, Q = never>(
  *
  * @example
  * ```ts
- * import { id, left, pipe, map } from "./fn.ts":
- * import * as E from "./either.ts":
+ * import { id, left, pipe, map } from "./fn.ts";
+ * import * as E from "./either.ts";
  *
  * const addOne = (n: number) => n + 1;
  * const power = (x: number) => (n: number) => Math.pow(n, x);
@@ -890,8 +892,8 @@ export function left<A, D, Q = never>(
  *
  * @example
  * ```ts
- * import { id, right, pipe, map } from "./fn.ts":
- * import * as E from "./either.ts":
+ * import { id, right, pipe, map } from "./fn.ts";
+ * import * as E from "./either.ts";
  *
  * const addOne = (n: number) => n + 1;
  * const power = (x: number) => (n: number) => Math.pow(n, x);
@@ -899,7 +901,7 @@ export function left<A, D, Q = never>(
  * // Adds 1 and multiplies the result by itself
  * // But keeps the original argument
  * const computation = pipe(
- *   E.right<number>,
+ *   (n: number) => E.right(n),
  *   map(right(addOne)),
  *   map(right(power(2))),
  * );
