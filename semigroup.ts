@@ -10,6 +10,7 @@
 import type { ReadonlyRecord } from "./record.ts";
 import type { Ord } from "./ord.ts";
 
+import { reduce } from "./array.ts";
 import { pipe } from "./fn.ts";
 
 /**
@@ -386,5 +387,5 @@ export function constant<A>(a: A): Semigroup<A> {
 export function concatAll<A>(
   S: Semigroup<A>,
 ): (startWith: A) => (as: ReadonlyArray<A>) => A {
-  return (startWith) => (as) => as.reduce((a, c) => S.concat(c)(a), startWith);
+  return (startWith) => reduce((a, c) => S.concat(c)(a), startWith);
 }

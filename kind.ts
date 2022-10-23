@@ -39,8 +39,8 @@ export type Substitute<T extends Kind, S extends Substitutions> = T extends
 export type $<
   T extends Kind,
   Out extends unknown[],
-  In extends unknown[] = never[],
-  InOut extends unknown[] = never[],
+  In extends unknown[] = [never],
+  InOut extends unknown[] = [never],
 > = Substitute<T, {
   ["covariant"]: Out;
   ["contravariant"]: In;

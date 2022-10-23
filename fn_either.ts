@@ -330,7 +330,6 @@ export function mapLeft<B, J>(
   return bimap(fbj, F.identity);
 }
 
-
 export function join<A, B, D extends unknown[]>(
   tua: FnEither<D, B, FnEither<D, B, A>>,
 ): FnEither<D, B, A> {

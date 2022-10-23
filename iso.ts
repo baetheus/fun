@@ -27,4 +27,3 @@ export function compose<B, C>(second: Iso<B, C>) {
 export function swap<S, A>(sa: Iso<S, A>): Iso<A, S> {
   return iso(sa.review, sa.view);
 }
-

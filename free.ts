@@ -49,5 +49,3 @@ export function concat<A>(second: Free<A>): (first: Free<A>) => Free<A> {
 export function getSemigroup<A>(): Semigroup<Free<A>> {
   return { concat };
 }
-
-
