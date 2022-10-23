@@ -17,14 +17,6 @@ const assertEqualsRE = (
   b: FE.FnEither<[number], any, any>,
 ) => assertEquals(a(0), b(0));
 
-Deno.test("FnEither ask", () => {
-  assertEqualsRE(FE.ask<number>(), FE.ask<number>());
-});
-
-Deno.test("FnEither asks", () => {
-  assertEqualsRE(FE.asks((n) => n), FE.of(0));
-});
-
 Deno.test("FnEither left", () => {
   assertEquals(FE.left("Hello")(n), E.left("Hello"));
 });
@@ -92,10 +84,6 @@ Deno.test("FnEither chain", () => {
   );
 });
 
-Deno.test("FnEither throwError", () => {
-  assertEqualsRE(FE.throwError(0), FE.left(0));
-});
-
 Deno.test("FnEither bimap", () => {
   const bimap = FE.bimap(add, multiply);
   assertEqualsRE(bimap(FE.left(0)), FE.left(1));
@@ -113,13 +101,6 @@ Deno.test("FnEither alt", () => {
   assertEquals(pipe(FE.right(0), FE.alt(FE.left(1)))(n), FE.right(0)(n));
   assertEquals(pipe(FE.left(0), FE.alt(FE.right(1)))(n), FE.right(1)(n));
   assertEquals(pipe(FE.left(0), FE.alt(FE.left(1)))(n), FE.left(1)(n));
-});
-
-Deno.test("FnEither compose", () => {
-  assertEquals(
-    pipe(FE.ask<number>(), FE.compose(FE.asks((n) => n + 1)))(0),
-    FE.right(1)(n),
-  );
 });
 
 // Deno.test("FnEither Do, bind, bindTo", () => {

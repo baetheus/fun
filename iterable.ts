@@ -1,7 +1,10 @@
-import type { Kind, Out } from "./kind.ts";
+import type { $, Kind, Out } from "./kind.ts";
 import type { Monad } from "./monad.ts";
+import type { Applicative } from "./applicative.ts";
+import type { Traversable } from "./traversable.ts";
 
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
+import { pipe } from "./fn.ts";
 
 export interface URI extends Kind {
   readonly kind: Iterable<Out<this, 0>>;
@@ -96,6 +99,16 @@ export function forEach<A>(fa: (a: A) => void): (ta: Iterable<A>) => void {
     for (const a of ta) {
       fa(a);
     }
+  };
+}
+
+export function reduce<A, O>(foao: (o: O, a: A) => O, o: O) {
+  return (ua: Iterable<A>): O => {
+    let out = o;
+    for (const a of ua) {
+      out = foao(o, a);
+    }
+    return out;
   };
 }
 

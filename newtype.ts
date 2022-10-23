@@ -13,12 +13,12 @@ import type { Iso } from "./iso.ts";
 import type { Monoid } from "./monoid.ts";
 import type { Ord } from "./ord.ts";
 import type { Predicate } from "./predicate.ts";
-import type { Prism } from "./prism.ts";
+import type { Prism } from "./optics.ts";
 import type { Semigroup } from "./semigroup.ts";
 import type { Setoid } from "./setoid.ts";
 
 import * as I from "./iso.ts";
-import * as P from "./prism.ts";
+import * as O from "./optics.ts";
 import { unsafeCoerce } from "./fn.ts";
 
 // ---
@@ -106,8 +106,8 @@ export type AnyNewtype = Newtype<any, any>;
  * type Real = Newtype<'Real', number>;
  * const isoReal = iso<Real>();
  *
- * const real: Real = isoReal.get(1);
- * const num: number = isoReal.reverseGet(real);
+ * const real: Real = isoReal.view(1);
+ * const num: number = isoReal.review(real);
  * ```
  */
 export function iso<T extends AnyNewtype>(): Iso<From<T>, T> {
@@ -128,14 +128,13 @@ export function iso<T extends AnyNewtype>(): Iso<From<T>, T> {
  * type Integer = Newtype<'Integer', number>;
  * const prismInteger = prism<Integer>(Number.isInteger);
  *
- * const int = prismInteger.getOption(1); // Option<Integer>
- * const num = pipe(int, O.map(prismInteger.reverseGet)); // Option<number>
+ * const int = prismInteger.view(1); // Option<Integer>
  * ```
  */
 export function prism<T extends AnyNewtype>(
   predicate: Predicate<From<T>>,
 ): Prism<From<T>, T> {
-  return P.fromPredicate(predicate) as unknown as Prism<From<T>, T>;
+  return O.fromPredicate(predicate) as Prism<From<T>, T>;
 }
 // ---
 // Instance Getters

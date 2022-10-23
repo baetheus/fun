@@ -221,36 +221,6 @@ export function getSemigroupAll<A = never>(): Semigroup<Predicate<A>> {
  * Get a Monoid<Predicate<A>> for any type A that concats using the
  * Predicate or function and defaults to false.
  *
- * @example
- * ```ts
- * import { getMonoidAny } from "./predicate.ts";
- * import { equals } from "./number.ts";
- * import { pipe } from "./fn.ts";
- * import * as T from "./traversal.ts";
- * import * as A from "./array.ts";
- *
- * const MonoidAnyNumber = getMonoidAny<number>();
- *
- * const equalsAny = pipe(
- *   // Start with number[]
- *   T.id<number[]>(),
- *   // Focus on each number
- *   T.traverse(A.TraversableArray),
- *   // Turn each number into an equals predicate
- *   T.foldMap(MonoidAnyNumber)(equals),
- * );
- *
- * // Matches 1, 2, 3, 4, or 5
- * const pred1 = equalsAny([1, 2, 3, 4, 5]);
- * // Matches 2, 4, 5, 7, or 11
- * const pred2 = equalsAny([2, 3, 5, 7, 11]);
- *
- * const result1 = pred1(1); // true
- * const result2 = pred1(0); // false
- * const result3 = pred2(5); // true
- * const result4 = pred2(10); // false
- * ```
- *
  * @since 2.0.0
  */
 export function getMonoidAny<A = never>(): Monoid<Predicate<A>> {
@@ -260,34 +230,6 @@ export function getMonoidAny<A = never>(): Monoid<Predicate<A>> {
 /**
  * Get a Monoid<Predicate<A>> for any type A that concats using the
  * Predicate and function and defaults to true.
- *
- * @example
- * ```ts
- * import { getMonoidAll } from "./predicate.ts";
- * import { divides } from "./number.ts";
- * import { pipe } from "./fn.ts";
- * import * as T from "./traversal.ts";
- * import * as A from "./array.ts";
- *
- * const MonoidAllNumber = getMonoidAll<number>();
- *
- * const dividesBy = pipe(
- *   // Start with number[]
- *   T.id<number[]>(),
- *   // Focus on each number
- *   T.traverse(A.TraversableArray),
- *   // Turn each number into an divides predicate
- *   T.foldMap(MonoidAllNumber)(divides),
- * );
- *
- * const pred = dividesBy([2, 3]);
- *
- * const result1 = pred(0); // true
- * const result2 = pred(1); // false
- * const result3 = pred(2); // false
- * const result4 = pred(3); // false
- * const result5 = pred(6); // true
- * ```
  *
  * @since 2.0.0
  */

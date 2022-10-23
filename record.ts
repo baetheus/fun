@@ -164,15 +164,6 @@ export function lookupWithKey(key: string) {
   };
 }
 
-export function lookup(key: string) {
-  return <A>(record: ReadonlyRecord<A>): Option<A> => {
-    if (Object.hasOwn(record, key)) {
-      return some(record[key]);
-    }
-    return none;
-  };
-}
-
 export function isSubrecord<A>(
   S: Setoid<A>,
 ): (second: ReadonlyRecord<A>) => (first: ReadonlyRecord<A>) => boolean {

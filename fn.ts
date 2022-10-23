@@ -37,6 +37,8 @@ export type Fn<D extends unknown[], A> = (...d: D) => A;
 /**
  * A Fn type over any, useful for constraining generics that
  * take or return Fns.
+ *
+ * @since 2.0.0
  */
 // deno-lint-ignore no-explicit-any
 export type AnyFn = Fn<any[], any>;

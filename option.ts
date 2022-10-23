@@ -11,6 +11,7 @@ import type { Monad } from "./monad.ts";
 import type { Monoid } from "./monoid.ts";
 import type { Ord } from "./ord.ts";
 import type { Predicate } from "./predicate.ts";
+import type { Refinement } from "./refinement.ts";
 import type { Semigroup } from "./semigroup.ts";
 import type { Setoid } from "./setoid.ts";
 import type { Show } from "./show.ts";
@@ -89,6 +90,12 @@ export function fromNullable<A>(a: A): Option<NonNullable<A>> {
  *     const a = fromPositiveNumber(-1); // None
  *     const a = fromPositiveNumber(1); // Some<number>
  */
+export function fromPredicate<A, B extends A>(
+  refinement: Refinement<A, B>,
+): (a: A) => Option<B>;
+export function fromPredicate<A>(
+  refinement: Predicate<A>,
+): (a: A) => Option<A>;
 export function fromPredicate<A>(predicate: Predicate<A>) {
   return (a: A): Option<A> => (predicate(a) ? some(a) : none);
 }

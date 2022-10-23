@@ -136,6 +136,16 @@ export function values<A>(O: Ord<A>): <K>(ta: ReadonlyMap<K, A>) => A[] {
   return (ta) => Array.from(ta.values()).sort(O.compare);
 }
 
+export function reduce<B, A, O>(foao: (o: O, a: A, b: B) => O, o: O) {
+  return (ua: ReadonlyMap<B, A>): O => {
+    let out = o;
+    for (const [b, a] of ua.entries()) {
+      out = foao(o, a, b);
+    }
+    return out;
+  };
+}
+
 export function collect<B>(
   O: Ord<B>,
 ): <A, I>(
