@@ -1,4 +1,102 @@
+/**
+ * An Optic is at heart two functions, view and modify. The
+ * view function is used to view some structure A that is
+ * contained in some structure S. The value that the view
+ * function tries to return is called its Focus, thus the
+ * name Optic. The Focus of the view function can be the
+ * value at a struct property, in an Option, or it can
+ * even reference all the values in a homogenous array.
+ * Thus the view function will return either 0, 1, or
+ * many of its Focus. Optics in this library are built
+ * to be composable. Let's look at some examples.
+ *
+ * @example
+ * ```ts
+ * import * as O from "./optics.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * // First lets create some data we are working with
+ * type Person = { name: string; age: number; children?: People };
+ * type People = readonly Person[];
+ *
+ * function person(name: string, age: number, children?: People): Person {
+ *   return { name, age, children };
+ * }
+ *
+ * const rufus = person("Rufus", 0.8);
+ * const clementine = person("Clementine", 0.5);
+ * const brandon = person("Brandon", 37, [rufus, clementine]);
+ * const jackie = person("Jackie", 57, [brandon]);
+ *
+ * // This Optic goes from Person to Person
+ * const children = pipe(
+ *   O.id<Person>(),
+ *   O.prop("children"),
+ *   O.nilable,
+ *   O.array,
+ * );
+ *
+ * // We can extend children with itself to get grandchildren
+ * // This Optic also goes from Person to Person (two levels)
+ * const grandchildren = pipe(
+ *   children,
+ *   O.compose(children),
+ * );
+ *
+ * // We can prepare an Optic from Person to name
+ * const names = O.prop<Person, "name">("name");
+ *
+ * // These return arrays of names of children and grandchildren
+ * const jackiesChildren = pipe(children, names, O.view)(jackie);
+ * const jackiesGrandchildren = pipe(grandchildren, names, O.view)(jackie);
+ * ```
+ *
+ * In the above example we have a potentially recursive data structure with
+ * optional fields, arrays, and structures. We start by building an Optic
+ * from a Person to each of their children. Then we compose this
+ * with itself to get grandchildren. And lastly we build a lens to get
+ * the name of a Person. Combining these lenses we are able to quickly
+ * list out the names of People for any generation under a Person.
+ *
+ * Optics can also be used to modify the data that they are focused on.
+ * They do so immutably and as easily as they can view data. Another
+ * example.
+ *
+ * ```ts
+ * import * as O from "./optics.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * type Todo = { text: string; completed: boolean };
+ * type Todos = readonly Todo[];
+ *
+ * const todo = (text: string, completed: boolean = false): Todo => ({
+ *   text,
+ *   completed,
+ * });
+ *
+ * const myTodos: Todos = [
+ *   todo("Write some good examples for Optics"),
+ *   todo("Make sure the examples actually work"),
+ *   todo("Make some coffee"),
+ *   todo("Drink some coffee"),
+ * ];
+ *
+ * // Focus on the completed field of the todos
+ * const completed = pipe(O.id<Todos>(), O.array, O.prop("completed"));
+ * const markAllAsCompleted = completed.modify(() => true);
+ *
+ * // This is a new Todos object with new Todo objects all with completed
+ * // set to true
+ * const newTodos = markAllAsCompleted(myTodos);
+ * ```
+ *
+ * @module Optics
+ *
+ * @since 2.0.0
+ */
 import type { $, Kind } from "./kind.ts";
+import { ReadonlyRecord } from "./record.ts";
+import { Tree } from "./tree.ts";
 import type { Either } from "./either.ts";
 import type { Iso } from "./iso.ts";
 import type { Monad } from "./monad.ts";
@@ -21,7 +119,15 @@ import { TraversableSet } from "./set.ts";
 import { TraversableTree } from "./tree.ts";
 import { isNotNil } from "./nilable.ts";
 import { concatAll as getConcatAll } from "./monoid.ts";
-import { apply, dimap, flow, identity, pipe, unsafeCoerce } from "./fn.ts";
+import {
+  apply,
+  dimap,
+  flow,
+  identity,
+  pipe,
+  todo,
+  unsafeCoerce,
+} from "./fn.ts";
 
 // Build up language of Kliesli Optics
 
@@ -107,6 +213,9 @@ const MONADS = {
   [TraversalTag]: A.MonadArray,
 } as const;
 
+const optionToArray = <A>(ua: Option<A>): ReadonlyArray<A> =>
+  O.isNone(ua) ? [] : [ua.value];
+
 /**
  * Our new Optic definition. Instead of get and set we use get and modify as
  * set can be derived from modify(() => value). This drastically simplifies
@@ -185,7 +294,7 @@ export function traversal<S, A>(
  * Traversal => Traversal
  *
  * As long as only Optics over Identity, Option, and Array are in
- * this file. There should be no way to break this casting.
+ * this file, there should be no way to break this casting.
  */
 function cast<U extends Tag, V extends Tag, S, A>(
   G: Optic<U, S, A>,
@@ -194,15 +303,22 @@ function cast<U extends Tag, V extends Tag, S, A>(
   // Covers Lens => Lens, Prism => Prism, Traversal => Traversal
   if (G.tag === tag as Tag) {
     return unsafeCoerce(G);
-    // Covers Lens => Traversal, Prism => Traversal
-  } else if (tag == TraversalTag) {
-    // deno-lint-ignore no-explicit-any
-    return unsafeCoerce(traversal((s) => A.of(G.view(s)) as any, G.modify));
-    // Covers Lens => Prism
-  } else {
-    // deno-lint-ignore no-explicit-any
-    return unsafeCoerce(prism((s) => O.of(G.view(s)) as any, G.modify));
+    // Prism => Traversal
+  } else if (tag === TraversalTag && G.tag === PrismTag) {
+    return unsafeCoerce(
+      traversal((s) => optionToArray(G.view(s) as Option<A>), G.modify),
+    );
+    // Lens => Traversal
+  } else if (tag === TraversalTag && G.tag === LensTag) {
+    return unsafeCoerce(traversal((s) => [G.view(s) as A], G.modify));
+    // Lens => Prism
+  } else if (tag === PrismTag && G.tag == LensTag) {
+    return unsafeCoerce(
+      prism((s) => O.of(G.view(s)) as Option<A>, G.modify),
+    );
   }
+  // Non-valid casts will throw an error.
+  throw new Error(`Attempted to cast ${G.tag} to ${tag}`);
 }
 
 /**
@@ -268,16 +384,6 @@ export function fromIso<S, A>({ view, review }: Iso<S, A>): Lens<S, A> {
 }
 
 /**
- * Wrap an Optic that focuses on a value that can be null or undefined
- * such that it focuses only on non-null values
- */
-export const nilable: <U extends Tag, S, A>(
-  first: Optic<U, S, A>,
-) => Optic<Join<U, PrismTag>, S, NonNullable<A>> = compose(
-  prism(O.fromNullable, (faa) => (a) => isNotNil(a) ? faa(a) : a),
-);
-
-/**
  * Given an Optic over a structure with a property P, construct a
  * new Optic at that property P.
  */
@@ -333,16 +439,16 @@ export function key(
 /**
  * Given an Optic focused on A, filter out or refine that A.
  */
-export function filter<A>(
-  r: Predicate<A>,
-): <U extends Tag, S>(
-  first: Optic<U, S, A>,
-) => Optic<Join<U, PrismTag>, S, A>;
 export function filter<A, B extends A>(
   r: Refinement<A, B>,
 ): <U extends Tag, S>(
   first: Optic<U, S, A>,
 ) => Optic<Join<U, PrismTag>, S, B>;
+export function filter<A>(
+  r: Predicate<A>,
+): <U extends Tag, S>(
+  first: Optic<U, S, A>,
+) => Optic<Join<U, PrismTag>, S, A>;
 export function filter<A>(
   predicate: Predicate<A>,
 ): <U extends Tag, S>(first: Optic<U, S, A>) => Optic<Join<U, PrismTag>, S, A> {
@@ -363,19 +469,41 @@ export function traverse<T extends Kind>(
 ): <U extends Tag, S, A, B, C, D, E>(
   first: Optic<U, S, $<T, [A, B, C], [D], [E]>>,
 ) => Optic<Join<U, TraversalTag>, S, A> {
-  return compose(traversal(
-    T.reduce((as, a) => {
-      // Interior mutability is questionable here
-      as.push(a);
-      return as;
+  return compose(
+    traversal(
       // deno-lint-ignore no-explicit-any
-    }, [] as any[]),
-    (faa) => T.map(faa),
-  ));
+      T.reduce((as, a) => as.concat(a), [] as any[]),
+      T.map,
+    ),
+  );
+}
+
+/**
+ * Extract the view function from an Optic
+ *
+ * @experiemental
+ */
+export function view<U extends Tag, S, A>(
+  optic: Optic<U, S, A>,
+): typeof optic.view {
+  return optic.view;
+}
+
+/**
+ * Extract the modify function from an Optic
+ *
+ * @experiemental
+ */
+export function modify<U extends Tag, S, A>(
+  optic: Optic<U, S, A>,
+): typeof optic.modify {
+  return optic.modify;
 }
 
 /**
  * Construct a replace function for a given Optic
+ *
+ * @experimental
  */
 export function replace<U extends Tag, S, A>(
   optic: Optic<U, S, A>,
@@ -452,22 +580,37 @@ export function concatAll<A, I>(M: Monoid<I>, fai: (a: A) => I) {
 /**
  * Construct an Optic over the values of a ReadonlyRecord<A>
  */
-export const record = traverse(R.TraversableRecord);
-
+export const record: <U extends Tag, S, A>(
+  first: Optic<U, S, ReadonlyRecord<A>>,
+) => Optic<Join<U, TraversalTag>, S, A> = traverse(R.TraversableRecord);
 /**
  * Construct an Optic over the values of a ReadonlyArray<A>
  */
-export const array = traverse(A.TraversableArray);
+export const array: <U extends Tag, S, A>(
+  first: Optic<U, S, ReadonlyArray<A>>,
+) => Optic<Join<U, TraversalTag>, S, A> = traverse(A.TraversableArray);
 
 /**
  * Construct an Optic over the values of a ReadonlySet<A>
  */
-export const set = traverse(TraversableSet);
+export const set: <U extends Tag, S, A>(
+  first: Optic<U, S, ReadonlySet<A>>,
+) => Optic<Join<U, TraversalTag>, S, A> = traverse(TraversableSet);
 
 /**
  * Construct an Optic over the values of a Tree<A>
  */
-export const tree = traverse(TraversableTree);
+export const tree: <U extends Tag, S, A>(
+  first: Optic<U, S, Tree<A>>,
+) => Optic<Join<U, TraversalTag>, S, A> = traverse(TraversableTree);
+
+/**
+ * Wrap an Optic that focuses on a value that can be null or undefined
+ * such that it focuses only on non-null values
+ */
+export const nilable: <U extends Tag, S, A>(
+  first: Optic<U, S, A>,
+) => Optic<Join<U, PrismTag>, S, NonNullable<A>> = filter(isNotNil);
 
 /**
  * Given an optic focused on an Option<A>, construct
