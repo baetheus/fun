@@ -5,6 +5,8 @@
  *
  * This file contains the Semigroup algebra, a collection of
  * instance getters, and some utilities around Semigroups.
+ *
+ * @module Semigroup
  */
 
 import type { ReadonlyRecord } from "./record.ts";

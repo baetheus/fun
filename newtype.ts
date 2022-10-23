@@ -6,6 +6,8 @@
  * `type MyNumber = number`. However, Newtype will prevent the
  * existing type from being used where the Branded type is
  * specified.
+ *
+ * @module Newtype
  */
 
 import type { Hold } from "./kind.ts";
