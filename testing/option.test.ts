@@ -2,6 +2,7 @@ import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
 import * as O from "../option.ts";
 import * as N from "../number.ts";
+import * as Ord from "../ord.ts";
 import { pipe, todo } from "../fn.ts";
 
 const add = (n: number) => n + 1;
@@ -83,8 +84,8 @@ Deno.test("Option getShow", () => {
 });
 
 Deno.test("Option getOrd", () => {
-  const Ord = O.getOrd(N.OrdNumber);
-  const { lte } = Ord;
+  const ord = O.getOrd(N.OrdNumber);
+  const lte = Ord.lte(ord);
   assertEquals(lte(O.none)(O.none), true);
   assertEquals(lte(O.none)(O.some(1)), false);
   assertEquals(lte(O.some(1))(O.none), true);

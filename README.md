@@ -95,7 +95,7 @@ module at the `HEAD` of the `main` branch can be found here:
 - [semigroupoid.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/semigroupoid.ts)
 - [separated.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/separated.ts)
 - [set.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/set.ts)
-- [setoid.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/setoid.ts)
+- [eq.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/eq.ts)
 - [show.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/show.ts)
 - [state.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/state.ts)
 - [string.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/string.ts)

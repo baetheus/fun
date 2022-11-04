@@ -54,7 +54,7 @@ Deno.test("Schemable schema", () => {
     )
   );
 
-  const decodeLazy = LazySchema(D.Schemable);
+  const decodeLazy = LazySchema(D.SchemableDecoder);
 
   assertEquals(decodeLazy(lazy()), E.right(lazy()));
 
@@ -79,11 +79,11 @@ Deno.test("Schemable schema", () => {
     )
   );
 
-  const decode = BigSchema(D.Schemable);
-  const refine = BigSchema(R.Schemable);
+  const decode = BigSchema(D.SchemableDecoder);
+  const refine = BigSchema(R.SchemableRefinement);
 
   // Shouldn't throw
-  BigSchema(J.Schemable);
+  BigSchema(J.SchemableJsonBuilder);
 
   const shouldPass: unknown = big();
   const shouldFail: unknown = Object.assign(big(), { number: "hello" });

@@ -3,6 +3,7 @@ import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 import * as E from "../either.ts";
 import * as O from "../option.ts";
 import * as N from "../number.ts";
+import * as Ord from "../ord.ts";
 import { pipe } from "../fn.ts";
 
 Deno.test("Either left", () => {
@@ -114,7 +115,7 @@ Deno.test("Either getShow", () => {
 });
 
 Deno.test("Either getSetoid", () => {
-  const Setoid = E.getSetoid(N.SetoidNumber, N.SetoidNumber);
+  const Setoid = E.getEq(N.EqNumber, N.EqNumber);
   const right = Setoid.equals(E.right(1));
   const left = Setoid.equals(E.left(1));
 
@@ -130,9 +131,10 @@ Deno.test("Either getSetoid", () => {
 });
 
 Deno.test("Either getOrd", () => {
-  const Ord = E.getOrd(N.OrdNumber, N.OrdNumber);
-  const right = Ord.lte(E.right(2));
-  const left = Ord.lte(E.left(2));
+  const ord = E.getOrd(N.OrdNumber, N.OrdNumber);
+  const lte = Ord.lte(ord);
+  const right = lte(E.right(2));
+  const left = lte(E.left(2));
 
   assertEquals(right(E.right(1)), true);
   assertEquals(right(E.right(2)), true);

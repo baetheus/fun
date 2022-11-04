@@ -2,6 +2,7 @@ import type { In, Kind, Out } from "./kind.ts";
 
 import type { Option } from "./option.ts";
 import type { Either } from "./either.ts";
+import type { Integer, Natural } from "./number.ts";
 
 import * as S from "./schemable.ts";
 import { isNil } from "./nilable.ts";
@@ -57,6 +58,14 @@ export function string(a: unknown): a is string {
 
 export function number(a: unknown): a is number {
   return typeof a === "number";
+}
+
+export function integer(a: unknown): a is Integer {
+  return number(a) && Number.isSafeInteger(a);
+}
+
+export function natural(a: unknown): a is Natural {
+  return integer(a) && a >= 0;
 }
 
 export function boolean(a: unknown): a is boolean {
@@ -167,7 +176,7 @@ export function lazy<A, B extends A>(
   return fga();
 }
 
-export const Schemable: S.Schemable<UnknownURI> = {
+export const SchemableRefinement: S.Schemable<UnknownURI> = {
   unknown: () => unknown,
   string: () => string,
   number: () => number,

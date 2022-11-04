@@ -19,63 +19,76 @@ Deno.test("Ord sign", () => {
 });
 
 Deno.test("Ord fromCompare", () => {
-  const ord = O.fromCompare(N.compare);
-  const { lt, lte, equals, gte, gt, min, max, clamp, between, compare } = ord;
-
-  // lt
-  assertEquals(lt(0)(0), false);
-  assertEquals(lt(0)(1), false);
-  assertEquals(lt(1)(0), true);
-
-  // gt
-  assertEquals(gt(0)(0), false);
-  assertEquals(gt(0)(1), true);
-  assertEquals(gt(1)(0), false);
-
-  // lte
-  assertEquals(lte(0)(0), true);
-  assertEquals(lte(0)(1), false);
-  assertEquals(lte(1)(0), true);
-
-  // gte
-  assertEquals(gte(0)(0), true);
-  assertEquals(gte(1)(0), false);
-  assertEquals(gte(0)(1), true);
-
+  const { compare, equals } = O.fromCompare(N.compare);
+  // compare
+  assertEquals(compare(0, 0), 0);
+  assertEquals(compare(0, 1), -1);
+  assertEquals(compare(1, 0), 1);
   // equals
   assertEquals(equals(0)(0), true);
   assertEquals(equals(0)(1), false);
   assertEquals(equals(1)(0), false);
+});
 
-  // min
+Deno.test("Ord lt", () => {
+  const lt = O.lt(N.OrdNumber);
+  assertEquals(lt(0)(0), false);
+  assertEquals(lt(0)(1), false);
+  assertEquals(lt(1)(0), true);
+});
+
+Deno.test("Ord gt", () => {
+  const gt = O.gt(N.OrdNumber);
+  assertEquals(gt(0)(0), false);
+  assertEquals(gt(0)(1), true);
+  assertEquals(gt(1)(0), false);
+});
+
+Deno.test("Ord lte", () => {
+  const lte = O.lte(N.OrdNumber);
+  assertEquals(lte(0)(0), true);
+  assertEquals(lte(0)(1), false);
+  assertEquals(lte(1)(0), true);
+});
+
+Deno.test("Ord gte", () => {
+  const gte = O.gte(N.OrdNumber);
+  assertEquals(gte(0)(0), true);
+  assertEquals(gte(1)(0), false);
+  assertEquals(gte(0)(1), true);
+});
+
+Deno.test("Ord min", () => {
+  const min = O.min(N.OrdNumber);
   assertEquals(min(0)(0), 0);
   assertEquals(min(0)(1), 0);
   assertEquals(min(1)(0), 0);
+});
 
-  // max
+Deno.test("Ord max", () => {
+  const max = O.max(N.OrdNumber);
   assertEquals(max(0)(0), 0);
   assertEquals(max(0)(1), 1);
   assertEquals(max(1)(0), 1);
+});
 
-  // clamp
+Deno.test("Ord clamp", () => {
+  const clamp = O.clamp(N.OrdNumber);
   assertEquals(clamp(0, 2)(-1), 0);
   assertEquals(clamp(0, 2)(0), 0);
   assertEquals(clamp(0, 2)(1), 1);
   assertEquals(clamp(0, 2)(2), 2);
   assertEquals(clamp(0, 2)(3), 2);
+});
 
-  // between
+Deno.test("Ord between", () => {
+  const between = O.between(N.OrdNumber);
   assertEquals(between(0, 2)(-1), false);
   assertEquals(between(0, 2)(0), false);
   assertEquals(between(0, 2)(1), true);
   assertEquals(between(0, 10)(5), true);
   assertEquals(between(0, 2)(2), false);
   assertEquals(between(0, 2)(3), false);
-
-  // compare
-  assertEquals(compare(0, 0), 0);
-  assertEquals(compare(0, 1), -1);
-  assertEquals(compare(1, 0), 1);
 });
 
 Deno.test("Ord trivial", () => {

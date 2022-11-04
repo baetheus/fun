@@ -7,7 +7,8 @@ import {
 import * as A from "../array.ts";
 import * as O from "../option.ts";
 import * as N from "../number.ts";
-import { SetoidBoolean } from "../boolean.ts";
+import * as Ord from "../ord.ts";
+import { EqBoolean } from "../boolean.ts";
 import { pipe } from "../fn.ts";
 
 Deno.test("Array empty", () => assertEquals(A.empty(), []));
@@ -75,7 +76,7 @@ Deno.test("Array traverse", () => {
 });
 
 Deno.test("Array getSetoid", () => {
-  const setoid = A.getSetoid(SetoidBoolean);
+  const setoid = A.getEq(EqBoolean);
 
   assertEquals(setoid.equals([])([]), true);
   assertEquals(setoid.equals([true])([]), false);
@@ -86,14 +87,15 @@ Deno.test("Array getSetoid", () => {
 
 Deno.test("Array getOrd", () => {
   const ord = A.getOrd(N.OrdNumber);
+  const lte = Ord.lte(ord);
 
-  assertEquals(ord.lte([])([]), true);
-  assertEquals(ord.lte([1])([]), true);
-  assertEquals(ord.lte([1, 2])([1]), true);
-  assertEquals(ord.lte([1, 2])([1, 1]), true);
-  assertEquals(ord.lte([])([1]), false);
-  assertEquals(ord.lte([1])([1, 2]), false);
-  assertEquals(ord.lte([1, 2])([2, 1]), false);
+  assertEquals(lte([])([]), true);
+  assertEquals(lte([1])([]), true);
+  assertEquals(lte([1, 2])([1]), true);
+  assertEquals(lte([1, 2])([1, 1]), true);
+  assertEquals(lte([])([1]), false);
+  assertEquals(lte([1])([1, 2]), false);
+  assertEquals(lte([1, 2])([2, 1]), false);
 });
 
 Deno.test("Array getSemigroup", () => {

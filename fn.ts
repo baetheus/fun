@@ -610,11 +610,11 @@ export function map<A, I>(
  * import { join } from "./fn.ts";
  *
  * const add = (n: number) => (m: number) => m + n;
- * const double = join(add);
+ * const dup = join(add);
  *
- * const result1 = double(1); // 2
- * const result2 = double(2); // 4
- * const result3 = double(10); // 20
+ * const result1 = dup(1); // 2
+ * const result2 = dup(2); // 4
+ * const result3 = dup(10); // 20
  * ```
  *
  * @since 2.0.0
@@ -771,11 +771,11 @@ export function id<A>(): Fn<[A], A> {
  * import { compose, pipe } from "./fn.ts";
  *
  * const length = (s: string) => s.length;
- * const double = (n: number) => n + n;
+ * const dup = (n: number) => n + n;
  *
  * const composed = pipe(
  *   length,
- *   compose(double),
+ *   compose(dup),
  * );
  *
  * const result1 = composed("Hello"); // 10
@@ -799,7 +799,7 @@ export function compose<A, I>(
  * @example
  * ```ts
  * import { id, first, pipe, map } from "./fn.ts";
- * import { double } from "./pair.ts";
+ * import { dup } from "./pair.ts";
  *
  * const addOne = (n: number) => n + 1;
  * const power = (x: number) => (n: number) => Math.pow(n, x);
@@ -807,7 +807,7 @@ export function compose<A, I>(
  * // Adds 1 and multiplies the result by itself
  * // But keeps the original argument
  * const computation = pipe(
- *   double<number>,
+ *   dup<number>,
  *   map(first(addOne)),
  *   map(first(power(2))),
  * );
@@ -833,7 +833,7 @@ export function first<A, D, Q = never>(
  * @example
  * ```ts
  * import { id, second, pipe, map } from "./fn.ts";
- * import { double } from "./pair.ts";
+ * import { dup } from "./pair.ts";
  *
  * const addOne = (n: number) => n + 1;
  * const power = (x: number) => (n: number) => Math.pow(n, x);
@@ -841,7 +841,7 @@ export function first<A, D, Q = never>(
  * // Adds 1 and multiplies the result by itself
  * // But keeps the original argument
  * const computation = pipe(
- *   double<number>,
+ *   dup<number>,
  *   map(second(addOne)),
  *   map(second(power(2))),
  * );

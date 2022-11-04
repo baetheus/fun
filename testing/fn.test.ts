@@ -197,7 +197,7 @@ Deno.test("Fn compose", () => {
 Deno.test("Fn first", () => {
   assertEquals(
     pipe(
-      P.double<number>,
+      P.dup<number>,
       F.map(F.first((n) => n + 1)),
       F.apply(1),
     ),
@@ -208,7 +208,7 @@ Deno.test("Fn first", () => {
 Deno.test("Fn second", () => {
   assertEquals(
     pipe(
-      P.double<number>,
+      P.dup<number>,
       F.map(F.second((n) => n + 1)),
       F.apply(1),
     ),

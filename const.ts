@@ -7,7 +7,7 @@ import type { Kind, Out } from "./kind.ts";
 import type { Monoid } from "./monoid.ts";
 import type { Ord } from "./ord.ts";
 import type { Semigroup } from "./semigroup.ts";
-import type { Setoid } from "./setoid.ts";
+import type { Eq } from "./eq.ts";
 import type { Show } from "./show.ts";
 
 import { identity } from "./fn.ts";
@@ -55,9 +55,9 @@ export const getShow = <E, A>(S: Show<E>): Show<Const<E, A>> => ({
   show: (c) => `Const(${S.show(c)})`,
 });
 
-export const getSetoid: <E, A>(
-  E: Setoid<E>,
-) => Setoid<Const<E, A>> = identity;
+export const getEq: <E, A>(
+  E: Eq<E>,
+) => Eq<Const<E, A>> = identity;
 
 export const getOrd: <E, A>(O: Ord<E>) => Ord<Const<E, A>> = identity;
 

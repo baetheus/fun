@@ -5,7 +5,7 @@ import type { Monad } from "./monad.ts";
 import type { Monoid } from "./monoid.ts";
 import type { Ord } from "./ord.ts";
 import type { Semigroup } from "./semigroup.ts";
-import type { Setoid } from "./setoid.ts";
+import type { Eq } from "./eq.ts";
 import type { Show } from "./show.ts";
 import type { Traversable } from "./traversable.ts";
 
@@ -244,7 +244,7 @@ export function getMonoid<A>(S: Semigroup<A>): Monoid<Datum<A>> {
   });
 }
 
-export function getSetoid<A>(S: Setoid<A>): Setoid<Datum<A>> {
+export function getEq<A>(S: Eq<A>): Eq<Datum<A>> {
   return ({
     equals: (b) =>
       fold(

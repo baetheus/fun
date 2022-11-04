@@ -71,14 +71,14 @@ export function pair<A, B>(first: A, second: B): Pair<A, B> {
  *
  * @example
  * ```ts
- * import { double } from "./pair.ts";
+ * import { dup } from "./pair.ts";
  *
- * const result = double(1); // [1, 1]
+ * const result = dup(1); // [1, 1]
  * ```
  *
  * @since 2.0.0
  */
-export function double<A>(a: A): Pair<A, A> {
+export function dup<A>(a: A): Pair<A, A> {
   return pair(a, a);
 }
 
@@ -359,6 +359,22 @@ export function traverse<V extends Kind>(A: Applicative<V>) {
       favi(fst),
       A.map(second(snd)),
     );
+}
+
+/**
+ * Apply a function in the first position of a pair to a value
+ * in the second position of a pair.
+ */
+export function merge<A, I>(ua: Pair<(a: A) => I, A>): I {
+  return ua[0](ua[1]);
+}
+
+/**
+ * Apply a function in the first position of a pair to a value
+ * in the second position of a pair.
+ */
+export function mergeSecond<A, I>(ua: Pair<A, (a: A) => I>): I {
+  return ua[1](ua[0]);
 }
 
 /**

@@ -5,12 +5,12 @@ import type { Monoid } from "./monoid.ts";
 import type { Option } from "./option.ts";
 import type { Ord } from "./ord.ts";
 import type { Semigroup } from "./semigroup.ts";
-import type { Setoid } from "./setoid.ts";
+import type { Eq } from "./eq.ts";
 import type { Show } from "./show.ts";
 
 import * as O from "./option.ts";
 import * as A from "./array.ts";
-import { fromEquals } from "./setoid.ts";
+import { fromEquals } from "./eq.ts";
 import { flow, pipe } from "./fn.ts";
 
 export interface URI extends Kind {
@@ -71,7 +71,7 @@ export function size<K, A>(d: ReadonlyMap<K, A>): number {
 }
 
 export function lookupWithKey<K>(
-  S: Setoid<K>,
+  S: Eq<K>,
 ): (k: K) => <A>(ta: ReadonlyMap<K, A>) => Option<[K, A]> {
   return (k) => (ta) => {
     for (const [ka, a] of ta.entries()) {
@@ -84,7 +84,7 @@ export function lookupWithKey<K>(
 }
 
 export function lookup<K>(
-  S: Setoid<K>,
+  S: Eq<K>,
 ): (k: K) => <A>(ta: ReadonlyMap<K, A>) => Option<A> {
   const _lookupWithKey = lookupWithKey(S);
   return (k) => {
@@ -99,14 +99,14 @@ export function lookup<K>(
 }
 
 export function member<K>(
-  S: Setoid<K>,
+  S: Eq<K>,
 ): (k: K) => <A>(ta: ReadonlyMap<K, A>) => boolean {
   const lookupKey = lookup(S);
   return (k) => (m) => pipe(lookupKey(k)(m), O.isSome);
 }
 
 export function elem<A>(
-  S: Setoid<A>,
+  S: Eq<A>,
 ): (a: A) => <K>(m: ReadonlyMap<K, A>) => boolean {
   return (a) => {
     const eq = S.equals(a);
@@ -160,7 +160,7 @@ export function collect<B>(
 }
 
 export function deleteAt<B>(
-  S: Setoid<B>,
+  S: Eq<B>,
 ): (key: B) => <A>(map: ReadonlyMap<B, A>) => ReadonlyMap<B, A> {
   const _lookup = lookupWithKey(S);
   return (key) => (map) =>
@@ -178,7 +178,7 @@ export function deleteAt<B>(
 }
 
 export function insert<B>(
-  S: Setoid<B>,
+  S: Eq<B>,
 ) {
   const _lookup = lookupWithKey(S);
   return <A>(value: A) =>
@@ -205,14 +205,14 @@ export function insert<B>(
 }
 
 export function insertAt<B>(
-  S: Setoid<B>,
+  S: Eq<B>,
 ) {
   const _insert = insert(S);
   return (key: B) => <A>(value: A) => _insert(value)(key);
 }
 
 export function modify<B>(
-  S: Setoid<B>,
+  S: Eq<B>,
 ): <A>(
   modifyFn: (a: A) => A,
 ) => (key: B) => (ta: ReadonlyMap<B, A>) => ReadonlyMap<B, A> {
@@ -232,7 +232,7 @@ export function modify<B>(
 }
 
 export function modifyAt<B>(
-  S: Setoid<B>,
+  S: Eq<B>,
 ): (
   key: B,
 ) => <A>(
@@ -242,19 +242,19 @@ export function modifyAt<B>(
 }
 
 export function update<B>(
-  S: Setoid<B>,
+  S: Eq<B>,
 ): <A>(value: A) => (key: B) => (map: ReadonlyMap<B, A>) => ReadonlyMap<B, A> {
   return (value) => (key) => modify(S)(() => value)(key);
 }
 
 export function updateAt<B>(
-  S: Setoid<B>,
+  S: Eq<B>,
 ): (key: B) => <A>(value: A) => (map: ReadonlyMap<B, A>) => ReadonlyMap<B, A> {
   return (key) => (value) => modify(S)(() => value)(key);
 }
 
 export function pop<B>(
-  S: Setoid<B>,
+  S: Eq<B>,
 ): (b: B) => <A>(ta: ReadonlyMap<B, A>) => Option<[A, ReadonlyMap<B, A>]> {
   const _lookup = lookup(S);
   const _deleteAt = deleteAt(S);
@@ -270,8 +270,8 @@ export function pop<B>(
 }
 
 export function isSubmap<K, A>(
-  SK: Setoid<K>,
-  SA: Setoid<A>,
+  SK: Eq<K>,
+  SA: Eq<A>,
 ): (second: ReadonlyMap<K, A>) => (first: ReadonlyMap<K, A>) => boolean {
   const _lookupWithKey = lookupWithKey(SK);
   return (second) => {
@@ -308,10 +308,10 @@ export function getShow<K, A>(
   });
 }
 
-export function getSetoid<K, A>(
-  SK: Setoid<K>,
-  SA: Setoid<A>,
-): Setoid<ReadonlyMap<K, A>> {
+export function getEq<K, A>(
+  SK: Eq<K>,
+  SA: Eq<A>,
+): Eq<ReadonlyMap<K, A>> {
   const submap = isSubmap(SK, SA);
   return fromEquals((first, second) =>
     submap(second)(first) && submap(first)(second)
@@ -319,7 +319,7 @@ export function getSetoid<K, A>(
 }
 
 export function getMonoid<K, A>(
-  SK: Setoid<K>,
+  SK: Eq<K>,
   SA: Semigroup<A>,
 ): Monoid<ReadonlyMap<K, A>> {
   const lookupKey = lookupWithKey(SK);

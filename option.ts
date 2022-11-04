@@ -13,7 +13,7 @@ import type { Ord } from "./ord.ts";
 import type { Predicate } from "./predicate.ts";
 import type { Refinement } from "./refinement.ts";
 import type { Semigroup } from "./semigroup.ts";
-import type { Setoid } from "./setoid.ts";
+import type { Eq } from "./eq.ts";
 import type { Show } from "./show.ts";
 import type { Traversable } from "./traversable.ts";
 
@@ -309,16 +309,16 @@ export function getShow<A>({ show }: Show<A>): Show<Option<A>> {
 }
 
 /**
- * Generates a Setoid module for an option with inner type of A.
+ * Generates a Eq module for an option with inner type of A.
  *
  * @example
- *     const Setoid = getSetoid({ equals: (a: number, b: number) => a === b });
- *     const a = Setoid.equals(some(1), some(2)); // false
- *     const b = Setoid.equals(some(1), some(1)); // true
- *     const c = Setoid.equals(none, none); // true
- *     const d = Setoid.equals(some(1), none); // false
+ *     const Eq = getEq({ equals: (a: number, b: number) => a === b });
+ *     const a = Eq.equals(some(1), some(2)); // false
+ *     const b = Eq.equals(some(1), some(1)); // true
+ *     const c = Eq.equals(none, none); // true
+ *     const d = Eq.equals(some(1), none); // false
  */
-export function getSetoid<A>(S: Setoid<A>): Setoid<Option<A>> {
+export function getEq<A>(S: Eq<A>): Eq<Option<A>> {
   return ({
     equals: (a) => (b) =>
       a === b ||

@@ -1,13 +1,18 @@
 import type { Monoid } from "./monoid.ts";
 import type { Ord, Ordering } from "./ord.ts";
 import type { Semigroup } from "./semigroup.ts";
-import type { Setoid } from "./setoid.ts";
+import type { Eq } from "./eq.ts";
 import type { Show } from "./show.ts";
+import type { Newtype } from "./newtype.ts";
 
-import { fromCompare, sign } from "./ord.ts";
+import * as O from "./ord.ts";
 import { map, pipe } from "./fn.ts";
 
 // TODO; Implement newtypes for natural, integer, rational
+
+export type Natural = Newtype<"Natural", number>;
+
+export type Integer = Newtype<"Integer", Natural>;
 
 export function equals(second: number): (first: number) => boolean {
   return (first) => first === second;
@@ -34,7 +39,7 @@ export function divides(second: number): (first: number) => boolean {
 }
 
 export function compare(first: number, second: number): Ordering {
-  return sign(first - second);
+  return O.sign(first - second);
 }
 
 export function emptyZero(): number {
@@ -45,9 +50,9 @@ export function emptyOne(): number {
   return 1;
 }
 
-export const SetoidNumber: Setoid<number> = { equals };
+export const EqNumber: Eq<number> = { equals };
 
-export const OrdNumber: Ord<number> = fromCompare(compare);
+export const OrdNumber: Ord<number> = O.fromCompare(compare);
 
 export const SemigroupNumberProduct: Semigroup<number> = {
   concat: multiply,
@@ -58,11 +63,11 @@ export const SemigroupNumberSum: Semigroup<number> = {
 };
 
 export const SemigroupNumberMax: Semigroup<number> = {
-  concat: OrdNumber.max,
+  concat: O.max(OrdNumber),
 };
 
 export const SemigroupNumberMin: Semigroup<number> = {
-  concat: OrdNumber.min,
+  concat: O.min(OrdNumber),
 };
 
 export const MonoidNumberProduct: Monoid<number> = {

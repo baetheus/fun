@@ -1,5 +1,6 @@
 import type { $, Kind, TypeClass } from "./kind.ts";
 import type { Functor } from "./functor.ts";
+import type { NonEmptyArray } from "./array.ts";
 
 /**
  * An instance of Alt extends Functor and provides a new method
@@ -22,4 +23,19 @@ export interface Alt<U extends Kind> extends TypeClass<U>, Functor<U> {
   readonly alt: <A, B, C, D, E>(
     second: $<U, [A, B, C], [D], [E]>,
   ) => (first: $<U, [A, B, C], [D], [E]>) => $<U, [A, B, C], [D], [E]>;
+}
+
+export function concatAll<U extends Kind>(
+  { alt }: Alt<U>,
+): <A, B, C, D, E>(
+  uas: NonEmptyArray<$<U, [A, B, C], [D], [E]>>,
+) => $<U, [A, B, C], [D], [E]> {
+  return (uas) => {
+    const [head, ...tail] = uas;
+    let out = head;
+    for (const ua of tail) {
+      out = alt(ua)(out);
+    }
+    return out;
+  };
 }

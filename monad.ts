@@ -1,6 +1,7 @@
 import type { $, Kind, TypeClass } from "./kind.ts";
 import type { Applicative } from "./applicative.ts";
 import type { Chain } from "./chain.ts";
+import type { Bifunctor } from "./bifunctor.ts";
 
 import { identity, pipe } from "./fn.ts";
 
@@ -23,8 +24,15 @@ import { identity, pipe } from "./fn.ts";
  */
 export interface Monad<U extends Kind>
   extends Applicative<U>, Chain<U>, TypeClass<U> {
-  readonly join: <A, B, C, D, E>(
+  readonly join: <A, B = never, C = never, D = never, E = never>(
     tta: $<U, [$<U, [A, B, C], [D], [E]>, B, C], [D], [E]>,
+  ) => $<U, [A, B, C], [D], [E]>;
+}
+
+export interface Bimonad<U extends Kind> extends Bifunctor<U>, Monad<U> {
+  // TODO: Should we switch from left to second?
+  readonly ofLeft: <B, A = never, C = never, D = never, E = never>(
+    b: B,
   ) => $<U, [A, B, C], [D], [E]>;
 }
 

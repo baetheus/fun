@@ -12,6 +12,7 @@
 import type { ReadonlyRecord } from "./record.ts";
 import type { Ord } from "./ord.ts";
 
+import * as O from "./ord.ts";
 import { reduce } from "./array.ts";
 import { pipe } from "./fn.ts";
 
@@ -273,8 +274,8 @@ export function struct<O extends ReadonlyRecord<any>>(
  *
  * @since 2.0.0
  */
-export function max<A>(O: Ord<A>): Semigroup<A> {
-  return { concat: O.max };
+export function max<A>(ord: Ord<A>): Semigroup<A> {
+  return { concat: O.max(ord) };
 }
 
 /**
@@ -302,8 +303,8 @@ export function max<A>(O: Ord<A>): Semigroup<A> {
  *
  * @since 2.0.0
  */
-export function min<A>(O: Ord<A>): Semigroup<A> {
-  return { concat: O.min };
+export function min<A>(ord: Ord<A>): Semigroup<A> {
+  return { concat: O.min(ord) };
 }
 
 /**

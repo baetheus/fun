@@ -1,7 +1,7 @@
 import type { Monoid } from "./monoid.ts";
 import type { Ord, Ordering } from "./ord.ts";
 import type { Semigroup } from "./semigroup.ts";
-import type { Setoid } from "./setoid.ts";
+import type { Eq } from "./eq.ts";
 import type { Show } from "./show.ts";
 
 import { fromCompare } from "./ord.ts";
@@ -164,12 +164,12 @@ export function and(second: boolean): (first: boolean) => boolean {
 export const OrdBoolean: Ord<boolean> = fromCompare(compare);
 
 /**
- * The canonical implementation of Setoid for boolean. It contains
+ * The canonical implementation of Eq for boolean. It contains
  * the method equals.
  *
  * @since 2.0.0
  */
-export const SetoidBoolean: Setoid<boolean> = { equals };
+export const EqBoolean: Eq<boolean> = { equals };
 
 /**
  * The canonical implementation of Semigroup for boolean that

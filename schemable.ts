@@ -255,9 +255,9 @@ type InferSchema<U extends Kind, A, B, C, D, E> =
  * @example
  * ```ts
  * import { schema, TypeOf } from "./schemable.ts";
- * import * as D from "./decoder.ts";
- * import * as G from "./refinement.ts";
- * import * as J from "./json_schema.ts";
+ * import { SchemableDecoder } from "./decoder.ts";
+ * import { SchemableRefinement } from "./refinement.ts";
+ * import { SchemableJsonBuilder, print } from "./json_schema.ts";
  * import { pipe } from "./fn.ts";
  *
  * const mySchema = schema(s => pipe(
@@ -273,9 +273,9 @@ type InferSchema<U extends Kind, A, B, C, D, E> =
  * // Derive the type from the schema
  * type MySchema = TypeOf<typeof mySchema>;
  *
- * const decode = mySchema(D.Schemable);
- * const guard = mySchema(G.Schemable);
- * const jsonSchema = mySchema(J.Schemable);
+ * const decode = mySchema(SchemableDecoder);
+ * const refine = mySchema(SchemableRefinement);
+ * const jsonSchema = mySchema(SchemableJsonBuilder);
  *
  * const unknown1 = {
  *   name: "Batman",
@@ -290,12 +290,12 @@ type InferSchema<U extends Kind, A, B, C, D, E> =
  * const decoded1 = decode(unknown1); // Success!
  * const decoded2 = decode(unknown2); // Failure with info
  *
- * const guarded1 = guard(unknown1); // true
- * const guarded2 = guard(unknown2); // false
+ * const refine1 = refine(unknown1); // true
+ * const refine2 = refine(unknown2); // false
  *
  * const jsonSchemaString = pipe(
  *   jsonSchema,
- *   J.print,
+ *   print,
  *   json => JSON.stringify(json, null, 2),
  * ); // Turns the jsonSchema into a prettified string
  *

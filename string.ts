@@ -3,7 +3,7 @@ import type { NonEmptyArray } from "./array.ts";
 import type { Option } from "./option.ts";
 import type { Ord, Ordering } from "./ord.ts";
 import type { Semigroup } from "./semigroup.ts";
-import type { Setoid } from "./setoid.ts";
+import type { Eq } from "./eq.ts";
 import type { Show } from "./show.ts";
 
 import { fromCompare } from "./ord.ts";
@@ -449,12 +449,12 @@ export function test(r: RegExp) {
 export const OrdString: Ord<string> = fromCompare(compare);
 
 /**
- * The canonical implementation of Setoid for string. It contains
+ * The canonical implementation of Eq for string. It contains
  * the method equals.
  *
  * @since 2.0.0
  */
-export const SetoidString: Setoid<string> = { equals };
+export const EqString: Eq<string> = { equals };
 
 /**
  * The canonical implementation of Semigroup for string. It contains

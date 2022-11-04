@@ -3,6 +3,7 @@ import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 import * as D from "../datum.ts";
 import * as O from "../option.ts";
 import * as N from "../number.ts";
+import * as Ord from "../ord.ts";
 import { pipe } from "../fn.ts";
 
 Deno.test("Datum initial", () => {
@@ -163,7 +164,7 @@ Deno.test("Datum getMonoid", () => {
 });
 
 Deno.test("Datum getSetoid", () => {
-  const Setoid = D.getSetoid(N.SetoidNumber);
+  const Setoid = D.getEq(N.EqNumber);
   const initial = Setoid.equals(D.initial);
   const pending = Setoid.equals(D.pending);
   const replete = Setoid.equals(D.replete(1));
@@ -193,11 +194,13 @@ Deno.test("Datum getSetoid", () => {
 });
 
 Deno.test("Datum getOrd", () => {
-  const Ord = D.getOrd(N.OrdNumber);
-  const initial = Ord.lte(D.initial);
-  const pending = Ord.lte(D.pending);
-  const replete = Ord.lte(D.replete(1));
-  const refresh = Ord.lte(D.refresh(1));
+  const ord = D.getOrd(N.OrdNumber);
+  const lte = Ord.lte(ord);
+
+  const initial = lte(D.initial);
+  const pending = lte(D.pending);
+  const replete = lte(D.replete(1));
+  const refresh = lte(D.refresh(1));
 
   assertEquals(initial(D.initial), true);
   assertEquals(initial(D.pending), false);

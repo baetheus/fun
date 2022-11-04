@@ -7,10 +7,7 @@
 
 import type { Contravariant } from "./contravariant.ts";
 import type { In, Kind } from "./kind.ts";
-import type { Setoid } from "./setoid.ts";
-
-import { and } from "./predicate.ts";
-import { flow, pipe } from "./fn.ts";
+import type { Eq } from "./eq.ts";
 
 /**
  * The ordering type is the expected output of any
@@ -38,43 +35,18 @@ export type Compare<A> = (first: A, second: A) => Ordering;
 
 /**
  * An Ord<T> is an algebra with a notion of equality and
- * order. Specifically, Ord extends Setoid and thus
- * inherites an `equals` method. It also implements
- * a handful of curried methods that are useful in
- * various situations. These include:
- *
- * * lt: less than
- * * lte: less than or equal to
- * * gte: greater than or equal to
- * * gt: greater than
- * * min: the minimum of two values
- * * max: the maximum of two values
- * * clamp: returns a value in a range or at the min
- *   or max of that range (inclusive)
- * * between: returns predicate indicating if a number
- *   is within a range (exclusive)
- *
- * An instance of Ord must obey the following laws:
- *
- * 1. Totality: lte(a)(b) || lte(b)(a) === true
- * 2. Antisymmetry: lte(a)(b) && lte(b)(a) -> equals(a)(b)
- * 3. Transitivity: lte(b)(a) && lte(c)(b) -> lte(c)(a)
+ * order. Specifically, Ord extends Eq and thus
+ * inherites an `equals` method. For order it contains
+ * a signed comparison function, taking two values
+ * and returning -1, 0, or 1 when first < second,
+ * first === second, and first > second respectively.
  *
  * The original type came from
  * [static-land](https://github.com/fantasyland/static-land/blob/master/docs/spec.md#ord)
  *
  * @since 2.0.0
  */
-export interface Ord<A> extends Setoid<A> {
-  readonly lt: (second: A) => (first: A) => boolean;
-  readonly lte: (second: A) => (first: A) => boolean;
-  readonly equals: (second: A) => (first: A) => boolean;
-  readonly gte: (second: A) => (first: A) => boolean;
-  readonly gt: (second: A) => (first: A) => boolean;
-  readonly min: (second: A) => (first: A) => A;
-  readonly max: (second: A) => (first: A) => A;
-  readonly clamp: (low: A, high: A) => (value: A) => A;
-  readonly between: (low: A, high: A) => (value: A) => boolean;
+export interface Ord<A> extends Eq<A> {
   readonly compare: Compare<A>;
 }
 
@@ -110,12 +82,58 @@ export function sign(n: number): Ordering {
   return n < 0 ? -1 : n > 0 ? 1 : 0;
 }
 
+export function lt<A>(ord: Ord<A>): (snd: A) => (fst: A) => boolean {
+  return (snd) => (fst): boolean => ord.compare(fst, snd) === -1;
+}
+
+export function lte<A>(ord: Ord<A>): (snd: A) => (fst: A) => boolean {
+  return (snd) => (fst) => ord.compare(fst, snd) !== 1;
+}
+
+export function gte<A>(ord: Ord<A>): (snd: A) => (fst: A) => boolean {
+  return (snd) => (fst) => ord.compare(fst, snd) !== -1;
+}
+
+export function gt<A>(ord: Ord<A>): (snd: A) => (fst: A) => boolean {
+  return (snd) => (fst) => ord.compare(fst, snd) === 1;
+}
+
+export function min<A>(ord: Ord<A>): (snd: A) => (fst: A) => A {
+  return (snd) => (fst) => ord.compare(fst, snd) !== 1 ? fst : snd;
+}
+
+export function max<A>(ord: Ord<A>): (snd: A) => (fst: A) => A {
+  return (snd) => (fst) => ord.compare(fst, snd) !== -1 ? fst : snd;
+}
+
+export function clamp<A>(ord: Ord<A>): (low: A, high: A) => (value: A) => A {
+  const _min = min(ord);
+  const _max = max(ord);
+  return (low, high) => {
+    const __min = _min(high);
+    const __max = _max(low);
+    return (value) => __min(__max(value));
+  };
+}
+
+export function between<A>(
+  ord: Ord<A>,
+): (low: A, high: A) => (value: A) => boolean {
+  const _gt = gt(ord);
+  const _lt = lt(ord);
+  return (low, high) => {
+    const __gt = _gt(low);
+    const __lt = _lt(high);
+    return (value) => __gt(value) && __lt(value);
+  };
+}
+
 /**
  * Derives an Ord from a Compare function.
  *
  * @example
  * ```ts
- * import { fromCompare, sign } from "./ord.ts";
+ * import { clamp, lte, min, fromCompare, sign } from "./ord.ts";
  * import { pipe } from "./fn.ts";
  *
  * const date = fromCompare<Date>(
@@ -126,27 +144,18 @@ export function sign(n: number): Ordering {
  * const later = new Date(Date.now() + 60 * 60 * 1000);
  * const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
  *
- * const result1 = pipe(now, date.lte(later)); // true
- * const result2 = pipe(tomorrow, date.clamp(now, later)); // later
- * const result3 = pipe(tomorrow, date.min(now)); // now
+ * const result1 = pipe(now, lte(date)(later)); // true
+ * const result2 = pipe(tomorrow, clamp(date)(now, later)); // later
+ * const result3 = pipe(tomorrow, min(date)(now)); // now
  * ```
  *
  * @since 2.0.0
  */
 export function fromCompare<A>(compare: Compare<A>): Ord<A> {
-  const ord: Ord<A> = {
-    lt: (snd) => (fst) => compare(fst, snd) === -1,
-    lte: (snd) => (fst) => compare(fst, snd) !== 1,
-    equals: (snd) => (fst) => compare(fst, snd) === 0,
-    gte: (snd) => (fst) => compare(fst, snd) !== -1,
-    gt: (snd) => (fst) => compare(fst, snd) === 1,
-    min: (snd) => (fst) => compare(fst, snd) !== 1 ? fst : snd,
-    max: (snd) => (fst) => compare(fst, snd) !== -1 ? fst : snd,
-    clamp: (low, high) => flow(ord.max(low), ord.min(high)),
-    between: (low, high) => pipe(ord.gt(low), and(ord.lt(high))),
+  return {
+    equals: (second) => (first) => compare(first, second) === 0,
     compare,
   };
-  return ord;
 }
 
 /**
@@ -154,15 +163,15 @@ export function fromCompare<A>(compare: Compare<A>): Ord<A> {
  *
  * @example
  * ```ts
- * import { trivial } from "./ord.ts";
+ * import { lt, trivial } from "./ord.ts";
  * import { pipe } from "./fn.ts";
  *
  * const date = trivial<Date>();
  * const now = new Date();
  * const later = new Date(Date.now() + 60 * 60 * 1000);
  *
- * const result1 = pipe(now, date.lt(later)); // false
- * const result2 = pipe(later, date.lt(now)); // false
+ * const result1 = pipe(now, lt(date)(later)); // false
+ * const result2 = pipe(later, lt(date)(now)); // false
  * const result3 = pipe(now, date.equals(later)); // true
  * ```
  *
@@ -177,14 +186,14 @@ export function trivial<A>(): Ord<A> {
  *
  * @example
  * ```ts
- * import { reverse } from "./ord.ts";
+ * import { reverse, lt } from "./ord.ts";
  * import { OrdNumber } from "./number.ts";
  * import { pipe } from "./fn.ts";
  *
  * const rev = reverse(OrdNumber);
  *
- * const result1 = pipe(1, rev.lt(2)); // false
- * const result2 = pipe(2, rev.lt(1)); // true
+ * const result1 = pipe(1, lt(rev)(2)); // false
+ * const result2 = pipe(2, lt(rev)(1)); // true
  * ```
  *
  * @since 2.0.0
@@ -200,16 +209,16 @@ export function reverse<A>(ord: Ord<A>): Ord<A> {
  *
  * @example
  * ```ts
- * import { tuple } from "./ord.ts"
+ * import { tuple, lt } from "./ord.ts"
  * import { OrdNumber } from "./number.ts";
  * import { OrdString } from "./string.ts";
  * import { pipe } from "./fn.ts";
  *
  * const tup = tuple(OrdNumber, OrdString);
  *
- * const result1 = pipe([1, "a"], tup.lt([2, "b"])); // true
- * const result2 = pipe([1, "a"], tup.lt([1, "b"])); // true
- * const result3 = pipe([1, "a"], tup.lt([1, "a"])); // false
+ * const result1 = pipe([1, "a"], lt(tup)([2, "b"])); // true
+ * const result2 = pipe([1, "a"], lt(tup)([1, "b"])); // true
+ * const result3 = pipe([1, "a"], lt(tup)([1, "a"])); // false
  * ```
  *
  * @since 2.0.0
@@ -233,24 +242,25 @@ export function tuple<T extends ReadonlyArray<unknown>>(
  *
  * @example
  * ```ts
- * import { struct } from "./ord.ts"
+ * import { struct, lt } from "./ord.ts"
  * import { OrdNumber } from "./number.ts";
  * import { OrdString } from "./string.ts";
  * import { pipe } from "./fn.ts";
  *
  * const ord = struct({ num: OrdNumber, str: OrdString });
+ * const _lt = lt(ord);
  *
  * const result1 = pipe(
  *   { num: 1, str: "a" },
- *   ord.lt({ str: "b", num: 2 })
+ *   _lt({ str: "b", num: 2 })
  * ); // true
  * const result2 = pipe(
  *   { num: 1, str: "a" },
- *   ord.lt({ str: "b", num: 1 })
+ *   _lt({ str: "b", num: 1 })
  * ); // true
  * const result3 = pipe(
  *   { num: 1, str: "a" },
- *   ord.lt({ str: "a", num: 1 })
+ *   _lt({ str: "a", num: 1 })
  * ); // false
  *
  * ```
@@ -279,6 +289,7 @@ export function struct<A>(
  * import { OrdNumber } from "./number.ts";
  * import { pipe } from "./fn.ts";
  *
+ * // Use number ordering, turn date into number and contramap
  * const date = pipe(
  *   OrdNumber,
  *   contramap((d: Date) => d.valueOf()),

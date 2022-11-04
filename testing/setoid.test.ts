@@ -1,9 +1,9 @@
 import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
-import * as S from "../setoid.ts";
+import * as S from "../eq.ts";
 import { of, pipe } from "../fn.ts";
 
-Deno.test("Setoid fromEquals", () => {
+Deno.test("Eq fromEquals", () => {
   type HasId = { id: number };
   const { equals } = S.fromEquals<HasId>((first, second) =>
     first.id === second.id
@@ -13,22 +13,22 @@ Deno.test("Setoid fromEquals", () => {
   assertEquals(equals({ id: 0 })({ id: 0 }), true);
 });
 
-Deno.test("Setoid readonly", () => {
-  const SetoidMutableArray = S.fromEquals<Array<number>>(
+Deno.test("Eq readonly", () => {
+  const EqMutableArray = S.fromEquals<Array<number>>(
     (first, second) =>
       first.length === second.length &&
       first.every((value, index) => value === second[index]),
   );
 
-  // This has type Setoid<Readonly<Array<string>>>
-  const { equals } = S.readonly(SetoidMutableArray);
+  // This has type Eq<Readonly<Array<string>>>
+  const { equals } = S.readonly(EqMutableArray);
 
   assertEquals(equals([1, 2])([1]), false);
   assertEquals(equals([])([]), true);
   assertEquals(equals([1, 2, 3])([1, 2, 3]), true);
 });
 
-Deno.test("Setoid unknown", () => {
+Deno.test("Eq unknown", () => {
   const { equals } = S.unknown;
 
   assertEquals(equals([1, 2])([1]), false);
@@ -36,7 +36,7 @@ Deno.test("Setoid unknown", () => {
   assertEquals(equals(1)(1), true);
 });
 
-Deno.test("Setoid string", () => {
+Deno.test("Eq string", () => {
   const { equals } = S.string;
 
   assertEquals(equals("")("Hello"), false);
@@ -44,28 +44,28 @@ Deno.test("Setoid string", () => {
   assertEquals(equals("")(""), true);
 });
 
-Deno.test("Setoid number", () => {
+Deno.test("Eq number", () => {
   const { equals } = S.number;
 
   assertEquals(equals(1)(2), false);
   assertEquals(equals(1)(1), true);
 });
 
-Deno.test("Setoid boolean", () => {
+Deno.test("Eq boolean", () => {
   const { equals } = S.boolean;
 
   assertEquals(equals(true)(false), false);
   assertEquals(equals(true)(true), true);
 });
 
-Deno.test("Setoid literal", () => {
+Deno.test("Eq literal", () => {
   const { equals } = S.literal(true, 1);
 
   assertEquals(equals(true)(1), false);
   assertEquals(equals(true)(true), true);
 });
 
-Deno.test("Setoid nullable", () => {
+Deno.test("Eq nullable", () => {
   const { equals } = S.nullable(S.boolean);
 
   assertEquals(equals(true)(null), false);
@@ -73,7 +73,7 @@ Deno.test("Setoid nullable", () => {
   assertEquals(equals(null)(null), true);
 });
 
-Deno.test("Setoid undefinable", () => {
+Deno.test("Eq undefinable", () => {
   const { equals } = S.undefinable(S.boolean);
 
   assertEquals(equals(true)(undefined), false);
@@ -81,7 +81,7 @@ Deno.test("Setoid undefinable", () => {
   assertEquals(equals(undefined)(undefined), true);
 });
 
-Deno.test("Setoid record", () => {
+Deno.test("Eq record", () => {
   const { equals } = S.record(S.boolean);
 
   assertEquals(equals({ one: true })({ two: true }), false);
@@ -90,7 +90,7 @@ Deno.test("Setoid record", () => {
   assertEquals(equals({})({}), true);
 });
 
-Deno.test("Setoid array", () => {
+Deno.test("Eq array", () => {
   const { equals } = S.array(S.boolean);
 
   assertEquals(equals([true])([false]), false);
@@ -99,7 +99,7 @@ Deno.test("Setoid array", () => {
   assertEquals(equals([])([]), true);
 });
 
-Deno.test("Setoid tuple", () => {
+Deno.test("Eq tuple", () => {
   const { equals } = S.tuple(S.boolean, S.number);
 
   assertEquals(equals([true, 1])([false, 2]), false);
@@ -108,7 +108,7 @@ Deno.test("Setoid tuple", () => {
   assertEquals(equals([false, 0])([false, 0]), true);
 });
 
-Deno.test("Setoid struct", () => {
+Deno.test("Eq struct", () => {
   const { equals } = S.struct({ one: S.boolean, two: S.number });
 
   assertEquals(equals({ one: true, two: 1 })({ one: false, two: 2 }), false);
@@ -117,7 +117,7 @@ Deno.test("Setoid struct", () => {
   assertEquals(equals({ one: false, two: 1 })({ one: false, two: 1 }), true);
 });
 
-Deno.test("Setoid partial", () => {
+Deno.test("Eq partial", () => {
   const { equals } = S.partial({ one: S.boolean, two: S.number });
 
   assertEquals(equals({ one: true, two: 1 })({ one: false, two: 2 }), false);
@@ -128,7 +128,7 @@ Deno.test("Setoid partial", () => {
   assertEquals(equals({ one: false, two: 1 })({ one: false, two: 1 }), true);
 });
 
-Deno.test("Setoid intersect", () => {
+Deno.test("Eq intersect", () => {
   const { equals } = pipe(
     S.struct({ one: S.boolean }),
     S.intersect(S.partial({ two: S.number })),
@@ -142,7 +142,7 @@ Deno.test("Setoid intersect", () => {
   assertEquals(equals({ one: false, two: 1 })({ one: false, two: 1 }), true);
 });
 
-Deno.test("Setoid union", () => {
+Deno.test("Eq union", () => {
   const { equals } = pipe(
     S.number,
     S.union(S.string),
@@ -168,7 +168,7 @@ Deno.test("Setoid union", () => {
   assertEquals(other.equals([[0], [0]])([[0], [0]]), true);
 
   // Force ua to throw
-  const throws: S.Setoid<number> = S.fromEquals(() => {
+  const throws: S.Eq<number> = S.fromEquals(() => {
     throw new Error("Ouch!");
   });
   const throwUnion = pipe(throws, S.union(S.number));
@@ -177,9 +177,9 @@ Deno.test("Setoid union", () => {
   assertEquals(throwUnion.equals(1)(1), true);
 });
 
-Deno.test("Setoid lazy", () => {
+Deno.test("Eq lazy", () => {
   type Tree = number | Tree[];
-  const tree: S.Setoid<Tree> = S.lazy("Tree", () =>
+  const tree: S.Eq<Tree> = S.lazy("Tree", () =>
     pipe(
       S.number,
       S.union(S.array(tree)),
@@ -195,7 +195,7 @@ Deno.test("Setoid lazy", () => {
   assertEquals(equals([1, []])([1, [1]]), false);
 });
 
-Deno.test("Setoid io", () => {
+Deno.test("Eq io", () => {
   const { equals } = S.io(S.string);
 
   const one = of("one");
@@ -205,7 +205,7 @@ Deno.test("Setoid io", () => {
   assertEquals(equals(one)(one), true);
 });
 
-Deno.test("Setoid method", () => {
+Deno.test("Eq method", () => {
   const { equals } = S.method("valueOf", S.number);
 
   const now = new Date();
@@ -215,7 +215,7 @@ Deno.test("Setoid method", () => {
   assertEquals(equals(now)(now), true);
 });
 
-Deno.test("Setoid contramap", () => {
+Deno.test("Eq contramap", () => {
   const { equals } = pipe(
     S.number,
     S.contramap((d: Date) => d.valueOf()),
@@ -228,24 +228,24 @@ Deno.test("Setoid contramap", () => {
   assertEquals(equals(now)(now), true);
 });
 
-Deno.test("Setoid ContravariantSetoid", () => {
-  assertEquals(S.ContravariantSetoid.contramap, S.contramap);
+Deno.test("Eq ContravariantEq", () => {
+  assertEquals(S.ContravariantEq.contramap, S.contramap);
 });
 
-Deno.test("Setoid SchemableSetoid", () => {
-  assertEquals(S.SchemableSetoid.unknown(), S.unknown);
-  assertEquals(S.SchemableSetoid.string(), S.string);
-  assertEquals(S.SchemableSetoid.number(), S.number);
-  assertEquals(S.SchemableSetoid.boolean(), S.boolean);
-  assertEquals(S.SchemableSetoid.literal, S.literal);
-  assertEquals(S.SchemableSetoid.nullable, S.nullable);
-  assertEquals(S.SchemableSetoid.undefinable, S.undefinable);
-  assertEquals(S.SchemableSetoid.record, S.record);
-  assertEquals(S.SchemableSetoid.array, S.array);
-  assertEquals(S.SchemableSetoid.tuple, S.tuple);
-  assertEquals(S.SchemableSetoid.struct, S.struct);
-  assertEquals(S.SchemableSetoid.partial, S.partial);
-  assertEquals(S.SchemableSetoid.intersect, S.intersect);
-  assertEquals(S.SchemableSetoid.union, S.union);
-  assertEquals(S.SchemableSetoid.lazy, S.lazy);
+Deno.test("Eq SchemableEq", () => {
+  assertEquals(S.SchemableEq.unknown(), S.unknown);
+  assertEquals(S.SchemableEq.string(), S.string);
+  assertEquals(S.SchemableEq.number(), S.number);
+  assertEquals(S.SchemableEq.boolean(), S.boolean);
+  assertEquals(S.SchemableEq.literal, S.literal);
+  assertEquals(S.SchemableEq.nullable, S.nullable);
+  assertEquals(S.SchemableEq.undefinable, S.undefinable);
+  assertEquals(S.SchemableEq.record, S.record);
+  assertEquals(S.SchemableEq.array, S.array);
+  assertEquals(S.SchemableEq.tuple, S.tuple);
+  assertEquals(S.SchemableEq.struct, S.struct);
+  assertEquals(S.SchemableEq.partial, S.partial);
+  assertEquals(S.SchemableEq.intersect, S.intersect);
+  assertEquals(S.SchemableEq.union, S.union);
+  assertEquals(S.SchemableEq.lazy, S.lazy);
 });

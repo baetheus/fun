@@ -23,7 +23,7 @@ export interface Kind extends Substitutions {
  * Substitute is a substitution type, taking a Kind implementation T and
  * substituting it with types passed in S.
  */
-export type Substitute<T extends Kind, S extends Substitutions> = T extends
+export type Substitute<T, S extends Substitutions> = T extends
   { readonly kind: unknown } ? (T & S)["kind"]
   : {
     readonly T: T;
@@ -37,7 +37,7 @@ export type Substitute<T extends Kind, S extends Substitutions> = T extends
  * substitutions to positional type parameters.
  */
 export type $<
-  T extends Kind,
+  T,
   Out extends unknown[],
   In extends unknown[] = [never],
   InOut extends unknown[] = [never],
@@ -65,18 +65,6 @@ export type In<T extends Kind, N extends keyof T["contravariant"]> =
 export type InOut<T extends Kind, N extends keyof T["invariant"]> =
   T["invariant"][N];
 
-export type FromOut<U extends Kind, S, N extends number = 0> = S extends // deno-lint-ignore no-explicit-any
-$<U, infer Out, any[], any[]> ? Out[N]
-  : never;
-
-export type FromIn<U extends Kind, S, N extends number = 0> = S extends // deno-lint-ignore no-explicit-any
-$<U, any[], infer In, any[]> ? In[N]
-  : never;
-
-export type FromInOut<U extends Kind, S, N extends number = 0> = S extends // deno-lint-ignore no-explicit-any
-$<U, any[], any[], infer InOut> ? InOut[N]
-  : never;
-
 /**
  * This declared symbol is used to create
  * phantom concrete types that do not exist
@@ -97,4 +85,4 @@ export interface Hold<A> {
  * Typeclass is a type constrained Hold type, specifically constrained
  * to a "Kind" (ie. type level type)
  */
-export type TypeClass<U extends Kind> = Hold<U>;
+export type TypeClass<U> = Hold<U>;

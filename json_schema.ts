@@ -739,7 +739,7 @@ export function print<A>(jsonschema: JsonBuilder<A>): JsonSchema {
  * );
  *
  * // Then we can derive a JsonBuilder from the generic Schema
- * const TreeJsonBuilder = TreeSchema(J.Schemable);
+ * const TreeJsonBuilder = TreeSchema(J.SchemableJsonBuilder);
  *
  * // Lastly, we can pull an actual JSON Schema from the JsonBuilder
  * const TreeJsonSchema = J.print(TreeJsonBuilder);
@@ -777,7 +777,7 @@ export function print<A>(jsonschema: JsonBuilder<A>): JsonSchema {
  *
  * @since 2.0.0
  */
-export const Schemable: S.Schemable<URI> = {
+export const SchemableJsonBuilder: S.Schemable<URI> = {
   unknown,
   string,
   number,

@@ -6,12 +6,12 @@ import type { Foldable } from "./foldable.ts";
 import type { Functor } from "./functor.ts";
 import type { Monoid } from "./monoid.ts";
 import type { Predicate } from "./predicate.ts";
-import type { Setoid } from "./setoid.ts";
+import type { Eq } from "./eq.ts";
 import type { Show } from "./show.ts";
 import type { Traversable } from "./traversable.ts";
 
 import { flow, pipe } from "./fn.ts";
-import { fromEquals } from "./setoid.ts";
+import { fromEquals } from "./eq.ts";
 
 export interface URI extends Kind {
   readonly kind: ReadonlySet<Out<this, 0>>;
@@ -61,25 +61,25 @@ export function every<A>(
 }
 
 export function elem<A>(
-  S: Setoid<A>,
+  S: Eq<A>,
 ): (a: A) => (ta: ReadonlySet<A>) => boolean {
   return (a) => some(S.equals(a));
 }
 
 export function elemOf<A>(
-  S: Setoid<A>,
+  S: Eq<A>,
 ): (ta: ReadonlySet<A>) => (a: A) => boolean {
   return (ta) => (a) => elem(S)(a)(ta);
 }
 
 export function isSubset<A>(
-  S: Setoid<A>,
+  S: Eq<A>,
 ): (tb: ReadonlySet<A>) => (ta: ReadonlySet<A>) => boolean {
   return flow(elemOf(S), every);
 }
 
 export function union<A>(
-  S: Setoid<A>,
+  S: Eq<A>,
 ): (tb: ReadonlySet<A>) => (ta: ReadonlySet<A>) => ReadonlySet<A> {
   return (tb) => (ta) => {
     const out = copy(ta);
@@ -94,7 +94,7 @@ export function union<A>(
 }
 
 export function intersection<A>(
-  S: Setoid<A>,
+  S: Eq<A>,
 ): (ta: ReadonlySet<A>) => (tb: ReadonlySet<A>) => ReadonlySet<A> {
   return (ta) => {
     const isIn = elemOf(S)(ta);
@@ -111,7 +111,7 @@ export function intersection<A>(
 }
 
 export function compact<A>(
-  S: Setoid<A>,
+  S: Eq<A>,
 ): (ta: ReadonlySet<A>) => ReadonlySet<A> {
   return (ta) => {
     const out = new Set<A>();
@@ -221,14 +221,14 @@ export function getShow<A>(S: Show<A>): Show<ReadonlySet<A>> {
   });
 }
 
-export function getSetoid<A>(S: Setoid<A>): Setoid<ReadonlySet<A>> {
+export function getEq<A>(S: Eq<A>): Eq<ReadonlySet<A>> {
   const subset = isSubset(S);
   return fromEquals((first, second) =>
     subset(first)(second) && subset(second)(first)
   );
 }
 
-export function getUnionMonoid<A>(S: Setoid<A>): Monoid<ReadonlySet<A>> {
+export function getUnionMonoid<A>(S: Eq<A>): Monoid<ReadonlySet<A>> {
   return ({ concat: union(S), empty });
 }
 

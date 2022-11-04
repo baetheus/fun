@@ -11,28 +11,10 @@
  */
 
 import type { Hold } from "./kind.ts";
-import type { Iso } from "./iso.ts";
 import type { Monoid } from "./monoid.ts";
 import type { Ord } from "./ord.ts";
-import type { Predicate } from "./predicate.ts";
-import type { Prism } from "./optics.ts";
 import type { Semigroup } from "./semigroup.ts";
-import type { Setoid } from "./setoid.ts";
-
-import * as I from "./iso.ts";
-import * as O from "./optics.ts";
-import { unsafeCoerce } from "./fn.ts";
-
-// ---
-// Locals
-// ---
-
-/**
- * We use a single Iso<any, any> when constructing an iso for
- * Newtype. This is only for optimization.
- */
-// deno-lint-ignore no-explicit-any
-const anyIso = I.iso<any, any>(unsafeCoerce, unsafeCoerce);
+import type { Eq } from "./eq.ts";
 
 // ---
 // Types
@@ -91,76 +73,25 @@ export type From<T> = T extends Newtype<infer _, infer A> ? A : never;
 // deno-lint-ignore no-explicit-any
 export type AnyNewtype = Newtype<any, any>;
 
-// ---
-// Combinators
-// ---
-
 /**
- * Construct an Iso instance for a Newtype. This is useful to
- * keep from using manual hacks to retype a Newtype. This
- * should only be used if the representation can always
- * be used in place of the Newtype.
+ * Retype an existing Eq from an inner type to a Newtype.
  *
  * @example
  * ```ts
- * import { Newtype, iso } from "./newtype.ts";
- *
- * type Real = Newtype<'Real', number>;
- * const isoReal = iso<Real>();
- *
- * const real: Real = isoReal.view(1);
- * const num: number = isoReal.review(real);
- * ```
- */
-export function iso<T extends AnyNewtype>(): Iso<From<T>, T> {
-  return anyIso;
-}
-
-/**
- * Construct a Prism instance for a Newtype from a predicate.
- * Use this when the Newtype is a strict subset of the
- * representation.
- *
- * @example
- * ```ts
- * import { Newtype, prism } from "./newtype.ts";
- * import * as O from "./option.ts";
- * import { pipe } from "./fn.ts";
- *
- * type Integer = Newtype<'Integer', number>;
- * const prismInteger = prism<Integer>(Number.isInteger);
- *
- * const int = prismInteger.view(1); // Option<Integer>
- * ```
- */
-export function prism<T extends AnyNewtype>(
-  predicate: Predicate<From<T>>,
-): Prism<From<T>, T> {
-  return O.fromPredicate(predicate) as Prism<From<T>, T>;
-}
-// ---
-// Instance Getters
-// ---
-
-/**
- * Retype an existing Setoid from an inner type to a Newtype.
- *
- * @example
- * ```ts
- * import { Newtype, getSetoid } from "./newtype.ts";
+ * import { Newtype, getEq } from "./newtype.ts";
  * import * as N from "./number.ts";
  *
  * type Integer = Newtype<'Integer', number>;
  *
- * const setoidInteger = getSetoid<Integer>(N.SetoidNumber);
+ * const eqInteger = getEq<Integer>(N.EqNumber);
  * ```
  *
  * @since 2.0.0
  */
-export function getSetoid<T extends AnyNewtype>(
-  setoid: Setoid<From<T>>,
-): Setoid<T> {
-  return setoid as Setoid<T>;
+export function getEq<T extends AnyNewtype>(
+  eq: Eq<From<T>>,
+): Eq<T> {
+  return eq as Eq<T>;
 }
 
 /**

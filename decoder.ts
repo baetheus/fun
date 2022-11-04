@@ -5,7 +5,7 @@ import type { FnEither } from "./fn_either.ts";
 import type { Refinement } from "./refinement.ts";
 
 import * as DE from "./decode_error.ts";
-import * as RE from "./fn_either.ts";
+import * as FE from "./fn_either.ts";
 import * as E from "./either.ts";
 import * as A from "./array.ts";
 import * as R from "./record.ts";
@@ -79,20 +79,20 @@ const compactRecord = <A>(
 export function compose<B, C>(
   dbc: Decoder<B, C>,
 ): <A>(dab: Decoder<A, B>) => Decoder<A, C> {
-  return RE.compose(dbc);
+  return FE.compose(dbc);
 }
 
 export function contramap<L, D>(
   fld: (l: L) => D,
 ): <A>(ua: Decoder<D, A>) => Decoder<L, A> {
-  return RE.contramap(fld);
+  return FE.contramap(fld);
 }
 
 export function dimap<A, I, L, D>(
   fld: (l: L) => D,
   fai: (a: A) => I,
 ): (ua: Decoder<D, A>) => Decoder<L, I> {
-  return RE.dimap(fld, fai);
+  return FE.dimap(fld, fai);
 }
 
 export function refine<A, B extends A>(
@@ -332,7 +332,7 @@ export interface UnknownDecoderURI extends Kind {
   readonly kind: Decoder<unknown, Out<this, 0>>;
 }
 
-export const Schemable: S.Schemable<UnknownDecoderURI> = {
+export const SchemableDecoder: S.Schemable<UnknownDecoderURI> = {
   unknown: () => unknown,
   string: () => string,
   number: () => number,

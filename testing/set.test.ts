@@ -2,7 +2,7 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
 import * as S from "../set.ts";
 import * as O from "../option.ts";
-import { SetoidNumber } from "../number.ts";
+import { EqNumber } from "../number.ts";
 import { pipe } from "../fn.ts";
 
 const add = (n: number) => n + 1;
@@ -16,19 +16,19 @@ Deno.test("Set set", () => {
 });
 
 Deno.test("Set elem", () => {
-  const elem = S.elem(SetoidNumber);
+  const elem = S.elem(EqNumber);
   assertEquals(pipe(S.set(1), elem(1)), true);
   assertEquals(pipe(S.set(1), elem(2)), false);
 });
 
 Deno.test("Set elemOf", () => {
-  const elemOf = S.elemOf(SetoidNumber);
+  const elemOf = S.elemOf(EqNumber);
   assertEquals(pipe(1, elemOf(S.set(1))), true);
   assertEquals(pipe(2, elemOf(S.set(1))), false);
 });
 
 Deno.test("Set isSubset", () => {
-  const isSubset = S.isSubset(SetoidNumber);
+  const isSubset = S.isSubset(EqNumber);
   const ta = S.set(1);
   const tb = S.set(1, 2);
   assertEquals(pipe(ta, isSubset(tb)), true);
@@ -36,18 +36,18 @@ Deno.test("Set isSubset", () => {
 });
 
 Deno.test("Set union", () => {
-  const union = S.union(SetoidNumber);
+  const union = S.union(EqNumber);
   assertEquals(pipe(S.set(1), union(S.set(2))), S.set(1, 2));
 });
 
 Deno.test("Set intersection", () => {
-  const intersection = S.intersection(SetoidNumber);
+  const intersection = S.intersection(EqNumber);
   assertEquals(pipe(S.set(1), intersection(S.set(2))), S.empty());
   assertEquals(pipe(S.set(1, 2), intersection(S.set(2, 3))), S.set(2));
 });
 
 Deno.test("Set compact", () => {
-  const compact = S.compact(SetoidNumber);
+  const compact = S.compact(EqNumber);
   assertEquals(compact(S.set(1, 2, 3)), S.set(1, 2, 3));
 });
 

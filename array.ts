@@ -10,7 +10,7 @@ import type { Pair } from "./pair.ts";
 import type { Predicate } from "./predicate.ts";
 import type { Refinement } from "./refinement.ts";
 import type { Semigroup } from "./semigroup.ts";
-import type { Setoid } from "./setoid.ts";
+import type { Eq } from "./eq.ts";
 import type { Show } from "./show.ts";
 import type { Traversable } from "./traversable.ts";
 
@@ -451,7 +451,7 @@ export const TraversableArray: Traversable<URI> = {
   traverse,
 };
 
-export function getSetoid<A>(S: Setoid<A>): Setoid<ReadonlyArray<A>> {
+export function getEq<A>(S: Eq<A>): Eq<ReadonlyArray<A>> {
   return ({
     equals: (a) => (b) => {
       if (a === b) {

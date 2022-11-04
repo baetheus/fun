@@ -9,7 +9,7 @@ import type { Ord } from "./ord.ts";
 import type { Predicate } from "./predicate.ts";
 import type { Refinement } from "./refinement.ts";
 import type { Semigroup } from "./semigroup.ts";
-import type { Setoid } from "./setoid.ts";
+import type { Eq } from "./eq.ts";
 import type { Show } from "./show.ts";
 import type { Traversable } from "./traversable.ts";
 
@@ -129,10 +129,10 @@ export function getShow<A, B>(
   });
 }
 
-export function getSetoid<A, B>(
-  SB: Setoid<B>,
-  SA: Setoid<A>,
-): Setoid<Either<B, A>> {
+export function getEq<A, B>(
+  SB: Eq<B>,
+  SA: Eq<A>,
+): Eq<Either<B, A>> {
   return ({
     equals: (b) => (a) => {
       if (isLeft(a)) {

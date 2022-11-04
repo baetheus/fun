@@ -3,6 +3,7 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 import * as C from "../const.ts";
 import * as B from "../boolean.ts";
 import * as N from "../number.ts";
+import * as O from "../ord.ts";
 import { pipe } from "../fn.ts";
 
 Deno.test("Const make", () => {
@@ -16,7 +17,7 @@ Deno.test("Const getShow", () => {
 });
 
 Deno.test("Const getSetoid", () => {
-  const setoid = C.getSetoid(B.SetoidBoolean);
+  const setoid = C.getEq(B.EqBoolean);
 
   assertEquals(setoid.equals(C.make(true))(C.make(true)), true);
   assertEquals(setoid.equals(C.make(false))(C.make(true)), false);
@@ -24,10 +25,11 @@ Deno.test("Const getSetoid", () => {
 
 Deno.test("Const getOrd", () => {
   const ord = C.getOrd(N.OrdNumber);
+  const lte = O.lte(ord);
 
-  assertEquals(ord.lte(C.make(1))(C.make(1)), true);
-  assertEquals(ord.lte(C.make(2))(C.make(1)), true);
-  assertEquals(ord.lte(C.make(0))(C.make(1)), false);
+  assertEquals(lte(C.make(1))(C.make(1)), true);
+  assertEquals(lte(C.make(2))(C.make(1)), true);
+  assertEquals(lte(C.make(0))(C.make(1)), false);
 });
 
 Deno.test("Const getSemigroup", () => {

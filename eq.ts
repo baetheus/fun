@@ -1,6 +1,6 @@
 /**
  * This file contains all of the tools for creating and
- * composing Setoids. Since a Setoid encapsulates the concept
+ * composing Eqs. Since a Eq encapsulates the concept
  * of equality, this file contains a lot of tools for
  * comparing objects to see if they are the same, or can
  * be treated the same.
@@ -17,63 +17,63 @@ import { memoize, tryCatch } from "./fn.ts";
 import { isSubrecord } from "./record.ts";
 
 /**
- * A Setoid<T> is an algebra with a notion of equality. Specifically,
- * a Setoid for a type T has an equal method that determines if the
- * two objects are the same. Setoids can be combined, like many
- * algebraic structures. The combinators for Setoid in fun can be found
- * in [setoid.ts](./setoid.ts).
+ * A Eq<T> is an algebra with a notion of equality. Specifically,
+ * a Eq for a type T has an equal method that determines if the
+ * two objects are the same. Eqs can be combined, like many
+ * algebraic structures. The combinators for Eq in fun can be found
+ * in [eq.ts](./eq.ts).
  *
- * An instance of a Setoid must obey the following laws:
+ * An instance of a Eq must obey the following laws:
  *
  * 1. Reflexivity: equals(a)(a) === true
  * 2. Symmetry: equals(a)(b) === equals(b)(a)
  * 3. Transitivity: if equals(a)(b) and equals(b)(c), then equals(a)(c)
  *
- * The original type came from [static-land](https://github.com/fantasyland/static-land/blob/master/docs/spec.md#Setoid)
+ * The original type came from [static-land](https://github.com/fantasyland/static-land/blob/master/docs/spec.md#Eq)
  *
  * @since 2.0.0
  */
-export interface Setoid<T> {
+export interface Eq<T> {
   readonly equals: (second: T) => (first: T) => boolean;
 }
 
 /**
- * Specifies Setoid as a Higher Kinded Type, with
+ * Specifies Eq as a Higher Kinded Type, with
  * covariant parameter A corresponding to the 0th
  * index of any Substitutions.
  *
  * @since 2.0.0
  */
 export interface URI extends Kind {
-  readonly kind: Setoid<Out<this, 0>>;
+  readonly kind: Eq<Out<this, 0>>;
 }
 
 /**
- * Specifies Setoid as a Higher Kinded Type, with
+ * Specifies Eq as a Higher Kinded Type, with
  * contravariant parameter D corresponding to the 0th
  * index of any Substitutions.
  *
  * @since 2.0.0
  */
 export interface URIContravariant extends Kind {
-  readonly kind: Setoid<In<this, 0>>;
+  readonly kind: Eq<In<this, 0>>;
 }
 
 /**
- * Create a Setoid from an uncurried function that checks equality.
+ * Create a Eq from an uncurried function that checks equality.
  *
  * @example
  * ```ts
- * import { fromEquals } from "./setoid.ts";
+ * import { fromEquals } from "./eq.ts";
  * import { pipe } from "./fn.ts";
  *
- * const SetoidNumber = fromEquals<number>(
+ * const EqNumber = fromEquals<number>(
  *   (first, second) => first === second
  * );
  *
  * const result = pipe(
  *   1,
- *   SetoidNumber.equals(1)
+ *   EqNumber.equals(1)
  * ); // true
  * ```
  *
@@ -81,44 +81,44 @@ export interface URIContravariant extends Kind {
  */
 export function fromEquals<A>(
   equals: (first: A, second: A) => boolean,
-): Setoid<A> {
+): Eq<A> {
   return ({
     equals: (second) => (first) => first === second || equals(first, second),
   });
 }
 
 /**
- * Create a Setoid that casts the inner type of another Setoid to
+ * Create a Eq that casts the inner type of another Eq to
  * Readonly.
  *
  * @example
  * ```ts
- * import { readonly, fromEquals } from "./setoid.ts";
+ * import { readonly, fromEquals } from "./eq.ts";
  *
- * // This has type Setoid<Array<string>>
- * const SetoidMutableArray = fromEquals<Array<string>>(
+ * // This has type Eq<Array<string>>
+ * const EqMutableArray = fromEquals<Array<string>>(
  *   (first, second) => first.length === second.length
  *   && first.every((value, index) => value === second[index])
  * );
  *
- * // This has type Setoid<Readonly<Array<string>>>
- * const SetoidReadonlyArray = readonly(SetoidMutableArray);
+ * // This has type Eq<Readonly<Array<string>>>
+ * const EqReadonlyArray = readonly(EqMutableArray);
  * ```
  *
  * @since 2.0.0
  */
-export function readonly<A>(setoid: Setoid<A>): Setoid<Readonly<A>> {
-  return setoid;
+export function readonly<A>(eq: Eq<A>): Eq<Readonly<A>> {
+  return eq;
 }
 
 /**
- * A Setoid that can compare any unknown values (and thus can
+ * A Eq that can compare any unknown values (and thus can
  * compare any values). Underneath it uses strict equality
  * for the comparison.
  *
  * @example
  * ```ts
- * import { unknown } from "./setoid.ts";
+ * import { unknown } from "./eq.ts";
  *
  * const result1 = unknown.equals(1)("Hello"); // false
  * const result2 = unknown.equals(1)(1); // true
@@ -126,16 +126,16 @@ export function readonly<A>(setoid: Setoid<A>): Setoid<Readonly<A>> {
  *
  * @since 2.0.0
  */
-export const unknown: Setoid<unknown> = {
+export const unknown: Eq<unknown> = {
   equals: (second) => (first) => first === second,
 };
 
 /**
- * A Setoid that compares strings using strict equality.
+ * A Eq that compares strings using strict equality.
  *
  * @example
  * ```ts
- * import { string } from "./setoid.ts";
+ * import { string } from "./eq.ts";
  *
  * const result1 = string.equals("World")("Hello"); // false
  * const result2 = string.equals("")(""); // true
@@ -143,14 +143,14 @@ export const unknown: Setoid<unknown> = {
  *
  * @since 2.0.0
  */
-export const string: Setoid<string> = unknown;
+export const string: Eq<string> = unknown;
 
 /**
- * A Setoid that compares number using strict equality.
+ * A Eq that compares number using strict equality.
  *
  * @example
  * ```ts
- * import { number } from "./setoid.ts";
+ * import { number } from "./eq.ts";
  *
  * const result1 = number.equals(1)(2); // false
  * const result2 = number.equals(1)(1); // true
@@ -158,14 +158,14 @@ export const string: Setoid<string> = unknown;
  *
  * @since 2.0.0
  */
-export const number: Setoid<number> = unknown;
+export const number: Eq<number> = unknown;
 
 /**
- * A Setoid that compares booleans using strict equality.
+ * A Eq that compares booleans using strict equality.
  *
  * @example
  * ```ts
- * import { boolean } from "./setoid.ts";
+ * import { boolean } from "./eq.ts";
  *
  * const result1 = boolean.equals(true)(false); // false
  * const result2 = boolean.equals(true)(true); // true
@@ -173,15 +173,15 @@ export const number: Setoid<number> = unknown;
  *
  * @since 2.0.0
  */
-export const boolean: Setoid<boolean> = unknown;
+export const boolean: Eq<boolean> = unknown;
 
 /**
- * Creates a Setoid that compares a union of literals
+ * Creates a Eq that compares a union of literals
  * using strict equality.
  *
  * @example
  * ```ts
- * import { literal } from "./setoid.ts";
+ * import { literal } from "./eq.ts";
  *
  * const { equals } = literal(1, 2, "Three");
  *
@@ -193,17 +193,17 @@ export const boolean: Setoid<boolean> = unknown;
  */
 export function literal<A extends NonEmptyArray<Literal>>(
   ..._: A
-): Setoid<A[number]> {
+): Eq<A[number]> {
   return unknown;
 }
 
 /**
- * Creates a derivative Setoid that can also compare null
- * values in addition to the source setoid.
+ * Creates a derivative Eq that can also compare null
+ * values in addition to the source eq.
  *
  * @example
  * ```ts
- * import { nullable, number } from "./setoid.ts";
+ * import { nullable, number } from "./eq.ts";
  *
  * const { equals } = nullable(number);
  *
@@ -213,22 +213,22 @@ export function literal<A extends NonEmptyArray<Literal>>(
  *
  * @since 2.0.0
  */
-export function nullable<A>(setoid: Setoid<A>): Setoid<A | null> {
+export function nullable<A>(eq: Eq<A>): Eq<A | null> {
   return {
     equals: (second) => (first) =>
       (isNil(first) || isNil(second))
         ? first === second
-        : setoid.equals(second)(first),
+        : eq.equals(second)(first),
   };
 }
 
 /**
- * Creates a derivative Setoid that can also compare undefined
- * values in addition to the source setoid.
+ * Creates a derivative Eq that can also compare undefined
+ * values in addition to the source eq.
  *
  * @example
  * ```ts
- * import { undefinable, number } from "./setoid.ts";
+ * import { undefinable, number } from "./eq.ts";
  *
  * const { equals } = undefinable(number);
  *
@@ -238,22 +238,22 @@ export function nullable<A>(setoid: Setoid<A>): Setoid<A | null> {
  *
  * @since 2.0.0
  */
-export function undefinable<A>(setoid: Setoid<A>): Setoid<A | undefined> {
+export function undefinable<A>(eq: Eq<A>): Eq<A | undefined> {
   return {
     equals: (second) => (first) =>
       (isNil(first) || isNil(second))
         ? first === second
-        : setoid.equals(second)(first),
+        : eq.equals(second)(first),
   };
 }
 
 /**
- * Creates a Setoid that compares readonly records with items
- * that have the type compared in the supplied setoid.
+ * Creates a Eq that compares readonly records with items
+ * that have the type compared in the supplied eq.
  *
  * @example
  * ```ts
- * import { record, number } from "./setoid.ts";
+ * import { record, number } from "./eq.ts";
  *
  * const { equals } = record(number);
  *
@@ -263,20 +263,20 @@ export function undefinable<A>(setoid: Setoid<A>): Setoid<A | undefined> {
  *
  * @since 2.0.0
  */
-export function record<A>(setoid: Setoid<A>): Setoid<ReadonlyRecord<A>> {
-  const isSub = isSubrecord(setoid);
+export function record<A>(eq: Eq<A>): Eq<ReadonlyRecord<A>> {
+  const isSub = isSubrecord(eq);
   return {
     equals: (second) => (first) => isSub(second)(first) && isSub(first)(second),
   };
 }
 
 /**
- * Creates a Setoid that compares readonly array with items
- * that have the type compared in the supplied setoid.
+ * Creates a Eq that compares readonly array with items
+ * that have the type compared in the supplied eq.
  *
  * @example
  * ```ts
- * import { array, number } from "./setoid.ts";
+ * import { array, number } from "./eq.ts";
  *
  * const { equals } = array(number);
  *
@@ -286,21 +286,21 @@ export function record<A>(setoid: Setoid<A>): Setoid<ReadonlyRecord<A>> {
  *
  * @since 2.0.0
  */
-export function array<A>(setoid: Setoid<A>): Setoid<ReadonlyArray<A>> {
+export function array<A>(eq: Eq<A>): Eq<ReadonlyArray<A>> {
   return {
     equals: (second) => (first) =>
       first.length === second.length &&
-      first.every((value, index) => setoid.equals(second[index])(value)),
+      first.every((value, index) => eq.equals(second[index])(value)),
   };
 }
 
 /**
- * Creates a setoid that compares, index for index, tuples according
- * to the order and setoids passed into tuple.
+ * Creates a eq that compares, index for index, tuples according
+ * to the order and eqs passed into tuple.
  *
  * @example
  * ```ts
- * import { tuple, number, string } from "./setoid.ts";
+ * import { tuple, number, string } from "./eq.ts";
  *
  * const { equals } = tuple(number, string);
  *
@@ -311,21 +311,21 @@ export function array<A>(setoid: Setoid<A>): Setoid<ReadonlyArray<A>> {
  * @since 2.0.0
  */
 // deno-lint-ignore no-explicit-any
-export function tuple<T extends ReadonlyArray<Setoid<any>>>(
-  ...Setoids: T
-): Setoid<{ [K in keyof T]: T[K] extends Setoid<infer A> ? A : never }> {
+export function tuple<T extends ReadonlyArray<Eq<any>>>(
+  ...Eqs: T
+): Eq<{ [K in keyof T]: T[K] extends Eq<infer A> ? A : never }> {
   return fromEquals((first, second) =>
-    Setoids.every((E, i) => E.equals(first[i])(second[i]))
+    Eqs.every((E, i) => E.equals(first[i])(second[i]))
   );
 }
 
 /**
- * Create a setoid that compares, key for key, structs according
- * to the structure of the setoids passed into struct.
+ * Create a eq that compares, key for key, structs according
+ * to the structure of the eqs passed into struct.
  *
  * @example
  * ```ts
- * import { struct, number, string } from "./setoid.ts";
+ * import { struct, number, string } from "./eq.ts";
  *
  * const { equals } = struct({ name: string, age: number });
  *
@@ -339,22 +339,22 @@ export function tuple<T extends ReadonlyArray<Setoid<any>>>(
  * @since 2.0.0
  */
 export function struct<A>(
-  setoids: { readonly [K in keyof A]: Setoid<A[K]> },
-): Setoid<{ readonly [K in keyof A]: A[K] }> {
-  const eqs = Object.entries(setoids) as [keyof A, Setoid<A[keyof A]>][];
+  eqs: { readonly [K in keyof A]: Eq<A[K]> },
+): Eq<{ readonly [K in keyof A]: A[K] }> {
+  const _eqs = Object.entries(eqs) as [keyof A, Eq<A[keyof A]>][];
   return fromEquals((first, second) =>
-    eqs.every(([key, { equals }]) => equals(second[key])(first[key]))
+    _eqs.every(([key, { equals }]) => equals(second[key])(first[key]))
   );
 }
 
 /**
- * Create a setoid that compares, key for key, structs according
- * to the structure of the setoids passed into struct. It allows
+ * Create a eq that compares, key for key, structs according
+ * to the structure of the eqs passed into struct. It allows
  * the values in the struct to be optional or null.
  *
  * @example
  * ```ts
- * import { struct, number, string } from "./setoid.ts";
+ * import { struct, number, string } from "./eq.ts";
  *
  * const { equals } = struct({ name: string, age: number });
  *
@@ -368,9 +368,9 @@ export function struct<A>(
  * @since 2.0.0
  */
 export function partial<A>(
-  Setoids: { readonly [K in keyof A]: Setoid<A[K]> },
-): Setoid<{ readonly [K in keyof A]?: A[K] | null }> {
-  const eqs = Object.entries(Setoids) as [keyof A, Setoid<A[keyof A]>][];
+  Eqs: { readonly [K in keyof A]: Eq<A[K]> },
+): Eq<{ readonly [K in keyof A]?: A[K] | null }> {
+  const eqs = Object.entries(Eqs) as [keyof A, Eq<A[keyof A]>][];
   return fromEquals((first, second) =>
     eqs.every(([key, { equals }]) => {
       const firstValue = first[key] as A[keyof A] | null | undefined;
@@ -385,12 +385,12 @@ export function partial<A>(
 }
 
 /**
- * Create a setoid from two other setoids. The resultant setoid checks
- * that any two values are equal according to both supplied setoids.
+ * Create a eq from two other eqs. The resultant eq checks
+ * that any two values are equal according to both supplied eqs.
  *
  * @example
  * ```ts
- * import { intersect, struct, partial, string } from "./setoid.ts";
+ * import { intersect, struct, partial, string } from "./eq.ts";
  * import { pipe } from "./fn.ts";
  *
  * const { equals } = pipe(
@@ -408,8 +408,8 @@ export function partial<A>(
  * @since 2.0.0
  */
 export function intersect<I>(
-  ui: Setoid<I>,
-): <A>(first: Setoid<A>) => Setoid<A & I> {
+  ui: Eq<I>,
+): <A>(first: Eq<A>) => Eq<A & I> {
   return (ua) => ({
     equals: (second) => (first) =>
       ua.equals(second)(first) && ui.equals(second)(first),
@@ -417,21 +417,21 @@ export function intersect<I>(
 }
 
 /**
- * Create a setoid from two other setoids. The resultant setoid checks
+ * Create a eq from two other eqs. The resultant eq checks
  * that any two values are equal according to at least one of the supplied
- * setoids.
+ * eqs.
  *
- * It should be noted that we cannot differentiate the setoid used to
+ * It should be noted that we cannot differentiate the eq used to
  * compare two disparate types like number and number[]. Thus, internally
  * union must type cast to any and treat thrown errors as a false
  * equivalence. To mitigate most of these issues we first test if the
  * 'typeof' the values matches, but keep in mind that if you are doing
- * any nonsense by mutating within a setoid that union will find and
+ * any nonsense by mutating within a eq that union will find and
  * expose such nonsense in inconsistent ways.
  *
  * @example
  * ```ts
- * import { union, number, string } from "./setoid.ts";
+ * import { union, number, string } from "./eq.ts";
  * import { pipe } from "./fn.ts";
  *
  * const { equals } = pipe(number, union(string));
@@ -443,8 +443,8 @@ export function intersect<I>(
  * @since 2.0.0
  */
 export function union<I>(
-  ui: Setoid<I>,
-): <A>(first: Setoid<A>) => Setoid<A | I> {
+  ui: Eq<I>,
+): <A>(first: Eq<A>) => Eq<A | I> {
   return (ua) => ({
     equals: (second) => (first) => {
       if (first === second) {
@@ -468,18 +468,18 @@ export function union<I>(
 }
 
 /**
- * Create a setoid that evaluates lazily. This is useful for equality
+ * Create a eq that evaluates lazily. This is useful for equality
  * of recursive types (either mutual or otherwise).
  *
  * @example
  * ```ts
- * import { lazy, intersect, struct, partial, string, Setoid } from "./setoid.ts";
+ * import { lazy, intersect, struct, partial, string, Eq } from "./eq.ts";
  * import { pipe } from "./fn.ts";
  *
  * type Person = { name: string, child?: Person };
  *
  * // Annotating the type is required for recursion
- * const person: Setoid<Person> = lazy('Person', () => pipe(
+ * const person: Eq<Person> = lazy('Person', () => pipe(
  *   struct({ name: string }),
  *   intersect(partial({ child: person }))
  * ));
@@ -493,20 +493,20 @@ export function union<I>(
  *
  * @since 2.0.0
  */
-export function lazy<A>(_: string, f: () => Setoid<A>): Setoid<A> {
-  const memo = memoize<void, Setoid<A>>(f);
+export function lazy<A>(_: string, f: () => Eq<A>): Eq<A> {
+  const memo = memoize<void, Eq<A>>(f);
   return { equals: (second) => (first) => memo().equals(second)(first) };
 }
 
 /**
- * Create a setoid that tests the output of a thunk (IO). This assumes that
+ * Create a eq that tests the output of a thunk (IO). This assumes that
  * the output of the thunk is always the same, which for true IO is not
  * the case. This assumes that the context for the function is undefined,
  * which means that it doesn't rely on "this" to execute.
  *
  * @example
  * ```ts
- * import { struct, io, number } from "./setoid.ts";
+ * import { struct, io, number } from "./eq.ts";
  * import { of as constant } from "./fn.ts";
  *
  * const { equals } = struct({ asNumber: io(number) });
@@ -520,12 +520,12 @@ export function lazy<A>(_: string, f: () => Setoid<A>): Setoid<A> {
  *
  * @since 2.0.0
  */
-export function io<A>(setoid: Setoid<A>): Setoid<() => A> {
-  return { equals: (second) => (first) => setoid.equals(second())(first()) };
+export function io<A>(eq: Eq<A>): Eq<() => A> {
+  return { equals: (second) => (first) => eq.equals(second())(first()) };
 }
 
 /**
- * Create a setoid from a method on a class or prototypical object. This
+ * Create a eq from a method on a class or prototypical object. This
  * exists because many objects in javascript do now allow you to pass an
  * object method around on its own without its parent object. For example,
  * if you pass Date.valueOf (type () => number) into another function and
@@ -534,9 +534,9 @@ export function io<A>(setoid: Setoid<A>): Setoid<() => A> {
  *
  * @example
  * ```ts
- * import { method, number } from "./setoid.ts";
+ * import { method, number } from "./eq.ts";
  *
- * // This setoid will work for date, but also for any objects that have
+ * // This eq will work for date, but also for any objects that have
  * // a valueOf method that returns a number.
  * const date = method("valueOf", number);
  *
@@ -552,21 +552,20 @@ export function io<A>(setoid: Setoid<A>): Setoid<() => A> {
  */
 export function method<M extends string, A>(
   method: M,
-  setoid: Setoid<A>,
-): Setoid<{ readonly [K in M]: () => A }> {
+  eq: Eq<A>,
+): Eq<{ readonly [K in M]: () => A }> {
   return {
-    equals: (second) => (first) =>
-      setoid.equals(second[method]())(first[method]()),
+    equals: (second) => (first) => eq.equals(second[method]())(first[method]()),
   };
 }
 
 /**
- * Create a Setoid<L> using a Setoid<D> and a function that takes
+ * Create a Eq<L> using a Eq<D> and a function that takes
  * a type L and returns a type D.
  *
  * @example
  * ```ts
- * import { contramap, number } from "./setoid.ts";
+ * import { contramap, number } from "./eq.ts";
  * import { pipe } from "./fn.ts";
  *
  * const dateToNumber = (d: Date): number => d.valueOf();
@@ -580,14 +579,14 @@ export function method<M extends string, A>(
  * const result2 = date.equals(now)(later); // false
  * ```
  *
- * Another use for contramap with setoid is to check for
+ * Another use for contramap with eq is to check for
  * equality after normalizing data. In the following we
  * can compare strings ignoring case by normalizing to
  * lowercase strings.
  *
  * @example
  * ```ts
- * import { contramap, string } from "./setoid.ts";
+ * import { contramap, string } from "./eq.ts";
  * import { pipe } from "./fn.ts";
  *
  * const lowercase = (s: string) => s.toLowerCase();
@@ -604,31 +603,31 @@ export function method<M extends string, A>(
  */
 export function contramap<L, D>(
   fld: (l: L) => D,
-): (setoid: Setoid<D>) => Setoid<L> {
+): (eq: Eq<D>) => Eq<L> {
   return ({ equals }) => ({
     equals: ((second) => (first) => equals(fld(second))(fld(first))),
   });
 }
 
 /**
- * The canonical implementation of Contravariant for Setoid. It contains
+ * The canonical implementation of Contravariant for Eq. It contains
  * the method contramap.
  *
  * @since 2.0.0
  */
-export const ContravariantSetoid: Contravariant<URIContravariant> = {
+export const ContravariantEq: Contravariant<URIContravariant> = {
   contramap,
 };
 
 /**
- * The canonical implementation of Schemable for a Setoid. It contains
+ * The canonical implementation of Schemable for a Eq. It contains
  * the methods unknown, string, number, boolean, literal, nullable,
  * undefinable, record, array, tuple, struct, partial, intersect,
  * union, and lazy.
  *
  * @since 2.0.0
  */
-export const SchemableSetoid: Schemable<URI> = {
+export const SchemableEq: Schemable<URI> = {
   unknown: () => unknown,
   string: () => string,
   number: () => number,

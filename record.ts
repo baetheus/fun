@@ -5,7 +5,7 @@ import type { Functor } from "./functor.ts";
 import type { Show } from "./show.ts";
 import type { Traversable } from "./traversable.ts";
 
-import type { Setoid } from "./setoid.ts";
+import type { Eq } from "./eq.ts";
 import type { Option } from "./option.ts";
 
 import { none, some } from "./option.ts";
@@ -165,7 +165,7 @@ export function lookupWithKey(key: string) {
 }
 
 export function isSubrecord<A>(
-  S: Setoid<A>,
+  S: Eq<A>,
 ): (second: ReadonlyRecord<A>) => (first: ReadonlyRecord<A>) => boolean {
   return (second) => (first) => {
     for (const key in first) {
