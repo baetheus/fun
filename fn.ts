@@ -597,7 +597,7 @@ export function ap<A, I, L = void>(
  */
 export function map<A, I>(
   fai: (a: A) => I,
-): <D = void>(ta: Fn<[D], A>) => Fn<[D], I> {
+): <D extends unknown[] = never[]>(ta: Fn<D, A>) => Fn<D, I> {
   return (ta) => flow(ta, fai);
 }
 

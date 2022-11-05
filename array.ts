@@ -439,6 +439,32 @@ export function partition<A>(
   };
 }
 
+export function binarySearch<A>(
+  ord: Ord<A>,
+): (value: A, sorted: ReadonlyArray<A>) => number {
+  const { compare } = ord;
+  return (value, sorted) => {
+    let low = 0;
+    let high = sorted.length;
+    let middle, cursor, ordering;
+
+    while (low < high) {
+      middle = Math.floor((low + high) / 2);
+      cursor = sorted[middle];
+      ordering = compare(value, cursor);
+
+      if (ordering === 0) {
+        return middle;
+      } else if (ordering === -1) {
+        high = middle;
+      } else {
+        low = middle + 1;
+      }
+    }
+    return high;
+  };
+}
+
 export const MonadArray: Monad<URI> = { of, ap, map, join, chain };
 
 export const AltArray: Alt<URI> = { alt, map };
