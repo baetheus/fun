@@ -4,12 +4,14 @@ import type { Applicative } from "./applicative.ts";
 import type { Apply } from "./apply.ts";
 import type { Chain } from "./chain.ts";
 import type { Extend } from "./extend.ts";
+import type { Either } from "./either.ts";
 import type { Filterable } from "./filterable.ts";
 import type { Foldable } from "./foldable.ts";
 import type { Functor } from "./functor.ts";
 import type { Monad } from "./monad.ts";
 import type { Monoid } from "./monoid.ts";
 import type { Ord } from "./ord.ts";
+import type { Pair } from "./pair.ts";
 import type { Predicate } from "./predicate.ts";
 import type { Refinement } from "./refinement.ts";
 import type { Semigroup } from "./semigroup.ts";
@@ -242,11 +244,54 @@ export function exists<A>(predicate: Predicate<A>) {
   return (ta: Option<A>): boolean => isSome(ta) && predicate(ta.value);
 }
 
+export function filter<A, B extends A>(
+  refinement: Refinement<A, B>,
+): (ta: Option<A>) => Option<B>;
+export function filter<A>(
+  predicate: Predicate<A>,
+): (ta: Option<A>) => Option<A>;
 export function filter<A>(
   predicate: Predicate<A>,
 ): (ta: Option<A>) => Option<A> {
   const _exists = exists(predicate);
   return (ta) => _exists(ta) ? ta : none;
+}
+
+export function filterMap<A, I>(
+  fai: (a: A) => Option<I>,
+): (ua: Option<A>) => Option<I> {
+  return chain(fai);
+}
+
+export function partition<A, B extends A>(
+  refinement: Refinement<A, B>,
+): (ua: Option<A>) => Pair<Option<B>, Option<A>>;
+export function partition<A>(
+  predicate: Predicate<A>,
+): (ua: Option<A>) => Pair<Option<A>, Option<A>>;
+export function partition<A>(
+  predicate: Predicate<A>,
+): (ua: Option<A>) => Pair<Option<A>, Option<A>> {
+  type Output = Pair<Option<A>, Option<A>>;
+  const empty: Output = [none, none];
+  return (ua) =>
+    isNone(ua) ? empty : predicate(ua.value) ? [ua, none] : [none, ua];
+}
+
+export function partitionMap<A, I, J>(
+  fai: (a: A) => Either<J, I>,
+): (ua: Option<A>) => Pair<Option<I>, Option<J>> {
+  type Output = Pair<Option<I>, Option<J>>;
+  const empty: Output = [none, none];
+  return (ua) => {
+    if (isNone(ua)) {
+      return empty;
+    }
+    const result = fai(ua.value);
+    return result.tag === "Right"
+      ? [some(result.right), none]
+      : [none, some(result.left)];
+  };
 }
 
 export function reduce<A, O>(
@@ -288,7 +333,12 @@ export const AltOption: Alt<URI> = { alt, map };
 
 export const ExtendsOption: Extend<URI> = { map, extend };
 
-export const FilterableOption: Filterable<URI> = { filter };
+export const FilterableOption: Filterable<URI> = {
+  filter,
+  filterMap,
+  partition,
+  partitionMap,
+};
 
 export const FoldableOption: Foldable<URI> = { reduce };
 

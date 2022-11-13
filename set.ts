@@ -1,17 +1,22 @@
 import type { $, Kind, Out } from "./kind.ts";
 import type { Applicative } from "./applicative.ts";
 import type { Apply } from "./apply.ts";
+import type { Either } from "./either.ts";
+import type { Eq } from "./eq.ts";
 import type { Filterable } from "./filterable.ts";
 import type { Foldable } from "./foldable.ts";
 import type { Functor } from "./functor.ts";
 import type { Monoid } from "./monoid.ts";
+import type { Option } from "./option.ts";
+import type { Pair } from "./pair.ts";
 import type { Predicate } from "./predicate.ts";
-import type { Eq } from "./eq.ts";
+import type { Refinement } from "./refinement.ts";
 import type { Show } from "./show.ts";
 import type { Traversable } from "./traversable.ts";
 
 import { flow, pipe } from "./fn.ts";
-import { fromEquals } from "./eq.ts";
+import * as O from "./option.ts";
+import * as E from "./either.ts";
 
 export interface URI extends Kind {
   readonly kind: ReadonlySet<Out<this, 0>>;
@@ -176,6 +181,12 @@ export function chain<A, I>(
   };
 }
 
+export function filter<A, B extends A>(
+  refinement: Refinement<A, B>,
+): (ta: ReadonlySet<A>) => ReadonlySet<B>;
+export function filter<A>(
+  predicate: Predicate<A>,
+): (ta: ReadonlySet<A>) => ReadonlySet<A>;
 export function filter<A>(
   predicate: Predicate<A>,
 ): (ta: ReadonlySet<A>) => ReadonlySet<A> {
@@ -187,6 +198,62 @@ export function filter<A>(
       }
     }
     return _ta;
+  };
+}
+
+export function filterMap<A, I>(
+  fai: (a: A) => Option<I>,
+): (ua: ReadonlySet<A>) => ReadonlySet<I> {
+  return (ua) => {
+    const output = new Set<I>();
+    for (const a of ua) {
+      const value = fai(a);
+      if (O.isSome(value)) {
+        output.add(value.value);
+      }
+    }
+    return output;
+  };
+}
+
+export function partition<A, B extends A>(
+  refinement: Refinement<A, B>,
+): (ua: ReadonlySet<A>) => Pair<ReadonlySet<B>, ReadonlySet<A>>;
+export function partition<A>(
+  predicate: Predicate<A>,
+): (ua: ReadonlySet<A>) => Pair<ReadonlySet<A>, ReadonlySet<A>>;
+export function partition<A>(
+  predicate: Predicate<A>,
+): (ua: ReadonlySet<A>) => Pair<ReadonlySet<A>, ReadonlySet<A>> {
+  return (ua) => {
+    const first = new Set<A>();
+    const second = new Set<A>();
+    for (const a of ua) {
+      if (predicate(a)) {
+        first.add(a);
+      } else {
+        second.add(a);
+      }
+    }
+    return [first, second];
+  };
+}
+
+export function partitionMap<A, I, J>(
+  fai: (a: A) => Either<J, I>,
+): (ua: ReadonlySet<A>) => Pair<ReadonlySet<I>, ReadonlySet<J>> {
+  return (ua) => {
+    const first = new Set<I>();
+    const second = new Set<J>();
+    for (const a of ua) {
+      const result = fai(a);
+      if (result.tag === "Right") {
+        first.add(result.right);
+      } else {
+        second.add(result.left);
+      }
+    }
+    return [first, second];
   };
 }
 
@@ -223,9 +290,10 @@ export function getShow<A>(S: Show<A>): Show<ReadonlySet<A>> {
 
 export function getEq<A>(S: Eq<A>): Eq<ReadonlySet<A>> {
   const subset = isSubset(S);
-  return fromEquals((first, second) =>
-    subset(first)(second) && subset(second)(first)
-  );
+  return {
+    equals: (second) => (first) =>
+      subset(first)(second) && subset(second)(first),
+  };
 }
 
 export function getUnionMonoid<A>(S: Eq<A>): Monoid<ReadonlySet<A>> {
@@ -236,7 +304,12 @@ export const FunctorSet: Functor<URI> = { map };
 
 export const ApplySet: Apply<URI> = { ap, map };
 
-export const FilterableSet: Filterable<URI> = { filter };
+export const FilterableSet: Filterable<URI> = {
+  filter,
+  filterMap,
+  partition,
+  partitionMap,
+};
 
 export const FoldableSet: Foldable<URI> = { reduce };
 

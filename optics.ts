@@ -402,9 +402,10 @@ export function props<A, P extends keyof A>(
 ): <U extends Tag, S>(
   first: Optic<U, S, A>,
 ) => Optic<Join<U, GetterTag>, S, { [K in P]: A[K] }> {
+  const pick = R.pick<A, P>(...props);
   return compose(getter(
-    R.pick(props),
-    (faa) => (a) => ({ ...a, ...faa(pipe(a, R.pick(props))) }),
+    pick,
+    (faa) => (a) => ({ ...a, ...faa(pick(a)) }),
   ));
 }
 

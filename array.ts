@@ -5,6 +5,7 @@ import type { Filterable } from "./filterable.ts";
 import type { Monad } from "./monad.ts";
 import type { Monoid } from "./monoid.ts";
 import type { Option } from "./option.ts";
+import type { Either } from "./either.ts";
 import type { Ord } from "./ord.ts";
 import type { Pair } from "./pair.ts";
 import type { Predicate } from "./predicate.ts";
@@ -15,8 +16,9 @@ import type { Show } from "./show.ts";
 import type { Traversable } from "./traversable.ts";
 
 import { pair } from "./pair.ts";
+import { isRight } from "./either.ts";
 import { fromCompare, sign } from "./ord.ts";
-import { none, some } from "./option.ts";
+import { isSome, none, some } from "./option.ts";
 import { apply, flow, identity, pipe } from "./fn.ts";
 import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
@@ -209,6 +211,26 @@ export function filter<A>(
       const value = ta[index];
       if (predicate(value)) {
         result[resultIndex++] = value;
+      }
+    }
+    return result;
+  };
+}
+
+export function filterMap<A, I>(
+  predicate: (a: A) => Option<I>,
+): (ua: ReadonlyArray<A>) => ReadonlyArray<I> {
+  return (ua) => {
+    let index = -1;
+    let resultIndex = 0;
+    const length = ua.length;
+    const result = [];
+
+    while (++index < length) {
+      const value = ua[index];
+      const filtered = predicate(value);
+      if (isSome(filtered)) {
+        result[resultIndex++] = filtered.value;
       }
     }
     return result;
@@ -409,33 +431,49 @@ export function sort<B>(
 export function partition<A, B extends A>(
   refinement: (a: A, index: number) => a is B,
 ): (ta: ReadonlyArray<A>) => Pair<ReadonlyArray<A>, ReadonlyArray<B>>;
-export function partition<A, B extends A>(
-  refinement: Refinement<A, B>,
-): (ta: ReadonlyArray<A>) => Pair<ReadonlyArray<A>, ReadonlyArray<B>>;
 export function partition<A>(
   predicate: (a: A, index: number) => boolean,
-): (ta: ReadonlyArray<A>) => Pair<ReadonlyArray<A>, ReadonlyArray<A>>;
-export function partition<A>(
-  predicate: Predicate<A>,
 ): (ta: ReadonlyArray<A>) => Pair<ReadonlyArray<A>, ReadonlyArray<A>>;
 export function partition<A>(
   refinement: (a: A, index: number) => boolean,
 ): (ta: ReadonlyArray<A>) => Pair<ReadonlyArray<A>, ReadonlyArray<A>> {
   return (ta) => {
-    const left: Array<A> = [];
-    const right: Array<A> = [];
+    const first: Array<A> = [];
+    const second: Array<A> = [];
     const length = ta.length;
     let index = -1;
 
     while (++index < length) {
       const value = ta[index];
       if (refinement(value, index)) {
-        right.push(value);
+        first.push(value);
       } else {
-        left.push(value);
+        second.push(value);
       }
     }
-    return pair(left, right);
+    return pair(first, second);
+  };
+}
+
+export function partitionMap<A, I, J>(
+  predicate: (a: A) => Either<J, I>,
+): (ua: ReadonlyArray<A>) => Pair<ReadonlyArray<I>, ReadonlyArray<J>> {
+  return (ua) => {
+    const first: Array<I> = [];
+    const second: Array<J> = [];
+    const length = ua.length;
+    let index = -1;
+
+    while (++index < length) {
+      const value = ua[index];
+      const filtered = predicate(value);
+      if (isRight(filtered)) {
+        first.push(filtered.right);
+      } else {
+        second.push(filtered.left);
+      }
+    }
+    return pair(first, second);
   };
 }
 
@@ -469,7 +507,12 @@ export const MonadArray: Monad<URI> = { of, ap, map, join, chain };
 
 export const AltArray: Alt<URI> = { alt, map };
 
-export const FilterableArray: Filterable<URI> = { filter };
+export const FilterableArray: Filterable<URI> = {
+  filter,
+  filterMap,
+  partition,
+  partitionMap,
+};
 
 export const TraversableArray: Traversable<URI> = {
   map,

@@ -36,7 +36,7 @@ import { pipe } from "./fn.ts";
 export type Pair<A, B> = readonly [A, B];
 
 /**
- * Specifies Pair as a High Kinded Type, with covariant
+ * Specifies Pair as a Higher Kinded Type, with covariant
  * parameters A and B corresponding to the 0th and 1st
  * index of any Substitutions.
  *
@@ -56,8 +56,8 @@ export interface URI extends Kind {
  *
  * const nameAndAge = P.pair("Brandon", 37);
  *
- * const name = P.first(nameAndAge); // "Brandon"
- * const age = P.second(nameAndAge); // 37
+ * const name = P.getFirst(nameAndAge); // "Brandon"
+ * const age = P.getSecond(nameAndAge); // 37
  * ```
  *
  * @since 2.0.0
