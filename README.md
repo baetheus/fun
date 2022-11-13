@@ -102,7 +102,6 @@ module at the `HEAD` of the `main` branch can be found here:
 - [traversable.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/traversable.ts)
 - [tree.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/tree.ts)
 
-
 In general, you can take any specific module url and put it into
 [https://doc.deno.land/](https://doc.deno.land/) to get a decent rendering of
 the documentation. (Note: Currently the deno_doc crate, which is what
