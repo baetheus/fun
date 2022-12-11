@@ -424,24 +424,26 @@ export function map<A, I>(
  * import * as S from "./set.ts";
  * import { pipe } from "./fn.ts";
  *
- * const setfn = S.set((n: number) => n + 1, (n: number) => n + 10);
- * const set = S.set(1, 2, 3, 4);
+ * type Person = { name: string, age: number };
+ *
+ * const person = (name: string) => (age: number): Person => ({ name, age });
  *
  * const result = pipe(
- *   set,
- *   S.ap(setfn),
- * ); // Set(2, 11, 3, 12, 4, 13, 14)
+ *   S.of(person),
+ *   S.ap(S.of("Brandon")),
+ *   S.ap(S.of(37)),
+ * ); // ReadonlySet<Person>
  * ```
  *
  * @since 2.0.0
  */
-export function ap<A, I>(
-  tfai: ReadonlySet<(a: A) => I>,
-): (ua: ReadonlySet<A>) => ReadonlySet<I> {
-  return (ua) => {
+export function ap<A>(
+  ua: ReadonlySet<A>,
+): <I>(ufai: ReadonlySet<(a: A) => I>) => ReadonlySet<I> {
+  return <I>(ufai: ReadonlySet<(a: A) => I>): ReadonlySet<I> => {
     const ti = new Set<I>();
-    for (const fai of tfai) {
-      for (const a of ua) {
+    for (const a of ua) {
+      for (const fai of ufai) {
         ti.add(fai(a));
       }
     }
@@ -695,9 +697,9 @@ export function reduce<A, O>(
 }
 
 // This is an unsafe Add for ReadonlySet<A> that violates Readonly contract
-const unsafeAdd = <A>(ua: ReadonlySet<A>) => (a: A): ReadonlySet<A> => {
+const unsafeAdd = <A>(ua: ReadonlySet<A>) => (a: A): Set<A> => {
   (ua as Set<A>).add(a);
-  return ua;
+  return ua as Set<A>;
 };
 
 /**
@@ -735,8 +737,8 @@ export function traverse<V extends Kind>(
     favi: (a: A) => $<V, [I, J, K], [L], [M]>,
   ): (ua: ReadonlySet<A>) => $<V, [ReadonlySet<I>, J, K], [L], [M]> =>
     reduce(
-      (fis, a) => pipe(favi(a), A.ap(pipe(fis, A.map(unsafeAdd)))),
-      A.of(empty()),
+      (vis, a) => pipe(vis, A.map(unsafeAdd), A.ap(favi(a))),
+      A.of(empty() as Set<I>),
     );
 }
 

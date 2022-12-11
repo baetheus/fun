@@ -21,7 +21,6 @@ import type { Traversable } from "./traversable.ts";
 
 import { isNotNil } from "./nilable.ts";
 import { fromCompare } from "./ord.ts";
-import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 import { flow, identity, pipe } from "./fn.ts";
 
 /**
@@ -211,10 +210,11 @@ export function mapNullable<A, I>(f: (a: A) => I | null | undefined) {
   return chain(flow(f, fromNullable));
 }
 
-export function ap<A, I>(
-  tfai: Option<(a: A) => I>,
-): (ta: Option<A>) => Option<I> {
-  return (ta) => isNone(tfai) || isNone(ta) ? none : some(tfai.value(ta.value));
+export function ap<A>(
+  ua: Option<A>,
+): <I>(ufai: Option<(a: A) => I>) => Option<I> {
+  return (ufai) =>
+    isNone(ufai) || isNone(ua) ? none : some(ufai.value(ua.value));
 }
 
 export function chain<A, I>(
@@ -311,11 +311,12 @@ export function traverse<V extends Kind>(A: Applicative<V>) {
     );
 }
 
-export function tap<A>(fa: (a: A) => void): (ta: Option<A>) => void {
+export function tap<A>(fa: (a: A) => void): (ta: Option<A>) => Option<A> {
   return (ta) => {
     if (isSome(ta)) {
       fa(ta.value);
     }
+    return ta;
   };
 }
 
@@ -403,7 +404,3 @@ export function getMonoid<A>(M: Monoid<A>): Monoid<Option<A>> {
     empty: constNone,
   });
 }
-
-export const sequenceTuple = createSequenceTuple(MonadOption);
-
-export const sequenceStruct = createSequenceStruct(MonadOption);

@@ -25,10 +25,13 @@ Deno.test("Tree of", () => {
 });
 
 Deno.test("Tree ap", () => {
-  assertEquals(pipe(T.of(1), T.ap(T.of(add))), T.of(2));
+  assertEquals(pipe(T.of((n: number) => n + 1), T.ap(T.of(1))), T.of(2));
   assertEquals(
-    pipe(T.of(1), T.ap(T.of(add, [T.of(add)]))),
-    T.of(2, [T.of(2)]),
+    pipe(
+      T.of((n: number) => n + 1, [T.of((n: number) => n + n)]),
+      T.ap(T.of(2)),
+    ),
+    T.of(3, [T.of(4)]),
   );
 });
 

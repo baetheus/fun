@@ -1,6 +1,7 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
 import * as I from "../identity.ts";
+import { pipe } from "../fn.ts";
 
 const add = (n: number) => n + 1;
 
@@ -9,8 +10,7 @@ Deno.test("Identity of", () => {
 });
 
 Deno.test("Identity ap", () => {
-  const ap = I.ap(I.of(add));
-  assertEquals(ap(I.of(1)), I.of(2));
+  assertEquals(pipe(I.of((n: number) => n + 1), I.ap(I.of(1))), I.of(2));
 });
 
 Deno.test("Identity map", () => {

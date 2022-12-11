@@ -13,7 +13,7 @@ import type { ReadonlyRecord } from "./record.ts";
 import type { Literal, Schemable } from "./schemable.ts";
 
 import { isNil } from "./nilable.ts";
-import { memoize, tryCatch } from "./fn.ts";
+import { memoize, tryThunk } from "./fn.ts";
 import { isSubrecord } from "./record.ts";
 
 /**
@@ -450,12 +450,12 @@ export function union<I>(
       if (first === second) {
         return true;
       } else if (typeof first === typeof second) {
-        return tryCatch(
+        return tryThunk(
           // deno-lint-ignore no-explicit-any
           () => ua.equals(second as any)(first as any),
           () => false,
         ) ||
-          tryCatch(
+          tryThunk(
             // deno-lint-ignore no-explicit-any
             () => ui.equals(second as any)(first as any),
             () => false,
@@ -511,8 +511,8 @@ export function lazy<A>(_: string, f: () => Eq<A>): Eq<A> {
  *
  * const { equals } = struct({ asNumber: io(number) });
  *
- * const one = { asNumber: constant(1) };
- * const two = { asNumber: constant(2) };
+ * const one = { asNumber: () => 1 };
+ * const two = { asNumber: () => 2 };
  *
  * const result1 = equals(one)(two); // false
  * const result2 = equals(one)(one); // true

@@ -8,7 +8,6 @@ import * as F from "../fn.ts";
 import * as P from "../pair.ts";
 import * as E from "../either.ts";
 import { pipe } from "../fn.ts";
-import { zip } from "../array.ts";
 
 const add = (n: number) => n + 1;
 
@@ -18,12 +17,12 @@ Deno.test("Fn unary", () => {
   assertEquals(unary([1, "Hello"]), variadic(1, "Hello"));
 });
 
-Deno.test("Fn tryCatch", () => {
+Deno.test("Fn tryThunk", () => {
   assertEquals(
-    F.tryCatch(F.todo, String),
+    F.tryThunk(F.todo, String),
     "Error: TODO: this function has not been implemented",
   );
-  assertEquals(F.tryCatch(() => 1, () => 2), 1);
+  assertEquals(F.tryThunk(() => 1, () => 2), 1);
 });
 
 Deno.test("Fn handleThrow", () => {
@@ -119,24 +118,27 @@ Deno.test("Fn flow", () => {
 
 Deno.test("Fn of", () => {
   const a = F.of(1);
-  assertEquals(a(), 1);
+  assertEquals(a(null), 1);
 });
 
 Deno.test("Fn ap", () => {
-  assertEquals(pipe(F.of(0), F.ap(F.of(add)))(), F.of(1)());
+  assertEquals(
+    pipe(F.of((n: number) => n + 1), F.ap(F.of(1)))(null),
+    F.of(2)(null),
+  );
 });
 
 Deno.test("Fn map", () => {
-  assertEquals(pipe(F.of(0), F.map(add))(), F.of(1)());
+  assertEquals(pipe(F.of(0), F.map(add))(null), F.of(1)(null));
 });
 
 Deno.test("Fn join", () => {
-  assertEquals(pipe(F.of(F.of(0)), F.join)(), F.of(0)());
+  assertEquals(pipe(F.of(F.of(0)), F.join)(null), F.of(0)(null));
 });
 
 Deno.test("Fn chain", () => {
   const chain = F.chain((n: number) => F.of(n + 1));
-  assertEquals(chain(F.of(0))(), F.of(1)());
+  assertEquals(chain(F.of(0))(null), F.of(1)(null));
 });
 
 Deno.test("Fn contramap", () => {
@@ -172,68 +174,9 @@ Deno.test("Fn id", () => {
 });
 
 Deno.test("Fn compose", () => {
-  const fab = (n: number) => n + 1;
-  const comp0 = F.compose(fab);
-  const comp1 = comp0(fab);
-  assertEquals(comp1(1), 3);
-
-  const comp2 = comp0(parseInt);
-  assertEquals(comp2("ff", 16), 256);
-
-  const template = (add: number) =>
-  (
-    [start, ...segments]: TemplateStringsArray,
-    ...numbers: number[]
-  ): string =>
-    [
-      start,
-      ...zip(segments)(numbers)
-        .map(([number, segment]) => `${number + add}${segment}`),
-    ].join("");
-  const repeated = F.flow(template, F.compose((a) => [a, a]));
-  assertEquals(repeated(1)`a${2}b${3}`, ["a3b4", "a3b4"]);
-});
-
-Deno.test("Fn first", () => {
-  assertEquals(
-    pipe(
-      P.dup<number>,
-      F.map(F.first((n) => n + 1)),
-      F.apply(1),
-    ),
-    P.pair(2, 1),
+  const result = pipe(
+    (n: [string, string]) => n[0],
+    F.compose((s: string) => s.length),
   );
-});
-
-Deno.test("Fn second", () => {
-  assertEquals(
-    pipe(
-      P.dup<number>,
-      F.map(F.second((n) => n + 1)),
-      F.apply(1),
-    ),
-    P.pair(1, 2),
-  );
-});
-
-Deno.test("Fn left", () => {
-  assertEquals(
-    pipe(
-      E.left<number>,
-      F.map(F.left((n) => n + 1)),
-      F.apply(1),
-    ),
-    E.left(2),
-  );
-});
-
-Deno.test("Fn right", () => {
-  assertEquals(
-    pipe(
-      E.right<number, number>,
-      F.map(F.right((n) => n + 1)),
-      F.apply(1),
-    ),
-    E.right(2),
-  );
+  assertEquals(result(["hello", "wurl"]), 5);
 });

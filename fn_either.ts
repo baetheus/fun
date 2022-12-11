@@ -40,7 +40,7 @@ import * as F from "./fn.ts";
  *
  * @since 2.0.0
  */
-export type FnEither<D extends unknown[], B, A> = Fn<D, E.Either<B, A>>;
+export type FnEither<D, B, A> = Fn<D, E.Either<B, A>>;
 
 /**
  * A FnEither type over any, useful for constraining generics that
@@ -49,7 +49,7 @@ export type FnEither<D extends unknown[], B, A> = Fn<D, E.Either<B, A>>;
  * @since 2.0.0
  */
 // deno-lint-ignore no-explicit-any
-export type AnyFnEither = FnEither<any[], any, any>;
+export type AnyFnEither = FnEither<any, any, any>;
 
 /**
  * Specifies FnEither as a Higher Kinded Type, with
@@ -66,7 +66,7 @@ export type AnyFnEither = FnEither<any[], any, any>;
  * @since 2.0.0
  */
 export interface URI extends Kind {
-  readonly kind: FnEither<[In<this, 0>], Out<this, 1>, Out<this, 0>>;
+  readonly kind: FnEither<In<this, 0>, Out<this, 1>, Out<this, 0>>;
 }
 
 /**
@@ -82,7 +82,7 @@ export interface URI extends Kind {
  * @since 2.0.0
  */
 export interface RightURI<B> extends Kind {
-  readonly kind: FnEither<[In<this, 0>], B, Out<this, 0>>;
+  readonly kind: FnEither<In<this, 0>, B, Out<this, 0>>;
 }
 
 /**
@@ -101,20 +101,20 @@ export interface RightURI<B> extends Kind {
  * const throws = tryCatch(todo<number>, () => "Failed!");
  * const returns = tryCatch((n: number) => n, () => "Failed!");
  *
- * const result1 = throws(); // Left("Failed!");
- * const result2 = returns(1); // Right(1);
+ * const result1 = throws()(0); // Left("Failed!");
+ * const result2 = returns(1)(0); // Right(1);
  * ```
  *
  * @since 2.0.0
  */
 export function tryCatch<D extends unknown[], B, A>(
-  ua: Fn<D, A>,
+  ua: (...d: D) => A,
   onThrow: (e: unknown, d: D) => B,
-): FnEither<D, B, A> {
+): (...d: D) => FnEither<unknown, B, A> {
   return F.handleThrow(
     ua,
-    (a) => E.right(a),
-    (e, d) => E.left(onThrow(e, d)),
+    right,
+    (e, d) => left(onThrow(e, d)),
   );
 }
 
@@ -127,12 +127,12 @@ export function tryCatch<D extends unknown[], B, A>(
  *
  * const leftNumber = left(1);
  *
- * const result = leftNumber(); // Left(1);
+ * const result = leftNumber(0); // Left(1);
  * ```
  *
  * @since 2.0.0
  */
-export function left<B, D extends unknown[] = never[], A = never>(
+export function left<B, D = unknown, A = never>(
   left: B,
 ): FnEither<D, B, A> {
   return F.of(E.left(left));
@@ -147,12 +147,12 @@ export function left<B, D extends unknown[] = never[], A = never>(
  *
  * const rightNumber = right(1);
  *
- * const result = rightNumber(); // Right(1);
+ * const result = rightNumber(null); // Right(1);
  * ```
  *
  * @since 2.0.0
  */
-export function right<A, D extends unknown[] = never[], B = never>(
+export function right<A, D = unknown, B = never>(
   right: A,
 ): FnEither<D, B, A> {
   return F.of(E.right(right));
@@ -172,13 +172,13 @@ export function right<A, D extends unknown[] = never[], B = never>(
  * const fnLeft = FE.fromEither(left);
  * const fnRight = FE.fromEither(right);
  *
- * const result1 = fnLeft(); // Left(1);
- * const result2 = fnRight(); // Right(1);
+ * const result1 = fnLeft(null); // Left(1);
+ * const result2 = fnRight(null); // Right(1);
  * ```
  *
  * @since 2.0.0
  */
-export function fromEither<A, B, D extends unknown[] = never[]>(
+export function fromEither<A, B, D = unknown>(
   ua: E.Either<B, A>,
 ): FnEither<D, B, A> {
   return F.of(ua);
@@ -199,7 +199,7 @@ export function fromEither<A, B, D extends unknown[] = never[]>(
  *
  * @since 2.0.0
  */
-export function fromFn<D extends unknown[], A>(
+export function fromFn<D, A>(
   fda: Fn<D, A>,
 ): FnEither<D, never, A> {
   return F.flow(fda, E.right);
@@ -226,13 +226,13 @@ export function fromFn<D extends unknown[], A>(
  */
 export function fromPredicate<A, B extends A>(
   refinement: Refinement<A, B>,
-): FnEither<[A], A, B>;
+): FnEither<A, A, B>;
 export function fromPredicate<A>(
   predicate: Predicate<A>,
-): FnEither<[A], A, A>;
+): FnEither<A, A, A>;
 export function fromPredicate<A>(
   predicate: Predicate<A>,
-): FnEither<[A], A, A> {
+): FnEither<A, A, A> {
   return (a) => predicate(a) ? E.right(a) : E.left(a);
 }
 
@@ -257,7 +257,7 @@ export function fromPredicate<A>(
  *
  * @since 2.0.0
  */
-export function of<A, B = never, D extends unknown[] = never[]>(
+export function of<A, D = unknown, B = never>(
   a: A,
 ): FnEither<D, B, A> {
   return right(a);
@@ -272,18 +272,23 @@ export function of<A, B = never, D extends unknown[] = never[]>(
  * import * as FE from "./fn_either.ts";
  * import { pipe } from "./fn.ts";
  *
+ * type Person = { name: string; age: number };
+ *
+ * const person = (name: string) => (age: number): Person => ({ name, age });
+ *
  * const result = pipe(
- *   FE.id<string>(),
- *   FE.ap(FE.of((s) => s.length)),
- * )("Hello World"); // Right(11)
+ *   FE.of(person),
+ *   FE.ap(FE.of("Brandon")),
+ *   FE.ap(FE.of(37)),
+ * ); // FnEither<[], never, Person>
  * ```
  *
  * @since 2.0.0
  */
-export function ap<A, I, B, D extends unknown[] = never[]>(
-  tfai: FnEither<D, B, (a: A) => I>,
-): (ua: FnEither<D, B, A>) => FnEither<D, B, I> {
-  return (ua) => (...d) => F.pipe(ua(...d), E.ap(tfai(...d)));
+export function ap<D, B, A>(
+  ua: FnEither<D, B, A>,
+): <L, I, J>(ufai: FnEither<L, J, (a: A) => I>) => FnEither<D & L, B | J, I> {
+  return (ufai) => (d) => F.pipe(ufai(d), E.ap(ua(d)));
 }
 
 /**
@@ -298,17 +303,17 @@ export function ap<A, I, B, D extends unknown[] = never[]>(
  * const result = pipe(
  *   FE.left("Oh no I broke!"),
  *   FE.alt(FE.right("But I work")),
- * )(); // Right("But I work")
+ * )(null); // Right("But I work")
  * ```
  *
  * @since 2.0.0
  */
-export function alt<A, B, D extends unknown[]>(
+export function alt<A, B, D>(
   ub: FnEither<D, B, A>,
 ): (ua: FnEither<D, B, A>) => FnEither<D, B, A> {
-  return (ua) => (...d) => {
-    const e = ua(...d);
-    return E.isLeft(e) ? ub(...d) : e;
+  return (ua) => (d) => {
+    const e = ua(d);
+    return E.isLeft(e) ? ub(d) : e;
   };
 }
 
@@ -337,7 +342,7 @@ export function alt<A, B, D extends unknown[]>(
 export function bimap<A, I, B, J>(
   fbj: (b: B) => J,
   fai: (a: A) => I,
-): <D extends unknown[] = never[]>(
+): <D = unknown>(
   ua: FnEither<D, B, A>,
 ) => FnEither<D, J, I> {
   return F.map(E.bimap(fbj, fai));
@@ -361,10 +366,10 @@ export function bimap<A, I, B, J>(
  */
 export function map<A, I>(
   fai: (a: A) => I,
-): <B = never, D extends unknown[] = never[]>(
+): <B = never, D = unknown>(
   ua: FnEither<D, B, A>,
 ) => FnEither<D, B, I> {
-  return bimap(F.identity, fai);
+  return F.map(E.map(fai));
 }
 
 /**
@@ -390,10 +395,10 @@ export function map<A, I>(
  */
 export function mapLeft<B, J>(
   fbj: (b: B) => J,
-): <A = never, D extends unknown[] = never[]>(
+): <A = never, D = unknown>(
   ua: FnEither<D, B, A>,
 ) => FnEither<D, J, A> {
-  return bimap(fbj, F.identity);
+  return F.map(E.mapLeft(fbj));
 }
 
 /**
@@ -408,15 +413,15 @@ export function mapLeft<B, J>(
  * const result = pipe(
  *   FE.right(FE.right(1)),
  *   FE.join,
- * )(); // Right(1)
+ * )(null); // Right(1)
  * ```
  *
  * @since 2.0.0
  */
-export function join<A, B, D extends unknown[]>(
-  tua: FnEither<D, B, FnEither<D, B, A>>,
-): FnEither<D, B, A> {
-  return F.pipe(tua, chain(F.identity));
+export function join<D, A, B, L, J>(
+  tua: FnEither<L, J, FnEither<D, B, A>>,
+): FnEither<D & L, B | J, A> {
+  return (d) => F.pipe(tua(d), E.chain(F.apply(d)));
 }
 
 /**
@@ -436,12 +441,14 @@ export function join<A, B, D extends unknown[]>(
  *
  * @since 2.0.0
  */
-export function chain<A, D extends unknown[], I, J>(
-  fati: (a: A) => FnEither<D, J, I>,
-): <B>(ua: FnEither<D, B, A>) => FnEither<D, B | J, I> {
-  return (ua) => (...d) => {
-    const e = ua(...d);
-    return E.isLeft(e) ? e : fati(e.right)(...d);
+export function chain<A, L = unknown, J = never, I = never>(
+  fati: (a: A) => FnEither<L, J, I>,
+): <D = unknown, B = never>(
+  ua: FnEither<D, B, A>,
+) => FnEither<D & L, B | J, I> {
+  return (ua) => (d) => {
+    const e = ua(d);
+    return E.isLeft(e) ? e : fati(e.right)(d);
   };
 }
 
@@ -463,12 +470,14 @@ export function chain<A, D extends unknown[], I, J>(
  *
  * @since 2.0.0
  */
-export function chainLeft<B, D extends unknown[], I, J>(
-  fbtj: (b: B) => FnEither<D, J, I>,
-): <A>(ua: FnEither<D, B, A>) => FnEither<D, J, A | I> {
-  return (ua) => (...d) => {
-    const e = ua(...d);
-    return E.isRight(e) ? e : fbtj(e.left)(...d);
+export function chainLeft<B, L = unknown, I = never, J = never>(
+  fbtj: (b: B) => FnEither<L, J, I>,
+): <D = unknown, A = never>(
+  ua: FnEither<D, B, A>,
+) => FnEither<D & L, J | B, A | I> {
+  return (ua) => (d) => {
+    const e = ua(d);
+    return E.isRight(e) ? e : fbtj(e.left)(d);
   };
 }
 
@@ -493,7 +502,7 @@ export function chainLeft<B, D extends unknown[], I, J>(
  */
 export function contramap<L, D>(
   fld: (l: L) => D,
-): <A, B>(ua: FnEither<[D], B, A>) => FnEither<[L], B, A> {
+): <A, B>(ua: FnEither<D, B, A>) => FnEither<L, B, A> {
   return (ua) => F.flow(fld, ua);
 }
 
@@ -523,7 +532,7 @@ export function contramap<L, D>(
 export function dimap<A, I, L, D>(
   fld: (l: L) => D,
   fai: (a: A) => I,
-): <B>(ua: FnEither<[D], B, A>) => FnEither<[L], B, I> {
+): <B>(ua: FnEither<D, B, A>) => FnEither<L, B, I> {
   return F.flow(contramap(fld), map(fai));
 }
 
@@ -545,7 +554,7 @@ export function dimap<A, I, L, D>(
  *
  * @since 2.0.0
  */
-export function id<A, B = never>(): FnEither<[A], B, A> {
+export function id<A, B = never>(): FnEither<A, B, A> {
   return E.right;
 }
 
@@ -567,7 +576,7 @@ export function id<A, B = never>(): FnEither<[A], B, A> {
  *
  * @since 2.0.0
  */
-export function idLeft<B, A = never>(): FnEither<[B], B, A> {
+export function idLeft<B, A = never>(): FnEither<B, B, A> {
   return E.left;
 }
 
@@ -596,8 +605,8 @@ export function idLeft<B, A = never>(): FnEither<[B], B, A> {
  * @since 2.0.0
  */
 export function compose<A, I, J>(
-  second: FnEither<[A], J, I>,
-): <B, D extends unknown[]>(
+  second: FnEither<A, J, I>,
+): <B, D>(
   first: FnEither<D, B, A>,
 ) => FnEither<D, B | J, I> {
   return (first) => F.flow(first, E.chain(second));
@@ -676,8 +685,8 @@ export function getRightMonad<B>(
 ): Monad<RightURI<B>> {
   return ({
     of,
-    ap: (tfai) => (ua) => (c) => {
-      const efai = tfai(c);
+    ap: (ua) => (ufai) => (c) => {
+      const efai = ufai(c);
       const ea = ua(c);
       return E.isLeft(efai)
         ? (E.isLeft(ea) ? E.left(concat(efai.left)(ea.left)) : efai)

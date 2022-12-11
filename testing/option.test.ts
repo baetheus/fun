@@ -99,9 +99,9 @@ Deno.test("Option of", () => {
 });
 
 Deno.test("Option ap", () => {
-  assertEquals(pipe(O.some(1), O.ap(O.some(add))), O.some(2));
-  assertEquals(pipe(O.some(1), O.ap(O.none)), O.none);
-  assertEquals(pipe(O.none, O.ap(O.some(add))), O.none);
+  assertEquals(pipe(O.of(add), O.ap(O.of(1))), O.some(2));
+  assertEquals(pipe(O.of(add), O.ap(O.none)), O.none);
+  assertEquals(pipe(O.none, O.ap(O.of(1))), O.none);
   assertEquals(pipe(O.none, O.ap(O.none)), O.none);
 });
 
@@ -165,23 +165,6 @@ Deno.test("Option extend", () => {
   const extend = O.extend(O.fold(() => -1, (n: number) => n + 1));
   assertEquals(extend(O.some(0)), O.some(1));
   assertEquals(extend(O.none), O.some(-1));
-});
-
-Deno.test("Option sequenceTuple", () => {
-  assertEquals(O.sequenceTuple(O.some(0), O.some(1)), O.some([0, 1]));
-  assertEquals(O.sequenceTuple(O.some(0), O.none), O.none);
-  assertEquals(O.sequenceTuple(O.none, O.some(1)), O.none);
-  assertEquals(O.sequenceTuple(O.none, O.none), O.none);
-});
-
-Deno.test("Option sequenceStruct", () => {
-  assertEquals(
-    O.sequenceStruct({ a: O.some(0), b: O.some(1) }),
-    O.some({ a: 0, b: 1 }),
-  );
-  assertEquals(O.sequenceStruct({ a: O.some(0), b: O.none }), O.none);
-  assertEquals(O.sequenceStruct({ a: O.none, b: O.some(1) }), O.none);
-  assertEquals(O.sequenceStruct({ a: O.none, b: O.none }), O.none);
 });
 
 Deno.test("Option exists", () => {

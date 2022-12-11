@@ -64,16 +64,23 @@ Deno.test("AsyncEither of", async () => {
 });
 
 Deno.test("AsyncEither apParallel", async () => {
-  await assertEqualsT(
-    pipe(AE.right(1), AE.apParallel(AE.right(add))),
-    AE.right(2),
+  const add = (n: number) => n + 1;
+  assertEquals(
+    await pipe(AE.of(add), AE.apParallel(AE.of(1)))(),
+    await AE.of(2)(),
   );
-  await assertEqualsT(
-    pipe(AE.left(1), AE.apParallel(AE.right(add))),
-    AE.left(1),
+  assertEquals(
+    await pipe(AE.left(1), AE.apParallel(AE.of(1)))(),
+    await AE.left(1)(),
   );
-  await assertEqualsT(pipe(AE.right(1), AE.apParallel(AE.left(1))), AE.left(1));
-  await assertEqualsT(pipe(AE.left(1), AE.apParallel(AE.left(2))), AE.left(1));
+  assertEquals(
+    await pipe(AE.of(add), AE.apParallel(AE.left(1)))(),
+    await AE.left(1)(),
+  );
+  assertEquals(
+    await pipe(AE.left(1), AE.apParallel(AE.left(2)))(),
+    await AE.left(2)(),
+  );
 });
 
 Deno.test("AsyncEither map", async () => {
@@ -106,21 +113,22 @@ Deno.test("AsyncEither mapLeft", async () => {
 });
 
 Deno.test("AsyncEither apSequential", async () => {
-  await assertEqualsT(
-    pipe(AE.right(1), AE.apSequential(AE.right(add))),
-    AE.right(2),
+  const add = (n: number) => n + 1;
+  assertEquals(
+    await pipe(AE.of(add), AE.apSequential(AE.of(1)))(),
+    await AE.of(2)(),
   );
-  await assertEqualsT(
-    pipe(AE.left(1), AE.apSequential(AE.right(add))),
-    AE.left(1),
+  assertEquals(
+    await pipe(AE.left(1), AE.apSequential(AE.of(1)))(),
+    await AE.left(1)(),
   );
-  await assertEqualsT(
-    pipe(AE.right(1), AE.apSequential(AE.left(1))),
-    AE.left(1),
+  assertEquals(
+    await pipe(AE.of(add), AE.apSequential(AE.left(1)))(),
+    await AE.left(1)(),
   );
-  await assertEqualsT(
-    pipe(AE.left(1), AE.apSequential(AE.left(2))),
-    AE.left(1),
+  assertEquals(
+    await pipe(AE.left(1), AE.apSequential(AE.left(2)))(),
+    await AE.left(2)(),
   );
 });
 

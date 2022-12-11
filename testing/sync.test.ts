@@ -2,7 +2,7 @@ import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
 import * as S from "../sync.ts";
 import * as O from "../option.ts";
-import { MonoidNumberSum, SemigroupNumberSum } from "../number.ts";
+import { pipe } from "../fn.ts";
 
 const add = (n: number) => n + 1;
 
@@ -10,27 +10,12 @@ const add = (n: number) => n + 1;
 const assertEqualsSync = (a: S.Sync<any>, b: S.Sync<any>) =>
   assertEquals(a(), b());
 
-Deno.test("Sync getSemigroup", () => {
-  const Semigroup = S.getApplySemigroup(SemigroupNumberSum);
-  const concat = Semigroup.concat(S.of(1));
-
-  assertEqualsSync(concat(S.of(1)), S.of(2));
-});
-
-Deno.test("Sync getMonoid", () => {
-  const Monoid = S.getMonoid(MonoidNumberSum);
-  const empty = Monoid.empty();
-
-  assertEqualsSync(empty, S.of(0));
-});
-
 Deno.test("Sync of", () => {
   assertEqualsSync(S.of(1), S.of(1));
 });
 
 Deno.test("Sync ap", () => {
-  const ap = S.ap(S.of(add));
-  assertEqualsSync(ap(S.of(1)), S.of(2));
+  assertEquals(pipe(S.of(add), S.ap(S.of(1)))(), S.of(2)());
 });
 
 Deno.test("Sync map", () => {
@@ -66,16 +51,6 @@ Deno.test("Sync traverse", () => {
 Deno.test("Sync extend", () => {
   const extend = S.extend((ta: S.Sync<number>) => ta() + 1);
   assertEqualsSync(extend(S.of(1)), S.of(2));
-});
-
-Deno.test("Sync sequenceTuple", () => {
-  const r1 = S.sequenceTuple(S.of(1), S.of("Hello World"));
-  assertEqualsSync(r1, S.of([1, "Hello World"]));
-});
-
-Deno.test("Sync sequenceStruct", () => {
-  const r1 = S.sequenceStruct({ a: S.of(1), b: S.of("Hello World") });
-  assertEqualsSync(r1, S.of({ a: 1, b: "Hello World" }));
 });
 
 // Deno.test("Sync Do, bind, bindTo", () => {

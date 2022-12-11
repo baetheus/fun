@@ -1,9 +1,14 @@
 import type { Filterable } from "./filterable.ts";
+import type { Option } from "./option.ts";
 import type { Kind, Out } from "./kind.ts";
 import type { Monad } from "./monad.ts";
+import type { Either } from "./either.ts";
+import type { Pair } from "./pair.ts";
 import type { Predicate } from "./predicate.ts";
+import type { Refinement } from "./refinement.ts";
 
-import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
+import { isLeft, isRight } from "./either.ts";
+import { isSome } from "./option.ts";
 import { wait } from "./promise.ts";
 
 export interface URI extends Kind {
@@ -66,13 +71,13 @@ export function of<A>(...a: A[]): AsyncIterable<A> {
   });
 }
 
-export function ap<A, I>(
-  tfai: AsyncIterable<(a: A) => I>,
-): (ta: AsyncIterable<A>) => AsyncIterable<I> {
-  return (ta) =>
+export function ap<A>(
+  ua: AsyncIterable<A>,
+): <I>(ufai: AsyncIterable<(a: A) => I>) => AsyncIterable<I> {
+  return (ufai) =>
     make(async function* () {
-      for await (const fai of tfai) {
-        for await (const a of ta) {
+      for await (const fai of ufai) {
+        for await (const a of ua) {
           yield fai(a);
         }
       }
@@ -133,17 +138,95 @@ export function delay(
   return map((a) => wait(ms).then(() => a));
 }
 
+export function filter<A, B extends A>(
+  refinement: Refinement<A, B>,
+): (ua: AsyncIterable<A>) => AsyncIterable<B>;
+export function filter<A>(
+  predicate: Predicate<A>,
+): (ua: AsyncIterable<A>) => AsyncIterable<A>;
 export function filter<A>(
   predicate: Predicate<A>,
 ): (ta: AsyncIterable<A>) => AsyncIterable<A> {
   return (ta) =>
-    make(async function* () {
+    make(async function* filter() {
       for await (const a of ta) {
         if (predicate(a)) {
           yield a;
         }
       }
     });
+}
+
+export function filterMap<A, I>(
+  predicate: (a: A) => Option<I>,
+): (ua: AsyncIterable<A>) => AsyncIterable<I> {
+  return (ua) =>
+    make(
+      async function* filterMap() {
+        for await (const a of ua) {
+          const result = predicate(a);
+          if (isSome(result)) {
+            yield result.value;
+          }
+        }
+      },
+    );
+}
+
+export function partition<A, B extends A>(
+  refinement: (a: A) => a is B,
+): (ua: AsyncIterable<A>) => Pair<AsyncIterable<A>, AsyncIterable<B>>;
+export function partition<A>(
+  predicate: (a: A) => boolean,
+): (ua: AsyncIterable<A>) => Pair<AsyncIterable<A>, AsyncIterable<A>>;
+export function partition<A>(
+  predicate: (a: A) => boolean,
+): (ua: AsyncIterable<A>) => Pair<AsyncIterable<A>, AsyncIterable<A>> {
+  return (ua) => {
+    const cloned = clone(ua);
+    return [
+      make(async function* partitionFirst() {
+        for await (const a of cloned) {
+          if (predicate(a)) {
+            yield a;
+          }
+        }
+      }),
+      make(async function* partitionFirst() {
+        for await (const a of cloned) {
+          if (!predicate(a)) {
+            yield a;
+          }
+        }
+      }),
+    ];
+  };
+}
+
+export function partitionMap<A, I, J>(
+  predicate: (a: A) => Either<J, I>,
+): (ua: AsyncIterable<A>) => Pair<AsyncIterable<I>, AsyncIterable<J>> {
+  return (ua) => {
+    const cloned = clone(ua);
+    return [
+      make(async function* partitionFirst() {
+        for await (const a of cloned) {
+          const result = predicate(a);
+          if (isRight(result)) {
+            yield result.right;
+          }
+        }
+      }),
+      make(async function* partitionSecond() {
+        for await (const a of cloned) {
+          const result = predicate(a);
+          if (isLeft(result)) {
+            yield result.left;
+          }
+        }
+      }),
+    ];
+  };
 }
 
 export function reduce<A, O>(
@@ -235,8 +318,9 @@ export function take(n: number): <A>(ta: AsyncIterable<A>) => AsyncIterable<A> {
 
 export const MonadAsyncIterable: Monad<URI> = { of, ap, map, join, chain };
 
-export const FilterableAsyncIterable: Filterable<URI> = { filter };
-
-export const sequenceTuple = createSequenceTuple(MonadAsyncIterable);
-
-export const sequenceStruct = createSequenceStruct(MonadAsyncIterable);
+export const FilterableAsyncIterable: Filterable<URI> = {
+  filter,
+  filterMap,
+  partition,
+  partitionMap,
+};

@@ -22,26 +22,21 @@ Deno.test("FnEither tryCatch", () => {
     },
     (_, [n]) => n,
   );
-  assertEquals(throwOnZero(0), E.left(0));
-  assertEquals(throwOnZero(1), E.right(1));
+  assertEquals(throwOnZero(0)(0), E.left(0));
+  assertEquals(throwOnZero(1)(0), E.right(1));
 });
 
 Deno.test("FnEither left", () => {
-  assertEquals(FE.left("Hello")(), E.left("Hello"));
+  assertEquals(FE.left("Hello")(0), E.left("Hello"));
 });
 
 Deno.test("FnEither right", () => {
-  assertEquals(FE.right("Hello")(), E.right("Hello"));
+  assertEquals(FE.right("Hello")(0), E.right("Hello"));
 });
 
 Deno.test("FnEither fromEither", () => {
-  assertEquals(FE.fromEither(E.left(0))(), E.left(0));
-  assertEquals(FE.fromEither(E.right(0))(), E.right(0));
-});
-
-Deno.test("FnEither fromFn", () => {
-  assertEquals(FE.fromFn((n: number) => n + 1)(0), E.right(1));
-  assertEquals(FE.fromFn((n: number, m: number) => n + m)(1, 1), E.right(2));
+  assertEquals(FE.fromEither(E.left(0))(0), E.left(0));
+  assertEquals(FE.fromEither(E.right(0))(0), E.right(0));
 });
 
 Deno.test("FnEither fromPredicate", () => {
@@ -57,52 +52,50 @@ Deno.test("FnEither fromPredicate", () => {
 });
 
 Deno.test("FnEither of", () => {
-  assertEquals(FE.of(0)(), E.right(0));
+  assertEquals(FE.of(0)(0), E.right(0));
 });
 
 Deno.test("FnEither ap", () => {
-  assertEquals(
-    pipe(FE.right(0), FE.ap(FE.right((n) => n + 1)))(),
-    FE.right(1)(),
-  );
-  assertEquals(
-    pipe(FE.left(0), FE.ap(FE.right((n) => n + 1)))(),
-    FE.left(0)(),
-  );
-  assertEquals(pipe(FE.right(0), FE.ap(FE.left(0)))(), FE.left(0)());
-  assertEquals(pipe(FE.left(1), FE.ap(FE.left(0)))(), FE.left(1)());
+  const add = (n: number) => n + 1;
+  assertEquals(pipe(FE.right(add), FE.ap(FE.right(1)))(0), FE.right(2)(0));
+  assertEquals(pipe(FE.right(add), FE.ap(FE.left(1)))(0), FE.left(1)(0));
+  assertEquals(pipe(FE.left(1), FE.ap(FE.right(1)))(0), FE.left(1)(0));
+  assertEquals(pipe(FE.left(1), FE.ap(FE.left(2)))(0), FE.left(2)(0));
 });
 
 Deno.test("FnEither alt", () => {
-  assertEquals(pipe(FE.right(0), FE.alt(FE.right(1)))(), FE.right(0)());
-  assertEquals(pipe(FE.right(0), FE.alt(FE.left(1)))(), FE.right(0)());
-  assertEquals(pipe(FE.left(0), FE.alt(FE.right(1)))(), FE.right(1)());
-  assertEquals(pipe(FE.left(0), FE.alt(FE.left(1)))(), FE.left(1)());
+  assertEquals(pipe(FE.right(0), FE.alt(FE.right(1)))(0), FE.right(0)(0));
+  assertEquals(pipe(FE.right(0), FE.alt(FE.left(1)))(0), FE.right(0)(0));
+  assertEquals(pipe(FE.left(0), FE.alt(FE.right(1)))(0), FE.right(1)(0));
+  assertEquals(pipe(FE.left(0), FE.alt(FE.left(1)))(0), FE.left(1)(0));
 });
 
 Deno.test("FnEither bimap", () => {
   const bimap = FE.bimap((n: number) => n + n, (n: number) => n * n);
-  assertEquals(bimap(FE.left(1))(), E.left(2));
-  assertEquals(bimap(FE.right(1))(), E.right(1));
+  assertEquals(bimap(FE.left(1))(0), E.left(2));
+  assertEquals(bimap(FE.right(1))(0), E.right(1));
 });
 
 Deno.test("FnEither map", () => {
-  assertEquals(pipe(FE.right(1), FE.map((n) => n + 1))(), E.right(2));
-  assertEquals(pipe(FE.left(1), FE.map((n: number) => n + 1))(), E.left(1));
+  assertEquals(pipe(FE.right(1), FE.map((n) => n + 1))(0), E.right(2));
+  assertEquals(pipe(FE.left(1), FE.map((n: number) => n + 1))(0), E.left(1));
 });
 
 Deno.test("FnEither mapLeft", () => {
   assertEquals(
-    pipe(FE.right(1), FE.mapLeft((n: number) => n + 1))(),
+    pipe(FE.right(1), FE.mapLeft((n: number) => n + 1))(0),
     E.right(1),
   );
-  assertEquals(pipe(FE.left(1), FE.mapLeft((n: number) => n + 1))(), E.left(2));
+  assertEquals(
+    pipe(FE.left(1), FE.mapLeft((n: number) => n + 1))(0),
+    E.left(2),
+  );
 });
 
 Deno.test("FnEither join", () => {
-  assertEquals(pipe(FE.of(FE.of(0)), FE.join)(), FE.of(0)());
-  assertEquals(pipe(FE.of(FE.left(0)), FE.join)(), FE.left(0)());
-  assertEquals(pipe(FE.left(0), FE.join)(), FE.left(0)());
+  assertEquals(pipe(FE.of(FE.of(0)), FE.join)(0), FE.of(0)(0));
+  assertEquals(pipe(FE.of(FE.left(0)), FE.join)(0), FE.left(0)(0));
+  assertEquals(pipe(FE.left(0), FE.join)(0), FE.left(0)(0));
 });
 
 Deno.test("FnEither chain", () => {
@@ -110,16 +103,16 @@ Deno.test("FnEither chain", () => {
     pipe(
       FE.of(0),
       FE.chain((n: number) => n === 0 ? FE.left(n) : FE.right(n)),
-    )(),
-    FE.left(0)(),
+    )(0),
+    FE.left(0)(0),
   );
   assertEquals(
-    pipe(FE.right(1), FE.chain((n) => n === 0 ? FE.left(n) : FE.right(n)))(),
-    FE.right(1)(),
+    pipe(FE.right(1), FE.chain((n) => n === 0 ? FE.left(n) : FE.right(n)))(0),
+    FE.right(1)(0),
   );
   assertEquals(
-    pipe(FE.left(1), FE.chain((n) => n === 0 ? FE.left(n) : FE.right(n)))(),
-    FE.left(1)(),
+    pipe(FE.left(1), FE.chain((n) => n === 0 ? FE.left(n) : FE.right(n)))(0),
+    FE.left(1)(0),
   );
 });
 
@@ -205,11 +198,9 @@ Deno.test("FnEither getRightMonad", () => {
   assertStrictEquals(join, FE.join);
   assertStrictEquals(chain, FE.chain);
 
-  const _ap = ap(pipe(FE.id<number>(), FE.map((n) => (m: number) => n + m)));
-  const _apLeft = ap(FE.idLeft<number, (n: number) => number>());
-
-  assertEquals(_ap(FE.id<number>())(1), E.right(2));
-  assertEquals(_ap(FE.idLeft<number>())(1), E.left(1));
-  assertEquals(_apLeft(FE.id<number>())(1), E.left(1));
-  assertEquals(_apLeft(FE.idLeft<number>())(1), E.left(2));
+  const add = (n: number) => n + 1;
+  assertEquals(pipe(FE.right(add), ap(FE.right(1)))(1), FE.right(2)(0));
+  assertEquals(pipe(FE.right(add), ap(FE.left(1)))(1), FE.left(1)(0));
+  assertEquals(pipe(FE.left(1), ap(FE.right(1)))(1), FE.left(1)(0));
+  assertEquals(pipe(FE.left(1), ap(FE.left(2)))(1), FE.left(3)(0));
 });

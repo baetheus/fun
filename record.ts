@@ -1,3 +1,5 @@
+// deno-lint-ignore-file no-explicit-any
+
 /**
  * ReadonlyRecord is a readonly product structure that operates
  * like a Map. Keys are always strings and Key/Value pairs
@@ -7,7 +9,7 @@
  * @module ReadonlyRecord
  */
 
-import type { $, Kind, Out } from "./kind.ts";
+import type { $, AnySub, Intersect, Kind, Out } from "./kind.ts";
 import type { Applicative } from "./applicative.ts";
 import type { Either } from "./either.ts";
 import type { Eq } from "./eq.ts";
@@ -23,7 +25,7 @@ import type { Traversable } from "./traversable.ts";
 import { isRight } from "./either.ts";
 import { isSome, none, some } from "./option.ts";
 import { pair } from "./pair.ts";
-import { pipe } from "./fn.ts";
+import { identity, pipe } from "./fn.ts";
 
 /**
  * ReadonlyRecord<A> is an alias of Readonly<Record<string, A>>.
@@ -313,25 +315,96 @@ export function collapse<A>(
  * const result2 = swapOption({ one: O.some(1), two: O.none }); // None
  * ```
  *
+ * TODO: Revisit because mutability is bad here
  * @since 2.0.0
  */
 export function traverse<V extends Kind>(
   A: Applicative<V>,
-) {
-  return <A, I, J, K, L, M>(
+): <A, I, J = never, K = never, L = unknown, M = unknown>(
+  favi: (value: A, key: string) => $<V, [I, J, K], [L], [M]>,
+) => (ua: ReadonlyRecord<A>) => $<V, [ReadonlyRecord<I>, J, K], [L], [M]> {
+  // We include a copy of the type parameters here to make the implementation
+  // type safe.
+  return <A, I, J = never, K = never, L = unknown, M = unknown>(
     favi: (a: A, i: string) => $<V, [I, J, K], [L], [M]>,
-  ): (ua: ReadonlyRecord<A>) => $<V, [ReadonlyRecord<I>, J, K], [L], [M]> =>
-    reduce(
-      (fbs, a, index) =>
-        pipe(
-          favi(a, index),
-          A.ap(pipe(
-            fbs,
-            A.map((xs: ReadonlyRecord<I>) => (x: I) => ({ ...xs, [index]: x })),
-          )),
-        ),
-      A.of({} as ReadonlyRecord<I>),
-    );
+  ): (ua: ReadonlyRecord<A>) => $<V, [ReadonlyRecord<I>, J, K], [L], [M]> => {
+    // Mutably pushes an i into is at key
+    const pusher = (key: string) =>
+    (is: Record<string, I>) =>
+    (
+      i: I,
+    ): Record<string, I> => ({ ...is, [key]: i });
+    // Interior mutability is used to increase perf
+    const reducer = (
+      vis: $<V, [Record<string, I>, J, K], [L], [M]>,
+      a: A,
+      key: string,
+    ): $<V, [Record<string, I>, J, K], [L], [M]> =>
+      pipe(
+        vis,
+        A.map(pusher(key)),
+        A.ap(favi(a, key)),
+      );
+
+    return (ua) => pipe(ua, reduce(reducer, A.of({})));
+  };
+}
+
+/**
+ * The Sequence inverts a tuple of substitutions over V into V containing a
+ * tuple of inferred values of the substitution.
+ *
+ * ie.
+ * [Option<number>, Option<string>]
+ * becomes
+ * Option<[number, string]>
+ *
+ * or
+ *
+ * [Either<number, number> Either<string, string>]
+ * becomes
+ * Either<string | number, [number, string]>
+ */
+// deno-fmt-ignore
+type Sequence<U extends Kind, R extends ReadonlyRecord<AnySub<U>>> = $<U, [
+    { [K in keyof R]: R[K] extends $<U, [infer A, infer _, infer _], any[], any[]> ? A : never; },
+    { [K in keyof R]: R[K] extends $<U, [infer _, infer B, infer _], any[], any[]> ? B : never; }[keyof R],
+    { [K in keyof R]: R[K] extends $<U, [infer _, infer _, infer C], any[], any[]> ? C : never; }[keyof R],
+  ], [
+    Intersect< { [K in keyof R]: R[K] extends $<U, any[], [infer D], any[]> ? D : never; }[keyof R] >,
+  ], [
+    Intersect< { [K in keyof R]: R[K] extends $<U, any[], any[], [infer E]> ? E : never; }[keyof R] >,
+  ]
+>;
+
+/**
+ * Sequence over an ReadonlyRecord of type V, inverting the relationship between V and
+ * ReadonlyRecord. This function also keeps the indexed types of in each V at
+ * covariant position 0. In other words sequence over [Option<number>,
+ * Option<string>] becomes Option<[number, string]>.
+ *
+ * @example
+ * ```ts
+ * import * as R from "./record.ts";
+ * import * as O from "./option.ts";
+ *
+ * const sequence = R.sequence(O.ApplicativeOption);
+ *
+ * const result1 = sequence({ one: O.some(1), two: O.some("Hello")}); // Some({ one: 1, two: "Hello"})
+ * const result2 = sequence({ one: O.none, two: O.some("Uh Oh")}); // None
+ * ```
+ *
+ * @since 2.0.0
+ */
+export function sequence<V extends Kind>(
+  A: Applicative<V>,
+): <VS extends ReadonlyRecord<AnySub<V>>>(
+  values: NonEmptyRecord<VS>,
+) => Sequence<V, VS> {
+  const sequence = traverse(A)(identity as any);
+  return <VS extends ReadonlyRecord<AnySub<V>>>(
+    vs: NonEmptyRecord<VS>,
+  ): Sequence<V, VS> => sequence(vs) as Sequence<V, VS>;
 }
 
 /**
@@ -417,8 +490,13 @@ export function insertAt(key: string) {
  * @since 2.0.0
  */
 export function modify<A>(modifyFn: (a: A) => A) {
-  return (key: string) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
-    Object.hasOwn(rec, key) ? { ...rec, [key]: modifyFn(rec[key]) } : rec;
+  return (key: string) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> => {
+    if (Object.hasOwn(rec, key)) {
+      const out = modifyFn(rec[key]);
+      return out === rec[key] ? rec : { ...rec, [key]: out };
+    }
+    return rec;
+  };
 }
 
 /**
@@ -448,8 +526,13 @@ export function modify<A>(modifyFn: (a: A) => A) {
  */
 export function modifyAt(key: string) {
   return <A>(modifyFn: (a: A) => A) =>
-  (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
-    Object.hasOwn(rec, key) ? { ...rec, [key]: modifyFn(rec[key]) } : rec;
+  (rec: ReadonlyRecord<A>): ReadonlyRecord<A> => {
+    if (Object.hasOwn(rec, key)) {
+      const out = modifyFn(rec[key]);
+      return out === rec[key] ? rec : { ...rec, [key]: out };
+    }
+    return rec;
+  };
 }
 
 /**

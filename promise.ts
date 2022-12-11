@@ -8,11 +8,6 @@ import type { Monad } from "./monad.ts";
 
 import * as E from "./either.ts";
 import { flow, handleThrow, identity, pipe } from "./fn.ts";
-import {
-  createApplySemigroup,
-  createSequenceStruct,
-  createSequenceTuple,
-} from "./apply.ts";
 
 /**
  * A type for Promise over any, useful as an extension target for
@@ -322,23 +317,26 @@ export function of<A>(a: A | PromiseLike<A>): Promise<A> {
  *
  * @example
  * ```ts
- * import { of, ap, delay } from "./promise.ts";
+ * import { of, ap } from "./promise.ts";
  * import { pipe } from "./fn.ts";
  *
- * const one = pipe(of(1), delay(200));
+ * type Person = { name: string, age: number };
  *
- * const result = await pipe(
- *   one,
- *   ap(of((n: number) => n + 1)),
- * ); // 2
+ * const person = (name: string) => (age: number): Person => ({ name, age });
+ *
+ * const result = pipe(
+ *   of(person),
+ *   ap(of("Brandon")),
+ *   ap(of(37)),
+ * ); // Promise<Person>
  * ```
  *
  * @since 2.0.0
  */
-export function ap<A, I>(
-  ufai: Promise<(a: A) => I>,
-): (ua: Promise<A>) => Promise<I> {
-  return (ua) =>
+export function ap<A>(
+  ua: Promise<A>,
+): <I>(ufai: Promise<(a: A) => I>) => Promise<I> {
+  return (ufai) =>
     pipe(
       all(ufai, ua),
       then(([fai, a]) => fai(a)),
@@ -478,61 +476,3 @@ export const ChainPromise: Chain<URI> = { ap, map, chain };
  * @since 2.0.0
  */
 export const MonadPromise: Monad<URI> = { of, ap, map, join, chain };
-
-/**
- * Sequence over a tuple of Promises. This is effectively the same
- * function as all.
- *
- * @example
- * ```ts
- * import { sequenceTuple, of } from "./promise.ts";
- *
- * const result = await sequenceTuple(of(1), of("Hello")); // [1, "Hello"]
- * ```
- *
- * @since 2.0.0
- */
-export const sequenceTuple = createSequenceTuple(ApplyPromise);
-
-/**
- * Sequence over a struct of Promises. This is effectively the same
- * function as all but for structs instead of tuples.
- *
- * @example
- * ```ts
- * import { sequenceStruct, of } from "./promise.ts";
- *
- * const result = await sequenceStruct({
- *   one: of(1),
- *   two: of("Hello")
- * }); // { one: 1, two: "Hello" }
- * ```
- *
- * @since 2.0.0
- */
-export const sequenceStruct = createSequenceStruct(ApplyPromise);
-
-/**
- * Create a Semigroup<Promise<A>> from a Semigroup<A>. This allows
- * one to concat/combine based on the inner value of a Promise.
- *
- * @example
- * ```ts
- * import { getApplySemigroup, of } from "./promise.ts";
- * import { pipe } from "./fn.ts";
- * import * as N from "./number.ts";
- *
- * const { concat } = getApplySemigroup(N.SemigroupNumberSum);
- *
- * const merged = pipe(
- *   of(1),
- *   concat(of(2)),
- *   concat(of(3)),
- * ); // Promise<number>
- *
- * const result = await merged; // 6
- * ```
- *
- * @since 2.0.0
- */
-export const getApplySemigroup = createApplySemigroup(ApplyPromise);

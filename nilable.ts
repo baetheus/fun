@@ -13,7 +13,6 @@ import type { Predicate } from "./predicate.ts";
 import type { Show } from "./show.ts";
 
 import { identity, pipe } from "./fn.ts";
-import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
 export type Nil = undefined | null;
 
@@ -82,10 +81,10 @@ export function throwError<A = never>(): Nilable<A> {
   return nil;
 }
 
-export function ap<A, I>(
-  tfai: Nilable<(a: A) => I>,
-): (ta: Nilable<A>) => Nilable<I> {
-  return (ta) => isNil(ta) ? nil : isNil(tfai) ? nil : tfai(ta);
+export function ap<A>(
+  ua: Nilable<A>,
+): <I>(ufai: Nilable<(a: A) => I>) => Nilable<I> {
+  return (ufai) => isNil(ua) ? nil : isNil(ufai) ? nil : ufai(ua);
 }
 
 export function map<A, I>(fai: (a: A) => I): (ta: Nilable<A>) => Nilable<I> {
@@ -110,10 +109,6 @@ export const MonadNilable: Monad<URI> = { of, ap, map, join, chain };
 
 export const AltNilable: Alt<URI> = { alt, map };
 
-export const getShow = <A>({ show }: Show<A>): Show<Nilable<A>> => ({
-  show: (ma) => (isNil(ma) ? "nil" : show(ma)),
-});
-
-export const sequenceStruct = createSequenceStruct(MonadNilable);
-
-export const sequenceTuple = createSequenceTuple(MonadNilable);
+export function getShow<A>({ show }: Show<A>): Show<Nilable<A>> {
+  return { show: (ma) => (isNil(ma) ? "nil" : show(ma)) };
+}

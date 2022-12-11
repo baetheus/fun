@@ -1,9 +1,8 @@
 import type { $, Kind, TypeClass } from "./kind.ts";
 import type { Applicative } from "./applicative.ts";
 import type { Chain } from "./chain.ts";
-import type { Bifunctor } from "./bifunctor.ts";
 
-import { identity, pipe } from "./fn.ts";
+import { pipe } from "./fn.ts";
 
 /**
  * A Monad<T> is an algebra with a notion of join(aka flatten or flat) for
@@ -24,16 +23,17 @@ import { identity, pipe } from "./fn.ts";
  */
 export interface Monad<U extends Kind>
   extends Applicative<U>, Chain<U>, TypeClass<U> {
-  readonly join: <A, B = never, C = never, D = never, E = never>(
-    tta: $<U, [$<U, [A, B, C], [D], [E]>, B, C], [D], [E]>,
-  ) => $<U, [A, B, C], [D], [E]>;
-}
-
-export interface Bimonad<U extends Kind> extends Bifunctor<U>, Monad<U> {
-  // TODO: Should we switch from left to second?
-  readonly ofLeft: <B, A = never, C = never, D = never, E = never>(
-    b: B,
-  ) => $<U, [A, B, C], [D], [E]>;
+  readonly join: <
+    A,
+    B = never,
+    C = never,
+    D = unknown,
+    E = unknown,
+    J = never,
+    K = never,
+  >(
+    tta: $<U, [$<U, [A, B, C], [D], [E]>, J, K], [D], [E]>,
+  ) => $<U, [A, B | J, C | K], [D], [E]>;
 }
 
 /**
@@ -62,10 +62,9 @@ export interface Bimonad<U extends Kind> extends Bifunctor<U>, Monad<U> {
  * const M = createMonad<URI>({ of, chain });
  *
  * const result = await pipe(
- *   M.of(1),
- *   M.map(n => n + 1),
- *   M.ap(M.of((n: number) => n - 1)),
- *   M.chain(n => M.of(n + 1)),
+ *   M.of((n: number) => (m: number) => n + m),
+ *   M.ap(M.of(1)),
+ *   M.ap(M.of(1)),
  * ); // 2
  * ```
  *
@@ -78,10 +77,10 @@ export function createMonad<U extends Kind>(
 ): Monad<U> {
   const Monad: Monad<U> = {
     of,
-    ap: (tfai) => (ta) => pipe(tfai, chain((fab) => pipe(ta, Monad.map(fab)))),
+    ap: (ua) => (ufai) => pipe(ufai, chain((fab) => pipe(ua, Monad.map(fab)))),
     map: (fai) => (ta) => pipe(ta, chain((a) => of(fai(a)))),
     chain,
-    join: chain(identity),
+    join: (uua) => pipe(uua, chain((ua) => ua)),
   };
   return Monad;
 }

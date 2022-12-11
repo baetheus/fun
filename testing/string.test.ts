@@ -125,14 +125,11 @@ Deno.test("String trimEnds", () => {
 
 Deno.test("String plural", () => {
   const are = S.plural("is", "are");
-  const rabbit = pipe(
-    S.plural("rabbit", "rabbits"),
-    ap((n: number) => (s) => `There ${are(n)} ${n} ${s}`),
-  );
-
-  assertEquals(rabbit(1), "There is 1 rabbit");
-  assertEquals(rabbit(4), "There are 4 rabbits");
-  assertEquals(rabbit(0), "There are 0 rabbits");
+  const rabbits = S.plural("rabbit", "rabbits");
+  const sentence = (n: number) => `There ${are(n)} ${n} ${rabbits(n)}`;
+  assertEquals(sentence(1), "There is 1 rabbit");
+  assertEquals(sentence(4), "There are 4 rabbits");
+  assertEquals(sentence(0), "There are 0 rabbits");
 });
 
 Deno.test("String slice", () => {

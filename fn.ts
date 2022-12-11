@@ -2,17 +2,11 @@ import type { Applicative } from "./applicative.ts";
 import type { Apply } from "./apply.ts";
 import type { Category } from "./category.ts";
 import type { Chain } from "./chain.ts";
-import type { Choice, Profunctor, Strong } from "./profunctor.ts";
+import type { Profunctor } from "./profunctor.ts";
 import type { Contravariant } from "./contravariant.ts";
-import type { Either } from "./either.ts";
 import type { Functor } from "./functor.ts";
 import type { In, Kind, Out } from "./kind.ts";
 import type { Monad } from "./monad.ts";
-import type { Pair } from "./pair.ts";
-
-import * as P from "./pair.ts";
-import * as E from "./either.ts";
-import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
 /**
  * A Fn, also known as Reader or Environment, is a type over a variadic
@@ -32,7 +26,7 @@ import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
  *
  * @since 2.0.0
  */
-export type Fn<D extends unknown[], A> = (...d: D) => A;
+export type Fn<D, A> = (d: D) => A;
 
 /**
  * A Fn type over any, useful for constraining generics that
@@ -41,7 +35,7 @@ export type Fn<D extends unknown[], A> = (...d: D) => A;
  * @since 2.0.0
  */
 // deno-lint-ignore no-explicit-any
-export type AnyFn = Fn<any[], any>;
+export type AnyFn = Fn<any, any>;
 
 /**
  * Specifies Fn as a Higher Kinded Type, with
@@ -58,7 +52,7 @@ export type AnyFn = Fn<any[], any>;
  * @since 2.0.0
  */
 export interface URI extends Kind {
-  readonly kind: Fn<[In<this, 0>], Out<this, 0>>;
+  readonly kind: Fn<In<this, 0>, Out<this, 0>>;
 }
 
 /**
@@ -77,7 +71,7 @@ export interface URI extends Kind {
  * ```
  * @since 2.0.0
  */
-export function unary<D extends unknown[], A>(fda: Fn<D, A>): Fn<[D], A> {
+export function unary<D extends unknown[], A>(fda: (...d: D) => A): Fn<D, A> {
   return (d) => fda(...d);
 }
 
@@ -98,12 +92,12 @@ export function unary<D extends unknown[], A>(fda: Fn<D, A>): Fn<[D], A> {
  *   return 0;
  * }
  *
- * const result = F.tryCatch(getZero, () => 0); // 0
+ * const result = F.tryThunk(getZero, () => 0); // 0
  * ```
  *
  * @since 2.0.0
  */
-export function tryCatch<A, E>(ua: Fn<[], A>, onThrow: Fn<[E], A>): A {
+export function tryThunk<A, E>(ua: Fn<void, A>, onThrow: Fn<E, A>): A {
   try {
     return ua();
   } catch (err) {
@@ -147,10 +141,10 @@ export function tryCatch<A, E>(ua: Fn<[], A>, onThrow: Fn<[E], A>): A {
  * @since 2.0.0
  */
 export function handleThrow<D extends unknown[], A, I>(
-  ua: Fn<D, A>,
+  ua: (...d: D) => A,
   onResult: (result: A, args: D) => I,
   onThrow: (error: unknown, args: D) => I,
-): Fn<D, I> {
+): (...d: D) => I {
   return (...d) => {
     try {
       return onResult(ua(...d), d);
@@ -184,7 +178,7 @@ export function handleThrow<D extends unknown[], A, I>(
  *
  * @since 2.0.0
  */
-export function memoize<D, A>(ua: Fn<[D], A>): Fn<[D], A> {
+export function memoize<D, A>(ua: Fn<D, A>): Fn<D, A> {
   const cache = new Map<D, A>();
   return (d) => {
     if (cache.has(d)) {
@@ -194,31 +188,6 @@ export function memoize<D, A>(ua: Fn<[D], A>): Fn<[D], A> {
     cache.set(d, a);
     return a;
   };
-}
-
-/**
- * A curried alias of Function.apply. Basically, this function
- * takes arguments and a function, applying the arguments to the
- * function.
- *
- * @example
- * ```ts
- * import * as F from "./fn.ts";
- *
- * const add = (a: number, b: number) => a + b;
- *
- * const result = F.pipe(
- *   add,
- *   F.apply(1, 1),
- * ); // 2
- * ```
- *
- * @since 2.0.0
- */
-export function apply<D extends unknown[], A>(
-  ...d: D
-): (ua: Fn<D, A>) => A {
-  return (ua) => ua(...d);
 }
 
 /**
@@ -234,7 +203,7 @@ export function apply<D extends unknown[], A>(
  *
  * type InOut = {
  *   read: () => Promise<string>,
- *   write: (s: string) => Promise<void>,
+ *   write: (s: string) => Promise<unknown>,
  * }
  *
  * const mockInOut: InOut = todo(); // InOut !!THROWS!!
@@ -511,13 +480,40 @@ export function flow(
  *
  * const alwaysA = of("A");
  *
+ * const result = alwaysA(null); // "A"
+ * ```
+ *
+ * @since 2.0.0
+ */
+export function of<A, D = unknown>(a: A): Fn<D, A> {
+  return () => a;
+}
+
+/**
+ * Create a Fn that always returns a value. This is equivalent to
+ * of but without the ability to specify a contravariant argument.
+ *
+ * @example
+ * ```ts
+ * import { constant } from "./fn.ts";
+ *
+ * const alwaysA = constant("A");
+ *
  * const result = alwaysA(); // "A"
  * ```
  *
  * @since 2.0.0
  */
-export function of<A>(a: A): Fn<[], A> {
+export function constant<A>(a: A): () => A {
   return () => a;
+}
+
+/**
+ * Apply functions to an unknown function. Useful for pipeing values into
+ * functions.
+ */
+export function apply<D>(d: D): <A>(ua: Fn<D, A>) => A {
+  return (ua) => ua(d);
 }
 
 /**
@@ -530,55 +526,23 @@ export function of<A>(a: A): Fn<[], A> {
  * import * as F from "./fn.ts";
  * import { ap, pipe } from "./fn.ts";
  *
- * type Person = { name: string; age: number };
- * type Parent = { parent: Person };
- * type Child = { child: Person };
+ * type Person = { name: string, age: number };
  *
- * const olderThan = (parent: Parent) => (age: number): number =>
- *   parent.parent.age - age;
- * const childAge = (child: Child): number => child.child.age;
- * const describe =
- *   ({ parent, child }: Parent & Child) => (ageDiff: number): string =>
- *     `${parent.name} is ${ageDiff}` +
- *     ` year${ageDiff > 0 ? "s" : ""} older than` + ` ${child.name}`;
+ * const person = (name: string) => (age: number): Person => ({ name, age });
  *
- * const compareAges = pipe(
- *   childAge,
- *   ap(olderThan),
- *   ap(describe),
- * );
- *
- * const jackie: Person = { name: "Jackie", age: 57 };
- * const brandon: Person = { name: "Brandon", age: 37 };
- * const rufus: Person = { name: "Rufus", age: 1 };
- *
- * // "Jackie is 20 years older than Brandon"
- * const result1 = compareAges({ parent: jackie, child: brandon });
- * // "Brandon is 36 years older than Rufus"
- * const result2 = compareAges({ parent: brandon, child: rufus });
- *
- * ```
- *
- * @example
- * ```ts
- * import * as F from "./fn.ts";
- * import { ap, pipe } from "./fn.ts";
- *
- * const average = pipe(
- *   (n: number[]) => n.reduce((a, b) => a + b, 0),
- *   ap((n: number[]) => (m: number) => m / n.length),
- * );
- *
- * const result1 = average([1, 2, 3, 4, 5]); // 3
- * const result2 = average([10, 20, 30, 40, 100]); // 40
+ * const result = pipe(
+ *   F.of(person),
+ *   F.ap(F.of("Brandon")),
+ *   F.ap(F.of(37)),
+ * ); // Fn<[], Person>
  * ```
  *
  * @since 2.0.0
  */
-export function ap<A, I, L = void>(
-  tfai: Fn<[L], (a: A) => I>,
-): <D = void>(ta: Fn<[D], A>) => Fn<[D & L], I> {
-  return (ta) => (dl) => pipe(ta(dl), tfai(dl));
+export function ap<D, A>(
+  ua: Fn<D, A>,
+): <I>(ufai: Fn<D, (a: A) => I>) => Fn<D, I> {
+  return (ufai) => (d) => ufai(d)(ua(d));
 }
 
 /**
@@ -597,7 +561,7 @@ export function ap<A, I, L = void>(
  */
 export function map<A, I>(
   fai: (a: A) => I,
-): <D extends unknown[] = never[]>(ta: Fn<D, A>) => Fn<D, I> {
+): <D>(ta: Fn<D, A>) => Fn<D, I> {
   return (ta) => flow(ta, fai);
 }
 
@@ -619,9 +583,9 @@ export function map<A, I>(
  *
  * @since 2.0.0
  */
-export function join<A, D = void>(
-  tta: Fn<[D], Fn<[D], A>>,
-): Fn<[D], A> {
+export function join<A, D = unknown>(
+  tta: Fn<D, Fn<D, A>>,
+): Fn<D, A> {
   return (d) => tta(d)(d);
 }
 
@@ -653,10 +617,10 @@ export function join<A, D = void>(
  *
  * @since 2.0.0
  */
-export function chain<A, I, L = void>(
-  fati: (a: A) => Fn<[L], I>,
-): <D = void>(ta: Fn<[D], A>) => Fn<[D & L], I> {
-  return (ta) => (dl) => fati(ta(dl))(dl);
+export function chain<A, I, D>(
+  fati: (a: A) => Fn<D, I>,
+): (ta: Fn<D, A>) => Fn<D, I> {
+  return (ta) => (d) => fati(ta(d))(d);
 }
 
 /**
@@ -683,8 +647,8 @@ export function chain<A, I, L = void>(
  */
 export function contramap<L, D>(
   fld: (l: L) => D,
-): <A>(ta: Fn<[D], A>) => Fn<[L], A> {
-  return (ta) => flow(fld, ta);
+): <A>(ta: Fn<D, A>) => Fn<L, A> {
+  return (ta) => (d) => ta(fld(d));
 }
 
 /**
@@ -719,7 +683,7 @@ export function contramap<L, D>(
 export function dimap<A, I, L, D>(
   fld: (l: L) => D,
   fai: (a: A) => I,
-): (ta: Fn<[D], A>) => Fn<[L], I> {
+): (ta: Fn<D, A>) => Fn<L, I> {
   return (ta) => flow(fld, ta, fai);
 }
 
@@ -757,7 +721,7 @@ export function identity<A>(a: A): A {
  *
  * @since 2.0.0
  */
-export function id<A>(): Fn<[A], A> {
+export function id<A>(): Fn<A, A> {
   return identity;
 }
 
@@ -785,139 +749,9 @@ export function id<A>(): Fn<[A], A> {
  * @since 2.0.0
  */
 export function compose<A, I>(
-  second: Fn<[A], I>,
-): <D extends unknown[]>(first: Fn<D, A>) => Fn<D, I> {
+  second: Fn<A, I>,
+): <D>(first: Fn<D, A>) => Fn<D, I> {
   return (first) => flow(first, second);
-}
-
-/**
- * Lifts a Fn<D, A> into a Fn<Pair<D, Q>, Pair<A, Q>>. This
- * is equivalent to Arrow fst. It can be used to achieve
- * State and Reader behaviors in the covariant position
- * of Fn.
- *
- * @example
- * ```ts
- * import { id, first, pipe, map } from "./fn.ts";
- * import { dup } from "./pair.ts";
- *
- * const addOne = (n: number) => n + 1;
- * const power = (x: number) => (n: number) => Math.pow(n, x);
- *
- * // Adds 1 and multiplies the result by itself
- * // But keeps the original argument
- * const computation = pipe(
- *   dup<number>,
- *   map(first(addOne)),
- *   map(first(power(2))),
- * );
- *
- * const result1 = computation(1); // [4, 1]
- * const result2 = computation(8); // [81, 8]
- * ```
- *
- * @since 2.0.0
- */
-export function first<A, D, Q = never>(
-  ua: Fn<[D], A>,
-): Fn<[Pair<D, Q>], Pair<A, Q>> {
-  return P.map(ua);
-}
-
-/**
- * Lifts a Fn<D, A> into a Fn<Pair<Q, D>, Pair<Q, A>>. This
- * is equivalent to Arrow snd. It can be used to achieve
- * State and Reader behaviors in the covariant position
- * of Fn.
- *
- * @example
- * ```ts
- * import { id, second, pipe, map } from "./fn.ts";
- * import { dup } from "./pair.ts";
- *
- * const addOne = (n: number) => n + 1;
- * const power = (x: number) => (n: number) => Math.pow(n, x);
- *
- * // Adds 1 and multiplies the result by itself
- * // But keeps the original argument
- * const computation = pipe(
- *   dup<number>,
- *   map(second(addOne)),
- *   map(second(power(2))),
- * );
- *
- * const result1 = computation(1); // [1, 4]
- * const result2 = computation(8); // [8, 81]
- * ```
- *
- * @since 2.0.0
- */
-export function second<A, D, Q = never>(
-  ua: Fn<[D], A>,
-): Fn<[Pair<Q, D>], Pair<Q, A>> {
-  return P.mapLeft(ua);
-}
-
-/**
- * Lifts a Fn<D, A> into a Fn<Either<D, Q>, Either<A, Q>>.
- *
- * @example
- * ```ts
- * import { id, left, pipe, map } from "./fn.ts";
- * import * as E from "./either.ts";
- *
- * const addOne = (n: number) => n + 1;
- * const power = (x: number) => (n: number) => Math.pow(n, x);
- *
- * // Adds 1 and multiplies the result by itself
- * // But keeps the original argument
- * const computation = pipe(
- *   E.left<number>,
- *   map(left(addOne)),
- *   map(left(power(2))),
- * );
- *
- * const result1 = computation(1); // Left(4)
- * const result2 = computation(8); // Left(81)
- * ```
- *
- * @since 2.0.0
- */
-export function left<A, D, Q = never>(
-  ua: Fn<[D], A>,
-): Fn<[Either<D, Q>], Either<A, Q>> {
-  return E.mapLeft(ua);
-}
-
-/**
- * Lifts a Fn<D, A> into a Fn<Either<Q, D>, Either<Q, A>>.
- *
- * @example
- * ```ts
- * import { id, right, pipe, map } from "./fn.ts";
- * import * as E from "./either.ts";
- *
- * const addOne = (n: number) => n + 1;
- * const power = (x: number) => (n: number) => Math.pow(n, x);
- *
- * // Adds 1 and multiplies the result by itself
- * // But keeps the original argument
- * const computation = pipe(
- *   (n: number) => E.right(n),
- *   map(right(addOne)),
- *   map(right(power(2))),
- * );
- *
- * const result1 = computation(1); // Right(4)
- * const result2 = computation(8); // Right(81)
- * ```
- *
- * @since 2.0.0
- */
-export function right<A, D, Q = never>(
-  ua: Fn<[D], A>,
-): Fn<[Either<Q, D>], Either<Q, A>> {
-  return E.map(ua);
 }
 
 /**
@@ -927,22 +761,6 @@ export function right<A, D, Q = never>(
  * @since 2.0.0
  */
 export const ProfunctorFn: Profunctor<URI> = { dimap };
-
-/**
- * The canonical implementation of Strong for Fn. It contains
- * the methods dimap, first, and second.
- *
- * @since 2.0.0
- */
-export const StrongFn: Strong<URI> = { dimap, first, second };
-
-/**
- * The canonical implementation of Choice for Fn. It contains
- * the methods dimap, left, and right.
- *
- * @since 2.0.0
- */
-export const ChoiceFn: Choice<URI> = { dimap, left, right };
 
 /**
  * The canonical implementation of Functor for Fn. It contains
@@ -999,60 +817,3 @@ export const ContravariantFn: Contravariant<URI> = { contramap };
  * @since 2.0.0
  */
 export const CategoryFn: Category<URI> = { id, compose };
-
-/**
- * Sequence over a tuple of Fns. The input values of the Fns
- * will be intersected and the output properly typed.
- *
- * @example
- * ```ts
- * import { sequenceTuple } from "./fn.ts";
- *
- * type Person = { name: string; age: number };
- * type Parent = { parent: Person };
- * type Child = { child: Person };
- *
- * const brandon: Person = { name: "Brandon", age: 37 };
- * const rufus: Person = { name: "Rufus", age: 1 };
- *
- * const tuple = sequenceTuple(
- *   (p: Parent) => p.parent,
- *   (c: Child) => c.child,
- * );
- *
- * // [brandon, rufus]
- * const result = tuple({ parent: brandon, child: rufus });
- * ```
- *
- * @since 2.0.0
- */
-export const sequenceTuple = createSequenceTuple(ApplyFn);
-
-/**
- * Sequence over a struct of Fns. The input values of the Fns
- * will be intersected and the output properly typed.
- *
- * @example
- * ```ts
- * import { sequenceStruct } from "./fn.ts";
- *
- * type Person = { name: string; age: number };
- * type Parent = { parent: Person };
- * type Child = { child: Person };
- *
- * const brandon: Person = { name: "Brandon", age: 37 };
- * const rufus: Person = { name: "Rufus", age: 1 };
- *
- * const struct = sequenceStruct({
- *   ageDiff: ({ parent, child }: Parent & Child) => parent.age - child.age,
- *   parent: ({ parent }: Parent) => parent,
- *   child: ({ child }: Child) => child,
- * });
- *
- * // { ageDiff: 36, parent: brandon, child: brandon }
- * const result = struct({ parent: brandon, child: rufus });
- * ```
- *
- * @since 2.0.0
- */
-export const sequenceStruct = createSequenceStruct(ApplyFn);

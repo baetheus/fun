@@ -84,10 +84,12 @@ Deno.test("Set map", () => {
 });
 
 Deno.test("Set ap", () => {
-  const setfn = S.set((n: number) => n, add);
-  assertEquals(pipe(S.empty(), S.ap(setfn)), S.empty());
-  assertEquals(pipe(set, S.ap(S.empty<typeof add>())), S.empty());
-  assertEquals(pipe(set, S.ap(setfn)), S.set(1, 2, 3, 4));
+  const add = (n: number) => n + 1;
+  assertEquals(pipe(S.of(add), S.ap(S.of(1))), S.of(2));
+  assertEquals(pipe(S.empty(), S.ap(S.of(1))), S.empty());
+  assertEquals(pipe(S.of(add), S.ap(S.empty())), S.empty());
+  assertEquals(pipe(S.empty(), S.ap(S.empty())), S.empty());
+  assertEquals(pipe(S.of(add), S.ap(S.set(1, 2))), S.set(2, 3));
 });
 
 Deno.test("Set chain", () => {

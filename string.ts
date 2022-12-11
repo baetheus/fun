@@ -344,17 +344,15 @@ export function trimEnd(a: string): string {
  * @example
  * ```ts
  * import { plural } from "./string.ts";
- * import { pipe, ap } from "./fn.ts";
+ * import { pipe, ap, of } from "./fn.ts";
  *
  * const are = plural("is", "are");
- * const rabbit = pipe(
- *   plural("rabbit", "rabbits"),
- *   ap((n: number) => s => `There ${are(n)} ${n} ${s}`),
- * );
+ * const rabbits = plural("rabbit", "rabbits");
+ * const sentence = (n: number) => `There ${are(n)} ${n} ${rabbits(n)}`;
  *
- * const result1 = rabbit(1); // "There is 1 rabbit"
- * const result2 = rabbit(4); // "There are 4 rabbits"
- * const result3 = rabbit(0); // "There are 0 rabbits"
+ * const result1 = sentence(1); // "There is 1 rabbit"
+ * const result2 = sentence(4); // "There are 4 rabbits"
+ * const result3 = sentence(0); // "There are 0 rabbits"
  * ```
  *
  * @since 2.0.0

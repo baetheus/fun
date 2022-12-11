@@ -9,12 +9,7 @@ import type { Either } from "./either.ts";
 
 import * as E from "./either.ts";
 import * as I from "./sync.ts";
-import {
-  createApplySemigroup,
-  createSequenceStruct,
-  createSequenceTuple,
-} from "./apply.ts";
-import { flow, identity, of as constant, pipe } from "./fn.ts";
+import { constant, flow, identity, pipe } from "./fn.ts";
 
 export type SyncEither<L, R> = Sync<Either<L, R>>;
 
@@ -59,10 +54,10 @@ export function throwError<A = never, B = never>(b: B): SyncEither<B, A> {
   return left(b);
 }
 
-export function ap<A, I, B>(
-  tfai: SyncEither<B, (a: A) => I>,
-): (ta: SyncEither<B, A>) => SyncEither<B, I> {
-  return I.ap(pipe(tfai, I.map(E.ap)));
+export function ap<B, A>(
+  ua: SyncEither<B, A>,
+): <J, I>(ufai: SyncEither<J, (a: A) => I>) => SyncEither<B | J, I> {
+  return (ufai) => flow(ufai, E.ap(ua()));
 }
 
 export function map<A, I>(
@@ -71,22 +66,28 @@ export function map<A, I>(
   return I.map(E.map(fai));
 }
 
-export function chain<A, I, B>(
-  fati: (a: A) => SyncEither<B, I>,
-): (ta: SyncEither<B, A>) => SyncEither<B, I> {
-  return (ta) => flow(ta, E.fold(E.left, (a) => fati(a)()));
+export function chain<A, I, J>(
+  faui: (a: A) => SyncEither<J, I>,
+): <B>(ua: SyncEither<B, A>) => SyncEither<B | J, I> {
+  return (ua) => () => {
+    const ea = ua();
+    return E.isLeft(ea) ? ea : faui(ea.right)();
+  };
 }
 
-export function join<A, B>(
-  ta: SyncEither<B, SyncEither<B, A>>,
-): SyncEither<B, A> {
+export function join<A, B, J>(
+  ta: SyncEither<J, SyncEither<B, A>>,
+): SyncEither<B | J, A> {
   return pipe(ta, chain(identity));
 }
 
-export function chainLeft<A, B, J>(
-  fbtj: (b: B) => SyncEither<J, A>,
-): (ta: SyncEither<B, A>) => SyncEither<J, A> {
-  return I.chain((e: E.Either<B, A>) => E.isLeft(e) ? fbtj(e.left) : I.of(e));
+export function chainLeft<B, J, I>(
+  fbui: (b: B) => SyncEither<J, I>,
+): <A>(ua: SyncEither<B, A>) => SyncEither<J, A | I> {
+  return (ua) => () => {
+    const ea = ua();
+    return E.isRight(ea) ? ea : fbui(ea.left)();
+  };
 }
 
 export function bimap<A, B, I, J>(
@@ -136,9 +137,3 @@ export const AltSyncEither: Alt<URI> = { alt, map };
 export const ExtendsSyncEither: Extend<URI> = { map, extend };
 
 export const FoldableSyncEither: Foldable<URI> = { reduce };
-
-export const getApplySemigroup = createApplySemigroup(MonadSyncEither);
-
-export const sequenceTuple = createSequenceTuple(MonadSyncEither);
-
-export const sequenceStruct = createSequenceStruct(MonadSyncEither);

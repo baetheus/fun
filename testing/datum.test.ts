@@ -232,18 +232,26 @@ Deno.test("Datum of", () => {
 });
 
 Deno.test("Datum ap", () => {
-  assertEquals(
-    pipe(D.refresh(1), D.ap(D.of((n: number) => n + 1))),
-    D.refresh(2),
-  );
-  assertEquals(
-    pipe(D.initial, D.ap(D.of((n: number) => n + 1))),
-    D.initial,
-  );
-  assertEquals(
-    pipe(D.pending, D.ap(D.of((n: number) => n + 1))),
-    D.pending,
-  );
+  const add = (n: number) => n + 1;
+  assertEquals(pipe(D.replete(add), D.ap(D.replete(1))), D.replete(2));
+  assertEquals(pipe(D.replete(add), D.ap(D.refresh(1))), D.refresh(2));
+  assertEquals(pipe(D.replete(add), D.ap(D.pending)), D.pending);
+  assertEquals(pipe(D.replete(add), D.ap(D.initial)), D.initial);
+
+  assertEquals(pipe(D.refresh(add), D.ap(D.replete(1))), D.refresh(2));
+  assertEquals(pipe(D.refresh(add), D.ap(D.refresh(1))), D.refresh(2));
+  assertEquals(pipe(D.refresh(add), D.ap(D.pending)), D.pending);
+  assertEquals(pipe(D.refresh(add), D.ap(D.initial)), D.pending);
+
+  assertEquals(pipe(D.pending, D.ap(D.replete(1))), D.pending);
+  assertEquals(pipe(D.pending, D.ap(D.refresh(1))), D.pending);
+  assertEquals(pipe(D.pending, D.ap(D.pending)), D.pending);
+  assertEquals(pipe(D.pending, D.ap(D.initial)), D.pending);
+
+  assertEquals(pipe(D.initial, D.ap(D.replete(1))), D.initial);
+  assertEquals(pipe(D.initial, D.ap(D.refresh(1))), D.pending);
+  assertEquals(pipe(D.initial, D.ap(D.pending)), D.pending);
+  assertEquals(pipe(D.initial, D.ap(D.initial)), D.initial);
 });
 
 Deno.test("Datum map", () => {

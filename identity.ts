@@ -17,10 +17,10 @@ export function map<A, I>(
   return fai;
 }
 
-export function ap<A, I>(
-  tfai: Identity<(a: A) => I>,
-): (ta: Identity<A>) => Identity<I> {
-  return tfai;
+export function ap<A>(
+  ua: Identity<A>,
+): <I>(ufai: Identity<(a: A) => I>) => Identity<I> {
+  return (ufai) => ufai(ua);
 }
 
 export function join<A>(ta: Identity<Identity<A>>): Identity<A> {

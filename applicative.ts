@@ -6,5 +6,7 @@ import type { Apply } from "./apply.ts";
  * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#applicative
  */
 export interface Applicative<U extends Kind> extends Apply<U>, TypeClass<U> {
-  readonly of: <A, B, C, D, E>(a: A) => $<U, [A, B, C], [D], [E]>;
+  readonly of: <A, B = never, C = never, D = unknown, E = unknown>(
+    a: A,
+  ) => $<U, [A, B, C], [D], [E]>;
 }

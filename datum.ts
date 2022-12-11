@@ -12,7 +12,6 @@ import type { Traversable } from "./traversable.ts";
 import { fromCompare } from "./ord.ts";
 import { isNotNil } from "./nilable.ts";
 import { apply, flow, identity, pipe } from "./fn.ts";
-import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
 /**
  * TODO: Lets get a monoid in here for tracking progress.
@@ -161,6 +160,28 @@ export function map<A, I>(fai: (a: A) => I): (ta: Datum<A>) => Datum<I> {
   );
 }
 
+export function ap<A>(
+  ua: Datum<A>,
+): <I>(ufai: Datum<(a: A) => I>) => Datum<I> {
+  switch (ua.tag) {
+    case "Initial":
+      return (ufai) => isLoading(ufai) ? pending : initial;
+    case "Pending":
+      return constPending;
+    case "Replete":
+      return (ufai) =>
+        isReplete(ufai)
+          ? replete(ufai.value(ua.value))
+          : isRefresh(ufai)
+          ? refresh(ufai.value(ua.value))
+          : isLoading(ufai)
+          ? pending
+          : initial;
+    case "Refresh":
+      return (ufai) => isSome(ufai) ? refresh(ufai.value(ua.value)) : pending;
+  }
+}
+
 export function chain<A, I>(
   fati: (a: A) => Datum<I>,
 ): (ta: Datum<A>) => Datum<I> {
@@ -170,12 +191,6 @@ export function chain<A, I>(
     fati,
     flow(fati, toLoading),
   );
-}
-
-export function ap<A, I>(
-  tfai: Datum<(a: A) => I>,
-): (ta: Datum<A>) => Datum<I> {
-  return (ta) => pipe(tfai, chain(flow(map, apply(ta))));
 }
 
 export function join<A>(taa: Datum<Datum<A>>): Datum<A> {
@@ -276,7 +291,3 @@ export const MonadDatum: Monad<URI> = { of, ap, map, join, chain };
 export const AltDatum: Alt<URI> = { alt, map };
 
 export const TraversableDatum: Traversable<URI> = { map, reduce, traverse };
-
-export const sequenceTuple = createSequenceTuple(MonadDatum);
-
-export const sequenceStruct = createSequenceStruct(MonadDatum);

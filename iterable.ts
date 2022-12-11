@@ -1,10 +1,5 @@
-import type { $, Kind, Out } from "./kind.ts";
+import type { Kind, Out } from "./kind.ts";
 import type { Monad } from "./monad.ts";
-import type { Applicative } from "./applicative.ts";
-import type { Traversable } from "./traversable.ts";
-
-import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
-import { pipe } from "./fn.ts";
 
 export interface URI extends Kind {
   readonly kind: Iterable<Out<this, 0>>;
@@ -49,13 +44,13 @@ export function of<A>(...a: A[]): Iterable<A> {
   });
 }
 
-export function ap<A, I>(
-  tfai: Iterable<(a: A) => I>,
-): (ta: Iterable<A>) => Iterable<I> {
-  return (ta) =>
+export function ap<A>(
+  ua: Iterable<A>,
+): <I>(ufai: Iterable<(a: A) => I>) => Iterable<I> {
+  return (ufai) =>
     make(function* () {
-      for (const fai of tfai) {
-        for (const a of ta) {
+      for (const fai of ufai) {
+        for (const a of ua) {
           yield fai(a);
         }
       }
@@ -113,7 +108,3 @@ export function reduce<A, O>(foao: (o: O, a: A) => O, o: O) {
 }
 
 export const MonadIterable: Monad<URI> = { of, ap, map, join, chain };
-
-export const sequenceTuple = createSequenceTuple(MonadIterable);
-
-export const sequenceStruct = createSequenceStruct(MonadIterable);

@@ -2,18 +2,11 @@ import type { $, Kind, Out } from "./kind.ts";
 import type { Applicative } from "./applicative.ts";
 import type { Extend } from "./extend.ts";
 import type { Monad } from "./monad.ts";
-import type { Monoid } from "./monoid.ts";
 import type { Traversable } from "./traversable.ts";
-import type { Fn } from "./fn.ts";
 
-import {
-  createApplySemigroup,
-  createSequenceStruct,
-  createSequenceTuple,
-} from "./apply.ts";
-import { apply, flow, of as constant, pipe } from "./fn.ts";
+import { constant, flow, pipe } from "./fn.ts";
 
-export type Sync<A> = Fn<[], A>;
+export type Sync<A> = () => A;
 
 export interface URI extends Kind {
   readonly kind: Sync<Out<this, 0>>;
@@ -23,8 +16,8 @@ export function of<A>(a: A): Sync<A> {
   return constant(a);
 }
 
-export function ap<A, I>(tfai: Sync<(a: A) => I>): (ta: Sync<A>) => Sync<I> {
-  return (ta) => flow(ta, tfai());
+export function ap<A>(ua: Sync<A>): <I>(ta: Sync<(a: A) => I>) => Sync<I> {
+  return (ufai) => flow(ua, ufai());
 }
 
 export function map<A, I>(fai: (a: A) => I): (ta: Sync<A>) => Sync<I> {
@@ -36,7 +29,7 @@ export function join<A>(ta: Sync<Sync<A>>): Sync<A> {
 }
 
 export function chain<A, I>(fati: (a: A) => Sync<I>): (ta: Sync<A>) => Sync<I> {
-  return (ta) => flow(ta, fati, apply());
+  return (ta) => flow(ta, fati, (x) => x());
 }
 
 export function extend<A, I>(
@@ -65,14 +58,3 @@ export const MonadSync: Monad<URI> = { of, ap, map, join, chain };
 export const ExtendsSync: Extend<URI> = { map, extend };
 
 export const TraversableSync: Traversable<URI> = { map, reduce, traverse };
-
-export const getApplySemigroup = createApplySemigroup(MonadSync);
-
-export const getMonoid = <A>(M: Monoid<A>): Monoid<Sync<A>> => ({
-  ...getApplySemigroup(M),
-  empty: constant(M.empty),
-});
-
-export const sequenceTuple = createSequenceTuple(MonadSync);
-
-export const sequenceStruct = createSequenceStruct(MonadSync);

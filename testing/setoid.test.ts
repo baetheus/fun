@@ -1,7 +1,7 @@
 import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
 import * as S from "../eq.ts";
-import { of, pipe } from "../fn.ts";
+import { constant, pipe } from "../fn.ts";
 
 Deno.test("Eq fromEquals", () => {
   type HasId = { id: number };
@@ -198,8 +198,8 @@ Deno.test("Eq lazy", () => {
 Deno.test("Eq io", () => {
   const { equals } = S.io(S.string);
 
-  const one = of("one");
-  const two = of("two");
+  const one = constant("one");
+  const two = constant("two");
 
   assertEquals(equals(one)(two), false);
   assertEquals(equals(one)(one), true);

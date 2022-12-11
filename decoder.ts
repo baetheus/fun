@@ -46,7 +46,7 @@ const traverseArray = A.traverse(MonadDecoded);
 // Decoder
 // ---
 
-export type Decoder<D, A> = FnEither<[D], DecodeError, A>;
+export type Decoder<D, A> = FnEither<D, DecodeError, A>;
 
 export type From<T> = T extends Decoder<infer _, infer A> ? A : never;
 

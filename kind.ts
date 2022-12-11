@@ -23,12 +23,12 @@ export interface Kind extends Substitutions {
  * Substitute is a substitution type, taking a Kind implementation T and
  * substituting it with types passed in S.
  */
-export type Substitute<T, S extends Substitutions> = T extends
+export type Substitute<T extends Kind, S extends Substitutions> = T extends
   { readonly kind: unknown } ? (T & S)["kind"]
   : {
     readonly T: T;
-    readonly ["covariant"]: (_: S["covariant"]) => void;
-    readonly ["contravariant"]: () => S["contravariant"];
+    readonly ["covariant"]: () => S["covariant"];
+    readonly ["contravariant"]: (_: S["contravariant"]) => void;
     readonly ["invariant"]: (_: S["invariant"]) => S["invariant"];
   };
 
@@ -37,7 +37,7 @@ export type Substitute<T, S extends Substitutions> = T extends
  * substitutions to positional type parameters.
  */
 export type $<
-  T,
+  T extends Kind,
   Out extends unknown[],
   In extends unknown[] = [never],
   InOut extends unknown[] = [never],
@@ -46,6 +46,13 @@ export type $<
   ["contravariant"]: In;
   ["invariant"]: InOut;
 }>;
+
+// deno-lint-ignore no-explicit-any
+export type AnySub<U extends Kind> = $<U, any[], any[], any[]>;
+
+// deno-lint-ignore no-explicit-any
+export type Intersect<U> = (U extends any ? (k: U) => void : never) extends
+  ((k: infer I) => void) ? I : never;
 
 /**
  * Access the Covariant substitution type at index N

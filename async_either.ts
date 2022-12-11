@@ -7,7 +7,7 @@ import type { Async } from "./async.ts";
 
 import * as E from "./either.ts";
 import * as T from "./async.ts";
-import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
+import * as P from "./promise.ts";
 import { handleThrow, identity, pipe } from "./fn.ts";
 import { resolve } from "./promise.ts";
 
@@ -156,19 +156,27 @@ export function mapLeft<B, J>(
 /**
  * Apply an argument to a function under the *Right* side.
  */
-export function apParallel<A, I, B>(
-  tfai: AsyncEither<B, (a: A) => I>,
-): (ta: AsyncEither<B, A>) => AsyncEither<B, I> {
-  return pipe(tfai, T.map(E.ap), T.apParallel);
+export function apParallel<A, B>(
+  ua: AsyncEither<B, A>,
+): <I, J>(ufai: AsyncEither<J, (a: A) => I>) => AsyncEither<B | J, I> {
+  return (ufai) => () =>
+    pipe(
+      P.all(ufai(), ua()),
+      P.map(([efai, ea]) => pipe(efai, E.ap(ea))),
+    );
 }
 
 /**
  * Sequentially apply arguments
  */
-export function apSequential<A, I, B>(
-  tfai: AsyncEither<B, (a: A) => I>,
-): (ta: AsyncEither<B, A>) => AsyncEither<B, I> {
-  return pipe(tfai, T.map(E.ap), T.apSequential);
+export function apSequential<A, B>(
+  ua: AsyncEither<B, A>,
+): <I, J = never>(ufai: AsyncEither<J, (a: A) => I>) => AsyncEither<B | J, I> {
+  return (ufai) => async () => {
+    const ea = await ua();
+    const efai = await ufai();
+    return pipe(efai, E.ap(ea));
+  };
 }
 
 /**
@@ -259,9 +267,9 @@ export function chainLeft<B, J, I>(
  * assertEquals(await ta(), E.right(4))
  * ```
  */
-export function join<A, B>(
-  tta: AsyncEither<B, AsyncEither<B, A>>,
-): AsyncEither<B, A> {
+export function join<A, B, J>(
+  tta: AsyncEither<J, AsyncEither<B, A>>,
+): AsyncEither<B | J, A> {
   return pipe(tta, chain(identity));
 }
 
@@ -342,19 +350,3 @@ export const MonadAsyncEitherSequential: Monad<URI> = {
   join,
   chain,
 };
-
-export const sequenceTupleParallel = createSequenceTuple(
-  MonadAsyncEitherParallel,
-);
-
-export const sequenceStructParallel = createSequenceStruct(
-  MonadAsyncEitherParallel,
-);
-
-export const sequenceTupleSequential = createSequenceTuple(
-  MonadAsyncEitherSequential,
-);
-
-export const sequenceStructSequential = createSequenceStruct(
-  MonadAsyncEitherSequential,
-);

@@ -210,23 +210,6 @@ Deno.test("Either chainLeft", () => {
   assertEquals(chainLeft(E.left(1)), E.right(1));
 });
 
-Deno.test("Either sequenceTuple", () => {
-  assertEquals(E.sequenceTuple(E.right(0), E.right("a")), E.right([0, "a"]));
-  assertEquals(E.sequenceTuple(E.right(0), E.left("a")), E.left("a"));
-  assertEquals(E.sequenceTuple(E.left(0), E.right("a")), E.left(0));
-  assertEquals(E.sequenceTuple(E.left(0), E.left("a")), E.left("a"));
-});
-
-Deno.test("Either sequenceStruct", () => {
-  assertEquals(
-    E.sequenceStruct({ a: E.right(1), b: E.right(2) }),
-    E.right({ a: 1, b: 2 }),
-  );
-  assertEquals(E.sequenceStruct({ a: E.right(1), b: E.left(2) }), E.left(2));
-  assertEquals(E.sequenceStruct({ a: E.left(1), b: E.right(2) }), E.left(1));
-  assertEquals(E.sequenceStruct({ a: E.left(1), b: E.left(2) }), E.left(2));
-});
-
 // Deno.test("Datum Do, bind, bindTo", () => {
 //   assertEquals(
 //     pipe(

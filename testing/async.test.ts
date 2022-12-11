@@ -43,7 +43,10 @@ Deno.test("Async of", async () => {
 });
 
 Deno.test("Async apParallel", async () => {
-  assertEquals(await pipe(A.of(1), A.apParallel(A.of(add)))(), 2);
+  assertEquals(
+    await pipe(A.of((n: number) => n + 1), A.apParallel(A.of(1)))(),
+    2,
+  );
 });
 
 Deno.test("Async map", async () => {
@@ -59,7 +62,10 @@ Deno.test("Async chain", async () => {
 });
 
 Deno.test("Async apSeq", async () => {
-  assertEquals(await pipe(A.of(1), A.apSequential(A.of(add)))(), 2);
+  assertEquals(
+    await pipe(A.of((n: number) => n + 1), A.apSequential(A.of(1)))(),
+    2,
+  );
 });
 
 // Deno.test("Async Do, bind, bindTo", () => {

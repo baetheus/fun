@@ -3,7 +3,6 @@ import type { Monad } from "./monad.ts";
 
 import { traverse } from "./array.ts";
 import { flow, identity, pipe } from "./fn.ts";
-import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
 export type State<E, A> = (e: E) => [A, E];
 
@@ -45,19 +44,19 @@ export function map<A, I>(
   return (ta) => flow(ta, ([a, b]) => [fai(a), b]);
 }
 
-export function ap<A, I, B>(
-  tfai: State<B, (a: A) => I>,
-): (ta: State<B, A>) => State<B, I> {
-  return (ta) => (s1) => {
-    const [fai, s2] = tfai(s1);
-    const [a, s3] = ta(s2);
+export function ap<E, A>(
+  ua: State<E, A>,
+): <I>(ufai: State<E, (a: A) => I>) => State<E, I> {
+  return (ufai) => (s1) => {
+    const [fai, s2] = ufai(s1);
+    const [a, s3] = ua(s2);
     return [fai(a), s3];
   };
 }
 
-export function chain<A, I, B>(
-  fati: (a: A) => State<B, I>,
-): (ta: State<B, A>) => State<B, I> {
+export function chain<A, M, I>(
+  fati: (a: A) => State<M, I>,
+): (ta: State<M, A>) => State<M, I> {
   return (ta) => flow(ta, ([a, s]) => fati(a)(s));
 }
 
@@ -86,7 +85,3 @@ export function execute<S>(s: S): <A>(ta: State<S, A>) => S {
 }
 
 export const MonadState: Monad<URI> = { of, ap, map, join, chain };
-
-export const sequenceTuple = createSequenceTuple(MonadState);
-
-export const sequenceStruct = createSequenceStruct(MonadState);

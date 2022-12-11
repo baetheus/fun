@@ -17,7 +17,6 @@ import * as O from "./option.ts";
 import { isNotNil } from "./nilable.ts";
 import { fromCompare } from "./ord.ts";
 import { flow, pipe } from "./fn.ts";
-import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
 
 export type Left<L> = { tag: "Left"; left: L };
 
@@ -195,10 +194,10 @@ export function getRightMonad<E>(
 ): Monad<RightURI<E>> {
   return ({
     of,
-    ap: (tfai) => (ta) =>
-      isLeft(tfai)
-        ? (isLeft(ta) ? left(concat(ta.left)(tfai.left)) : tfai)
-        : (isLeft(ta) ? ta : right(tfai.right(ta.right))),
+    ap: (ua) => (ufai) =>
+      isLeft(ufai)
+        ? (isLeft(ua) ? left(concat(ua.left)(ufai.left)) : ufai)
+        : (isLeft(ua) ? ua : right(ufai.right(ua.right))),
     map,
     join,
     chain,
@@ -235,11 +234,11 @@ export function chainLeft<B, I, J>(
   return (tab) => (isLeft(tab) ? fbj(tab.left) : tab);
 }
 
-export function ap<A, I, B>(
-  tfai: Either<B, (a: A) => I>,
-): (ta: Either<B, A>) => Either<B, I> {
-  return (ta) =>
-    isLeft(ta) ? ta : isLeft(tfai) ? tfai : right(tfai.right(ta.right));
+export function ap<A, B>(
+  ua: Either<B, A>,
+): <I, J>(ufai: Either<J, (a: A) => I>) => Either<B | J, I> {
+  return (ufai) =>
+    isLeft(ua) ? ua : isLeft(ufai) ? ufai : right(ufai.right(ua.right));
 }
 
 export function chain<A, I, J>(
@@ -248,7 +247,9 @@ export function chain<A, I, J>(
   return (ta) => isLeft(ta) ? ta : fati(ta.right);
 }
 
-export function join<A, B>(ta: Either<B, Either<B, A>>): Either<B, A> {
+export function join<A, B, J = never>(
+  ta: Either<J, Either<B, A>>,
+): Either<B | J, A> {
   return isLeft(ta) ? ta : ta.right;
 }
 
@@ -301,7 +302,3 @@ export const AltEither: Alt<URI> = { alt, map };
 export const ExtendEither: Extend<URI> = { map, extend };
 
 export const TraversableEither: Traversable<URI> = { map, reduce, traverse };
-
-export const sequenceTuple = createSequenceTuple(MonadEither);
-
-export const sequenceStruct = createSequenceStruct(MonadEither);

@@ -129,8 +129,8 @@ Deno.test("Promise of", async () => {
 Deno.test("Promise ap", async () => {
   assertEquals(
     await pipe(
-      P.of(1),
-      P.ap(P.of((n) => n + 1)),
+      P.of((n: number) => n + 1),
+      P.ap(P.of(1)),
     ),
     2,
   );
@@ -192,25 +192,4 @@ Deno.test("Promise MonadPromise", () => {
   assertStrictEquals(P.MonadPromise.map, P.map);
   assertStrictEquals(P.MonadPromise.join, P.join);
   assertStrictEquals(P.MonadPromise.chain, P.chain);
-});
-
-Deno.test("Promise sequenceTuple", async () => {
-  assertEquals(await P.sequenceTuple(P.of(1), P.of("Hello")), [1, "Hello"]);
-});
-
-Deno.test("Promise sequenceStruct", async () => {
-  assertEquals(await P.sequenceStruct({ one: P.of(1), two: P.of("Hello") }), {
-    one: 1,
-    two: "Hello",
-  });
-});
-
-Deno.test("Promise getApplySemigroup", async () => {
-  const S = P.getApplySemigroup(N.SemigroupNumberSum);
-  const concat = concatAll(S);
-
-  assertEquals(
-    await pipe([P.of(1), P.of(2), P.of(3), P.of(4)], concat(P.of(0))),
-    10,
-  );
 });

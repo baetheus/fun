@@ -16,6 +16,7 @@ import type { Show } from "./show.ts";
 import type { Traversable } from "./traversable.ts";
 
 import { createMonad } from "./monad.ts";
+import { dual } from "./monoid.ts";
 import { pipe } from "./fn.ts";
 
 /**
@@ -381,31 +382,6 @@ export function mergeSecond<A, I>(ua: Pair<A, (a: A) => I>): I {
  * The canonical Functor instance for Pair. Contains the
  * map method.
  *
- * @example
- * ```ts
- * import type { Kind, Out } from "./kind.ts";
- * import type { Functor } from "./functor.ts";
- * import { compose } from "./functor.ts"
- * import { FunctorOption, Option, some } from "./option.ts";
- * import { FunctorPair, Pair, pair } from "./pair.ts";
- * import { pipe } from "./fn.ts";
- *
- * export interface URI extends Kind {
- *   readonly kind: Option<Pair<Out<this, 0>, Out<this, 1>>>;
- * }
- *
- * const { map } = pipe(
- *   FunctorPair,
- *   compose(FunctorOption)
- * ) as Functor<URI>;
- *
- * const result = pipe(
- *   some(pair(1, "Hello")),
- *   map(n => n + 1),
- * ); // { tag: "Some", value: [2, "Hello"] }
- *
- * ```
- *
  * @since 2.0.0
  */
 export const FunctorPair: Functor<URI> = { map };
@@ -484,10 +460,11 @@ export interface RightPairURI<B> extends Kind {
  * @since 2.0.0
  */
 export function getRightMonad<L>(M: Monoid<L>): Monad<RightPairURI<L>> {
+  const { empty, concat } = dual(M);
   return createMonad<RightPairURI<L>>({
-    of: (a) => pair(a, M.empty()),
+    of: (a) => pair(a, empty()),
     chain: (fati) => ([first, second]) =>
-      pipe(fati(first), mapLeft(M.concat(second))),
+      pipe(fati(first), mapLeft(concat(second))),
   });
 }
 

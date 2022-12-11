@@ -5,12 +5,7 @@ import type { Applicative } from "./applicative.ts";
 import type { Monad } from "./monad.ts";
 
 import * as A from "./array.ts";
-import {
-  createApplySemigroup,
-  createSequenceStruct,
-  createSequenceTuple,
-} from "./apply.ts";
-import { apply, flow, identity, pipe } from "./fn.ts";
+import { flow, identity, pipe } from "./fn.ts";
 
 export type Forest<A> = ReadonlyArray<Tree<A>>;
 
@@ -36,12 +31,12 @@ function draw(indentation: string, forest: Forest<string>): string {
   return r;
 }
 
-function _make<A>(value: A): (forest: Forest<A>) => Tree<A> {
-  return (forest) => ({ value, forest });
+export function tree<A>(value: A, forest: Forest<A> = []): Tree<A> {
+  return ({ value, forest });
 }
 
 export function of<A>(value: A, forest: Forest<A> = A.empty()): Tree<A> {
-  return ({ value, forest });
+  return tree(value, forest);
 }
 
 export function map<A, I>(fai: (a: A) => I): (ta: Tree<A>) => Tree<I> {
@@ -56,8 +51,8 @@ export function chain<A, I>(fati: (a: A) => Tree<I>): (ta: Tree<A>) => Tree<I> {
   };
 }
 
-export function ap<A, I>(tfai: Tree<(a: A) => I>): (ta: Tree<A>) => Tree<I> {
-  return (ta) => pipe(tfai, chain(flow(map, apply(ta))));
+export function ap<A>(ua: Tree<A>): <I>(tfai: Tree<(a: A) => I>) => Tree<I> {
+  return (ufai) => pipe(ufai, chain(flow(map, (fn) => fn(ua))));
 }
 
 export function join<A>(tta: Tree<Tree<A>>): Tree<A> {
@@ -74,21 +69,24 @@ export function reduce<A, O>(
 
 export function traverse<V extends Kind>(
   V: Applicative<V>,
-): <A, I, J, K, L, M>(
+): <A, I, J = never, K = never, L = unknown, M = unknown>(
   favi: (a: A) => $<V, [I, J, K], [L], [M]>,
 ) => (ta: Tree<A>) => $<V, [Tree<I>, J, K], [L], [M]> {
-  const traverseV = A.traverse(V);
-  return (favi) => {
-    const out = <A, I, J, K, L, M>(
-      _favi: (a: A) => $<V, [I, J, K], [L], [M]>,
-    ) =>
-    (ta: Tree<A>): $<V, [Tree<I>, J, K], [L], [M]> =>
+  const traverseArray = A.traverse(V);
+  return <A, I, J = never, K = never, L = unknown, M = unknown>(
+    favi: (a: A) => $<V, [I, J, K], [L], [M]>,
+  ): (ua: Tree<A>) => $<V, [Tree<I>, J, K], [L], [M]> => {
+    const pusher: (i: I) => (is: Forest<I>) => Tree<I> = (i) => (fs) =>
+      tree(i, fs);
+    const wrappedPusher = V.of<typeof pusher, J, K, L, M>(pusher);
+    const traverseTree = (ua: Tree<A>): $<V, [Tree<I>, J, K], [L], [M]> =>
       pipe(
-        ta.forest,
-        traverseV(out(_favi)),
-        V.ap(pipe(_favi(ta.value), V.map(_make))),
+        wrappedPusher,
+        V.ap(favi(ua.value)),
+        V.ap(traverseForest(ua.forest)),
       );
-    return out(favi);
+    const traverseForest = traverseArray(traverseTree);
+    return traverseTree;
   };
 }
 
@@ -116,9 +114,3 @@ export const getShow = <A>(S: Show<A>): Show<Tree<A>> => {
       : `Tree(${S.show(ta.value)}, [${ta.forest.map(show).join(", ")}])`;
   return ({ show });
 };
-
-export const getApplySemigroup = createApplySemigroup(MonadTree);
-
-export const sequenceStruct = createSequenceStruct(MonadTree);
-
-export const sequenceTuple = createSequenceTuple(MonadTree);

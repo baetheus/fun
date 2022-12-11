@@ -94,7 +94,7 @@
  *
  * @since 2.0.0
  */
-import type { $, Kind } from "./kind.ts";
+import type { $, In, Kind, Out } from "./kind.ts";
 import type { ReadonlyRecord } from "./record.ts";
 import type { Tree } from "./tree.ts";
 import type { Either } from "./either.ts";
@@ -119,115 +119,74 @@ import { TraversableSet } from "./set.ts";
 import { TraversableTree } from "./tree.ts";
 import { isNotNil } from "./nilable.ts";
 import { concatAll as getConcatAll } from "./monoid.ts";
-import { apply, dimap, flow, identity, pipe, unsafeCoerce } from "./fn.ts";
-
-// Build up language of Kliesli Optics
+import { apply, dimap, flow, identity, pipe } from "./fn.ts";
 
 /**
  * Following are the runtime tags associated
  * with various forms of Optics.
  */
 
-const GetterTag = "Getter" as const;
-type GetterTag = typeof GetterTag;
+const GetTag = "Getter" as const;
+type GetTag = typeof GetTag;
 
-const AffineFoldTag = "AffineFold" as const;
-type AffineFoldTag = typeof AffineFoldTag;
+const AffineTag = "Affine" as const;
+type AffineTag = typeof AffineTag;
 
 const FoldTag = "Fold" as const;
 type FoldTag = typeof FoldTag;
 
-type Tag = GetterTag | AffineFoldTag | FoldTag;
+type Tag = GetTag | AffineTag | FoldTag;
 
 /**
  * Type level mapping from Tag to URI. Since an
  * Optic get function is a Kliesli Arrow a => mb, we
  * associate the Optic Tags as follows:
  *
- * GetterTag => Identity
- * AffineFoldTag => Option
+ * GetTag => Identity
+ * AffineTag => Option
  * FoldTag => Array
  */
-type ToURI<T extends Tag> = T extends GetterTag ? I.URI
-  : T extends AffineFoldTag ? O.URI
+type ToURI<T extends Tag> = T extends GetTag ? I.URI
+  : T extends AffineTag ? O.URI
   : T extends FoldTag ? A.URI
   : never;
 
-/**
- * Join will give us the "loosest" of two tags. This is used to
- * determine the abstraction level that an Optic operatates at. The
- * most contstrained is Identity while the least constrained is Array.
- * The typescript version of the source optics Getters are as follows:
- *
- * ```ts
- * import type { Identity } from "./identity.ts";
- * import type { Option } from "./option.ts";
- *
- * type Getter<S, A>      = { get: (s: S) => Identity<A> };
- * type AffineFold<S, A>     = { get: (s: S) =>   Option<A> };
- * type Fold<S, A> = { get: (s: S) =>    Array<A> };
- * ```
- *
- * Here we can see that Getter is constrained to get exactly one A,
- * AffineFold is constrained to get zero or one A, and Fold is
- * constrained to get zero, one, or many As. Because of this,
- * Getter can always be lifted to a AffineFold and AffineFold can always be
- * lifted to Fold. All Optics share the same modify function
- * over S and A.
- *
- * Thus Join is like GT where Array > Option > Identity.
- */
-type Join<U extends Tag, V extends Tag> = U extends FoldTag ? FoldTag
-  : V extends FoldTag ? FoldTag
-  : U extends AffineFoldTag ? AffineFoldTag
-  : V extends AffineFoldTag ? AffineFoldTag
-  : GetterTag;
+export type Viewer<T extends Tag, S, A> = {
+  readonly tag: T;
+  readonly view: (s: S) => $<ToURI<T>, [A, never, never]>;
+};
 
-/**
- * The runtime level GTE for Join
- */
-function join<A extends Tag, B extends Tag>(
-  a: A,
-  b: B,
-): Join<A, B> {
-  if (a === FoldTag || b === FoldTag) {
-    return FoldTag as unknown as Join<A, B>;
-  } else if (a === AffineFoldTag || b === AffineFoldTag) {
-    return AffineFoldTag as unknown as Join<A, B>;
-  } else {
-    return GetterTag as unknown as Join<A, B>;
-  }
+export interface KindViewer extends Kind {
+  readonly kind: Viewer<Tag, In<this, 0>, Out<this, 0>>;
 }
 
-const MONADS = {
-  [GetterTag]: I.MonadIdentity,
-  [AffineFoldTag]: O.MonadOption,
-  [FoldTag]: A.MonadArray,
-} as const;
+export function viewer<T extends Tag, S, A>(
+  tag: T,
+  view: (s: S) => $<ToURI<T>, [A, never, never]>,
+): Viewer<T, S, A> {
+  return { tag, view };
+}
 
-const optionToArray = <A>(ua: Option<A>): ReadonlyArray<A> =>
-  O.isNone(ua) ? [] : [ua.value];
+export type Modifier<S, A> = {
+  readonly modify: (modifyFn: (a: A) => A) => (s: S) => S;
+};
 
 /**
  * Our new Optic definition. Instead of get and set we use get and modify as
  * set can be derived from modify(() => value). This drastically simplifies
  * implementation.
  */
-export type Optic<T extends Tag, S, A> = {
-  readonly tag: T;
-  readonly view: (s: S) => $<ToURI<T>, [A, never, never]>;
-  readonly modify: (modifyFn: (a: A) => A) => (s: S) => S;
-};
+export type Optic<T extends Tag, S, A> = Viewer<T, S, A> & Modifier<S, A>;
 
 /**
  * We recover the Getter type from the generic Optic
  */
-export type Getter<S, A> = Optic<GetterTag, S, A>;
+export type Getter<S, A> = Optic<GetTag, S, A>;
 
 /**
- * We recover the AffineFold type from the generic Optic
+ * We recover the Affine type from the generic Optic
  */
-export type AffineFold<S, A> = Optic<AffineFoldTag, S, A>;
+export type Affine<S, A> = Optic<AffineTag, S, A>;
 
 /**
  * We recover the Fold type from the generic Optic
@@ -249,17 +208,17 @@ export function getter<S, A>(
   view: (s: S) => A,
   modify: (modifyFn: (a: A) => A) => (s: S) => S,
 ): Getter<S, A> {
-  return optic(GetterTag, view, modify);
+  return optic(GetTag, view, modify);
 }
 
 /**
- * Construct a AffineFold from get and modify functions.
+ * Construct a Affine from get and modify functions.
  */
-export function affinefold<S, A>(
+export function affine<S, A>(
   view: (s: S) => Option<A>,
   modify: (modifyFn: (a: A) => A) => (s: S) => S,
-): AffineFold<S, A> {
-  return optic(AffineFoldTag, view, modify);
+): Affine<S, A> {
+  return optic(AffineTag, view, modify);
 }
 
 /**
@@ -273,65 +232,98 @@ export function fold<S, A>(
 }
 
 /**
- * Cast an Optic<U> as an Optic<V>. This non-exported function only
- * works for the following cases
+ * Align will give us the "loosest" of two tags. This is used to
+ * determine the abstraction level that an Optic operatates at. The
+ * most contstrained is Identity while the least constrained is Array.
+ * The typescript version of the source optics Getters are as follows:
  *
- * Getter => Getter
- * Getter => AffineFold
- * Getter => Fold
+ * ```ts
+ * import type { Identity } from "./identity.ts";
+ * import type { Option } from "./option.ts";
  *
- * AffineFold => AffineFold
- * AffineFold => Fold
+ * type Getter<S, A>      = { get: (s: S) => Identity<A> };
+ * type Affine<S, A>     = { get: (s: S) =>   Option<A> };
+ * type Fold<S, A> = { get: (s: S) =>    Array<A> };
+ * ```
  *
- * Fold => Fold
+ * Here we can see that Getter is constrained to get exactly one A,
+ * Affine is constrained to get zero or one A, and Fold is
+ * constrained to get zero, one, or many As. Because of this,
+ * Getter can always be lifted to a Affine and Affine can always be
+ * lifted to Fold. All Optics share the same modify function
+ * over S and A.
  *
- * As long as only Optics over Identity, Option, and Array are in
- * this file, there should be no way to break this casting.
+ * Thus Align is like GT where Array > Option > Identity.
  */
-function cast<U extends Tag, V extends Tag, S, A>(
-  G: Optic<U, S, A>,
-  tag: V,
-): Optic<V, S, A> {
-  // Covers Getter => Getter, AffineFold => AffineFold, Fold => Fold
-  if (G.tag === tag as Tag) {
-    return unsafeCoerce(G);
-    // AffineFold => Fold
-  } else if (tag === FoldTag && G.tag === AffineFoldTag) {
-    return unsafeCoerce(
-      fold((s) => optionToArray(G.view(s) as Option<A>), G.modify),
-    );
-    // Getter => Fold
-  } else if (tag === FoldTag && G.tag === GetterTag) {
-    return unsafeCoerce(fold((s) => [G.view(s) as A], G.modify));
-    // Getter => AffineFold
-  } else if (tag === AffineFoldTag && G.tag == GetterTag) {
-    return unsafeCoerce(
-      affinefold((s) => O.of(G.view(s)) as Option<A>, G.modify),
-    );
-  }
-  // Non-valid casts will throw an error.
-  throw new Error(`Attempted to cast ${G.tag} to ${tag}`);
+type Align<U extends Tag, V extends Tag> = U extends FoldTag ? FoldTag
+  : V extends FoldTag ? FoldTag
+  : U extends AffineTag ? AffineTag
+  : V extends AffineTag ? AffineTag
+  : GetTag;
+
+/**
+ * The runtime level GTE for Align
+ */
+function align<A extends Tag, B extends Tag>(
+  a: A,
+  b: B,
+): Align<A, B> {
+  return ((a === FoldTag || b === FoldTag)
+    ? FoldTag
+    : (a === AffineTag || b === AffineTag)
+    ? AffineTag
+    : GetTag) as Align<A, B>;
 }
 
 /**
- * Compose two Optics by lifting them to matching ADTs, then chain
- * using the Monad for that ADT. Using a monad here was easier than
- * implementing Arrow all over the fun library
+ * Create a view function from a Viewer<U, S, A> and
+ * a tag V. In the case where U and V match this is
+ * a noop, returning the view function from the input
+ * Viewer. Otherwise this uses hand coded Natural
+ * Transformations for:
+ *
+ * Identity<A> -> Option<A>
+ * Identity<A> -> ReadonlyArray<A>
+ * Option<A> -> ReadonlyArray<A>
+ *
+ * This cast is unable to downcast from Array or Option and
+ * will throw a runtime error if that is attempted.
+ * Because of this, the cast function is not exported and
+ * is only used in compose and ap, where two tags are
+ * aligned prior to casting.
  */
-export function compose<V extends Tag, A, I>(second: Optic<V, A, I>) {
-  return <U extends Tag, S>(
-    first: Optic<U, S, A>,
-  ): Optic<Join<U, V>, S, I> => {
-    const tag = join(first.tag, second.tag);
-    const _chain = MONADS[tag].chain as Monad<ToURI<Join<U, V>>>["chain"];
-    const _first = cast(first, tag);
-    const _second = cast(second, tag);
-    return optic(
-      tag,
-      flow(_first.view, _chain(_second.view)),
-      flow(_second.modify, _first.modify),
-    );
-  };
+function cast<U extends Tag, V extends Tag, S, A>(
+  viewer: Viewer<U, S, A>,
+  tag: V,
+): Viewer<V, S, A>["view"] {
+  type Out = Viewer<V, S, A>["view"];
+  // Covers Getter => Getter, Affine => Affine, Fold => Fold
+  if (viewer.tag === tag as GetTag) {
+    return viewer.view as Out;
+    // Affine => Fold
+  } else if (tag === FoldTag && viewer.tag === AffineTag) {
+    return (s: S) => {
+      const ua = viewer.view(s) as Option<A>;
+      return (O.isNone(ua) ? [] : [ua.value]) as ReturnType<Out>;
+    };
+    // Getter => Fold
+  } else if (tag === FoldTag && viewer.tag === GetTag) {
+    return (s: S) => [viewer.view(s)] as ReturnType<Out>;
+    // Getter => Affine
+  } else if (tag === AffineTag && viewer.tag == GetTag) {
+    return (s) => O.of(viewer.view(s)) as ReturnType<Out>;
+  }
+  // Non-valid casts will throw an error at runtime.
+  // This is not reachable with the combinators in this lib.
+  throw new Error(`Attempted to cast ${viewer.tag} to ${tag}`);
+}
+
+function getMonad<T extends Tag>(tag: T): Monad<ToURI<T>> {
+  return (tag === FoldTag
+    ? A.MonadArray
+    : tag === AffineTag
+    ? O.MonadOption
+    : I.MonadIdentity) as unknown as Monad<ToURI<T>>;
 }
 
 // deno-lint-ignore no-explicit-any
@@ -346,6 +338,59 @@ export function id<A>(): Getter<A, A> {
 }
 
 /**
+ * Compose two Optics by:
+ *
+ * 1. Finding the alignment of them, which is Max<first, second> where
+ *    Fold > Affine > Get
+ * 2. Cast both optics to the alignment tag, one cast will always be
+ *    a noop.
+ * 3. Construct a new optic by chaining the view functions first to
+ *    second and composing the modify functions second to first.
+ */
+export function compose<V extends Tag, A, I>(second: Optic<V, A, I>) {
+  return <U extends Tag, S>(
+    first: Optic<U, S, A>,
+  ): Optic<Align<U, V>, S, I> => {
+    const tag = align(first.tag, second.tag);
+    const _chain = getMonad(tag).chain;
+    const _first = cast(first, tag);
+    const _second = cast(second, tag);
+    return optic(
+      tag,
+      flow(_first, _chain(_second)),
+      flow(second.modify, first.modify),
+    );
+  };
+}
+
+export function of<A, S = unknown>(a: A): Viewer<GetTag, S, A> {
+  return viewer(GetTag, (_: S) => a);
+}
+
+export function map<A, I>(
+  fai: (a: A) => I,
+): <T extends Tag, S>(first: Viewer<T, S, A>) => Viewer<T, S, I> {
+  return ({ tag, view }) => {
+    const _map = getMonad(tag).map;
+    return viewer(tag, flow(view, _map(fai)));
+  };
+}
+
+export function ap<V extends Tag, S, A>(
+  second: Viewer<V, S, A>,
+): <U extends Tag, I>(
+  first: Viewer<U, S, (a: A) => I>,
+) => Viewer<Align<U, V>, S, I> {
+  return (first) => {
+    const tag = align(first.tag, second.tag);
+    const _ap = getMonad(tag).ap;
+    const _first = cast(first, tag);
+    const _second = cast(second, tag);
+    return viewer(tag, (s) => pipe(_first(s), _ap(_second(s))));
+  };
+}
+
+/**
  * Invariant map over the focus of an existing Optic.
  */
 export function imap<A, I>(
@@ -353,23 +398,19 @@ export function imap<A, I>(
   fia: (i: I) => A,
 ): <U extends Tag, S>(
   first: Optic<U, S, A>,
-) => Optic<Join<U, GetterTag>, S, I> {
+) => Optic<Align<U, GetTag>, S, I> {
   return compose(getter(fai, dimap(fai, fia)));
 }
 
-export function of<A>(a: A): Getter<A, A> {
-  return getter(() => a, identity);
-}
-
 /**
- * Construct a AffineFold from a Predicate or a Refinement.
+ * Construct a Affine from a Predicate or a Refinement.
  */
 export function fromPredicate<S, A extends S>(
   refinement: Refinement<S, A>,
-): AffineFold<S, A>;
-export function fromPredicate<A>(predicate: Predicate<A>): AffineFold<A, A>;
-export function fromPredicate<A>(predicate: Predicate<A>): AffineFold<A, A> {
-  return affinefold(O.fromPredicate(predicate), identity);
+): Affine<S, A>;
+export function fromPredicate<A>(predicate: Predicate<A>): Affine<A, A>;
+export function fromPredicate<A>(predicate: Predicate<A>): Affine<A, A> {
+  return affine(O.fromPredicate(predicate), identity);
 }
 
 /**
@@ -387,7 +428,7 @@ export function prop<A, P extends keyof A>(
   prop: P,
 ): <U extends Tag, S>(
   sa: Optic<U, S, A>,
-) => Optic<Join<U, GetterTag>, S, A[P]> {
+) => Optic<Align<U, GetTag>, S, A[P]> {
   return compose(
     getter((s) => s[prop], (fii) => (a) => ({ ...a, [prop]: fii(a[prop]) })),
   );
@@ -401,7 +442,7 @@ export function props<A, P extends keyof A>(
   ...props: [P, P, ...Array<P>]
 ): <U extends Tag, S>(
   first: Optic<U, S, A>,
-) => Optic<Join<U, GetterTag>, S, { [K in P]: A[K] }> {
+) => Optic<Align<U, GetTag>, S, { [K in P]: A[K] }> {
   const pick = R.pick<A, P>(...props);
   return compose(getter(
     pick,
@@ -417,8 +458,8 @@ export function index(
   i: number,
 ): <U extends Tag, S, A>(
   first: Optic<U, S, ReadonlyArray<A>>,
-) => Optic<Join<U, AffineFoldTag>, S, A> {
-  return compose(affinefold(A.lookup(i), A.modifyAt(i)));
+) => Optic<Align<U, AffineTag>, S, A> {
+  return compose(affine(A.lookup(i), A.modifyAt(i)));
 }
 
 /**
@@ -429,8 +470,8 @@ export function key(
   key: string,
 ): <U extends Tag, S, A>(
   first: Optic<U, S, Readonly<Record<string, A>>>,
-) => Optic<Join<U, AffineFoldTag>, S, A> {
-  return compose(affinefold(R.lookupAt(key), R.modifyAt(key)));
+) => Optic<Align<U, AffineTag>, S, A> {
+  return compose(affine(R.lookupAt(key), R.modifyAt(key)));
 }
 
 /**
@@ -440,19 +481,19 @@ export function filter<A, B extends A>(
   r: Refinement<A, B>,
 ): <U extends Tag, S>(
   first: Optic<U, S, A>,
-) => Optic<Join<U, AffineFoldTag>, S, B>;
+) => Optic<Align<U, AffineTag>, S, B>;
 export function filter<A>(
   r: Predicate<A>,
 ): <U extends Tag, S>(
   first: Optic<U, S, A>,
-) => Optic<Join<U, AffineFoldTag>, S, A>;
+) => Optic<Align<U, AffineTag>, S, A>;
 export function filter<A>(
   predicate: Predicate<A>,
 ): <U extends Tag, S>(
   first: Optic<U, S, A>,
-) => Optic<Join<U, AffineFoldTag>, S, A> {
+) => Optic<Align<U, AffineTag>, S, A> {
   return compose(
-    affinefold(
+    affine(
       O.fromPredicate(predicate),
       (fii) => (a) => predicate(a) ? fii(a) : a,
     ),
@@ -467,7 +508,7 @@ export function traverse<T extends Kind>(
   T: Traversable<T>,
 ): <U extends Tag, S, A, B, C, D, E>(
   first: Optic<U, S, $<T, [A, B, C], [D], [E]>>,
-) => Optic<Join<U, FoldTag>, S, A> {
+) => Optic<Align<U, FoldTag>, S, A> {
   return compose(
     fold(
       // deno-lint-ignore no-explicit-any
@@ -521,7 +562,7 @@ export function atKey(
   key: string,
 ): <U extends Tag, S, A>(
   first: Optic<U, S, Readonly<Record<string, A>>>,
-) => Optic<Join<U, GetterTag>, S, Option<A>> {
+) => Optic<Align<U, GetTag>, S, Option<A>> {
   const lookup = R.lookupAt(key);
   const deleteAt = () => R.deleteAt(key);
   const insertAt = R.insertAt(key);
@@ -548,7 +589,7 @@ export function atMap<B>(eq: Eq<B>) {
     const _insertAt = M.insertAt(eq)(key);
     return <U extends Tag, S, A>(
       first: Optic<U, S, ReadonlyMap<B, A>>,
-    ): Optic<Join<U, GetterTag>, S, Option<A>> =>
+    ): Optic<Align<U, GetTag>, S, Option<A>> =>
       pipe(
         first,
         compose(getter(
@@ -573,7 +614,7 @@ export function atMap<B>(eq: Eq<B>) {
 export function concatAll<A, I>(M: Monoid<I>, fai: (a: A) => I) {
   const _concatAll = getConcatAll(M);
   return <U extends Tag, S>(first: Optic<U, S, A>): (s: S) => I => {
-    const { view } = cast(first, FoldTag);
+    const view = cast(first, FoldTag);
     return flow(view, A.map(fai), _concatAll);
   };
 }
@@ -583,27 +624,27 @@ export function concatAll<A, I>(M: Monoid<I>, fai: (a: A) => I) {
  */
 export const record: <U extends Tag, S, A>(
   first: Optic<U, S, ReadonlyRecord<A>>,
-) => Optic<Join<U, FoldTag>, S, A> = traverse(R.TraversableRecord);
+) => Optic<Align<U, FoldTag>, S, A> = traverse(R.TraversableRecord);
 /**
  * Construct an Optic over the values of a ReadonlyArray<A>
  */
 export const array: <U extends Tag, S, A>(
   first: Optic<U, S, ReadonlyArray<A>>,
-) => Optic<Join<U, FoldTag>, S, A> = traverse(A.TraversableArray);
+) => Optic<Align<U, FoldTag>, S, A> = traverse(A.TraversableArray);
 
 /**
  * Construct an Optic over the values of a ReadonlySet<A>
  */
 export const set: <U extends Tag, S, A>(
   first: Optic<U, S, ReadonlySet<A>>,
-) => Optic<Join<U, FoldTag>, S, A> = traverse(TraversableSet);
+) => Optic<Align<U, FoldTag>, S, A> = traverse(TraversableSet);
 
 /**
  * Construct an Optic over the values of a Tree<A>
  */
 export const tree: <U extends Tag, S, A>(
   first: Optic<U, S, Tree<A>>,
-) => Optic<Join<U, FoldTag>, S, A> = traverse(TraversableTree);
+) => Optic<Align<U, FoldTag>, S, A> = traverse(TraversableTree);
 
 /**
  * Wrap an Optic that focuses on a value that can be null or undefined
@@ -611,7 +652,7 @@ export const tree: <U extends Tag, S, A>(
  */
 export const nilable: <U extends Tag, S, A>(
   first: Optic<U, S, A>,
-) => Optic<Join<U, AffineFoldTag>, S, NonNullable<A>> = filter(isNotNil);
+) => Optic<Align<U, AffineTag>, S, NonNullable<A>> = filter(isNotNil);
 
 /**
  * Given an optic focused on an Option<A>, construct
@@ -619,7 +660,7 @@ export const nilable: <U extends Tag, S, A>(
  */
 export const some: <U extends Tag, S, A>(
   optic: Optic<U, S, Option<A>>,
-) => Optic<Join<U, AffineFoldTag>, S, A> = compose(affinefold(identity, O.map));
+) => Optic<Align<U, AffineTag>, S, A> = compose(affine(identity, O.map));
 
 /**
  * Given an optic focused on an Either<B, A>, construct
@@ -627,8 +668,8 @@ export const some: <U extends Tag, S, A>(
  */
 export const right: <U extends Tag, S, B, A>(
   optic: Optic<U, S, Either<B, A>>,
-) => Optic<Join<U, AffineFoldTag>, S, A> = compose(
-  affinefold(E.getRight, E.map),
+) => Optic<Align<U, AffineTag>, S, A> = compose(
+  affine(E.getRight, E.map),
 );
 
 /**
@@ -637,8 +678,8 @@ export const right: <U extends Tag, S, B, A>(
  */
 export const left: <U extends Tag, S, B, A>(
   optic: Optic<U, S, Either<B, A>>,
-) => Optic<Join<U, AffineFoldTag>, S, B> = compose(
-  affinefold(E.getLeft, E.mapLeft),
+) => Optic<Align<U, AffineTag>, S, B> = compose(
+  affine(E.getLeft, E.mapLeft),
 );
 
 /**
@@ -647,7 +688,7 @@ export const left: <U extends Tag, S, B, A>(
  */
 export const first: <U extends Tag, S, B, A>(
   optic: Optic<U, S, Pair<A, B>>,
-) => Optic<Join<U, GetterTag>, S, A> = compose(getter(P.getFirst, P.map));
+) => Optic<Align<U, GetTag>, S, A> = compose(getter(P.getFirst, P.map));
 
 /**
  * Given an optic focused on an Pair<A, B>, construct
@@ -655,4 +696,4 @@ export const first: <U extends Tag, S, B, A>(
  */
 export const second: <U extends Tag, S, B, A>(
   optic: Optic<U, S, Pair<A, B>>,
-) => Optic<Join<U, GetterTag>, S, B> = compose(getter(P.getSecond, P.mapLeft));
+) => Optic<Align<U, GetTag>, S, B> = compose(getter(P.getSecond, P.mapLeft));

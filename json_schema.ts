@@ -14,8 +14,8 @@ import type { Semigroup } from "./semigroup.ts";
 import type { State } from "./state.ts";
 
 import { MonadState } from "./state.ts";
-import { createSequenceStruct, createSequenceTuple } from "./apply.ts";
-import { createSequence } from "./array.ts";
+import { sequence as sequenceA } from "./array.ts";
+import { sequence as sequenceR } from "./record.ts";
 import { pipe } from "./fn.ts";
 
 // --
@@ -201,11 +201,9 @@ const { concat }: Semigroup<JsonSchemaDefinitions> = {
 
 export const MonadJsonBuilder = MonadState as Monad<URI>;
 
-export const sequenceTuple = createSequenceTuple(MonadJsonBuilder);
+export const sequenceArray = sequenceA(MonadJsonBuilder);
 
-export const sequenceStruct = createSequenceStruct(MonadJsonBuilder);
-
-export const sequenceArray = createSequence(MonadJsonBuilder);
+export const sequenceRecord = sequenceR(MonadJsonBuilder);
 
 export const of = MonadJsonBuilder.of;
 
@@ -347,8 +345,8 @@ export function literal<A extends [S.Literal, ...S.Literal[]]>(
  */
 export function nullable<A>(or: JsonBuilder<A>): JsonBuilder<A | null> {
   return pipe(
-    sequenceTuple(or, of({ type: "null" })),
-    map((anyOf) => ({ anyOf })),
+    or,
+    map((or) => ({ anyOf: [or, { type: "null" }] })),
   );
 }
 
@@ -369,8 +367,8 @@ export function nullable<A>(or: JsonBuilder<A>): JsonBuilder<A | null> {
  */
 export function undefinable<A>(or: JsonBuilder<A>): JsonBuilder<A | undefined> {
   return pipe(
-    sequenceTuple(or, of({})),
-    map((anyOf) => ({ anyOf })),
+    or,
+    map((or) => ({ anyOf: [or, {}] })),
   );
 }
 
@@ -444,7 +442,7 @@ export function tuple<A extends any[]>(
   ...items: { [K in keyof A]: JsonBuilder<A[K]> }
 ): JsonBuilder<{ [K in keyof A]: A[K] }> {
   return pipe(
-    sequenceArray(items),
+    sequenceArray(...items),
     map((items) => ({ type: "array", items })),
   ) as JsonBuilder<{ [K in keyof A]: A[K] }>;
 }
@@ -475,8 +473,7 @@ export function struct<A>(
   items: { [K in keyof A]: JsonBuilder<A[K]> },
 ): JsonBuilder<{ readonly [K in keyof A]: A[K] }> {
   return pipe(
-    items as Record<string, JsonBuilder<unknown>>,
-    sequenceStruct,
+    sequenceRecord(items as Record<string, JsonBuilder<unknown>>),
     map((properties) => ({
       type: "object",
       properties,
@@ -510,8 +507,7 @@ export function partial<A>(
   items: { readonly [K in keyof A]: JsonBuilder<A[K]> },
 ): JsonBuilder<{ [K in keyof A]?: A[K] }> {
   return pipe(
-    items as Record<string, JsonBuilder<unknown>>,
-    sequenceStruct,
+    sequenceRecord(items as Record<string, JsonBuilder<unknown>>),
     map((properties) => ({ type: "object", properties })),
   ) as JsonBuilder<{ [K in keyof A]: A[K] }>;
 }
@@ -562,7 +558,7 @@ export function intersect<I>(
 ): <A>(ta: JsonBuilder<A>) => JsonBuilder<A & I> {
   return <A>(ta: JsonBuilder<A>) =>
     pipe(
-      sequenceTuple(ta, and),
+      sequenceArray(ta, and),
       map((allOf) => ({ allOf })),
     );
 }
@@ -613,7 +609,7 @@ export function union<I>(
 ): <A>(ta: JsonBuilder<A>) => JsonBuilder<A & I> {
   return <A>(ta: JsonBuilder<A>) =>
     pipe(
-      sequenceTuple(ta, or),
+      sequenceArray(ta, or),
       map((anyOf) => ({ anyOf })),
     );
 }

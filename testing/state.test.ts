@@ -35,8 +35,6 @@ Deno.test("State of", () => {
 });
 
 Deno.test("State ap", () => {
-  const ap = S.ap(S.gets((s: number): (a: number) => number => (a) => a + s));
-  assertEqualsS(ap(S.get()), S.state(2, 1));
 });
 
 Deno.test("State map", () => {

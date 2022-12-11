@@ -89,15 +89,12 @@ Deno.test("Nilable throwError", () => {
 });
 
 Deno.test("Nilable ap", () => {
-  const ap1 = N.ap(N.make(add));
-  const ap2 = N.ap(N.constNil<typeof add>());
+  const add = (n: number) => n + 1;
 
-  assertEquals(ap1(null), N.nil);
-  assertEquals(ap1(undefined), N.nil);
-  assertEquals(ap1(1), 2);
-  assertEquals(ap2(null), N.nil);
-  assertEquals(ap2(undefined), N.nil);
-  assertEquals(ap2(1), N.nil);
+  assertEquals(pipe(N.of(add), N.ap(N.of(1))), N.of(2));
+  assertEquals(pipe(N.of(add), N.ap(N.constNil())), N.nil);
+  assertEquals(pipe(N.constNil(), N.ap(N.of(1))), N.nil);
+  assertEquals(pipe(N.constNil(), N.ap(N.constNil())), N.nil);
 });
 
 Deno.test("Nilable map", () => {
@@ -125,23 +122,6 @@ Deno.test("Nilable chain", () => {
   assertEquals(chain(undefined), N.nil);
   assertEquals(chain(null), N.nil);
   assertEquals(chain(1), 1);
-});
-
-Deno.test("Nilable sequenceStruct", () => {
-  assertEquals(N.sequenceStruct({ a: N.make(0), b: N.make(1) }), {
-    a: 0,
-    b: 1,
-  });
-  assertEquals(N.sequenceStruct({ a: N.make(0), b: N.nil }), N.nil);
-  assertEquals(N.sequenceStruct({ a: N.nil, b: N.make(1) }), N.nil);
-  assertEquals(N.sequenceStruct({ a: N.nil, b: N.nil }), N.nil);
-});
-
-Deno.test("Nilable sequenceTuple", () => {
-  assertEquals(N.sequenceTuple(N.make(0), N.make(1)), [0, 1]);
-  assertEquals(N.sequenceTuple(N.make(0), N.nil), N.nil);
-  assertEquals(N.sequenceTuple(N.nil, N.make(1)), N.nil);
-  assertEquals(N.sequenceTuple(N.nil, N.nil), N.nil);
 });
 
 // Deno.test("Nilable Do, bind, bindTo", () => {

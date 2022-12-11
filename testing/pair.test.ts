@@ -116,7 +116,7 @@ Deno.test("Pair getRightMonad", () => {
 
   assertEquals(of(1), [1, MonoidNumberSum.empty()]);
   assertEquals(
-    pipe(P.pair("brandon", 10), ap(P.pair((s) => s.toUpperCase(), 5))),
+    pipe(P.pair((s: string) => s.toUpperCase(), 5), ap(P.pair("brandon", 10))),
     [
       "BRANDON",
       15,

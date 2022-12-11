@@ -3,7 +3,7 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 import * as SE from "../sync_either.ts";
 import * as S from "../sync.ts";
 import * as E from "../either.ts";
-import { of as constant, pipe, todo } from "../fn.ts";
+import { constant, pipe, todo } from "../fn.ts";
 
 const assertEqualsIO = (
   // deno-lint-ignore no-explicit-any
@@ -39,14 +39,12 @@ Deno.test("SyncEither of", () => {
 });
 
 Deno.test("SyncEither ap", () => {
-  const fab = (n: number) => n + 1;
-  const ap0 = SE.ap(SE.right<typeof fab, number>(fab));
-  const ap1 = SE.ap(SE.left<typeof fab, number>(0));
+  const add = (n: number) => n + 1;
 
-  assertEqualsIO(ap0(SE.left(0)), SE.left(0));
-  assertEqualsIO(ap0(SE.right(0)), SE.right(1));
-  assertEqualsIO(ap1(SE.left(1)), SE.left(1));
-  assertEqualsIO(ap1(SE.right(0)), SE.left(0));
+  assertEquals(pipe(SE.of(add), SE.ap(SE.of(1)))(), SE.of(2)());
+  assertEquals(pipe(SE.left(1), SE.ap(SE.of(1)))(), SE.left(1)());
+  assertEquals(pipe(SE.of(add), SE.ap(SE.left(1)))(), SE.left(1)());
+  assertEquals(pipe(SE.left(1), SE.ap(SE.left(2)))(), SE.left(2)());
 });
 
 Deno.test("SyncEither map", () => {
@@ -125,32 +123,6 @@ Deno.test("SyncEither chainLeft", () => {
   assertEqualsIO(chainLeft(SE.right(1)), SE.right(1));
   assertEqualsIO(chainLeft(SE.left(0)), SE.left(1));
   assertEqualsIO(chainLeft(SE.left(1)), SE.right(2));
-});
-
-Deno.test("SyncEither sequenceTuple", () => {
-  assertEqualsIO(SE.sequenceTuple(SE.right(0), SE.right(0)), SE.right([0, 0]));
-  assertEqualsIO(SE.sequenceTuple(SE.right(0), SE.left(0)), SE.left(0));
-  assertEqualsIO(SE.sequenceTuple(SE.left(0), SE.right(0)), SE.left(0));
-  assertEqualsIO(SE.sequenceTuple(SE.left(0), SE.left(1)), SE.left(1));
-});
-
-Deno.test("SyncEither sequenceStruct", () => {
-  assertEqualsIO(
-    SE.sequenceStruct({ a: SE.right(0), b: SE.right(0) }),
-    SE.right({ a: 0, b: 0 }),
-  );
-  assertEqualsIO(
-    SE.sequenceStruct({ a: SE.right(0), b: SE.left(0) }),
-    SE.left(0),
-  );
-  assertEqualsIO(
-    SE.sequenceStruct({ a: SE.left(0), b: SE.right(0) }),
-    SE.left(0),
-  );
-  assertEqualsIO(
-    SE.sequenceStruct({ a: SE.left(0), b: SE.left(1) }),
-    SE.left(1),
-  );
 });
 
 // Deno.test("Datum Do, bind, bindTo", () => {

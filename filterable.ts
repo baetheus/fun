@@ -1,6 +1,4 @@
 import type { $, Kind, TypeClass } from "./kind.ts";
-import type { Predicate } from "./predicate.ts";
-import type { Refinement } from "./refinement.ts";
 import type { Pair } from "./pair.ts";
 import type { Option } from "./option.ts";
 import type { Either } from "./either.ts";
@@ -14,10 +12,10 @@ import type { Either } from "./either.ts";
 export interface Filterable<U extends Kind> extends TypeClass<U> {
   readonly filter: {
     <A, I extends A>(
-      refinement: Refinement<A, I>,
+      refinement: (a: A) => a is I,
     ): <B, C, D, E>(ta: $<U, [A, B, C], [D], [E]>) => $<U, [I, B, C], [D], [E]>;
     <A>(
-      predicate: Predicate<A>,
+      predicate: (a: A) => boolean,
     ): <B, C, D, E>(ta: $<U, [A, B, C], [D], [E]>) => $<U, [A, B, C], [D], [E]>;
   };
   readonly filterMap: <A, I>(
@@ -25,12 +23,12 @@ export interface Filterable<U extends Kind> extends TypeClass<U> {
   ) => <B, C, D, E>(ua: $<U, [A, B, C], [D], [E]>) => $<U, [I, B, C], [D], [E]>;
   readonly partition: {
     <A, I extends A>(
-      refinement: Refinement<A, I>,
+      refinement: (a: A) => a is I,
     ): <B, C, D, E>(
       ta: $<U, [A, B, C], [D], [E]>,
     ) => Pair<$<U, [I, B, C], [D], [E]>, $<U, [A, B, C], [D], [E]>>;
     <A>(
-      predicate: Predicate<A>,
+      predicate: (a: A) => boolean,
     ): <B, C, D, E>(
       ta: $<U, [A, B, C], [D], [E]>,
     ) => Pair<$<U, [A, B, C], [D], [E]>, $<U, [A, B, C], [D], [E]>>;

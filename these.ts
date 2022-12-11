@@ -8,7 +8,7 @@ import type { Show } from "./show.ts";
 import type { Traversable } from "./traversable.ts";
 
 import * as E from "./either.ts";
-import { identity, pipe } from "./fn.ts";
+import { id, pipe } from "./fn.ts";
 
 export type Left<B> = E.Left<B>;
 
@@ -78,13 +78,13 @@ export function bimap<A, B, I, J>(
 export function map<A, I>(
   fai: (a: A) => I,
 ): <B>(ta: These<B, A>) => These<B, I> {
-  return bimap(identity, fai);
+  return bimap(id(), fai);
 }
 
 export function mapLeft<B, J>(
   fbj: (b: B) => J,
 ): <A>(ta: These<B, A>) => These<J, A> {
-  return bimap(fbj, identity);
+  return bimap(fbj, id());
 }
 
 export function reduce<A, O>(
