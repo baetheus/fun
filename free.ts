@@ -1,4 +1,4 @@
-import type { Hold, Kind, Out } from "./kind.ts";
+import type { Kind, Out } from "./kind.ts";
 import type { Semigroup } from "./semigroup.ts";
 
 // TODO: Implement any algebraic structures you can
@@ -28,7 +28,7 @@ export function two<A>(first: A, second: A): Free<A> {
   return { tag: "Two", first: one(first), second: one(second) };
 }
 
-export function fold<A, O>(
+export function match<A, O>(
   onOne: (value: A) => O,
   onTwo: (left: Free<A>, right: Free<A>) => O,
 ) {

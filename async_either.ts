@@ -311,7 +311,7 @@ export function alt<I, J>(
  * import { flow, identity } from "./fn.ts";
  *
  * const hello = flow(
- *   TE.fold(() => "World", identity),
+ *   TE.match(() => "World", identity),
  *   T.map((name) => `Hello ${name}!`),
  * );
  *
@@ -319,11 +319,11 @@ export function alt<I, J>(
  * assertEquals(await hello(TE.left(Error))(), "Hello World!");
  * ```
  */
-export function fold<L, R, B>(
+export function match<L, R, B>(
   onLeft: (left: L) => B,
   onRight: (right: R) => B,
 ): (ta: AsyncEither<L, R>) => Async<B> {
-  return (ta) => () => ta().then(E.fold<L, R, B>(onLeft, onRight));
+  return (ta) => () => ta().then(E.match<L, R, B>(onLeft, onRight));
 }
 
 // This leaks async ops so we cut it for now.

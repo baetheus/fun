@@ -11,7 +11,7 @@ import type { Traversable } from "./traversable.ts";
 
 import { fromCompare } from "./ord.ts";
 import { isNotNil } from "./nilable.ts";
-import { apply, flow, identity, pipe } from "./fn.ts";
+import { flow, identity, pipe } from "./fn.ts";
 
 /**
  * TODO: Lets get a monoid in here for tracking progress.
@@ -82,7 +82,7 @@ export function tryCatch<A>(fa: () => A): Datum<A> {
 export function toLoading<A>(ta: Datum<A>): Datum<A> {
   return pipe(
     ta,
-    fold(
+    match(
       constPending,
       constPending,
       refresh,
@@ -119,7 +119,7 @@ export function isLoading<A>(ta: Datum<A>): ta is Loading<A> {
   return isPending(ta) || isRefresh(ta);
 }
 
-export function fold<A, B>(
+export function match<A, B>(
   onInitial: () => B,
   onPending: () => B,
   onReplete: (a: A) => B,
@@ -140,7 +140,7 @@ export function fold<A, B>(
 }
 
 export function getOrElse<A>(onNone: () => A) {
-  return fold<A, A>(onNone, onNone, identity, identity);
+  return match<A, A>(onNone, onNone, identity, identity);
 }
 
 export function of<A>(a: A): Datum<A> {
@@ -152,7 +152,7 @@ export function throwError<A = never>(): Datum<A> {
 }
 
 export function map<A, I>(fai: (a: A) => I): (ta: Datum<A>) => Datum<I> {
-  return fold(
+  return match(
     constInitial,
     constPending,
     flow(fai, replete),
@@ -185,7 +185,7 @@ export function ap<A>(
 export function chain<A, I>(
   fati: (a: A) => Datum<I>,
 ): (ta: Datum<A>) => Datum<I> {
-  return fold(
+  return match(
     constInitial,
     constPending,
     fati,
@@ -214,7 +214,7 @@ export function traverse<V extends Kind>(
   favi: (a: A) => $<V, [I, J, K], [L], [M]>,
 ) => (ta: Datum<A>) => $<V, [Datum<I>, J, K], [L], [M]> {
   return (favi) =>
-    fold(
+    match(
       () => A.of(constInitial()),
       () => A.of(constPending()),
       (a) => pipe(favi(a), A.map((i) => replete(i))),
@@ -224,7 +224,7 @@ export function traverse<V extends Kind>(
 
 export function getShow<A>({ show }: Show<A>): Show<Datum<A>> {
   return ({
-    show: fold(
+    show: match(
       () => `Initial`,
       () => `Pending`,
       (a) => `Replete(${show(a)})`,
@@ -238,7 +238,7 @@ export function getSemigroup<A>(
 ): Semigroup<Datum<A>> {
   return ({
     concat: (mx) =>
-      fold(
+      match(
         () => mx,
         () => toLoading(mx),
         (v) =>
@@ -262,7 +262,7 @@ export function getMonoid<A>(S: Semigroup<A>): Monoid<Datum<A>> {
 export function getEq<A>(S: Eq<A>): Eq<Datum<A>> {
   return ({
     equals: (b) =>
-      fold(
+      match(
         () => isInitial(b),
         () => isPending(b),
         (v) => isReplete(b) ? S.equals(b.value)(v) : false,
@@ -275,7 +275,7 @@ export function getOrd<A>(O: Ord<A>): Ord<Datum<A>> {
   return fromCompare((fst, snd) =>
     pipe(
       fst,
-      fold(
+      match(
         () => isInitial(snd) ? 0 : -1,
         () => isInitial(snd) ? 1 : isPending(snd) ? 0 : -1,
         (value) =>

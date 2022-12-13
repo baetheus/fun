@@ -148,8 +148,8 @@ Deno.test("AsyncEither chainLeft", async () => {
   await assertEqualsT(chainLeft(AE.left(1)), AE.left(1));
 });
 
-Deno.test("AsyncEither fold", async () => {
-  const fold = AE.fold((l: string) => l, String);
+Deno.test("AsyncEither match", async () => {
+  const fold = AE.match((l: string) => l, String);
 
   assertEquals(await fold(AE.right(1))(), "1");
   assertEquals(await fold(AE.left("asdf"))(), "asdf");

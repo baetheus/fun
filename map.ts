@@ -166,7 +166,7 @@ export function deleteAt<B>(
   return (key) => (map) =>
     pipe(
       _lookup(key)(map),
-      O.fold(
+      O.match(
         () => map,
         ([_key]) => {
           const out = new Map(map);
@@ -186,7 +186,7 @@ export function insert<B>(
   (map: ReadonlyMap<B, A>): ReadonlyMap<B, A> =>
     pipe(
       _lookup(key)(map),
-      O.fold(
+      O.match(
         () => {
           const _map = new Map(map);
           _map.set(key, value);
@@ -220,7 +220,7 @@ export function modify<B>(
   return (modifyFn) => (key) => (map) =>
     pipe(
       _lookup(key)(map),
-      O.fold(
+      O.match(
         () => map,
         ([_key, value]) => {
           const _map = new Map(map);
@@ -335,7 +335,7 @@ export function getMonoid<K, A>(
       for (const [bk, ba] of b) {
         pipe(
           lookupKey(bk)(a),
-          O.fold(
+          O.match(
             () => r.set(bk, ba),
             ([ak, aa]) => r.set(ak, SA.concat(aa)(ba)),
           ),

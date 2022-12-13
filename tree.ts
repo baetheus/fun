@@ -98,7 +98,9 @@ export function drawTree(tree: Tree<string>): string {
   return tree.value + drawForest(tree.forest);
 }
 
-export function fold<A, I>(fai: (a: A, is: Array<I>) => I): (ta: Tree<A>) => I {
+export function match<A, I>(
+  fai: (a: A, is: Array<I>) => I,
+): (ta: Tree<A>) => I {
   const go = (tree: Tree<A>): I => fai(tree.value, tree.forest.map(go));
   return go;
 }

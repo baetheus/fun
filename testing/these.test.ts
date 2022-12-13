@@ -19,7 +19,7 @@ Deno.test("These both", () => {
 });
 
 Deno.test("These fold", () => {
-  const fold = T.fold(add, add, (a, b) => a + b);
+  const fold = T.match(add, add, (a, b) => a + b);
   assertEquals(fold(T.left(1)), 2);
   assertEquals(fold(T.right(2)), 3);
   assertEquals(fold(T.both(2, 2)), 4);

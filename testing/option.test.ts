@@ -1,6 +1,8 @@
 import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
 import * as O from "../option.ts";
+import * as P from "../pair.ts";
+import * as E from "../either.ts";
 import * as N from "../number.ts";
 import * as Ord from "../ord.ts";
 import { pipe, todo } from "../fn.ts";
@@ -32,14 +34,14 @@ Deno.test("Option fromPredicate", () => {
 });
 
 Deno.test("Option tryCatch", () => {
-  assertEquals(O.tryCatch(todo), O.none);
-  assertEquals(O.tryCatch(() => 1), O.some(1));
+  assertEquals(O.tryCatch(todo)(), O.none);
+  assertEquals(O.tryCatch(() => 1)(), O.some(1));
 });
 
-Deno.test("Option fold", () => {
-  const fold = O.fold(() => 0, (n: number) => n);
-  assertEquals(fold(O.none), 0);
-  assertEquals(fold(O.some(1)), 1);
+Deno.test("Option match", () => {
+  const match = O.match(() => 0, (n: number) => n);
+  assertEquals(match(O.none), 0);
+  assertEquals(match(O.some(1)), 1);
 });
 
 Deno.test("Option getOrElse", () => {
@@ -75,23 +77,6 @@ Deno.test("Option isNone", () => {
 Deno.test("Option isSome", () => {
   assertEquals(O.isSome(O.none), false);
   assertEquals(O.isSome(O.some(1)), true);
-});
-
-Deno.test("Option getShow", () => {
-  const { show } = O.getShow({ show: (n: number) => n.toString() });
-  assertEquals(show(O.none), "None");
-  assertEquals(show(O.some(1)), "Some(1)");
-});
-
-Deno.test("Option getOrd", () => {
-  const ord = O.getOrd(N.OrdNumber);
-  const lte = Ord.lte(ord);
-  assertEquals(lte(O.none)(O.none), true);
-  assertEquals(lte(O.none)(O.some(1)), false);
-  assertEquals(lte(O.some(1))(O.none), true);
-  assertEquals(lte(O.some(1))(O.some(1)), true);
-  assertEquals(lte(O.some(1))(O.some(2)), false);
-  assertEquals(lte(O.some(2))(O.some(1)), true);
 });
 
 Deno.test("Option of", () => {
@@ -143,10 +128,6 @@ Deno.test("Option empty", () => {
   assertEquals(O.empty(), O.none);
 });
 
-Deno.test("Option throwError", () => {
-  assertEquals(O.throwError(), O.none);
-});
-
 Deno.test("Option alt", () => {
   assertEquals(pipe(O.some(0), O.alt(O.some(1))), O.some(0));
   assertEquals(pipe(O.some(0), O.alt(O.constNone<number>())), O.some(0));
@@ -161,8 +142,33 @@ Deno.test("Option filter", () => {
   assertEquals(filter(O.none), O.none);
 });
 
+Deno.test("Option filterMap", () => {
+  const filterMap = O.filterMap((s: string) =>
+    s.length % 2 === 0 ? O.some(s.length) : O.none
+  );
+  assertEquals(filterMap(O.some("")), O.some(0));
+  assertEquals(filterMap(O.some("Hello")), O.none);
+  assertEquals(filterMap(O.none), O.none);
+});
+
+Deno.test("Option partition", () => {
+  const partition = O.partition((n: number) => n > 0);
+  assertEquals(partition(O.some(0)), P.pair(O.none, O.some(0)));
+  assertEquals(partition(O.some(1)), P.pair(O.some(1), O.none));
+  assertEquals(partition(O.none), P.pair(O.none, O.none));
+});
+
+Deno.test("Option partitionMap", () => {
+  const partitionMap = O.partitionMap((s: string) =>
+    s.length % 2 === 0 ? E.right(s.length) : E.left(s)
+  );
+  assertEquals(partitionMap(O.some("")), P.pair(O.some(0), O.none));
+  assertEquals(partitionMap(O.some("Hello")), P.pair(O.none, O.some("Hello")));
+  assertEquals(partitionMap(O.none), P.pair(O.none, O.none));
+});
+
 Deno.test("Option extend", () => {
-  const extend = O.extend(O.fold(() => -1, (n: number) => n + 1));
+  const extend = O.extend(O.match(() => -1, (n: number) => n + 1));
   assertEquals(extend(O.some(0)), O.some(1));
   assertEquals(extend(O.none), O.some(-1));
 });
@@ -172,6 +178,49 @@ Deno.test("Option exists", () => {
   assertEquals(exists(O.some(0)), false);
   assertEquals(exists(O.some(1)), true);
   assertEquals(exists(O.none), false);
+});
+
+Deno.test("Option getShow", () => {
+  const { show } = O.getShow({ show: (n: number) => n.toString() });
+  assertEquals(show(O.none), "None");
+  assertEquals(show(O.some(1)), "Some(1)");
+});
+
+Deno.test("Option getEq", () => {
+  const { equals } = O.getEq(N.EqNumber);
+  assertEquals(equals(O.some(1))(O.some(1)), true);
+  assertEquals(equals(O.some(1))(O.some(2)), false);
+  assertEquals(equals(O.some(1))(O.none), false);
+  assertEquals(equals(O.none)(O.some(1)), false);
+  assertEquals(equals(O.none)(O.none), true);
+});
+
+Deno.test("Option getOrd", () => {
+  const ord = O.getOrd(N.OrdNumber);
+  const lte = Ord.lte(ord);
+  assertEquals(lte(O.none)(O.none), true);
+  assertEquals(lte(O.none)(O.some(1)), false);
+  assertEquals(lte(O.some(1))(O.none), true);
+  assertEquals(lte(O.some(1))(O.some(1)), true);
+  assertEquals(lte(O.some(1))(O.some(2)), false);
+  assertEquals(lte(O.some(2))(O.some(1)), true);
+});
+
+Deno.test("Option getSemigroup", () => {
+  const { concat } = O.getSemigroup(N.SemigroupNumberSum);
+  assertEquals(concat(O.some(1))(O.some(1)), O.some(2));
+  assertEquals(concat(O.some(1))(O.none), O.some(1));
+  assertEquals(concat(O.none)(O.some(1)), O.some(1));
+  assertEquals(concat(O.none)(O.none), O.none);
+});
+
+Deno.test("Option getMonoid", () => {
+  const { concat, empty } = O.getMonoid(N.MonoidNumberSum);
+  assertEquals(concat(O.some(1))(O.some(1)), O.some(2));
+  assertEquals(concat(O.some(1))(O.none), O.some(1));
+  assertEquals(concat(O.none)(O.some(1)), O.some(1));
+  assertEquals(concat(O.none)(O.none), O.none);
+  assertEquals(empty(), O.none);
 });
 
 // Deno.test("Option Do, bind, bindTo", () => {

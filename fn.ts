@@ -76,6 +76,19 @@ export function unary<D extends unknown[], A>(fda: (...d: D) => A): Fn<D, A> {
 }
 
 /**
+ * A common pattern in optics is to apply an input value to a function at the
+ * beginning and the end of a computation. This can (and has) been achieved by
+ * the composition of Pair using flow(P.dup, P.map(fn), P.merge). But for
+ * performance reasons it's nice to have a straighforward function that achieves
+ * the same result.
+ *
+ * @since 2.0.0
+ */
+export function over<A, I>(faai: (a: A) => (a: A) => I): (a: A) => I {
+  return (a) => faai(a)(a);
+}
+
+/**
  * Wrap a thunk (a Fn that takes no arguments) in a try catch block, using
  * an onThrow function (that should itself never throw) to handle a default
  * case should the original function throw. This is useful for wrapping

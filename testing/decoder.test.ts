@@ -8,7 +8,7 @@ import { flow, pipe } from "../fn.ts";
 
 const out = flow(
   D.extract,
-  E.fold((s: string) => s, (a) => JSON.stringify(a)),
+  E.match((s: string) => s, (a) => JSON.stringify(a)),
 );
 
 Deno.test("Decoder success", () => {

@@ -106,7 +106,7 @@ export function mapLeft<B, J>(
 export function alt<A = never, B = never>(
   tb: SyncEither<B, A>,
 ): (ta: SyncEither<B, A>) => SyncEither<B, A> {
-  return (ta) => flow(ta, E.fold(tb, E.right));
+  return (ta) => flow(ta, E.match(tb, E.right));
 }
 
 export function extend<A, I, B>(
@@ -119,7 +119,7 @@ export function reduce<A, O>(
   foao: (o: O, a: A) => O,
   o: O,
 ): <B>(ta: SyncEither<B, A>) => O {
-  return (ta) => pipe(ta(), E.fold(() => o, (a) => foao(o, a)));
+  return (ta) => pipe(ta(), E.match(() => o, (a) => foao(o, a)));
 }
 
 export const BifunctorSyncEither: Bifunctor<URI> = { bimap, mapLeft };

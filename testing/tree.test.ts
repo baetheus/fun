@@ -76,12 +76,12 @@ Deno.test("Tree drawTree", () => {
   assertEquals(T.drawTree(tb), "1\n├─ 2\n└─ 3");
 });
 
-Deno.test("Tree fold", () => {
-  const fold = T.fold((a: number, bs: number[]) =>
+Deno.test("Tree match", () => {
+  const match = T.match((a: number, bs: number[]) =>
     bs.reduce((n: number, m: number) => n + m, a)
   );
-  assertEquals(fold(T.of(1)), 1);
-  assertEquals(fold(T.of(1, [T.of(2, [T.of(3)])])), 6);
+  assertEquals(match(T.of(1)), 1);
+  assertEquals(match(T.of(1, [T.of(2, [T.of(3)])])), 6);
 });
 
 // Deno.test("Tree Do, bind, bindTo", () => {

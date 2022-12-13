@@ -17,7 +17,7 @@ import type { Traversable } from "./traversable.ts";
 
 import { createMonad } from "./monad.ts";
 import { dual } from "./monoid.ts";
-import { pipe } from "./fn.ts";
+import { flow, pipe } from "./fn.ts";
 
 /**
  * Pair represents a pair of values. This is
@@ -81,6 +81,22 @@ export function pair<A, B>(first: A, second: B): Pair<A, B> {
  */
 export function dup<A>(a: A): Pair<A, A> {
   return pair(a, a);
+}
+
+/**
+ * Apply a function in the first position of a pair to a value
+ * in the second position of a pair.
+ */
+export function merge<A, I>(ua: Pair<(a: A) => I, A>): I {
+  return ua[0](ua[1]);
+}
+
+/**
+ * Apply a function in the first position of a pair to a value
+ * in the second position of a pair.
+ */
+export function mergeSecond<A, I>(ua: Pair<A, (a: A) => I>): I {
+  return ua[1](ua[0]);
 }
 
 /**
@@ -360,22 +376,6 @@ export function traverse<V extends Kind>(A: Applicative<V>) {
       favi(fst),
       A.map(second(snd)),
     );
-}
-
-/**
- * Apply a function in the first position of a pair to a value
- * in the second position of a pair.
- */
-export function merge<A, I>(ua: Pair<(a: A) => I, A>): I {
-  return ua[0](ua[1]);
-}
-
-/**
- * Apply a function in the first position of a pair to a value
- * in the second position of a pair.
- */
-export function mergeSecond<A, I>(ua: Pair<A, (a: A) => I>): I {
-  return ua[1](ua[0]);
 }
 
 /**

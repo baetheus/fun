@@ -198,5 +198,5 @@ export function struct<O extends Record<string, any>>(
  */
 export function concatAll<A>(M: Monoid<A>): (as: ReadonlyArray<A>) => A {
   const innerFold = S.concatAll(M);
-  return (as) => pipe(as, innerFold(M.empty()));
+  return innerFold(M.empty());
 }

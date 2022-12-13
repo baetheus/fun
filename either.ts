@@ -89,7 +89,7 @@ export function fromPredicate<E, A>(
   return (a: A) => predicate(a) ? right(a) : left(onFalse(a));
 }
 
-export function fold<L, R, B>(
+export function match<L, R, B>(
   onLeft: (left: L) => B,
   onRight: (right: R) => B,
 ): (ta: Either<L, R>) => B {
@@ -101,11 +101,11 @@ export function getOrElse<E, A>(onLeft: (e: E) => A) {
 }
 
 export function getRight<E, A>(ma: Either<E, A>): O.Option<A> {
-  return pipe(ma, fold(O.constNone, O.some));
+  return pipe(ma, match(O.constNone, O.some));
 }
 
 export function getLeft<E, A>(ma: Either<E, A>): O.Option<E> {
-  return pipe(ma, fold(O.some, O.constNone));
+  return pipe(ma, match(O.some, O.constNone));
 }
 
 export function isLeft<L, R>(m: Either<L, R>): m is Left<L> {
@@ -121,7 +121,7 @@ export function getShow<A, B>(
   SA: Show<A>,
 ): Show<Either<B, A>> {
   return ({
-    show: fold(
+    show: match(
       (left) => `Left(${SB.show(left)})`,
       (right) => `Right(${SA.show(right)})`,
     ),
@@ -284,7 +284,7 @@ export function traverse<V extends Kind>(
   faui: (a: A) => $<V, [I, J, K], [L], [M]>,
 ) => <B>(ta: Either<B, A>) => $<V, [Either<B, I>, J, K], [L], [M]> {
   return (faui) =>
-    fold((l) => A.of(left(l)), flow(faui, A.map((r) => right(r))));
+    match((l) => A.of(left(l)), flow(faui, A.map((r) => right(r))));
 }
 
 export const MonadEither: Monad<URI> = {

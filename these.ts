@@ -34,12 +34,12 @@ export function both<A, B>(left: B, right: A): These<B, A> {
   return ({ tag: "Both", left, right });
 }
 
-export function fold<A, B, O>(
+export function match<A, B, O>(
   onLeft: (b: B) => O,
   onRight: (a: A) => O,
   onBoth: (b: B, a: A) => O,
 ): (ta: These<B, A>) => O {
-  const _fold = E.fold(onLeft, onRight);
+  const _fold = E.match(onLeft, onRight);
   return (ta) => ta.tag === "Both" ? onBoth(ta.left, ta.right) : _fold(ta);
 }
 
@@ -100,7 +100,7 @@ export function traverse<U extends Kind>(
   favi: (a: A) => $<U, [I, J, K], [L], [M]>,
 ) => <B>(ta: These<B, A>) => $<U, [These<B, I>, J, K], [L], [M]> {
   return (favi) =>
-    fold(
+    match(
       (b) => A.of(left(b)),
       (a) => pipe(favi(a), A.map((i) => right(i))),
       (b, a) => pipe(favi(a), A.map((i) => both(b, i))),
@@ -120,7 +120,7 @@ export function getShow<A, B>(
   SA: Show<A>,
 ): Show<These<B, A>> {
   return ({
-    show: fold(
+    show: match(
       (left) => `Left(${SB.show(left)})`,
       (right) => `Right(${SA.show(right)})`,
       (left, right) => `Both(${SB.show(left)}, ${SA.show(right)})`,

@@ -102,13 +102,13 @@ Deno.test("Datum isLoading", () => {
   assertEquals(D.isLoading(D.refresh(1)), true);
 });
 
-Deno.test("Datum fold", () => {
-  const fold = D.fold(() => 1, () => 2, (v: number) => v, (v: number) => v);
+Deno.test("Datum match", () => {
+  const match = D.match(() => 1, () => 2, (v: number) => v, (v: number) => v);
 
-  assertEquals(fold(D.initial), 1);
-  assertEquals(fold(D.pending), 2);
-  assertEquals(fold(D.replete(3)), 3);
-  assertEquals(fold(D.refresh(4)), 4);
+  assertEquals(match(D.initial), 1);
+  assertEquals(match(D.pending), 2);
+  assertEquals(match(D.replete(3)), 3);
+  assertEquals(match(D.refresh(4)), 4);
 });
 
 Deno.test("Datum getOrElse", () => {

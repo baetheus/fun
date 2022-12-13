@@ -144,7 +144,7 @@ export function many(
   return { tag: "Many", errors: _errors };
 }
 
-export function fold<O>(
+export function match<O>(
   Leaf: (value: unknown, reason: string) => O,
   Wrap: (error: string, errors: DecodeError) => O,
   Key: (key: string, property: Property, errors: DecodeError) => O,
@@ -173,13 +173,15 @@ export function fold<O>(
   };
 }
 
+const stringify = O.tryCatch(JSON.stringify);
+
 function toForest(err: DecodeError): Forest<string> {
   return pipe(
     err,
-    fold(
+    match(
       (value, reason) =>
         pipe(
-          O.stringifyJSON(value),
+          stringify(value),
           O.map((str) => `cannot decode ${str}, should be ${reason}`),
           O.getOrElse(() => `cannot decode or render, should be ${reason}`),
           TR.of,

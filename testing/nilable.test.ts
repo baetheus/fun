@@ -33,11 +33,11 @@ Deno.test("Nilable tryCatch", () => {
   assertEquals(N.tryCatch(() => 1), 1);
 });
 
-Deno.test("Nilable fold", () => {
-  const fold = N.fold(() => 0, (n: number) => n);
-  assertEquals(fold(null), 0);
-  assertEquals(fold(undefined), 0);
-  assertEquals(fold(1), 1);
+Deno.test("Nilable match", () => {
+  const match = N.match(() => 0, (n: number) => n);
+  assertEquals(match(null), 0);
+  assertEquals(match(undefined), 0);
+  assertEquals(match(1), 1);
 });
 
 Deno.test("Nilable getOrElse", () => {

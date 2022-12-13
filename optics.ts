@@ -47,8 +47,8 @@
  * const names = O.prop<Person, "name">("name");
  *
  * // These return arrays of names of children and grandchildren
- * const jackiesChildren = pipe(children, names, O.view)(jackie);
- * const jackiesGrandchildren = pipe(grandchildren, names, O.view)(jackie);
+ * const jackiesChildren = pipe(children, names, O.view(jackie));
+ * const jackiesGrandchildren = pipe(grandchildren, names, O.view(jackie));
  * ```
  *
  * In the above example we have a potentially recursive data structure with
@@ -119,7 +119,7 @@ import { TraversableSet } from "./set.ts";
 import { TraversableTree } from "./tree.ts";
 import { isNotNil } from "./nilable.ts";
 import { concatAll as getConcatAll } from "./monoid.ts";
-import { apply, dimap, flow, identity, pipe } from "./fn.ts";
+import { dimap, flow, identity, over, pipe } from "./fn.ts";
 
 /**
  * Following are the runtime tags associated
@@ -430,7 +430,10 @@ export function prop<A, P extends keyof A>(
   sa: Optic<U, S, A>,
 ) => Optic<Align<U, GetTag>, S, A[P]> {
   return compose(
-    getter((s) => s[prop], (fii) => (a) => ({ ...a, [prop]: fii(a[prop]) })),
+    getter((s) => s[prop], (fii) => (a) => {
+      const out = fii(a[prop]);
+      return a[prop] === out ? a : { ...a, [prop]: out };
+    }),
   );
 }
 
@@ -446,7 +449,12 @@ export function props<A, P extends keyof A>(
   const pick = R.pick<A, P>(...props);
   return compose(getter(
     pick,
-    (faa) => (a) => ({ ...a, ...faa(pick(a)) }),
+    (faa) => (a) => {
+      const out = faa(pick(a));
+      return props.every((prop) => a[prop] === out[prop])
+        ? a
+        : { ...a, ...out };
+    },
   ));
 }
 
@@ -511,52 +519,37 @@ export function traverse<T extends Kind>(
 ) => Optic<Align<U, FoldTag>, S, A> {
   return compose(
     fold(
-      // deno-lint-ignore no-explicit-any
-      T.reduce((as, a) => as.concat(a), [] as any[]),
+      T.reduce((as, a) => as.concat(a), A.empty()),
       T.map,
     ),
   );
 }
 
-/**
- * Extract the view function from an Optic
- *
- * @experiemental
- */
-export function view<U extends Tag, S, A>(
-  optic: Optic<U, S, A>,
-): typeof optic.view {
-  return optic.view;
+export function view<S>(
+  s: S,
+): <U extends Tag, A>(
+  viewer: Viewer<U, S, A>,
+) => ReturnType<typeof viewer.view> {
+  return (viewer) => viewer.view(s);
 }
 
-/**
- * Extract the modify function from an Optic
- *
- * @experiemental
- */
-export function modify<U extends Tag, S, A>(
-  optic: Optic<U, S, A>,
-): typeof optic.modify {
-  return optic.modify;
+export function modify<A>(faa: (a: A) => A): <S>(
+  modifier: Modifier<S, A>,
+) => ReturnType<typeof modifier.modify> {
+  return (modifier) => modifier.modify(faa);
 }
 
-/**
- * Construct a replace function for a given Optic
- *
- * @experimental
- */
-export function replace<U extends Tag, S, A>(
-  optic: Optic<U, S, A>,
-): (a: A) => (s: S) => S {
-  return (a) => optic.modify(() => a);
+export function replace<A>(a: A): <S>(
+  modifier: Modifier<S, A>,
+) => ReturnType<typeof modifier.modify> {
+  const value = () => a;
+  return (modifier) => modifier.modify(value);
 }
 
 /**
  * Given an optic over a record, focus on an Option(value) at
  * the given key, allowing one to delete the key by modifying
  * with a None value.
- *
- * TODO: Clean this implementation up.
  */
 export function atKey(
   key: string,
@@ -564,46 +557,37 @@ export function atKey(
   first: Optic<U, S, Readonly<Record<string, A>>>,
 ) => Optic<Align<U, GetTag>, S, Option<A>> {
   const lookup = R.lookupAt(key);
-  const deleteAt = () => R.deleteAt(key);
+  const _deleteAt = R.deleteAt(key);
+  const deleteAt = () => _deleteAt;
   const insertAt = R.insertAt(key);
   return compose(
-    getter(lookup, (faa) =>
-      flow(
-        P.dup,
-        P.map(flow(lookup, faa, O.fold(deleteAt, insertAt))),
-        P.merge,
-      )),
+    getter(
+      lookup,
+      (faa) => over(flow(lookup, faa, O.match(deleteAt, insertAt))),
+    ),
   );
 }
 
 /**
  * Construct an Optic over a ReadonlyMap that
  * can lookup a value by key.
- *
- * TODO: Clean this implementation up.
  */
-export function atMap<B>(eq: Eq<B>) {
+export function atMap<B>(
+  eq: Eq<B>,
+): (
+  key: B,
+) => <U extends Tag, S, A>(
+  first: Optic<U, S, ReadonlyMap<B, A>>,
+) => Optic<Align<U, GetTag>, S, Option<A>> {
   return (key: B) => {
-    const _lookup = M.lookup(eq)(key);
+    const lookup = M.lookup(eq)(key);
     const _deleteAt = M.deleteAt(eq)(key);
-    const _insertAt = M.insertAt(eq)(key);
-    return <U extends Tag, S, A>(
-      first: Optic<U, S, ReadonlyMap<B, A>>,
-    ): Optic<Align<U, GetTag>, S, Option<A>> =>
-      pipe(
-        first,
-        compose(getter(
-          _lookup,
-          (faa) => (s) =>
-            pipe(
-              s,
-              _lookup,
-              faa,
-              O.fold(() => _deleteAt, _insertAt),
-              apply(s),
-            ),
-        )),
-      );
+    const deleteAt = () => _deleteAt;
+    const insertAt = M.insertAt(eq)(key);
+    return compose(getter(
+      lookup,
+      (faa) => over(flow(lookup, faa, O.match(deleteAt, insertAt))),
+    ));
   };
 }
 

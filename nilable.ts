@@ -46,7 +46,7 @@ export function tryCatch<A>(fa: () => A): Nilable<A> {
   }
 }
 
-export function fold<A, I>(
+export function match<A, I>(
   onNil: () => I,
   onValue: (a: A) => I,
 ): (ta: Nilable<A>) => I {

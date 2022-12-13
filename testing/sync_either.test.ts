@@ -100,7 +100,7 @@ Deno.test("SyncEither reduce", () => {
 
 Deno.test("SyncEither extend", () => {
   const extend = SE.extend((ta: SE.SyncEither<number, number>) =>
-    pipe(ta(), E.fold((n) => n, (n) => n + 1))
+    pipe(ta(), E.match((n) => n, (n) => n + 1))
   );
 
   assertEqualsIO(extend(SE.left(0)), SE.right(0));

@@ -57,11 +57,11 @@ Deno.test("Either fromPredicate", () => {
   assertEquals(fromPredicate("asdf"), E.left("unknown"));
 });
 
-Deno.test("Either fold", () => {
-  const fold = E.fold((l: string) => l, (r: number) => r.toString());
+Deno.test("Either match", () => {
+  const match = E.match((l: string) => l, (r: number) => r.toString());
 
-  assertEquals(fold(E.right(1)), "1");
-  assertEquals(fold(E.left("asdf")), "asdf");
+  assertEquals(match(E.right(1)), "1");
+  assertEquals(match(E.left("asdf")), "asdf");
 });
 
 Deno.test("Either getOrElse", () => {
