@@ -1,104 +1,36 @@
-/**
- * An Optic is at heart two functions, view and modify. The
- * view function is used to view some structure A that is
- * contained in some structure S. The value that the view
- * function tries to return is called its Focus, thus the
- * name Optic. The Focus of the view function can be the
- * value at a struct property, in an Option, or it can
- * even reference all the values in a homogenous array.
- * Thus the view function will return either 0, 1, or
- * many of its Focus. Optics in this library are built
- * to be composable. Let's look at some examples.
+/*
+ * Optics are a collection of combinators for focusing on specific parts of data
+ * within an existing structure. The core operations are view, review, and
+ * modify. Optics in the fun library are based on the concept of Kliesli optics
+ * as outlined
+ * [here](https://gist.github.com/serras/5152ec18ec5223b676cc67cac0e99b70).
  *
- * @example
- * ```ts
- * import * as O from "./optics.ts";
- * import { pipe } from "./fn.ts";
+ * Their uses include (but are not limited to):
+ * * Accessing deeply nested data
+ * * Mapping related but distinct types without loss of fidelity
+ * * Immutably modifying large data structures
  *
- * // First lets create some data we are working with
- * type Person = { name: string; age: number; children?: People };
- * type People = readonly Person[];
+ * At its core, instead of separating the view method into view, preview, and
+ * toList of, as is done in many languages and libraries. This implementation
+ * uses a single view method that operates as a Kliesli arrow (a -> mb) where
+ * the m in this case is limited to the Identity, Option, and Array monads,
+ * which can be composed using Natural transformations and flatMap.
  *
- * function person(name: string, age: number, children?: People): Person {
- *   return { name, age, children };
- * }
+ * In addition to view, there are also implementations of review and modify,
+ * which also have composition functions.. but the research for composition is
+ * not yet complete for review.
  *
- * const rufus = person("Rufus", 0.8);
- * const clementine = person("Clementine", 0.5);
- * const brandon = person("Brandon", 37, [rufus, clementine]);
- * const jackie = person("Jackie", 57, [brandon]);
- *
- * // This Optic goes from Person to Person
- * const children = pipe(
- *   O.id<Person>(),
- *   O.prop("children"),
- *   O.nilable,
- *   O.array,
- * );
- *
- * // We can extend children with itself to get grandchildren
- * // This Optic also goes from Person to Person (two levels)
- * const grandchildren = pipe(
- *   children,
- *   O.compose(children),
- * );
- *
- * // We can prepare an Optic from Person to name
- * const names = O.prop<Person, "name">("name");
- *
- * // These return arrays of names of children and grandchildren
- * const jackiesChildren = pipe(children, names, O.view(jackie));
- * const jackiesGrandchildren = pipe(grandchildren, names, O.view(jackie));
- * ```
- *
- * In the above example we have a potentially recursive data structure with
- * optional fields, arrays, and structures. We start by building an Optic
- * from a Person to each of their children. Then we compose this
- * with itself to get grandchildren. And lastly we build a getter to get
- * the name of a Person. Combining these getteres we are able to quickly
- * list out the names of People for any generation under a Person.
- *
- * Optics can also be used to modify the data that they are focused on.
- * They do so immutably and as easily as they can view data. Another
- * example.
- *
- * ```ts
- * import * as O from "./optics.ts";
- * import { pipe } from "./fn.ts";
- *
- * type Todo = { text: string; completed: boolean };
- * type Todos = readonly Todo[];
- *
- * const todo = (text: string, completed: boolean = false): Todo => ({
- *   text,
- *   completed,
- * });
- *
- * const myTodos: Todos = [
- *   todo("Write some good examples for Optics"),
- *   todo("Make sure the examples actually work"),
- *   todo("Make some coffee"),
- *   todo("Drink some coffee"),
- * ];
- *
- * // Focus on the completed field of the todos
- * const completed = pipe(O.id<Todos>(), O.array, O.prop("completed"));
- * const markAllAsCompleted = completed.modify(() => true);
- *
- * // This is a new Todos object with new Todo objects all with completed
- * // set to true
- * const newTodos = markAllAsCompleted(myTodos);
- * ```
+ * In any case, this implementation of optics is distinct from Laarhoven lenses
+ * and profunctor optics, and is much more compact and performant in typescript
+ * than those implementations.
  *
  * @module Optics
- *
  * @since 2.0.0
  */
 import type { $, In, Kind, Out } from "./kind.ts";
 import type { ReadonlyRecord } from "./record.ts";
 import type { Tree } from "./tree.ts";
 import type { Either } from "./either.ts";
-import type { Iso } from "./iso.ts";
 import type { Monad } from "./monad.ts";
 import type { Monoid } from "./monoid.ts";
 import type { Option } from "./option.ts";
@@ -126,8 +58,8 @@ import { dimap, flow, identity, over, pipe } from "./fn.ts";
  * with various forms of Optics.
  */
 
-const GetTag = "Getter" as const;
-type GetTag = typeof GetTag;
+const LensTag = "Lens" as const;
+type LensTag = typeof LensTag;
 
 const AffineTag = "Affine" as const;
 type AffineTag = typeof AffineTag;
@@ -135,19 +67,19 @@ type AffineTag = typeof AffineTag;
 const FoldTag = "Fold" as const;
 type FoldTag = typeof FoldTag;
 
-type Tag = GetTag | AffineTag | FoldTag;
+type Tag = LensTag | AffineTag | FoldTag;
 
 /**
  * Type level mapping from Tag to URI. Since an
  * Optic get function is a Kliesli Arrow a => mb, we
  * associate the Optic Tags as follows:
  *
- * GetTag => Identity
+ * LensTag => Identity
  * AffineTag => Option
  * FoldTag => Array
  */
-type ToURI<T extends Tag> = T extends GetTag ? I.URI
-  : T extends AffineTag ? O.URI
+type ToURI<T extends Tag> = T extends LensTag ? I.URI
+  : T extends AffineTag ? O.KindOption
   : T extends FoldTag ? A.URI
   : never;
 
@@ -171,6 +103,25 @@ export type Modifier<S, A> = {
   readonly modify: (modifyFn: (a: A) => A) => (s: S) => S;
 };
 
+export type Reviewer<S, A> = {
+  readonly review: (a: A) => S;
+};
+
+export type Iso<S, A> = Viewer<LensTag, S, A> & Reviewer<S, A>;
+
+export function iso<S, A>(view: (s: S) => A, review: (a: A) => S): Iso<S, A> {
+  return { tag: LensTag, view, review };
+}
+
+export type Prism<S, A> = Viewer<AffineTag, S, A> & Reviewer<S, A>;
+
+export function prism<S, A>(
+  view: (s: S) => Option<A>,
+  review: (a: A) => S,
+): Prism<S, A> {
+  return { tag: AffineTag, view, review };
+}
+
 /**
  * Our new Optic definition. Instead of get and set we use get and modify as
  * set can be derived from modify(() => value). This drastically simplifies
@@ -179,9 +130,9 @@ export type Modifier<S, A> = {
 export type Optic<T extends Tag, S, A> = Viewer<T, S, A> & Modifier<S, A>;
 
 /**
- * We recover the Getter type from the generic Optic
+ * We recover the Lens type from the generic Optic
  */
-export type Getter<S, A> = Optic<GetTag, S, A>;
+export type Lens<S, A> = Optic<LensTag, S, A>;
 
 /**
  * We recover the Affine type from the generic Optic
@@ -202,13 +153,13 @@ export function optic<U extends Tag, S, A>(
 }
 
 /**
- * Construct a Getter from get and modify functions.
+ * Construct a Lens from get and modify functions.
  */
 export function getter<S, A>(
   view: (s: S) => A,
   modify: (modifyFn: (a: A) => A) => (s: S) => S,
-): Getter<S, A> {
-  return optic(GetTag, view, modify);
+): Lens<S, A> {
+  return optic(LensTag, view, modify);
 }
 
 /**
@@ -235,21 +186,21 @@ export function fold<S, A>(
  * Align will give us the "loosest" of two tags. This is used to
  * determine the abstraction level that an Optic operatates at. The
  * most contstrained is Identity while the least constrained is Array.
- * The typescript version of the source optics Getters are as follows:
+ * The typescript version of the source optics Lenss are as follows:
  *
  * ```ts
  * import type { Identity } from "./identity.ts";
  * import type { Option } from "./option.ts";
  *
- * type Getter<S, A>      = { get: (s: S) => Identity<A> };
+ * type Lens<S, A>      = { get: (s: S) => Identity<A> };
  * type Affine<S, A>     = { get: (s: S) =>   Option<A> };
  * type Fold<S, A> = { get: (s: S) =>    Array<A> };
  * ```
  *
- * Here we can see that Getter is constrained to get exactly one A,
+ * Here we can see that Lens is constrained to get exactly one A,
  * Affine is constrained to get zero or one A, and Fold is
  * constrained to get zero, one, or many As. Because of this,
- * Getter can always be lifted to a Affine and Affine can always be
+ * Lens can always be lifted to a Affine and Affine can always be
  * lifted to Fold. All Optics share the same modify function
  * over S and A.
  *
@@ -259,7 +210,7 @@ type Align<U extends Tag, V extends Tag> = U extends FoldTag ? FoldTag
   : V extends FoldTag ? FoldTag
   : U extends AffineTag ? AffineTag
   : V extends AffineTag ? AffineTag
-  : GetTag;
+  : LensTag;
 
 /**
  * The runtime level GTE for Align
@@ -272,7 +223,7 @@ function align<A extends Tag, B extends Tag>(
     ? FoldTag
     : (a === AffineTag || b === AffineTag)
     ? AffineTag
-    : GetTag) as Align<A, B>;
+    : LensTag) as Align<A, B>;
 }
 
 /**
@@ -297,8 +248,8 @@ function cast<U extends Tag, V extends Tag, S, A>(
   tag: V,
 ): Viewer<V, S, A>["view"] {
   type Out = Viewer<V, S, A>["view"];
-  // Covers Getter => Getter, Affine => Affine, Fold => Fold
-  if (viewer.tag === tag as GetTag) {
+  // Covers Lens => Lens, Affine => Affine, Fold => Fold
+  if (viewer.tag === tag as LensTag) {
     return viewer.view as Out;
     // Affine => Fold
   } else if (tag === FoldTag && viewer.tag === AffineTag) {
@@ -306,11 +257,11 @@ function cast<U extends Tag, V extends Tag, S, A>(
       const ua = viewer.view(s) as Option<A>;
       return (O.isNone(ua) ? [] : [ua.value]) as ReturnType<Out>;
     };
-    // Getter => Fold
-  } else if (tag === FoldTag && viewer.tag === GetTag) {
+    // Lens => Fold
+  } else if (tag === FoldTag && viewer.tag === LensTag) {
     return (s: S) => [viewer.view(s)] as ReturnType<Out>;
-    // Getter => Affine
-  } else if (tag === AffineTag && viewer.tag == GetTag) {
+    // Lens => Affine
+  } else if (tag === AffineTag && viewer.tag == LensTag) {
     return (s) => O.of(viewer.view(s)) as ReturnType<Out>;
   }
   // Non-valid casts will throw an error at runtime.
@@ -327,13 +278,13 @@ function getMonad<T extends Tag>(tag: T): Monad<ToURI<T>> {
 }
 
 // deno-lint-ignore no-explicit-any
-const _identity: Getter<any, any> = getter(identity, identity);
+const _identity: Lens<any, any> = getter(identity, identity);
 
 /**
  * The starting place for most Optics. Create an Optic over the
  * identity function.
  */
-export function id<A>(): Getter<A, A> {
+export function id<A>(): Lens<A, A> {
   return _identity;
 }
 
@@ -363,8 +314,8 @@ export function compose<V extends Tag, A, I>(second: Optic<V, A, I>) {
   };
 }
 
-export function of<A, S = unknown>(a: A): Viewer<GetTag, S, A> {
-  return viewer(GetTag, (_: S) => a);
+export function of<A, S = unknown>(a: A): Viewer<LensTag, S, A> {
+  return viewer(LensTag, (_: S) => a);
 }
 
 export function map<A, I>(
@@ -398,7 +349,7 @@ export function imap<A, I>(
   fia: (i: I) => A,
 ): <U extends Tag, S>(
   first: Optic<U, S, A>,
-) => Optic<Align<U, GetTag>, S, I> {
+) => Optic<Align<U, LensTag>, S, I> {
   return compose(getter(fai, dimap(fai, fia)));
 }
 
@@ -414,9 +365,9 @@ export function fromPredicate<A>(predicate: Predicate<A>): Affine<A, A> {
 }
 
 /**
- * Construct a Getter<S, A> from an Iso<S, A>;
+ * Construct a Lens<S, A> from an Iso<S, A>;
  */
-export function fromIso<S, A>({ view, review }: Iso<S, A>): Getter<S, A> {
+export function fromIso<S, A>({ view, review }: Iso<S, A>): Lens<S, A> {
   return getter(view, dimap(view, review));
 }
 
@@ -428,7 +379,7 @@ export function prop<A, P extends keyof A>(
   prop: P,
 ): <U extends Tag, S>(
   sa: Optic<U, S, A>,
-) => Optic<Align<U, GetTag>, S, A[P]> {
+) => Optic<Align<U, LensTag>, S, A[P]> {
   return compose(
     getter((s) => s[prop], (fii) => (a) => {
       const out = fii(a[prop]);
@@ -445,7 +396,7 @@ export function props<A, P extends keyof A>(
   ...props: [P, P, ...Array<P>]
 ): <U extends Tag, S>(
   first: Optic<U, S, A>,
-) => Optic<Align<U, GetTag>, S, { [K in P]: A[K] }> {
+) => Optic<Align<U, LensTag>, S, { [K in P]: A[K] }> {
   const pick = R.pick<A, P>(...props);
   return compose(getter(
     pick,
@@ -555,7 +506,7 @@ export function atKey(
   key: string,
 ): <U extends Tag, S, A>(
   first: Optic<U, S, Readonly<Record<string, A>>>,
-) => Optic<Align<U, GetTag>, S, Option<A>> {
+) => Optic<Align<U, LensTag>, S, Option<A>> {
   const lookup = R.lookupAt(key);
   const _deleteAt = R.deleteAt(key);
   const deleteAt = () => _deleteAt;
@@ -578,7 +529,7 @@ export function atMap<B>(
   key: B,
 ) => <U extends Tag, S, A>(
   first: Optic<U, S, ReadonlyMap<B, A>>,
-) => Optic<Align<U, GetTag>, S, Option<A>> {
+) => Optic<Align<U, LensTag>, S, Option<A>> {
   return (key: B) => {
     const lookup = M.lookup(eq)(key);
     const _deleteAt = M.deleteAt(eq)(key);
@@ -672,7 +623,7 @@ export const left: <U extends Tag, S, B, A>(
  */
 export const first: <U extends Tag, S, B, A>(
   optic: Optic<U, S, Pair<A, B>>,
-) => Optic<Align<U, GetTag>, S, A> = compose(getter(P.getFirst, P.map));
+) => Optic<Align<U, LensTag>, S, A> = compose(getter(P.getFirst, P.map));
 
 /**
  * Given an optic focused on an Pair<A, B>, construct
@@ -680,4 +631,4 @@ export const first: <U extends Tag, S, B, A>(
  */
 export const second: <U extends Tag, S, B, A>(
   optic: Optic<U, S, Pair<A, B>>,
-) => Optic<Align<U, GetTag>, S, B> = compose(getter(P.getSecond, P.mapLeft));
+) => Optic<Align<U, LensTag>, S, B> = compose(getter(P.getSecond, P.mapLeft));

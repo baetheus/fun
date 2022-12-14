@@ -3,6 +3,7 @@ import type { Either } from "./either.ts";
 import type { DecodeError } from "./decode_error.ts";
 import type { FnEither } from "./fn_either.ts";
 import type { Refinement } from "./refinement.ts";
+import type { ReadonlyRecord } from "./record.ts";
 
 import * as DE from "./decode_error.ts";
 import * as FE from "./fn_either.ts";
@@ -249,7 +250,7 @@ export function array<A>(
 // deno-lint-ignore no-explicit-any
 export function tuple<A extends any[]>(
   ...items: { [K in keyof A]: Decoder<unknown, A[K]> }
-): Decoder<unknown, { [K in keyof A]: A[K] }> {
+): Decoder<unknown, { readonly [K in keyof A]: A[K] }> {
   return flow(
     arrayN(items.length),
     E.chain(
@@ -281,7 +282,7 @@ const traverseStruct =
 
 export function struct<A>(
   items: { [K in keyof A]: Decoder<unknown, A[K]> },
-): Decoder<unknown, { [K in keyof A]: A[K] }> {
+): Decoder<unknown, { readonly [K in keyof A]: A[K] }> {
   return flow(
     _record,
     E.chain(traverseStruct(items)),
@@ -315,12 +316,12 @@ const traversePartial =
 
 export function partial<A>(
   items: { [K in keyof A]: Decoder<unknown, A[K]> },
-): Decoder<unknown, { [K in keyof A]?: A[K] }> {
+): Decoder<unknown, { readonly [K in keyof A]?: A[K] }> {
   return flow(
     _record,
     E.chain(traversePartial(items)),
     E.bimap((e) => DE.wrap("cannot decode partial struct", e), compactRecord),
-  ) as Decoder<unknown, { [K in keyof A]: A[K] }>;
+  ) as Decoder<unknown, { readonly [K in keyof A]: A[K] }>;
 }
 
 export function lazy<A, B>(id: string, fn: () => Decoder<B, A>): Decoder<B, A> {

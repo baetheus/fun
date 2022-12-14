@@ -3,14 +3,12 @@ import {
   assertStrictEquals,
 } from "https://deno.land/std/testing/asserts.ts";
 
-import type { Integer } from "../number.ts";
-
 import * as FE from "../fn_either.ts";
 import * as E from "../either.ts";
 import { SemigroupNumberSum } from "../number.ts";
 import { pipe } from "../fn.ts";
 
-const fn = FE.fromPredicate((n: number): n is Integer => Number.isInteger(n));
+const fn = FE.fromPredicate(Number.isInteger);
 
 Deno.test("FnEither tryCatch", () => {
   const throwOnZero = FE.tryCatch(
@@ -41,14 +39,12 @@ Deno.test("FnEither fromEither", () => {
 
 Deno.test("FnEither fromPredicate", () => {
   const pred = FE.fromPredicate((n: number) => n > 0);
-  const refine = FE.fromPredicate((n: number): n is Integer =>
-    Number.isInteger(n)
-  );
+  const refine = FE.fromPredicate((s: string): s is "Big" => s === "Big");
 
   assertEquals(pred(0), E.left(0));
   assertEquals(pred(1), E.right(1));
-  assertEquals(refine(0.1), E.left(0.1));
-  assertEquals(refine(1), E.right(1));
+  assertEquals(refine("Hello"), E.left("Hello"));
+  assertEquals(refine("Big"), E.right("Big"));
 });
 
 Deno.test("FnEither of", () => {

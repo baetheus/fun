@@ -3,16 +3,9 @@ import type { Ord, Ordering } from "./ord.ts";
 import type { Semigroup } from "./semigroup.ts";
 import type { Eq } from "./eq.ts";
 import type { Show } from "./show.ts";
-import type { Newtype } from "./newtype.ts";
 
 import * as O from "./ord.ts";
 import { map, pipe } from "./fn.ts";
-
-// TODO; Implement newtypes for natural, integer, rational
-
-export type Natural = Newtype<"Natural", number>;
-
-export type Integer = Newtype<"Integer", Natural>;
 
 export function equals(second: number): (first: number) => boolean {
   return (first) => first === second;

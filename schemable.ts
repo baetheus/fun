@@ -5,6 +5,7 @@
  */
 
 import type { $, Kind, TypeClass } from "./kind.ts";
+import type { ReadonlyRecord } from "./record.ts";
 
 import { memoize } from "./fn.ts";
 
@@ -94,7 +95,7 @@ export type UndefinableSchemable<U extends Kind> = TypeClass<U> & {
 export type RecordSchemable<U extends Kind> = TypeClass<U> & {
   readonly record: <A, B, C, D, E>(
     codomain: $<U, [A, B, C], [D], [E]>,
-  ) => $<U, [Readonly<Record<string, A>>, B, C], [D], [E]>;
+  ) => $<U, [ReadonlyRecord<A>, B, C], [D], [E]>;
 };
 
 /**
@@ -154,7 +155,7 @@ export type StructSchemable<U extends Kind> = TypeClass<U> & {
 export type PartialSchemable<U extends Kind> = TypeClass<U> & {
   readonly partial: <A, B, C, D, E>(
     items: { readonly [K in keyof A]: $<U, [A[K], B, C], [D], [E]> },
-  ) => $<U, [{ readonly [K in keyof A]?: A[K] | null }, B, C], [D], [E]>;
+  ) => $<U, [{ readonly [K in keyof A]?: A[K] }, B, C], [D], [E]>;
 };
 
 /**

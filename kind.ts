@@ -78,7 +78,7 @@ export type InOut<T extends Kind, N extends keyof T["invariant"]> =
  * but are useful for carrying type data around
  * for inferrence.
  */
-export declare const PhantomType: unique symbol;
+declare const PhantomType: unique symbol;
 
 /**
  * Holds a type level value in a concrete position
@@ -87,6 +87,11 @@ export declare const PhantomType: unique symbol;
 export interface Hold<A> {
   readonly [PhantomType]?: A;
 }
+
+/**
+ * Extract the inner type from a Hold
+ */
+export type ToHold<T> = T extends Hold<infer A> ? A : never;
 
 /**
  * Typeclass is a type constrained Hold type, specifically constrained

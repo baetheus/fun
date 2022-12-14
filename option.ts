@@ -4,7 +4,6 @@
  * purpose is to represent the possibility that some data is not available.
  *
  * @module Option
- *
  * @since 2.0.0
  */
 import type { $, Kind, Out } from "./kind.ts";
@@ -60,7 +59,7 @@ export type Option<A> = Some<A> | None;
  *
  * @since 2.0.0
  */
-export interface URI extends Kind {
+export interface KindOption extends Kind {
   readonly kind: Option<Out<this, 0>>;
 }
 
@@ -716,7 +715,7 @@ export function traverse<V extends Kind>(A: Applicative<V>) {
  *
  * @since 2.0.0
  */
-export const FunctorOption: Functor<URI> = { map };
+export const FunctorOption: Functor<KindOption> = { map };
 
 /**
  * The canonical implementation of Apply for Option. It contains
@@ -724,7 +723,7 @@ export const FunctorOption: Functor<URI> = { map };
  *
  * @since 2.0.0
  */
-export const ApplyOption: Apply<URI> = { ap, map };
+export const ApplyOption: Apply<KindOption> = { ap, map };
 
 /**
  * The canonical implementation of Applicative for Option. It contains
@@ -732,7 +731,7 @@ export const ApplyOption: Apply<URI> = { ap, map };
  *
  * @since 2.0.0
  */
-export const ApplicativeOption: Applicative<URI> = { of, ap, map };
+export const ApplicativeOption: Applicative<KindOption> = { of, ap, map };
 
 /**
  * The canonical implementation of Chain for Option. It contains
@@ -740,7 +739,7 @@ export const ApplicativeOption: Applicative<URI> = { of, ap, map };
  *
  * @since 2.0.0
  */
-export const ChainOption: Chain<URI> = { ap, map, chain };
+export const ChainOption: Chain<KindOption> = { ap, map, chain };
 
 /**
  * The canonical implementation of Monad for Option. It contains
@@ -748,7 +747,7 @@ export const ChainOption: Chain<URI> = { ap, map, chain };
  *
  * @since 2.0.0
  */
-export const MonadOption: Monad<URI> = { of, ap, map, join, chain };
+export const MonadOption: Monad<KindOption> = { of, ap, map, join, chain };
 
 /**
  * The canonical implementation of Alt for Option. It contains
@@ -756,7 +755,7 @@ export const MonadOption: Monad<URI> = { of, ap, map, join, chain };
  *
  * @since 2.0.0
  */
-export const AltOption: Alt<URI> = { alt, map };
+export const AltOption: Alt<KindOption> = { alt, map };
 
 /**
  * The canonical implementation of Extend for Option. It contains
@@ -764,7 +763,7 @@ export const AltOption: Alt<URI> = { alt, map };
  *
  * @since 2.0.0
  */
-export const ExtendsOption: Extend<URI> = { map, extend };
+export const ExtendsOption: Extend<KindOption> = { map, extend };
 
 /**
  * The canonical implementation of Filterable for Option. It contains
@@ -772,7 +771,7 @@ export const ExtendsOption: Extend<URI> = { map, extend };
  *
  * @since 2.0.0
  */
-export const FilterableOption: Filterable<URI> = {
+export const FilterableOption: Filterable<KindOption> = {
   filter,
   filterMap,
   partition,
@@ -785,7 +784,7 @@ export const FilterableOption: Filterable<URI> = {
  *
  * @since 2.0.0
  */
-export const FoldableOption: Foldable<URI> = { reduce };
+export const FoldableOption: Foldable<KindOption> = { reduce };
 
 /**
  * The canonical implementation of Traversable for Option. It contains
@@ -793,7 +792,11 @@ export const FoldableOption: Foldable<URI> = { reduce };
  *
  * @since 2.0.0
  */
-export const TraversableOption: Traversable<URI> = { map, reduce, traverse };
+export const TraversableOption: Traversable<KindOption> = {
+  map,
+  reduce,
+  traverse,
+};
 
 /**
  * Create an instance of Show for Option<A> given an instance of Show for A.

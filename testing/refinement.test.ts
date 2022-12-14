@@ -1,7 +1,59 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
 import * as R from "../refinement.ts";
+import * as O from "../option.ts";
+import * as E from "../either.ts";
 import { pipe } from "../fn.ts";
+
+Deno.test("Refinement fromOption", () => {
+  const refine = R.fromOption((u: unknown) =>
+    typeof u === "number" ? O.some(u) : O.none
+  );
+  assertEquals(refine(null), false);
+  assertEquals(refine(1), true);
+});
+
+Deno.test("Refinement fromEither", () => {
+  const refine = R.fromEither((u: unknown) =>
+    typeof u === "number" ? E.right(u) : E.left(u)
+  );
+  assertEquals(refine(0), true);
+  assertEquals(refine(null), false);
+});
+
+Deno.test("Refinement and", () => {
+  const refine = pipe(
+    R.struct({ two: R.boolean }),
+    R.and(R.struct({ one: R.number })),
+  );
+  assertEquals(refine({}), false);
+  assertEquals(refine(1), false);
+  assertEquals(refine({ two: true }), false);
+  assertEquals(refine({ one: 1 }), false);
+  assertEquals(refine({ one: 1, two: true }), true);
+});
+
+Deno.test("Refinement or", () => {
+  const refine = pipe(
+    R.number,
+    R.or(R.boolean),
+  );
+  assertEquals(refine(null), false);
+  assertEquals(refine("asdf"), false);
+  assertEquals(refine(1), true);
+  assertEquals(refine(true), true);
+});
+
+Deno.test("Refinement id", () => {
+  assertEquals(R.id()(1), true);
+});
+
+Deno.test("Refinement compose", () => {
+  const isBig = (s: string): s is "Big" => s === "Big";
+  const composed = pipe(R.string, R.compose(isBig));
+  assertEquals(composed(null), false);
+  assertEquals(composed("Big"), true);
+});
 
 Deno.test("Refinement unknown", () => {
   assertEquals(R.unknown(1), true);

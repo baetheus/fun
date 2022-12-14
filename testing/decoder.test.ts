@@ -128,7 +128,7 @@ Deno.test("Decoder array", () => {
 
 Deno.test("Decoder tuple", () => {
   const decoder = D.tuple(D.number, D.string);
-  assertEquals(decoder([1, "one"]), D.success([1, "one"]));
+  assertEquals(decoder([1, "one"]), D.success([1, "one"] as const));
   assertEquals(
     out(decoder(null)),
     `cannot decode tuple

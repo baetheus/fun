@@ -5,8 +5,6 @@ import {
 
 import type { ReadonlyRecord } from "../record.ts";
 import type { Predicate } from "../predicate.ts";
-import type { Refinement } from "../refinement.ts";
-import type { Newtype } from "../newtype.ts";
 
 import * as R from "../record.ts";
 import * as O from "../option.ts";
@@ -25,11 +23,8 @@ const value3: ReadonlyRecord<string> = {
 };
 const value4: ReadonlyRecord<string> = { one: "one", two: "two" };
 
-type Positive = Newtype<"Positive", number>;
-
 const greaterThanZero: Predicate<number> = (n: number) => n > 0;
-const isPositive: Refinement<number, Positive> = (n: number): n is Positive =>
-  n > 0;
+const isPositive: Predicate<number> = (n: number) => n >= 0;
 
 Deno.test("Record entries", () => {
   assertEquals(pipe(value1, R.entries), Object.entries(value1));
@@ -216,12 +211,12 @@ Deno.test("Record isSubrecord", () => {
 
 Deno.test("Record filter", () => {
   const pred = R.filter(greaterThanZero);
-  const refine = R.filter(isPositive);
+  const refine = R.filter((s: string): s is "Big" => s === "Big");
 
   assertEquals(pred({}), {});
   assertEquals(refine({}), {});
   assertEquals(pred({ zero: 0, one: 1 }), { one: 1 });
-  assertEquals(refine({ zero: 0, one: 1 }), { one: 1 });
+  assertEquals(refine({ zero: "Hi", one: "Big" }), { one: "Big" });
 });
 
 Deno.test("Record filterMap", () => {
@@ -233,14 +228,17 @@ Deno.test("Record filterMap", () => {
 
 Deno.test("Record partition", () => {
   const guard = R.partition(greaterThanZero);
-  const refine = R.partition(isPositive);
+  const refine = R.partition((s: string): s is "Big" => s === "Big");
 
   const given = { zero: 0, one: 1 };
 
   assertEquals(guard({}), P.pair({}, {}));
   assertEquals(refine({}), P.pair({}, {}));
   assertEquals(guard(given), P.pair({ one: 1 }, { zero: 0 }));
-  assertEquals(refine(given), P.pair({ one: 1 }, { zero: 0 }));
+  assertEquals(
+    refine({ one: "Hi", two: "Big" }),
+    [{ two: "Big" }, { one: "Hi" }],
+  );
 });
 
 Deno.test("Record partitionMap", () => {
