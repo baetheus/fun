@@ -107,42 +107,12 @@ export type Reviewer<S, A> = {
   readonly review: (a: A) => S;
 };
 
-export type Iso<S, A> = Viewer<LensTag, S, A> & Reviewer<S, A>;
-
-export function iso<S, A>(view: (s: S) => A, review: (a: A) => S): Iso<S, A> {
-  return { tag: LensTag, view, review };
-}
-
-export type Prism<S, A> = Viewer<AffineTag, S, A> & Reviewer<S, A>;
-
-export function prism<S, A>(
-  view: (s: S) => Option<A>,
-  review: (a: A) => S,
-): Prism<S, A> {
-  return { tag: AffineTag, view, review };
-}
-
 /**
  * Our new Optic definition. Instead of get and set we use get and modify as
  * set can be derived from modify(() => value). This drastically simplifies
  * implementation.
  */
 export type Optic<T extends Tag, S, A> = Viewer<T, S, A> & Modifier<S, A>;
-
-/**
- * We recover the Lens type from the generic Optic
- */
-export type Lens<S, A> = Optic<LensTag, S, A>;
-
-/**
- * We recover the Affine type from the generic Optic
- */
-export type Affine<S, A> = Optic<AffineTag, S, A>;
-
-/**
- * We recover the Fold type from the generic Optic
- */
-export type Fold<S, A> = Optic<FoldTag, S, A>;
 
 export function optic<U extends Tag, S, A>(
   tag: U,
@@ -153,9 +123,14 @@ export function optic<U extends Tag, S, A>(
 }
 
 /**
+ * We recover the Lens type from the generic Optic
+ */
+export type Lens<S, A> = Optic<LensTag, S, A>;
+
+/**
  * Construct a Lens from get and modify functions.
  */
-export function getter<S, A>(
+export function lens<S, A>(
   view: (s: S) => A,
   modify: (modifyFn: (a: A) => A) => (s: S) => S,
 ): Lens<S, A> {
@@ -163,14 +138,56 @@ export function getter<S, A>(
 }
 
 /**
- * Construct a Affine from get and modify functions.
+ * We recover the Iso type from the Lens and Reviewer types
  */
-export function affine<S, A>(
+export type Iso<S, A> = Lens<S, A> & Reviewer<S, A>;
+
+/**
+ * Construct an Iso from view and review functions
+ */
+export function iso<S, A>(view: (s: S) => A, review: (a: A) => S): Iso<S, A> {
+  return { tag: LensTag, view, review, modify: dimap(view, review) };
+}
+
+/**
+ * We recover the AffineFold type from the generic Optic
+ */
+export type AffineFold<S, A> = Optic<AffineTag, S, A>;
+
+/**
+ * Construct a AffineFold from get and modify functions.
+ */
+export function affineFold<S, A>(
   view: (s: S) => Option<A>,
   modify: (modifyFn: (a: A) => A) => (s: S) => S,
-): Affine<S, A> {
+): AffineFold<S, A> {
   return optic(AffineTag, view, modify);
 }
+
+/**
+ * We recover the Prism type from the AffineFold and Reviewr types
+ */
+export type Prism<S, A> = AffineFold<S, A> & Reviewer<S, A>;
+
+/**
+ * Construct a Prism from view and review functions.
+ */
+export function prism<S, A>(
+  view: (s: S) => Option<A>,
+  review: (a: A) => S,
+): Prism<S, A> {
+  return {
+    tag: AffineTag,
+    view,
+    review,
+    modify: (modifyFn) => (s) =>
+      pipe(view(s), O.map(modifyFn), O.match(() => s, review)),
+  };
+}
+/**
+ * We recover the Fold type from the generic Optic
+ */
+export type Fold<S, A> = Optic<FoldTag, S, A>;
 
 /**
  * Construct a Fold from get and modify functions.
@@ -193,14 +210,14 @@ export function fold<S, A>(
  * import type { Option } from "./option.ts";
  *
  * type Lens<S, A>      = { get: (s: S) => Identity<A> };
- * type Affine<S, A>     = { get: (s: S) =>   Option<A> };
+ * type AffineFold<S, A>     = { get: (s: S) =>   Option<A> };
  * type Fold<S, A> = { get: (s: S) =>    Array<A> };
  * ```
  *
  * Here we can see that Lens is constrained to get exactly one A,
- * Affine is constrained to get zero or one A, and Fold is
+ * AffineFold is constrained to get zero or one A, and Fold is
  * constrained to get zero, one, or many As. Because of this,
- * Lens can always be lifted to a Affine and Affine can always be
+ * Lens can always be lifted to a AffineFold and AffineFold can always be
  * lifted to Fold. All Optics share the same modify function
  * over S and A.
  *
@@ -248,10 +265,10 @@ function cast<U extends Tag, V extends Tag, S, A>(
   tag: V,
 ): Viewer<V, S, A>["view"] {
   type Out = Viewer<V, S, A>["view"];
-  // Covers Lens => Lens, Affine => Affine, Fold => Fold
+  // Covers Lens => Lens, AffineFold => AffineFold, Fold => Fold
   if (viewer.tag === tag as LensTag) {
     return viewer.view as Out;
-    // Affine => Fold
+    // AffineFold => Fold
   } else if (tag === FoldTag && viewer.tag === AffineTag) {
     return (s: S) => {
       const ua = viewer.view(s) as Option<A>;
@@ -260,7 +277,7 @@ function cast<U extends Tag, V extends Tag, S, A>(
     // Lens => Fold
   } else if (tag === FoldTag && viewer.tag === LensTag) {
     return (s: S) => [viewer.view(s)] as ReturnType<Out>;
-    // Lens => Affine
+    // Lens => AffineFold
   } else if (tag === AffineTag && viewer.tag == LensTag) {
     return (s) => O.of(viewer.view(s)) as ReturnType<Out>;
   }
@@ -278,7 +295,7 @@ function getMonad<T extends Tag>(tag: T): Monad<ToURI<T>> {
 }
 
 // deno-lint-ignore no-explicit-any
-const _identity: Lens<any, any> = getter(identity, identity);
+const _identity: Lens<any, any> = lens(identity, identity);
 
 /**
  * The starting place for most Optics. Create an Optic over the
@@ -292,7 +309,7 @@ export function id<A>(): Lens<A, A> {
  * Compose two Optics by:
  *
  * 1. Finding the alignment of them, which is Max<first, second> where
- *    Fold > Affine > Get
+ *    Fold > AffineFold > Get
  * 2. Cast both optics to the alignment tag, one cast will always be
  *    a noop.
  * 3. Construct a new optic by chaining the view functions first to
@@ -350,25 +367,25 @@ export function imap<A, I>(
 ): <U extends Tag, S>(
   first: Optic<U, S, A>,
 ) => Optic<Align<U, LensTag>, S, I> {
-  return compose(getter(fai, dimap(fai, fia)));
+  return compose(lens(fai, dimap(fai, fia)));
 }
 
 /**
- * Construct a Affine from a Predicate or a Refinement.
+ * Construct a AffineFold from a Predicate or a Refinement.
  */
 export function fromPredicate<S, A extends S>(
   refinement: Refinement<S, A>,
-): Affine<S, A>;
-export function fromPredicate<A>(predicate: Predicate<A>): Affine<A, A>;
-export function fromPredicate<A>(predicate: Predicate<A>): Affine<A, A> {
-  return affine(O.fromPredicate(predicate), identity);
+): AffineFold<S, A>;
+export function fromPredicate<A>(predicate: Predicate<A>): AffineFold<A, A>;
+export function fromPredicate<A>(predicate: Predicate<A>): AffineFold<A, A> {
+  return affineFold(O.fromPredicate(predicate), identity);
 }
 
 /**
  * Construct a Lens<S, A> from an Iso<S, A>;
  */
 export function fromIso<S, A>({ view, review }: Iso<S, A>): Lens<S, A> {
-  return getter(view, dimap(view, review));
+  return lens(view, dimap(view, review));
 }
 
 /**
@@ -381,7 +398,7 @@ export function prop<A, P extends keyof A>(
   sa: Optic<U, S, A>,
 ) => Optic<Align<U, LensTag>, S, A[P]> {
   return compose(
-    getter((s) => s[prop], (fii) => (a) => {
+    lens((s) => s[prop], (fii) => (a) => {
       const out = fii(a[prop]);
       return a[prop] === out ? a : { ...a, [prop]: out };
     }),
@@ -398,7 +415,7 @@ export function props<A, P extends keyof A>(
   first: Optic<U, S, A>,
 ) => Optic<Align<U, LensTag>, S, { [K in P]: A[K] }> {
   const pick = R.pick<A, P>(...props);
-  return compose(getter(
+  return compose(lens(
     pick,
     (faa) => (a) => {
       const out = faa(pick(a));
@@ -418,7 +435,7 @@ export function index(
 ): <U extends Tag, S, A>(
   first: Optic<U, S, ReadonlyArray<A>>,
 ) => Optic<Align<U, AffineTag>, S, A> {
-  return compose(affine(A.lookup(i), A.modifyAt(i)));
+  return compose(affineFold(A.lookup(i), A.modifyAt(i)));
 }
 
 /**
@@ -430,7 +447,7 @@ export function key(
 ): <U extends Tag, S, A>(
   first: Optic<U, S, Readonly<Record<string, A>>>,
 ) => Optic<Align<U, AffineTag>, S, A> {
-  return compose(affine(R.lookupAt(key), R.modifyAt(key)));
+  return compose(affineFold(R.lookupAt(key), R.modifyAt(key)));
 }
 
 /**
@@ -452,7 +469,7 @@ export function filter<A>(
   first: Optic<U, S, A>,
 ) => Optic<Align<U, AffineTag>, S, A> {
   return compose(
-    affine(
+    affineFold(
       O.fromPredicate(predicate),
       (fii) => (a) => predicate(a) ? fii(a) : a,
     ),
@@ -512,7 +529,7 @@ export function atKey(
   const deleteAt = () => _deleteAt;
   const insertAt = R.insertAt(key);
   return compose(
-    getter(
+    lens(
       lookup,
       (faa) => over(flow(lookup, faa, O.match(deleteAt, insertAt))),
     ),
@@ -535,7 +552,7 @@ export function atMap<B>(
     const _deleteAt = M.deleteAt(eq)(key);
     const deleteAt = () => _deleteAt;
     const insertAt = M.insertAt(eq)(key);
-    return compose(getter(
+    return compose(lens(
       lookup,
       (faa) => over(flow(lookup, faa, O.match(deleteAt, insertAt))),
     ));
@@ -595,7 +612,7 @@ export const nilable: <U extends Tag, S, A>(
  */
 export const some: <U extends Tag, S, A>(
   optic: Optic<U, S, Option<A>>,
-) => Optic<Align<U, AffineTag>, S, A> = compose(affine(identity, O.map));
+) => Optic<Align<U, AffineTag>, S, A> = compose(affineFold(identity, O.map));
 
 /**
  * Given an optic focused on an Either<B, A>, construct
@@ -604,7 +621,7 @@ export const some: <U extends Tag, S, A>(
 export const right: <U extends Tag, S, B, A>(
   optic: Optic<U, S, Either<B, A>>,
 ) => Optic<Align<U, AffineTag>, S, A> = compose(
-  affine(E.getRight, E.map),
+  affineFold(E.getRight, E.map),
 );
 
 /**
@@ -614,7 +631,7 @@ export const right: <U extends Tag, S, B, A>(
 export const left: <U extends Tag, S, B, A>(
   optic: Optic<U, S, Either<B, A>>,
 ) => Optic<Align<U, AffineTag>, S, B> = compose(
-  affine(E.getLeft, E.mapLeft),
+  affineFold(E.getLeft, E.mapLeft),
 );
 
 /**
@@ -623,7 +640,7 @@ export const left: <U extends Tag, S, B, A>(
  */
 export const first: <U extends Tag, S, B, A>(
   optic: Optic<U, S, Pair<A, B>>,
-) => Optic<Align<U, LensTag>, S, A> = compose(getter(P.getFirst, P.map));
+) => Optic<Align<U, LensTag>, S, A> = compose(lens(P.getFirst, P.map));
 
 /**
  * Given an optic focused on an Pair<A, B>, construct
@@ -631,4 +648,4 @@ export const first: <U extends Tag, S, B, A>(
  */
 export const second: <U extends Tag, S, B, A>(
   optic: Optic<U, S, Pair<A, B>>,
-) => Optic<Align<U, LensTag>, S, B> = compose(getter(P.getSecond, P.mapLeft));
+) => Optic<Align<U, LensTag>, S, B> = compose(lens(P.getSecond, P.mapLeft));
