@@ -1,4 +1,4 @@
-/*
+/**
  * Optics are a collection of combinators for focusing on specific parts of data
  * within an existing structure. The core operations are view, review, and
  * modify. Optics in the fun library are based on the concept of Kliesli optics
@@ -25,6 +25,7 @@
  * than those implementations.
  *
  * @module Optics
+ *
  * @since 2.0.0
  */
 import type { $, Kind } from "./kind.ts";
@@ -1072,7 +1073,7 @@ export function prop<A, P extends keyof A>(
  *
  * @since 2.0.0
  */
-export function props<A, P extends keyof A>(
+export function props<A extends ReadonlyRecord<unknown>, P extends keyof A>(
   ...props: [P, P, ...Array<P>]
 ): <U extends Tag, S>(
   first: Optic<U, S, A>,

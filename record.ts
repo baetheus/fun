@@ -160,7 +160,7 @@ export function omit<T, K extends string[]>(
  *
  * @since 2.0.0
  */
-export function pick<T, K extends keyof T>(
+export function pick<T extends ReadonlyRecord<unknown>, K extends keyof T>(
   ...keys: readonly K[]
 ): (record: T) => Pick<T, K> {
   return (record) => {
