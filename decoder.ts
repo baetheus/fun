@@ -3,7 +3,6 @@ import type { Either } from "./either.ts";
 import type { DecodeError } from "./decode_error.ts";
 import type { FnEither } from "./fn_either.ts";
 import type { Refinement } from "./refinement.ts";
-import type { ReadonlyRecord } from "./record.ts";
 
 import * as DE from "./decode_error.ts";
 import * as FE from "./fn_either.ts";
@@ -168,21 +167,25 @@ export function json<A>(decoder: Decoder<unknown, A>): Decoder<unknown, A> {
 export function intersect<B, I>(
   right: Decoder<B, I>,
 ) {
-  return <A>(left: Decoder<B, A>): Decoder<B, A & I> => (a) => {
-    const _left = left(a);
-    const _right = right(a);
+  return <A>(left: Decoder<B, A>): Decoder<B, S.Spread<A & I>> => (a) => {
+    const _left = left(a) as Decoded<S.Spread<A & I>>;
+    const _right = right(a) as Decoded<S.Spread<A & I>>;
 
     if (E.isRight(_left) && E.isRight(_right)) {
-      return success(Object.assign({}, _left.right, _right.right));
+      return success(
+        Object.assign({}, _left.right, _right.right),
+      );
     }
 
     if (E.isLeft(_left)) {
       if (E.isLeft(_right)) {
-        return fromDecodeError(DE.intersection(_left.left, _right.left));
+        return fromDecodeError(
+          DE.intersection(_left.left, _right.left),
+        );
       }
-      return _left as Decoded<A & I>;
+      return _left;
     }
-    return _right as Decoded<A & I>;
+    return _right;
   };
 }
 

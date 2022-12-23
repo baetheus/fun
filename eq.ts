@@ -10,10 +10,10 @@ import type { In, Kind, Out } from "./kind.ts";
 import type { Contravariant } from "./contravariant.ts";
 import type { NonEmptyArray } from "./array.ts";
 import type { ReadonlyRecord } from "./record.ts";
-import type { Literal, Schemable } from "./schemable.ts";
+import type { Literal, Schemable, Spread } from "./schemable.ts";
 
 import { isNil } from "./nilable.ts";
-import { memoize, tryThunk } from "./fn.ts";
+import { memoize } from "./fn.ts";
 import { isSubrecord } from "./record.ts";
 
 /**
@@ -369,7 +369,7 @@ export function struct<A>(
  */
 export function partial<A>(
   Eqs: { readonly [K in keyof A]: Eq<A[K]> },
-): Eq<{ readonly [K in keyof A]?: A[K] | null }> {
+): Eq<{ readonly [K in keyof A]?: A[K] }> {
   const eqs = Object.entries(Eqs) as [keyof A, Eq<A[keyof A]>][];
   return fromEquals((first, second) =>
     eqs.every(([key, { equals }]) => {
@@ -408,11 +408,11 @@ export function partial<A>(
  * @since 2.0.0
  */
 export function intersect<I>(
-  ui: Eq<I>,
-): <A>(first: Eq<A>) => Eq<A & I> {
-  return (ua) => ({
-    equals: (second) => (first) =>
-      ua.equals(second)(first) && ui.equals(second)(first),
+  second: Eq<I>,
+): <A>(first: Eq<A>) => Eq<Spread<A & I>> {
+  return <A>(first: Eq<A>): Eq<Spread<A & I>> => ({
+    equals: (snd) => (fst) =>
+      first.equals(snd as A)(fst as A) && second.equals(snd as I)(fst as I),
   });
 }
 
@@ -424,10 +424,7 @@ export function intersect<I>(
  * It should be noted that we cannot differentiate the eq used to
  * compare two disparate types like number and number[]. Thus, internally
  * union must type cast to any and treat thrown errors as a false
- * equivalence. To mitigate most of these issues we first test if the
- * 'typeof' the values matches, but keep in mind that if you are doing
- * any nonsense by mutating within a eq that union will find and
- * expose such nonsense in inconsistent ways.
+ * equivalence.
  *
  * @example
  * ```ts
@@ -449,19 +446,15 @@ export function union<I>(
     equals: (second) => (first) => {
       if (first === second) {
         return true;
-      } else if (typeof first === typeof second) {
-        return tryThunk(
-          // deno-lint-ignore no-explicit-any
-          () => ua.equals(second as any)(first as any),
-          () => false,
-        ) ||
-          tryThunk(
-            // deno-lint-ignore no-explicit-any
-            () => ui.equals(second as any)(first as any),
-            () => false,
-          );
       } else {
-        return false;
+        try {
+          // deno-lint-ignore no-explicit-any
+          return ua.equals(second as any)(first as any) ||
+            // deno-lint-ignore no-explicit-any
+            ui.equals(second as any)(first as any);
+        } catch {
+          return false;
+        }
       }
     },
   });

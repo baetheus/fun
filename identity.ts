@@ -3,7 +3,7 @@ import type { Monad } from "./monad.ts";
 
 export type Identity<A> = A;
 
-export interface URI extends Kind {
+export interface KindIdentity extends Kind {
   readonly kind: Identity<Out<this, 0>>;
 }
 
@@ -33,4 +33,4 @@ export function chain<A, I>(
   return fati;
 }
 
-export const MonadIdentity: Monad<URI> = { of, ap, map, join, chain };
+export const MonadIdentity: Monad<KindIdentity> = { of, ap, map, join, chain };

@@ -32,15 +32,15 @@ export interface RightURI<B> extends Kind {
   readonly kind: Either<B, Out<this, 0>>;
 }
 
-export function left<E = never, A = never>(left: E): Either<E, A> {
+export function left<E, A = never>(left: E): Either<E, A> {
   return ({ tag: "Left", left });
 }
 
-export function right<E = never, A = never>(right: A): Either<E, A> {
+export function right<A, E = never>(right: A): Either<E, A> {
   return ({ tag: "Right", right });
 }
 
-export function of<A = never, B = never>(a: A): Either<B, A> {
+export function of<A, B = never>(a: A): Either<B, A> {
   return right(a);
 }
 

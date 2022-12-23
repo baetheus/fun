@@ -655,7 +655,7 @@ export const SchemableRefinement: S.Schemable<KindUnknownRefinement> = {
   tuple: tuple as S.Schemable<KindUnknownRefinement>["tuple"],
   struct,
   partial,
-  intersect,
+  intersect: intersect as S.Schemable<KindUnknownRefinement>["intersect"],
   union,
   lazy,
 };

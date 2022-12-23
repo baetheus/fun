@@ -136,7 +136,7 @@ export function some<A>(
 }
 
 /**
- * Operates like Array.evert, testing values in a ReadonlySet with a Predicate
+ * Operates like Array.every, testing values in a ReadonlySet with a Predicate
  * until either the predicate returns false for a value or all of the
  * values have been tested as true. Shortcircuits on the first value that
  * returns false. This is the dual of some.
@@ -170,7 +170,7 @@ export function every<A>(
 
 /**
  * Given an insuance of Eq<A> create a function
- * that uakes a value A and returns a predicate over
+ * that takes a value A and returns a predicate over
  * ReadonlySet<A> the returns true if there are any
  * members of the set that are equal to the value.
  *

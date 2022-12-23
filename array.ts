@@ -56,7 +56,7 @@ export type NonEmptyArray<A> = readonly [A, ...A[]];
  *
  * @since 2.0.0
  */
-export interface URI extends Kind {
+export interface KindArray extends Kind {
   readonly kind: ReadonlyArray<Out<this, 0>>;
 }
 
@@ -688,7 +688,7 @@ export function filterMap<A, I>(
  */
 export function partition<A, B extends A>(
   refinement: (a: A, index: number) => a is B,
-): (ua: ReadonlyArray<A>) => Pair<ReadonlyArray<A>, ReadonlyArray<B>>;
+): (ua: ReadonlyArray<A>) => Pair<ReadonlyArray<B>, ReadonlyArray<A>>;
 export function partition<A>(
   predicate: (a: A, index: number) => boolean,
 ): (ua: ReadonlyArray<A>) => Pair<ReadonlyArray<A>, ReadonlyArray<A>>;
@@ -1228,7 +1228,7 @@ export function orderedInsert<A>(
  *
  * @since 2.0.0
  */
-export const FunctorArray: Functor<URI> = { map };
+export const FunctorArray: Functor<KindArray> = { map };
 
 /**
  * The canonical implementation of Apply for ReadonlyArray. It contains
@@ -1236,7 +1236,7 @@ export const FunctorArray: Functor<URI> = { map };
  *
  * @since 2.0.0
  */
-export const ApplyArray: Apply<URI> = { ap, map };
+export const ApplyArray: Apply<KindArray> = { ap, map };
 
 /**
  * The canonical implementation of Applicative for ReadonlyArray. It contains
@@ -1244,7 +1244,7 @@ export const ApplyArray: Apply<URI> = { ap, map };
  *
  * @since 2.0.0
  */
-export const ApplicativeArray: Applicative<URI> = { of, ap, map };
+export const ApplicativeArray: Applicative<KindArray> = { of, ap, map };
 
 /**
  * The canonical implementation of Chain for ReadonlyArray. It contains
@@ -1252,7 +1252,7 @@ export const ApplicativeArray: Applicative<URI> = { of, ap, map };
  *
  * @since 2.0.0
  */
-export const ChainArray: Chain<URI> = { ap, map, chain };
+export const ChainArray: Chain<KindArray> = { ap, map, chain };
 
 /**
  * The canonical implementation of Monad for ReadonlyArray. It contains
@@ -1260,7 +1260,7 @@ export const ChainArray: Chain<URI> = { ap, map, chain };
  *
  * @since 2.0.0
  */
-export const MonadArray: Monad<URI> = { of, ap, map, join, chain };
+export const MonadArray: Monad<KindArray> = { of, ap, map, join, chain };
 
 /**
  * The canonical implementation of Alt for ReadonlyArray. It contains
@@ -1268,7 +1268,7 @@ export const MonadArray: Monad<URI> = { of, ap, map, join, chain };
  *
  * @since 2.0.0
  */
-export const AltArray: Alt<URI> = { alt, map };
+export const AltArray: Alt<KindArray> = { alt, map };
 
 /**
  * The canonical implementation of Filterable for ReadonlyArray. It contains
@@ -1276,7 +1276,7 @@ export const AltArray: Alt<URI> = { alt, map };
  *
  * @since 2.0.0
  */
-export const FilterableArray: Filterable<URI> = {
+export const FilterableArray: Filterable<KindArray> = {
   filter,
   filterMap,
   partition,
@@ -1289,7 +1289,7 @@ export const FilterableArray: Filterable<URI> = {
  *
  * @since 2.0.0
  */
-export const FoldableArray: Foldable<URI> = { reduce };
+export const FoldableArray: Foldable<KindArray> = { reduce };
 
 /**
  * The canonical implementation of Traversable for ReadonlyArray. It contains
@@ -1297,7 +1297,7 @@ export const FoldableArray: Foldable<URI> = { reduce };
  *
  * @since 2.0.0
  */
-export const TraversableArray: Traversable<URI> = {
+export const TraversableArray: Traversable<KindArray> = {
   map,
   reduce,
   traverse,

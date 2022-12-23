@@ -9,6 +9,8 @@ import type { ReadonlyRecord } from "./record.ts";
 
 import { memoize } from "./fn.ts";
 
+export type Spread<A> = { [K in keyof A]: A[K] } extends infer B ? B : never;
+
 /**
  * These are the super-types that a Literal schema must extent.
  * They are used to constrain the inputs for LiteralSchemable.
@@ -168,7 +170,9 @@ export type PartialSchemable<U extends Kind> = TypeClass<U> & {
 export type IntersectSchemable<U extends Kind> = TypeClass<U> & {
   readonly intersect: <I, B, C, D, E>(
     right: $<U, [I, B, C], [D], [E]>,
-  ) => <A>(left: $<U, [A, B, C], [D], [E]>) => $<U, [A & I, B, C], [D], [E]>;
+  ) => <A>(
+    left: $<U, [A, B, C], [D], [E]>,
+  ) => $<U, [Spread<A & I>, B, C], [D], [E]>;
 };
 
 /**

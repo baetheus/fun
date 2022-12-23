@@ -17,7 +17,7 @@ import type { Traversable } from "./traversable.ts";
 
 import { createMonad } from "./monad.ts";
 import { dual } from "./monoid.ts";
-import { flow, pipe } from "./fn.ts";
+import { pipe } from "./fn.ts";
 
 /**
  * Pair represents a pair of values. This is
