@@ -52,7 +52,7 @@ export type From<T> = T extends Decoder<infer _, infer A> ? A : never;
 
 export type To<T> = T extends Decoder<infer B, infer _> ? B : never;
 
-export interface URI extends Kind {
+export interface KindDecoder extends Kind {
   readonly kind: Decoder<In<this, 0>, Out<this, 0>>;
 }
 
@@ -75,6 +75,12 @@ const compactRecord = <A>(
 };
 
 // Combinators
+
+export function annotate(
+  context: string,
+): <D, A>(decoder: Decoder<D, A>) => Decoder<D, A> {
+  return FE.mapLeft((error) => DE.wrap(context, error));
+}
 
 export function compose<B, C>(
   dbc: Decoder<B, C>,
@@ -332,11 +338,11 @@ export function lazy<A, B>(id: string, fn: () => Decoder<B, A>): Decoder<B, A> {
   return (u) => pipe(get()(u), E.mapLeft((e) => DE.wrap(`lazy type ${id}`, e)));
 }
 
-export interface UnknownDecoderURI extends Kind {
+export interface UnknownDecoderKindDecoder extends Kind {
   readonly kind: Decoder<unknown, Out<this, 0>>;
 }
 
-export const SchemableDecoder: S.Schemable<UnknownDecoderURI> = {
+export const SchemableDecoder: S.Schemable<UnknownDecoderKindDecoder> = {
   unknown: () => unknown,
   string: () => string,
   number: () => number,
@@ -346,7 +352,7 @@ export const SchemableDecoder: S.Schemable<UnknownDecoderURI> = {
   undefinable,
   record,
   array,
-  tuple: tuple as S.Schemable<URI>["tuple"],
+  tuple: tuple as S.Schemable<KindDecoder>["tuple"],
   struct,
   partial,
   intersect,

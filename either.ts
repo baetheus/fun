@@ -283,8 +283,11 @@ export function traverse<V extends Kind>(
 ): <A, I, J, K, L, M>(
   faui: (a: A) => $<V, [I, J, K], [L], [M]>,
 ) => <B>(ta: Either<B, A>) => $<V, [Either<B, I>, J, K], [L], [M]> {
-  return (faui) =>
-    match((l) => A.of(left(l)), flow(faui, A.map((r) => right(r))));
+  //deno-lint-ignore no-explicit-any
+  const onLeft: any = flow(left, A.of);
+  //deno-lint-ignore no-explicit-any
+  const mapRight: any = A.map(right);
+  return (faui) => match(onLeft, flow(faui, mapRight));
 }
 
 export const MonadEither: Monad<URI> = {

@@ -1,4 +1,4 @@
-# functional [![Coverage Status](https://coveralls.io/repos/github/baetheus/fun/badge.svg?branch=main)](https://coveralls.io/github/baetheus/fun?branch=main)
+# functional [![Coverage Status](https://coveralls.io/repos/github/baetheus/fun/badge.svg?branch=main)](https://coveralls.io/github/baetheus/fun?branch=main) [![deno module](https://shield.deno.dev/x/fun)](https://deno.land/x/fun)
 
 functional is a set of utility modules in the vein of
 [Ramda](https://ramdajs.com/) and [fp-ts](https://gcanti.github.io/fp-ts/). It

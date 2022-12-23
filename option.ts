@@ -699,7 +699,11 @@ export function reduce<A, O>(
  *
  * @since 2.0.0
  */
-export function traverse<V extends Kind>(A: Applicative<V>) {
+export function traverse<V extends Kind>(
+  A: Applicative<V>,
+): <A, I, J, K, L, M>(
+  favi: (a: A) => $<V, [I, J, K], [L], [M]>,
+) => (ta: Option<A>) => $<V, [Option<I>, J, K], [L], [M]> {
   return <A, I, J, K, L, M>(
     favi: (a: A) => $<V, [I, J, K], [L], [M]>,
   ): (ta: Option<A>) => $<V, [Option<I>, J, K], [L], [M]> =>
