@@ -10,11 +10,12 @@
  */
 import type { In, Kind, Out } from "./kind.ts";
 
+import type { NonEmptyArray } from "./array.ts";
 import type { Option } from "./option.ts";
 import type { Either } from "./either.ts";
 import type { ReadonlyRecord } from "./record.ts";
+import type { Literal, Schemable } from "./schemable.ts";
 
-import * as S from "./schemable.ts";
 import { memoize } from "./fn.ts";
 
 /**
@@ -24,6 +25,14 @@ import { memoize } from "./fn.ts";
  * @since 2.0.0
  */
 export type Refinement<A, B extends A> = (a: A) => a is B;
+
+/**
+ * A type that matches any refinement type.
+ *
+ * @since 2.0.0
+ */
+// deno-lint-ignore no-explicit-any
+export type AnyRefinement = Refinement<unknown, any>;
 
 /**
  * The ToIn type takes a Refinement type and returns the type of its input.
@@ -374,7 +383,7 @@ export function isArrayN<N extends number>(
  *
  * @since 2.0.0
  */
-export function literal<A extends [S.Literal, ...S.Literal[]]>(
+export function literal<A extends NonEmptyArray<Literal>>(
   ...literals: A
 ): Refinement<unknown, A[number]> {
   return (a): a is A[number] => literals.some((l) => l === a);
@@ -642,7 +651,7 @@ export function lazy<A, B extends A>(
  *
  * @since 2.0.0
  */
-export const SchemableRefinement: S.Schemable<KindUnknownRefinement> = {
+export const SchemableRefinement: Schemable<KindUnknownRefinement> = {
   unknown: () => unknown,
   string: () => string,
   number: () => number,
@@ -652,10 +661,10 @@ export const SchemableRefinement: S.Schemable<KindUnknownRefinement> = {
   undefinable,
   record,
   array,
-  tuple: tuple as S.Schemable<KindUnknownRefinement>["tuple"],
+  tuple: tuple as Schemable<KindUnknownRefinement>["tuple"],
   struct,
   partial,
-  intersect: intersect as S.Schemable<KindUnknownRefinement>["intersect"],
+  intersect: intersect as Schemable<KindUnknownRefinement>["intersect"],
   union,
   lazy,
 };

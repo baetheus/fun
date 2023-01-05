@@ -1,4 +1,3 @@
-// deno-lint-ignore-file no-explicit-any
 /**
  * This file contains a collection of utilities and
  * algebraic structure implemenuations for ReadonlyArray
@@ -34,6 +33,14 @@ import { isRight } from "./either.ts";
 import { fromCompare, sign } from "./ord.ts";
 import { isSome, none, some } from "./option.ts";
 import { identity, pipe } from "./fn.ts";
+
+/**
+ * This type can be used as a placeholder for an array of any type.
+ *
+ * @since 2.0.0
+ */
+// deno-lint-ignore no-explicit-any
+export type AnyArray = ReadonlyArray<any>;
 
 /**
  * This type alias extracts the inner type of a ReadonlyArray.
@@ -1220,6 +1227,45 @@ export function orderedInsert<A>(
     }
     return out;
   };
+}
+
+/**
+ * Collect the values of many arrays into an array of tuples. Each tuple
+ * contains an element from each of the input arrays at a shared index. The number of
+ * tuples in the returned array will match the minimum length of the input
+ * arrays. ie. If any input array is empty, then the output array will be empty.
+ *
+ * @example
+ * ```ts
+ * import * as A from "./array.ts";
+ *
+ * const result1 = A.zip([1, 2, 3], ["a", "b", "c"]);
+ * // [[1, "a"], [2, "b"], [3, "c"]]
+ * const result2 = A.zip([], A.range(100)); // []
+ * ```
+ *
+ * @since 2.0.0
+ */
+export function zip<A extends ReadonlyArray<AnyArray>>(
+  ...arrays: A
+): ReadonlyArray<{ [K in keyof A]: TypeOf<A[K]> }> {
+  switch (arrays.length) {
+    case 0:
+      return [];
+    case 1:
+      return arrays[0];
+    default: {
+      const length = Math.min(...arrays.map((a) => a.length));
+      const output: Array<{ [K in keyof A]: TypeOf<A[K]> }> = new Array(length);
+      let index = -1;
+      while (++index < length) {
+        output[index] = arrays.map((a) => a[index]) as {
+          [K in keyof A]: TypeOf<A[K]>;
+        };
+      }
+      return output;
+    }
+  }
 }
 
 /**

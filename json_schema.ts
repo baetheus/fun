@@ -5,8 +5,8 @@
  * for describing a Schema to an external system.
  */
 
-import type * as S from "./schemable.ts";
 import type { Kind, Out } from "./kind.ts";
+import type { Literal, Schemable, TupleSchemable } from "./schemable.ts";
 import type { Monad } from "./monad.ts";
 import type { NonEmptyArray } from "./array.ts";
 import type { ReadonlyRecord } from "./record.ts";
@@ -48,7 +48,7 @@ export type JsonSchemaNull = { readonly type: "null" };
  *
  * @since 2.0.0
  */
-export type JsonSchemaEnum = { readonly enum: NonEmptyArray<S.Literal> };
+export type JsonSchemaEnum = { readonly enum: NonEmptyArray<Literal> };
 
 /**
  * Represents an intersection of Schemas in JSON Schema
@@ -318,11 +318,11 @@ export function date(): JsonBuilder<Date> {
  *
  * @since 2.0.0
  */
-export function literal<A extends [S.Literal, ...S.Literal[]]>(
+export function literal<A extends NonEmptyArray<Literal>>(
   ...literals: A
 ): JsonBuilder<A[number]> {
   // deno-lint-ignore ban-types
-  const _literals = literals.map((l): Exclude<S.Literal | {}, undefined> =>
+  const _literals = literals.map((l): Exclude<Literal | {}, undefined> =>
     l === undefined ? {} : l
   );
   return of({ enum: _literals });
@@ -773,7 +773,7 @@ export function print<A>(jsonschema: JsonBuilder<A>): JsonSchema {
  *
  * @since 2.0.0
  */
-export const SchemableJsonBuilder: S.Schemable<URI> = {
+export const SchemableJsonBuilder: Schemable<URI> = {
   unknown,
   string,
   number,
@@ -783,7 +783,7 @@ export const SchemableJsonBuilder: S.Schemable<URI> = {
   undefinable,
   record,
   array,
-  tuple: tuple as S.TupleSchemable<URI>["tuple"],
+  tuple: tuple as TupleSchemable<URI>["tuple"],
   struct,
   partial,
   intersect,

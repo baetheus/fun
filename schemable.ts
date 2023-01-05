@@ -5,6 +5,7 @@
  */
 
 import type { $, Kind, TypeClass } from "./kind.ts";
+import type { NonEmptyArray } from "./array.ts";
 import type { ReadonlyRecord } from "./record.ts";
 
 import { memoize } from "./fn.ts";
@@ -62,7 +63,7 @@ export type BooleanSchemable<U extends Kind> = TypeClass<U> & {
  * @since 2.0.0
  */
 export type LiteralSchemable<U extends Kind> = TypeClass<U> & {
-  readonly literal: <A extends [Literal, ...Literal[]], B, C, D, E>(
+  readonly literal: <A extends NonEmptyArray<Literal>, B, C, D, E>(
     ...s: A
   ) => $<U, [A[number], B, C], [D], [E]>;
 };
@@ -320,50 +321,3 @@ export function schema<
 ): Schema<A, B, C, D, E> {
   return memoize(s) as Schema<A>;
 }
-
-import { pipe } from "./fn.ts";
-
-const mySchema = schema((s) =>
-  pipe(
-    s.struct({
-      name: s.string(),
-      age: s.number(),
-    }),
-    s.intersect(s.partial({
-      interests: s.array(s.string()),
-    })),
-  )
-);
-
-// Derive the type from the schema
-type MySchema = TypeOf<typeof mySchema>;
-
-import { SchemableDecoder } from "./decoder.ts";
-import { SchemableRefinement } from "./refinement.ts";
-import { print, SchemableJsonBuilder } from "./json_schema.ts";
-
-const decode = mySchema(SchemableDecoder);
-const refine = mySchema(SchemableRefinement);
-const jsonSchema = mySchema(SchemableJsonBuilder);
-
-const unknown1 = {
-  name: "Batman",
-  age: 45,
-  interests: ["crime fighting", "cake", "bats"],
-};
-const unknown2 = {
-  name: "Cthulhu",
-  interests: ["madness"],
-};
-
-const decoded1 = decode(unknown1); // Success!
-const decoded2 = decode(unknown2); // Failure with info
-
-const refine1 = refine(unknown1); // true
-const refine2 = refine(unknown2); // false
-
-const jsonSchemaString = pipe(
-  jsonSchema,
-  print,
-  (json) => JSON.stringify(json, null, 2),
-); // Turns the jsonSchema into a prettified string

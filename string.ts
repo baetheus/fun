@@ -203,8 +203,12 @@ export function includes(searchString: string, position?: number) {
  *
  * @since 2.0.0
  */
-export function startsWith(searchString: string, position?: number) {
-  return (s: string): boolean => s.startsWith(searchString, position);
+export function startsWith<T extends string>(
+  searchString: T,
+  position?: number,
+) {
+  return (s: string): s is `${T}${string}` =>
+    s.startsWith(searchString, position);
 }
 
 /**
@@ -224,8 +228,9 @@ export function startsWith(searchString: string, position?: number) {
  *
  * @since 2.0.0
  */
-export function endsWith(searchString: string, position?: number) {
-  return (s: string): boolean => s.endsWith(searchString, position);
+export function endsWith<T extends string>(searchString: T, position?: number) {
+  return (s: string): s is `${string}${T}` =>
+    s.endsWith(searchString, position);
 }
 
 /**

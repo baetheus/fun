@@ -18,6 +18,7 @@ import type { Profunctor } from "./profunctor.ts";
 import type { Predicate } from "./predicate.ts";
 import type { Refinement } from "./refinement.ts";
 import type { Fn } from "./fn.ts";
+import type { Either } from "./either.ts";
 
 import * as E from "./either.ts";
 import * as F from "./fn.ts";
@@ -40,7 +41,7 @@ import * as F from "./fn.ts";
  *
  * @since 2.0.0
  */
-export type FnEither<D, B, A> = Fn<D, E.Either<B, A>>;
+export type FnEither<D, B, A> = Fn<D, Either<B, A>>;
 
 /**
  * A FnEither type over any, useful for constraining generics that
@@ -179,7 +180,7 @@ export function right<A, D = unknown, B = never>(
  * @since 2.0.0
  */
 export function fromEither<A, B, D = unknown>(
-  ua: E.Either<B, A>,
+  ua: Either<B, A>,
 ): FnEither<D, B, A> {
   return F.of(ua);
 }

@@ -267,6 +267,18 @@ Deno.test("Array orderedInsert", () => {
   assertEquals(pipe([], ins(3, 5, 1)), [1, 3, 5]);
 });
 
+Deno.test("Array zip", () => {
+  const arr = [1, 2, 3];
+  assertEquals(A.zip(), []);
+  assertStrictEquals(A.zip(arr), arr);
+  assertEquals(A.zip([], A.range(100)), []);
+  assertEquals(A.zip([1], A.range(100)), [[1, 0]]);
+  assertEquals(A.zip([1, 2, 3], ["a", "b", "c"]), [[1, "a"], [2, "b"], [
+    3,
+    "c",
+  ]]);
+});
+
 Deno.test("Array range", () => {
   assertEquals(A.range(0), []);
   assertEquals(A.range(1), [0]);

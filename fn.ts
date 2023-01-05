@@ -240,6 +240,192 @@ export function unsafeCoerce<A, I>(a: A): I {
 }
 
 /**
+ * The flow function is like the pipe function without the initial value. It
+ * composes up to 9 functions from left to right (top to bottom). The first
+ * function can take multiple arguments but every subsequent function must
+ * be unary (only take one argument).
+ *
+ * @example
+ * ```ts
+ * import { flow } from "./fn.ts";
+ *
+ * const add = (m: number) => (n: number) => m + n;
+ * const multiply = (m: number) => (n: number) => m * n;
+ *
+ * const flowed = flow(
+ *   add(1),
+ *   multiply(2),
+ *   add(1),
+ *   multiply(2),
+ * );
+ *
+ * const result1 = flowed(1); // 10
+ * const result2 = flowed(2); // 14
+ * const result3 = flowed(3); // 18
+ * ```
+ *
+ * @since 2.0.0
+ */
+export function flow<A extends unknown[], B>(
+  ab: (...a: A) => B,
+): (...a: A) => B;
+export function flow<A extends unknown[], B, C>(
+  ab: (...a: A) => B,
+  bc: (b: B) => C,
+): (...a: A) => C;
+export function flow<A extends unknown[], B, C, D>(
+  ab: (...a: A) => B,
+  bc: (b: B) => C,
+  cd: (c: C) => D,
+): (...a: A) => D;
+export function flow<A extends unknown[], B, C, D, E>(
+  ab: (...a: A) => B,
+  bc: (b: B) => C,
+  cd: (c: C) => D,
+  de: (d: D) => E,
+): (...a: A) => E;
+export function flow<A extends unknown[], B, C, D, E, F>(
+  ab: (...a: A) => B,
+  bc: (b: B) => C,
+  cd: (c: C) => D,
+  de: (d: D) => E,
+  ef: (e: E) => F,
+): (...a: A) => F;
+export function flow<A extends unknown[], B, C, D, E, F, G>(
+  ab: (...a: A) => B,
+  bc: (b: B) => C,
+  cd: (c: C) => D,
+  de: (d: D) => E,
+  ef: (e: E) => F,
+  fg: (f: F) => G,
+): (...a: A) => G;
+export function flow<A extends unknown[], B, C, D, E, F, G, H>(
+  ab: (...a: A) => B,
+  bc: (b: B) => C,
+  cd: (c: C) => D,
+  de: (d: D) => E,
+  ef: (e: E) => F,
+  fg: (f: F) => G,
+  gh: (g: G) => H,
+): (...a: A) => H;
+export function flow<A extends unknown[], B, C, D, E, F, G, H, I>(
+  ab: (...a: A) => B,
+  bc: (b: B) => C,
+  cd: (c: C) => D,
+  de: (d: D) => E,
+  ef: (e: E) => F,
+  fg: (f: F) => G,
+  gh: (g: G) => H,
+  hi: (h: H) => I,
+): (...a: A) => I;
+export function flow<
+  A extends unknown[],
+  B,
+  C,
+  D,
+  E,
+  F,
+  G,
+  H,
+  I,
+  J,
+>(
+  ab: (...a: A) => B,
+  bc: (b: B) => C,
+  cd: (c: C) => D,
+  de: (d: D) => E,
+  ef: (e: E) => F,
+  fg: (f: F) => G,
+  gh: (g: G) => H,
+  hi: (h: H) => I,
+  ij: (i: I) => J,
+): (...a: A) => J;
+export function flow<
+  A extends unknown[],
+  B,
+  C,
+  D,
+  E,
+  F,
+  G,
+  H,
+  I,
+  J,
+  K,
+>(
+  ab: (...a: A) => B,
+  bc: (b: B) => C,
+  cd: (c: C) => D,
+  de: (d: D) => E,
+  ef: (e: E) => F,
+  fg: (f: F) => G,
+  gh: (g: G) => H,
+  hi: (h: H) => I,
+  ij: (i: I) => J,
+  jk: (j: J) => K,
+): (...a: A) => K;
+export function flow<
+  A extends unknown[],
+  B,
+  C,
+  D,
+  E,
+  F,
+  G,
+  H,
+  I,
+  J,
+  K,
+  L,
+>(
+  ab: (...a: A) => B,
+  bc: (b: B) => C,
+  cd: (c: C) => D,
+  de: (d: D) => E,
+  ef: (e: E) => F,
+  fg: (f: F) => G,
+  gh: (g: G) => H,
+  hi: (h: H) => I,
+  ij: (i: I) => J,
+  jk: (j: J) => K,
+  kl: (k: K) => L,
+): (...a: A) => L;
+export function flow(
+  ...[ab, bc, cd, de, ef, fg, gh, hi, ij, jk, kl, ...rest]: AnyFn[]
+): AnyFn {
+  switch (arguments.length) {
+    case 1:
+      return (...as) => ab(...as);
+    case 2:
+      return (...as) => bc(ab(...as));
+    case 3:
+      return (...as) => cd(bc(ab(...as)));
+    case 4:
+      return (...as) => de(cd(bc(ab(...as))));
+    case 5:
+      return (...as) => ef(de(cd(bc(ab(...as)))));
+    case 6:
+      return (...as) => fg(ef(de(cd(bc(ab(...as))))));
+    case 7:
+      return (...as) => gh(fg(ef(de(cd(bc(ab(...as)))))));
+    case 8:
+      return (...as) => hi(gh(fg(ef(de(cd(bc(ab(...as))))))));
+    case 9:
+      return (...as) => ij(hi(gh(fg(ef(de(cd(bc(ab(...as)))))))));
+    case 10:
+      return (...as) => jk(ij(hi(gh(fg(ef(de(cd(bc(ab(...as))))))))));
+    case 11:
+      return (...as) => kl(jk(ij(hi(gh(fg(ef(de(cd(bc(ab(...as)))))))))));
+    default:
+      return (...as) =>
+        rest.reduce(
+          (val, fn) => fn(val),
+          kl(jk(ij(hi(gh(fg(ef(de(cd(bc(ab(...as))))))))))),
+        );
+  }
+}
+
+/**
  * The pipe takes a value as the first argument and composes it with subsequent
  * function arguments, returning the result of the last function passed in. It
  * handles and correctly types up to 10 unary functions. Beyond 10 it makes
@@ -371,116 +557,11 @@ export function pipe<A, B, C, D, E, F, G, H, I, J, K, L>(
   kl: (K: K) => L,
   end: never,
 ): L;
-export function pipe(a: unknown, ...fns: ((u: unknown) => unknown)[]): unknown {
-  return fns.reduce((res, fn) => fn(res), a);
-}
-
-/**
- * The flow function is like the pipe function without the initial value. It
- * composes up to 9 functions from left to right (top to bottom). The first
- * function can take multiple arguments but every subsequent function must
- * be unary (only take one argument).
- *
- * @example
- * ```ts
- * import { flow } from "./fn.ts";
- *
- * const add = (m: number) => (n: number) => m + n;
- * const multiply = (m: number) => (n: number) => m * n;
- *
- * const flowed = flow(
- *   add(1),
- *   multiply(2),
- *   add(1),
- *   multiply(2),
- * );
- *
- * const result1 = flowed(1); // 10
- * const result2 = flowed(2); // 14
- * const result3 = flowed(3); // 18
- * ```
- *
- * @since 2.0.0
- */
-export function flow<A extends ReadonlyArray<unknown>, B>(
-  ab: (...a: A) => B,
-): (...a: A) => B;
-export function flow<A extends ReadonlyArray<unknown>, B, C>(
-  ab: (...a: A) => B,
-  bc: (b: B) => C,
-): (...a: A) => C;
-export function flow<A extends ReadonlyArray<unknown>, B, C, D>(
-  ab: (...a: A) => B,
-  bc: (b: B) => C,
-  cd: (c: C) => D,
-): (...a: A) => D;
-export function flow<A extends ReadonlyArray<unknown>, B, C, D, E>(
-  ab: (...a: A) => B,
-  bc: (b: B) => C,
-  cd: (c: C) => D,
-  de: (d: D) => E,
-): (...a: A) => E;
-export function flow<A extends ReadonlyArray<unknown>, B, C, D, E, F>(
-  ab: (...a: A) => B,
-  bc: (b: B) => C,
-  cd: (c: C) => D,
-  de: (d: D) => E,
-  ef: (e: E) => F,
-): (...a: A) => F;
-export function flow<A extends ReadonlyArray<unknown>, B, C, D, E, F, G>(
-  ab: (...a: A) => B,
-  bc: (b: B) => C,
-  cd: (c: C) => D,
-  de: (d: D) => E,
-  ef: (e: E) => F,
-  fg: (f: F) => G,
-): (...a: A) => G;
-export function flow<A extends ReadonlyArray<unknown>, B, C, D, E, F, G, H>(
-  ab: (...a: A) => B,
-  bc: (b: B) => C,
-  cd: (c: C) => D,
-  de: (d: D) => E,
-  ef: (e: E) => F,
-  fg: (f: F) => G,
-  gh: (g: G) => H,
-): (...a: A) => H;
-export function flow<A extends ReadonlyArray<unknown>, B, C, D, E, F, G, H, I>(
-  ab: (...a: A) => B,
-  bc: (b: B) => C,
-  cd: (c: C) => D,
-  de: (d: D) => E,
-  ef: (e: E) => F,
-  fg: (f: F) => G,
-  gh: (g: G) => H,
-  hi: (h: H) => I,
-): (...a: A) => I;
-export function flow<
-  A extends ReadonlyArray<unknown>,
-  B,
-  C,
-  D,
-  E,
-  F,
-  G,
-  H,
-  I,
-  J,
->(
-  ab: (...a: A) => B,
-  bc: (b: B) => C,
-  cd: (c: C) => D,
-  de: (d: D) => E,
-  ef: (e: E) => F,
-  fg: (f: F) => G,
-  gh: (g: G) => H,
-  hi: (h: H) => I,
-  ij: (i: I) => J,
-): (...a: A) => J;
-export function flow(
-  ua: AnyFn,
+export function pipe(
+  value: unknown,
   ...fns: AnyFn[]
-): AnyFn {
-  return (...args) => fns.reduce((a, fab) => fab(a), ua(...args));
+): unknown {
+  return fns.reduce((val, fn) => fn(val), value);
 }
 
 /**
