@@ -1065,6 +1065,24 @@ export function annotate(
 }
 
 /**
+ * Create a Decoder<D, D> from a type D.
+ *
+ * @example
+ * ```ts
+ * import * as D from "./decoder.ts";
+ *
+ * const num = D.id<number>();
+ *
+ * const result1 = num(1); // Right(1)
+ * ```
+ *
+ * @since 2.0.0
+ */
+export function id<D = unknown>(): Decoder<D, D> {
+  return E.right;
+}
+
+/**
  * Compose two Decoders where the input to second aligns with the output of
  * first.
  *

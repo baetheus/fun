@@ -10,8 +10,8 @@ const assertEqualsS = (
   b: S.State<number, unknown>,
 ) => assertEquals(a(1), b(1));
 
-Deno.test("State get", () => {
-  assertEquals(S.get<number>()(0), [0, 0]);
+Deno.test("State id", () => {
+  assertEquals(S.id<number>()(0), [0, 0]);
 });
 
 Deno.test("State put", () => {
@@ -27,18 +27,18 @@ Deno.test("State gets", () => {
 });
 
 Deno.test("State make", () => {
-  assertEqualsS(S.state(1, 1), S.get<number>());
+  assertEqualsS(S.state(1, 1), S.id<number>());
 });
 
 Deno.test("State of", () => {
-  assertEqualsS(S.of(1), S.get<number>());
+  assertEqualsS(S.of(1), S.id<number>());
 });
 
 Deno.test("State ap", () => {
 });
 
 Deno.test("State map", () => {
-  assertEqualsS(pipe(S.get<number>(), S.map(add)), S.state(2, 1));
+  assertEqualsS(pipe(S.id<number>(), S.map(add)), S.state(2, 1));
 });
 
 Deno.test("State join", () => {
@@ -50,17 +50,17 @@ Deno.test("State join", () => {
 
 Deno.test("State chain", () => {
   assertEqualsS(
-    pipe(S.get<number>(), S.chain((n) => S.gets((m) => n + m))),
+    pipe(S.id<number>(), S.chain((n) => S.gets((m) => n + m))),
     S.state(2, 1),
   );
 });
 
 Deno.test("State evaluate", () => {
-  assertEquals(pipe(S.get<number>(), S.evaluate(0)), 0);
+  assertEquals(pipe(S.id<number>(), S.evaluate(0)), 0);
 });
 
 Deno.test("State execute", () => {
-  assertEquals(pipe(S.get<number>(), S.execute(0)), 0);
+  assertEquals(pipe(S.id<number>(), S.execute(0)), 0);
 });
 
 // Deno.test("State Do, bind, bindTo", () => {

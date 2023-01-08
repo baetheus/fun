@@ -86,6 +86,23 @@ export function dup<A>(a: A): Pair<A, A> {
 /**
  * Apply a function in the first position of a pair to a value
  * in the second position of a pair.
+ *
+ * @example
+ * ```ts
+ * import * as P from "./pair.ts";
+ * import { flow } from "./fn.ts";
+ *
+ * const double = flow(
+ *   P.dup<number>,
+ *   P.map(n => (m: number) => n + m),
+ *   P.merge,
+ * );
+ *
+ * const result1 = double(1); // 2
+ * const result2 = double(2); // 4
+ * ```
+ *
+ * @since 2.0.0
  */
 export function merge<A, I>(ua: Pair<(a: A) => I, A>): I {
   return ua[0](ua[1]);
@@ -94,6 +111,23 @@ export function merge<A, I>(ua: Pair<(a: A) => I, A>): I {
 /**
  * Apply a function in the first position of a pair to a value
  * in the second position of a pair.
+ *
+ * @example
+ * ```ts
+ * import * as P from "./pair.ts";
+ * import { flow } from "./fn.ts";
+ *
+ * const double = flow(
+ *   P.dup<number>,
+ *   P.mapLeft(n => (m: number) => n + m),
+ *   P.mergeSecond,
+ * );
+ *
+ * const result1 = double(1); // 2
+ * const result2 = double(2); // 4
+ * ```
+ *
+ * @since 2.0.0
  */
 export function mergeSecond<A, I>(ua: Pair<A, (a: A) => I>): I {
   return ua[1](ua[0]);
