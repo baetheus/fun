@@ -1,6 +1,6 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
-import type { $, TypeClass } from "../kind.ts";
+import type { $, Kind, TypeClass } from "../kind.ts";
 
 import * as E from "../either.ts";
 import * as O from "../option.ts";
@@ -24,7 +24,7 @@ import { pipe } from "../fn.ts";
  * Option to Either and not from ANY ADT to ANY other ADT (which it would
  * have to if it were actually a Functor of Functors).
  */
-export interface Nat<U, V> extends TypeClass<[U, V]> {
+export interface Nat<U extends Kind, V extends Kind> extends TypeClass<[U, V]> {
   transform: <A, B, C, D, E, J, K, L, M>(
     ua: $<U, [A, B, C], [D], [E]>,
   ) => $<V, [A, J, K], [L], [M]>;
@@ -52,11 +52,11 @@ export interface Nat<U, V> extends TypeClass<[U, V]> {
  * )
  */
 
-export const NatEitherOption: Nat<E.URI, O.URI> = {
+export const NatEitherOption: Nat<E.KindEither, O.KindOption> = {
   transform: (either) => E.isLeft(either) ? O.none : O.some(either.right),
 };
 
-export const NatOptionEither: Nat<O.URI, E.RightURI<void>> = {
+export const NatOptionEither: Nat<O.KindOption, E.KindRightEither<void>> = {
   transform: (option) =>
     O.isNone(option) ? E.left(void 0) : E.right(option.value),
 };
@@ -64,15 +64,15 @@ export const NatOptionEither: Nat<O.URI, E.RightURI<void>> = {
 /**
  * Identity can be transformed into any category!
  */
-export function getIdentityNat<U>(
+export function getIdentityNat<U extends Kind>(
   of: <A, B, C, D, E>(a: A) => $<U, [A, B, C], [D], [E]>,
-): Nat<I.URI, U> {
+): Nat<I.KindIdentity, U> {
   return { transform: (a) => of(a) };
 }
 
-export const NatIdentityOption = getIdentityNat<O.URI>(O.of);
+export const NatIdentityOption = getIdentityNat<O.KindOption>(O.of);
 
-export const NatIdentityEither = getIdentityNat<E.URI>(E.of);
+export const NatIdentityEither = getIdentityNat<E.KindEither>(E.of);
 
 const strLength = (str: string) => str.length;
 

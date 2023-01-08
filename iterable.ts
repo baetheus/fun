@@ -1,7 +1,7 @@
 import type { Kind, Out } from "./kind.ts";
 import type { Monad } from "./monad.ts";
 
-export interface URI extends Kind {
+export interface KindIterable extends Kind {
   readonly kind: Iterable<Out<this, 0>>;
 }
 
@@ -107,4 +107,4 @@ export function reduce<A, O>(foao: (o: O, a: A) => O, o: O) {
   };
 }
 
-export const MonadIterable: Monad<URI> = { of, ap, map, join, chain };
+export const MonadIterable: Monad<KindIterable> = { of, ap, map, join, chain };

@@ -8,7 +8,7 @@ import { constant, flow, pipe } from "./fn.ts";
 
 export type Sync<A> = () => A;
 
-export interface URI extends Kind {
+export interface KindSync extends Kind {
   readonly kind: Sync<Out<this, 0>>;
 }
 
@@ -53,8 +53,8 @@ export function traverse<V extends Kind>(
   return (faui) => (ta) => pipe(faui(ta()), A.map(of));
 }
 
-export const MonadSync: Monad<URI> = { of, ap, map, join, chain };
+export const MonadSync: Monad<KindSync> = { of, ap, map, join, chain };
 
-export const ExtendsSync: Extend<URI> = { map, extend };
+export const ExtendsSync: Extend<KindSync> = { map, extend };
 
-export const TraversableSync: Traversable<URI> = { map, reduce, traverse };
+export const TraversableSync: Traversable<KindSync> = { map, reduce, traverse };

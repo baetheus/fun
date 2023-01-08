@@ -44,7 +44,7 @@ export interface Eq<T> {
  *
  * @since 2.0.0
  */
-export interface URI extends Kind {
+export interface KindEq extends Kind {
   readonly kind: Eq<Out<this, 0>>;
 }
 
@@ -55,7 +55,7 @@ export interface URI extends Kind {
  *
  * @since 2.0.0
  */
-export interface URIContravariant extends Kind {
+export interface KindContraEq extends Kind {
   readonly kind: Eq<In<this, 0>>;
 }
 
@@ -608,7 +608,7 @@ export function contramap<L, D>(
  *
  * @since 2.0.0
  */
-export const ContravariantEq: Contravariant<URIContravariant> = {
+export const ContravariantEq: Contravariant<KindContraEq> = {
   contramap,
 };
 
@@ -620,7 +620,7 @@ export const ContravariantEq: Contravariant<URIContravariant> = {
  *
  * @since 2.0.0
  */
-export const SchemableEq: Schemable<URI> = {
+export const SchemableEq: Schemable<KindEq> = {
   unknown: () => unknown,
   string: () => string,
   number: () => number,

@@ -57,7 +57,7 @@ export type AnyFnEither = FnEither<any, any, any>;
  * covariant parameter A and B corresponding to the 0th
  * and 1st indices of any Substitutions and a contravariant
  * parameter D corresponding to the 0th index of
- * any Substititions. The FnEither URI is unique in that
+ * any Substititions. The FnEither KindFnEither is unique in that
  * it constrains the FnEither type to taking a single
  * argument for the purposes of type substitution
  * while the implementations of FnEither combinators such
@@ -66,7 +66,7 @@ export type AnyFnEither = FnEither<any, any, any>;
  *
  * @since 2.0.0
  */
-export interface URI extends Kind {
+export interface KindFnEither extends Kind {
   readonly kind: FnEither<In<this, 0>, Out<this, 1>, Out<this, 0>>;
 }
 
@@ -75,14 +75,14 @@ export interface URI extends Kind {
  * covariant parameter A  corresponding to the 0th
  * index of any Substitutions and a contravariant
  * parameter D corresponding to the 0th index of
- * any Substititions. RightURI curries the Left parameter
+ * any Substititions. KindRightFnEither curries the Left parameter
  * of the output Either. This is useful when one
  * needs to Fix the Left output with a Semigroup or
  * some other collection algebraic structure.
  *
  * @since 2.0.0
  */
-export interface RightURI<B> extends Kind {
+export interface KindRightFnEither<B> extends Kind {
   readonly kind: FnEither<In<this, 0>, B, Out<this, 0>>;
 }
 
@@ -619,7 +619,7 @@ export function compose<A, I, J>(
  *
  * @since 2.0.0
  */
-export const BifunctorFnEither: Bifunctor<URI> = { bimap, mapLeft };
+export const BifunctorFnEither: Bifunctor<KindFnEither> = { bimap, mapLeft };
 
 /**
  * The canonical implementation of Monad for FnEither. It contains
@@ -627,7 +627,7 @@ export const BifunctorFnEither: Bifunctor<URI> = { bimap, mapLeft };
  *
  * @since 2.0.0
  */
-export const MonadFnEither: Monad<URI> = { of, ap, map, join, chain };
+export const MonadFnEither: Monad<KindFnEither> = { of, ap, map, join, chain };
 
 /**
  * The canonical implementation of Alt for FnEither. It contains
@@ -635,7 +635,7 @@ export const MonadFnEither: Monad<URI> = { of, ap, map, join, chain };
  *
  * @since 2.0.0
  */
-export const AltFnEither: Alt<URI> = { alt, map };
+export const AltFnEither: Alt<KindFnEither> = { alt, map };
 
 /**
  * The canonical implementation of Contravariant for FnEither. It contains
@@ -643,7 +643,7 @@ export const AltFnEither: Alt<URI> = { alt, map };
  *
  * @since 2.0.0
  */
-export const ContravariantFnEither: Contravariant<URI> = { contramap };
+export const ContravariantFnEither: Contravariant<KindFnEither> = { contramap };
 
 /**
  * The canonical implementation of Profunctor for FnEither. It contains
@@ -651,7 +651,7 @@ export const ContravariantFnEither: Contravariant<URI> = { contramap };
  *
  * @since 2.0.0
  */
-export const ProfunctorFnEither: Profunctor<URI> = { dimap };
+export const ProfunctorFnEither: Profunctor<KindFnEither> = { dimap };
 
 /**
  * The canonical implementation of Category for FnEither. It contains
@@ -659,7 +659,7 @@ export const ProfunctorFnEither: Profunctor<URI> = { dimap };
  *
  * @since 2.0.0
  */
-export const CategoryFnEither: Category<URI> = { id, compose };
+export const CategoryFnEither: Category<KindFnEither> = { id, compose };
 
 /**
  * Create a Monad for FnEither where left values are combined using the
@@ -683,7 +683,7 @@ export const CategoryFnEither: Category<URI> = { id, compose };
  */
 export function getRightMonad<B>(
   { concat }: Semigroup<B>,
-): Monad<RightURI<B>> {
+): Monad<KindRightFnEither<B>> {
   return ({
     of,
     ap: (ua) => (ufai) => (c) => {

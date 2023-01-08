@@ -13,7 +13,7 @@ import * as A from "./array.ts";
 import { fromEquals } from "./eq.ts";
 import { flow, pipe } from "./fn.ts";
 
-export interface URI extends Kind {
+export interface KindReadonlyMap extends Kind {
   readonly kind: ReadonlyMap<Out<this, 1>, Out<this, 0>>;
 }
 
@@ -290,9 +290,9 @@ export function isSubmap<K, A>(
   };
 }
 
-export const FunctorMap: Functor<URI> = { map };
+export const FunctorMap: Functor<KindReadonlyMap> = { map };
 
-export const BifunctorMap: Bifunctor<URI> = { bimap, mapLeft };
+export const BifunctorMap: Bifunctor<KindReadonlyMap> = { bimap, mapLeft };
 
 export function getShow<K, A>(
   SK: Show<K>,

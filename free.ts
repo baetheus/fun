@@ -16,7 +16,7 @@ export type Two<A> = {
 
 export type Free<A> = One<A> | Two<A>;
 
-export interface URI extends Kind {
+export interface KindFree extends Kind {
   readonly kind: Free<Out<this, 0>>;
 }
 

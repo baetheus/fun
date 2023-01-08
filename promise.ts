@@ -32,7 +32,7 @@ export type TypeOf<T> = T extends Promise<infer A> ? A : never;
  *
  * @since 2.0.0
  */
-export interface URI extends Kind {
+export interface KindPromise extends Kind {
   readonly kind: Promise<Out<this, 0>>;
 }
 
@@ -443,7 +443,7 @@ export function tryCatch<D extends unknown[], A>(
  *
  * @since 2.0.0
  */
-export const FunctorPromise: Functor<URI> = { map };
+export const FunctorPromise: Functor<KindPromise> = { map };
 
 /**
  * The canonical implementation of Apply for Promise. It contains
@@ -451,7 +451,7 @@ export const FunctorPromise: Functor<URI> = { map };
  *
  * @since 2.0.0
  */
-export const ApplyPromise: Apply<URI> = { map, ap };
+export const ApplyPromise: Apply<KindPromise> = { map, ap };
 
 /**
  * The canonical implementation of Applicative for Promise. It contains
@@ -459,7 +459,7 @@ export const ApplyPromise: Apply<URI> = { map, ap };
  *
  * @since 2.0.0
  */
-export const ApplicativePromise: Applicative<URI> = { of, map, ap };
+export const ApplicativePromise: Applicative<KindPromise> = { of, map, ap };
 
 /**
  * The canonical implementation of Chain for Promise. It contains
@@ -467,7 +467,7 @@ export const ApplicativePromise: Applicative<URI> = { of, map, ap };
  *
  * @since 2.0.0
  */
-export const ChainPromise: Chain<URI> = { ap, map, chain };
+export const ChainPromise: Chain<KindPromise> = { ap, map, chain };
 
 /**
  * The canonical implementation of Monad for Promise. It contains
@@ -475,4 +475,4 @@ export const ChainPromise: Chain<URI> = { ap, map, chain };
  *
  * @since 2.0.0
  */
-export const MonadPromise: Monad<URI> = { of, ap, map, join, chain };
+export const MonadPromise: Monad<KindPromise> = { of, ap, map, join, chain };

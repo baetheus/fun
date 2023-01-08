@@ -7,7 +7,7 @@ import { handleThrow } from "./fn.ts";
 
 export type Async<A> = Sync<Promise<A>>;
 
-export interface URI extends Kind {
+export interface KindAsync extends Kind {
   readonly kind: Async<Out<this, 0>>;
 }
 
@@ -63,7 +63,7 @@ export function chain<A, I>(
   return (ta) => () => ta().then((a) => fati(a)());
 }
 
-export const MonadAsyncParallel: Monad<URI> = {
+export const MonadAsyncParallel: Monad<KindAsync> = {
   of,
   ap: apParallel,
   map,
@@ -71,7 +71,7 @@ export const MonadAsyncParallel: Monad<URI> = {
   chain,
 };
 
-export const MonadAsyncSequential: Monad<URI> = {
+export const MonadAsyncSequential: Monad<KindAsync> = {
   of,
   ap: apSequential,
   map,

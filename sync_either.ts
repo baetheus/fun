@@ -13,7 +13,7 @@ import { constant, flow, identity, pipe } from "./fn.ts";
 
 export type SyncEither<L, R> = Sync<Either<L, R>>;
 
-export interface URI extends Kind {
+export interface KindSyncEither extends Kind {
   readonly kind: SyncEither<Out<this, 1>, Out<this, 0>>;
 }
 
@@ -122,9 +122,12 @@ export function reduce<A, O>(
   return (ta) => pipe(ta(), E.match(() => o, (a) => foao(o, a)));
 }
 
-export const BifunctorSyncEither: Bifunctor<URI> = { bimap, mapLeft };
+export const BifunctorSyncEither: Bifunctor<KindSyncEither> = {
+  bimap,
+  mapLeft,
+};
 
-export const MonadSyncEither: Monad<URI> = {
+export const MonadSyncEither: Monad<KindSyncEither> = {
   of,
   ap,
   map,
@@ -132,8 +135,8 @@ export const MonadSyncEither: Monad<URI> = {
   chain,
 };
 
-export const AltSyncEither: Alt<URI> = { alt, map };
+export const AltSyncEither: Alt<KindSyncEither> = { alt, map };
 
-export const ExtendsSyncEither: Extend<URI> = { map, extend };
+export const ExtendsSyncEither: Extend<KindSyncEither> = { map, extend };
 
-export const FoldableSyncEither: Foldable<URI> = { reduce };
+export const FoldableSyncEither: Foldable<KindSyncEither> = { reduce };

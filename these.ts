@@ -18,7 +18,7 @@ export type Both<B, A> = { tag: "Both"; left: B; right: A };
 
 export type These<B, A> = Left<B> | Right<A> | Both<B, A>;
 
-export interface URI extends Kind {
+export interface KindThese extends Kind {
   readonly kind: These<Out<this, 1>, Out<this, 0>>;
 }
 
@@ -107,13 +107,17 @@ export function traverse<U extends Kind>(
     );
 }
 
-export const BifunctorThese: Bifunctor<URI> = { bimap, mapLeft };
+export const BifunctorThese: Bifunctor<KindThese> = { bimap, mapLeft };
 
-export const FunctorThese: Functor<URI> = { map };
+export const FunctorThese: Functor<KindThese> = { map };
 
-export const FoldableThese: Foldable<URI> = { reduce };
+export const FoldableThese: Foldable<KindThese> = { reduce };
 
-export const TraversableThese: Traversable<URI> = { map, reduce, traverse };
+export const TraversableThese: Traversable<KindThese> = {
+  map,
+  reduce,
+  traverse,
+};
 
 export function getShow<A, B>(
   SB: Show<B>,

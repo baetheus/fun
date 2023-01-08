@@ -70,7 +70,7 @@ export type NonEmptyRecord<R> = keyof R extends never ? never : R;
  *
  * @since 2.0.0
  */
-export interface URI extends Kind {
+export interface KindReadonlyRecord extends Kind {
   readonly kind: ReadonlyRecord<Out<this, 0>>;
 }
 
@@ -933,7 +933,7 @@ export function partitionMap<A, I, J>(
  *
  * @since 2.0.0
  */
-export const FilterableRecord: Filterable<URI> = {
+export const FilterableRecord: Filterable<KindReadonlyRecord> = {
   filter,
   filterMap,
   partition,
@@ -946,7 +946,7 @@ export const FilterableRecord: Filterable<URI> = {
  *
  * @since 2.0.0
  */
-export const FunctorRecord: Functor<URI> = { map };
+export const FunctorRecord: Functor<KindReadonlyRecord> = { map };
 
 /**
  * The canonical implementation of Foldable for ReadonlyRecord. It contains
@@ -954,7 +954,7 @@ export const FunctorRecord: Functor<URI> = { map };
  *
  * @since 2.0.0
  */
-export const FoldableRecord: Foldable<URI> = { reduce };
+export const FoldableRecord: Foldable<KindReadonlyRecord> = { reduce };
 
 /**
  * The canonical implementation of Traversable for ReadonlyRecord. It contains
@@ -962,7 +962,7 @@ export const FoldableRecord: Foldable<URI> = { reduce };
  *
  * @since 2.0.0
  */
-export const TraversableRecord: Traversable<URI> = {
+export const TraversableRecord: Traversable<KindReadonlyRecord> = {
   map,
   reduce,
   traverse,

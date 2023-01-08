@@ -18,7 +18,7 @@ export type Nil = undefined | null;
 
 export type Nilable<A> = Nil | A;
 
-export interface URI extends Kind {
+export interface KindNilable extends Kind {
   readonly kind: Nilable<Out<this, 0>>;
 }
 
@@ -105,9 +105,9 @@ export function alt<A>(tb: Nilable<A>): (ta: Nilable<A>) => Nilable<A> {
   return (ta) => isNil(ta) ? tb : ta;
 }
 
-export const MonadNilable: Monad<URI> = { of, ap, map, join, chain };
+export const MonadNilable: Monad<KindNilable> = { of, ap, map, join, chain };
 
-export const AltNilable: Alt<URI> = { alt, map };
+export const AltNilable: Alt<KindNilable> = { alt, map };
 
 export function getShow<A>({ show }: Show<A>): Show<Nilable<A>> {
   return { show: (ma) => (isNil(ma) ? "nil" : show(ma)) };

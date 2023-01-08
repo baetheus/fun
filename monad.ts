@@ -37,7 +37,7 @@ export interface Monad<U extends Kind>
 }
 
 /**
- * Derive a Monad instance from of, chain, and a Kind URI. This is
+ * Derive a Monad instance from of, chain, and a Kind. This is
  * the simplest way to get a Monad instance when one has a
  * creation function (of) and a chain function (aka flatMap or
  * bind).
@@ -48,8 +48,8 @@ export interface Monad<U extends Kind>
  * import { createMonad } from "./monad.ts";
  * import { pipe } from "./fn.ts";
  *
- * // Create a URI for Promise<A>
- * interface URI extends Kind {
+ * // Create a Kind for Promise<A>
+ * interface KindPromise extends Kind {
  *   readonly kind: Promise<Out<this, 0>>;
  * };
  *
@@ -59,7 +59,7 @@ export interface Monad<U extends Kind>
  *   (ua: Promise<A>): Promise<I> => ua.then(faui);
  *
  * // Derive a Monad for Promise
- * const M = createMonad<URI>({ of, chain });
+ * const M = createMonad<KindPromise>({ of, chain });
  *
  * const result = await pipe(
  *   M.of((n: number) => (m: number) => n + m),

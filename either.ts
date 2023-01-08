@@ -24,11 +24,11 @@ export type Right<R> = { tag: "Right"; right: R };
 
 export type Either<L, R> = Left<L> | Right<R>;
 
-export interface URI extends Kind {
+export interface KindEither extends Kind {
   readonly kind: Either<Out<this, 1>, Out<this, 0>>;
 }
 
-export interface RightURI<B> extends Kind {
+export interface KindRightEither<B> extends Kind {
   readonly kind: Either<B, Out<this, 0>>;
 }
 
@@ -191,7 +191,7 @@ export function getRightMonoid<E = never, A = never>(
 
 export function getRightMonad<E>(
   { concat }: Semigroup<E>,
-): Monad<RightURI<E>> {
+): Monad<KindRightEither<E>> {
   return ({
     of,
     ap: (ua) => (ufai) =>
@@ -290,7 +290,7 @@ export function traverse<V extends Kind>(
   return (faui) => match(onLeft, flow(faui, mapRight));
 }
 
-export const MonadEither: Monad<URI> = {
+export const MonadEither: Monad<KindEither> = {
   of,
   ap,
   map,
@@ -298,10 +298,14 @@ export const MonadEither: Monad<URI> = {
   chain,
 };
 
-export const BifunctorEither: Bifunctor<URI> = { bimap, mapLeft };
+export const BifunctorEither: Bifunctor<KindEither> = { bimap, mapLeft };
 
-export const AltEither: Alt<URI> = { alt, map };
+export const AltEither: Alt<KindEither> = { alt, map };
 
-export const ExtendEither: Extend<URI> = { map, extend };
+export const ExtendEither: Extend<KindEither> = { map, extend };
 
-export const TraversableEither: Traversable<URI> = { map, reduce, traverse };
+export const TraversableEither: Traversable<KindEither> = {
+  map,
+  reduce,
+  traverse,
+};

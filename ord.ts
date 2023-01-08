@@ -57,7 +57,7 @@ export interface Ord<A> extends Eq<A> {
  *
  * @since 2.0.0
  */
-export interface URI extends Kind {
+export interface KindOrd extends Kind {
   readonly kind: Ord<In<this, 0>>;
 }
 
@@ -453,6 +453,6 @@ export function contramap<L, D>(fld: (l: L) => D): (ord: Ord<D>) => Ord<L> {
  *
  * @since 2.0.0
  */
-export const ContravariantOrd: Contravariant<URI> = {
+export const ContravariantOrd: Contravariant<KindOrd> = {
   contramap,
 };

@@ -14,7 +14,7 @@ export type Tree<A> = {
   readonly forest: Forest<A>;
 };
 
-export interface URI extends Kind {
+export interface KindTree extends Kind {
   readonly kind: Tree<Out<this, 0>>;
 }
 
@@ -105,9 +105,9 @@ export function match<A, I>(
   return go;
 }
 
-export const MonadTree: Monad<URI> = { of, ap, map, join, chain };
+export const MonadTree: Monad<KindTree> = { of, ap, map, join, chain };
 
-export const TraversableTree: Traversable<URI> = { map, reduce, traverse };
+export const TraversableTree: Traversable<KindTree> = { map, reduce, traverse };
 
 export const getShow = <A>(S: Show<A>): Show<Tree<A>> => {
   const show = (ta: Tree<A>): string =>

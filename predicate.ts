@@ -41,7 +41,7 @@ export type Predicate<A> = (a: A) => boolean;
  *
  * @since 2.0.0
  */
-export interface URI extends Kind {
+export interface KindPredicate extends Kind {
   readonly kind: Predicate<In<this, 0>>;
 }
 
@@ -155,7 +155,9 @@ export function and<A>(second: Predicate<A>) {
  *
  * @since 2.0.0
  */
-export const ContravariantPredicate: Contravariant<URI> = { contramap };
+export const ContravariantPredicate: Contravariant<KindPredicate> = {
+  contramap,
+};
 
 /**
  * Get a Semigroup<Predicate<A>> for any type A that concats using the

@@ -40,7 +40,7 @@ export type TypeOf<T> = T extends ReadonlySet<infer A> ? A : never;
  *
  * @since 2.0.0
  */
-export interface URI extends Kind {
+export interface KindReadonlySet extends Kind {
   readonly kind: ReadonlySet<Out<this, 0>>;
 }
 
@@ -748,7 +748,7 @@ export function traverse<V extends Kind>(
  *
  * @since 2.0.0
  */
-export const FunctorSet: Functor<URI> = { map };
+export const FunctorSet: Functor<KindReadonlySet> = { map };
 
 /**
  * The canonical implementation of Apply for ReadonlySet. It contains
@@ -756,7 +756,7 @@ export const FunctorSet: Functor<URI> = { map };
  *
  * @since 2.0.0
  */
-export const ApplySet: Apply<URI> = { ap, map };
+export const ApplySet: Apply<KindReadonlySet> = { ap, map };
 
 /**
  * The canonical implementation of Applicative for ReadonlySet. It contains
@@ -764,7 +764,7 @@ export const ApplySet: Apply<URI> = { ap, map };
  *
  * @since 2.0.0
  */
-export const ApplicativeSet: Applicative<URI> = { of, ap, map };
+export const ApplicativeSet: Applicative<KindReadonlySet> = { of, ap, map };
 
 /**
  * The canonical implementation of Applicative for ReadonlySet. It contains
@@ -772,7 +772,7 @@ export const ApplicativeSet: Applicative<URI> = { of, ap, map };
  *
  * @since 2.0.0
  */
-export const ChainSet: Chain<URI> = { ap, map, chain };
+export const ChainSet: Chain<KindReadonlySet> = { ap, map, chain };
 
 /**
  * The canonical implementation of Monad for ReadonlySet. It contains
@@ -780,7 +780,7 @@ export const ChainSet: Chain<URI> = { ap, map, chain };
  *
  * @since 2.0.0
  */
-export const MonadSet: Monad<URI> = { of, ap, map, join, chain };
+export const MonadSet: Monad<KindReadonlySet> = { of, ap, map, join, chain };
 
 /**
  * The canonical implementation of Filterable for ReadonlySet. It contains
@@ -788,7 +788,7 @@ export const MonadSet: Monad<URI> = { of, ap, map, join, chain };
  *
  * @since 2.0.0
  */
-export const FilterableSet: Filterable<URI> = {
+export const FilterableSet: Filterable<KindReadonlySet> = {
   filter,
   filterMap,
   partition,
@@ -801,7 +801,7 @@ export const FilterableSet: Filterable<URI> = {
  *
  * @since 2.0.0
  */
-export const FoldableSet: Foldable<URI> = { reduce };
+export const FoldableSet: Foldable<KindReadonlySet> = { reduce };
 
 /**
  * The canonical implementation of Traversable for ReadonlySet. It contains
@@ -809,7 +809,11 @@ export const FoldableSet: Foldable<URI> = { reduce };
  *
  * @since 2.0.0
  */
-export const TraversableSet: Traversable<URI> = { map, reduce, traverse };
+export const TraversableSet: Traversable<KindReadonlySet> = {
+  map,
+  reduce,
+  traverse,
+};
 
 /**
  * Given an instance of Show<A> return an instance of Show<ReadonlySet<A>>.

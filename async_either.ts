@@ -19,7 +19,7 @@ import { resolve } from "./promise.ts";
  */
 export type AsyncEither<L, R> = Async<Either<L, R>>;
 
-export interface URI extends Kind {
+export interface KindAsyncEither extends Kind {
   readonly kind: AsyncEither<Out<this, 1>, Out<this, 0>>;
 }
 
@@ -331,9 +331,12 @@ export function match<L, R, B>(
 //  (ta: AsyncEither<E, A>): AsyncEither<E, A> =>
 //    () => Promise.race([ta(), wait(ms).then(flow(onTimeout, E.left))]);
 
-export const BifunctorAsyncEither: Bifunctor<URI> = { bimap, mapLeft };
+export const BifunctorAsyncEither: Bifunctor<KindAsyncEither> = {
+  bimap,
+  mapLeft,
+};
 
-export const MonadAsyncEitherParallel: Monad<URI> = {
+export const MonadAsyncEitherParallel: Monad<KindAsyncEither> = {
   of,
   ap: apParallel,
   map,
@@ -341,9 +344,9 @@ export const MonadAsyncEitherParallel: Monad<URI> = {
   chain,
 };
 
-export const AltAsyncEither: Alt<URI> = { alt, map };
+export const AltAsyncEither: Alt<KindAsyncEither> = { alt, map };
 
-export const MonadAsyncEitherSequential: Monad<URI> = {
+export const MonadAsyncEitherSequential: Monad<KindAsyncEither> = {
   of,
   ap: apSequential,
   map,

@@ -43,7 +43,7 @@ export type Pair<A, B> = readonly [A, B];
  *
  * @since 2.0.0
  */
-export interface URI extends Kind {
+export interface KindPair extends Kind {
   readonly kind: Pair<Out<this, 0>, Out<this, 1>>;
 }
 
@@ -418,7 +418,7 @@ export function traverse<V extends Kind>(A: Applicative<V>) {
  *
  * @since 2.0.0
  */
-export const FunctorPair: Functor<URI> = { map };
+export const FunctorPair: Functor<KindPair> = { map };
 
 /**
  * The canonical Bifunctor instance for Pair. Contains the
@@ -426,7 +426,7 @@ export const FunctorPair: Functor<URI> = { map };
  *
  * @since 2.0.0
  */
-export const BifunctorPair: Bifunctor<URI> = { mapLeft, bimap };
+export const BifunctorPair: Bifunctor<KindPair> = { mapLeft, bimap };
 
 /**
  * The canonical Comonad instance for Pair. Contains the
@@ -434,7 +434,7 @@ export const BifunctorPair: Bifunctor<URI> = { mapLeft, bimap };
  *
  * @since 2.0.0
  */
-export const ComonadPair: Comonad<URI> = { extract, extend, map };
+export const ComonadPair: Comonad<KindPair> = { extract, extend, map };
 
 /**
  * The canonical Extend instance for Pair. Contains the
@@ -442,7 +442,7 @@ export const ComonadPair: Comonad<URI> = { extract, extend, map };
  *
  * @since 2.0.0
  */
-export const ExtendPair: Extend<URI> = { extend, map };
+export const ExtendPair: Extend<KindPair> = { extend, map };
 
 /**
  * The canonical Foldable instance for Pair. Contains the
@@ -450,7 +450,7 @@ export const ExtendPair: Extend<URI> = { extend, map };
  *
  * @since 2.0.0
  */
-export const FoldablePair: Foldable<URI> = { reduce };
+export const FoldablePair: Foldable<KindPair> = { reduce };
 
 /**
  * The canonical Traversable instance for Pair. Contains the
@@ -458,7 +458,7 @@ export const FoldablePair: Foldable<URI> = { reduce };
  *
  * @since 2.0.0
  */
-export const TraversablePair: Traversable<URI> = { map, reduce, traverse };
+export const TraversablePair: Traversable<KindPair> = { map, reduce, traverse };
 
 /**
  * A Kind implementation used to fix the second parameter in a Pair.
@@ -466,7 +466,7 @@ export const TraversablePair: Traversable<URI> = { map, reduce, traverse };
  *
  * @since 2.0.0
  */
-export interface RightPairURI<B> extends Kind {
+export interface KindRightPair<B> extends Kind {
   readonly kind: Pair<Out<this, 0>, B>;
 }
 
@@ -493,9 +493,9 @@ export interface RightPairURI<B> extends Kind {
  *
  * @since 2.0.0
  */
-export function getRightMonad<L>(M: Monoid<L>): Monad<RightPairURI<L>> {
+export function getRightMonad<L>(M: Monoid<L>): Monad<KindRightPair<L>> {
   const { empty, concat } = dual(M);
-  return createMonad<RightPairURI<L>>({
+  return createMonad<KindRightPair<L>>({
     of: (a) => pair(a, empty()),
     chain: (fati) => ([first, second]) =>
       pipe(fati(first), mapLeft(concat(second))),

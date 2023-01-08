@@ -84,7 +84,7 @@ export type Tag = LensTag | AffineTag | FoldTag;
  * A type level mapping from an Optic Tag to its associated output Kind. This is
  * used to substitute the container of the output of a view function.
  */
-type ToURI<T extends Tag> = T extends LensTag ? I.KindIdentity
+type ToKind<T extends Tag> = T extends LensTag ? I.KindIdentity
   : T extends AffineTag ? O.KindOption
   : T extends FoldTag ? A.KindArray
   : never;
@@ -171,12 +171,12 @@ export function _unsafeCast<U extends Tag, V extends Tag, S, A>(
  * * AffineTag => MonadOption
  * * FoldTag => MonadArray
  */
-function getMonad<T extends Tag>(tag: T): Monad<ToURI<T>> {
+function getMonad<T extends Tag>(tag: T): Monad<ToKind<T>> {
   return (tag === FoldTag
     ? A.MonadArray
     : tag === AffineTag
     ? O.MonadOption
-    : I.MonadIdentity) as unknown as Monad<ToURI<T>>;
+    : I.MonadIdentity) as unknown as Monad<ToKind<T>>;
 }
 
 /**
@@ -189,7 +189,7 @@ function getMonad<T extends Tag>(tag: T): Monad<ToURI<T>> {
  */
 export interface Viewer<T extends Tag, S, A> {
   readonly tag: T;
-  readonly view: (s: S) => $<ToURI<T>, [A, never, never]>;
+  readonly view: (s: S) => $<ToKind<T>, [A, never, never]>;
 }
 
 /**
@@ -351,7 +351,7 @@ export type Refold<S, A> = Fold<S, A> & Reviewer<S, A>;
  */
 export function viewer<T extends Tag, S, A>(
   tag: T,
-  view: (s: S) => $<ToURI<T>, [A, never, never]>,
+  view: (s: S) => $<ToKind<T>, [A, never, never]>,
 ): Viewer<T, S, A> {
   return { tag, view };
 }
@@ -384,7 +384,7 @@ export function reviewer<S, A>(review: (a: A) => S): Reviewer<S, A> {
  */
 export function optic<U extends Tag, S, A>(
   tag: U,
-  view: (s: S) => $<ToURI<U>, [A, never, never]>,
+  view: (s: S) => $<ToKind<U>, [A, never, never]>,
   modify: (modifyFn: (a: A) => A) => (s: S) => S,
   review: (a: A) => S,
 ): Optic<U, S, A> & Reviewer<S, A>;
@@ -395,12 +395,12 @@ export function optic<U extends Tag, S, A>(
  */
 export function optic<U extends Tag, S, A>(
   tag: U,
-  view: (s: S) => $<ToURI<U>, [A, never, never]>,
+  view: (s: S) => $<ToKind<U>, [A, never, never]>,
   modify: (modifyFn: (a: A) => A) => (s: S) => S,
 ): Optic<U, S, A>;
 export function optic<U extends Tag, S, A>(
   tag: U,
-  view: (s: S) => $<ToURI<U>, [A, never, never]>,
+  view: (s: S) => $<ToKind<U>, [A, never, never]>,
   modify: (modifyFn: (a: A) => A) => (s: S) => S,
   review?: (a: A) => S,
 ): Optic<U, S, A> | Optic<U, S, A> & Reviewer<S, A> {

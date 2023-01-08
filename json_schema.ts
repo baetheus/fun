@@ -190,7 +190,7 @@ export type TypeOf<T> = T extends JsonBuilder<infer A> ? A : never;
 /**
  * The Kind substitution scheme for JsonBuilder.
  */
-export interface URI extends Kind {
+export interface KindJsonBuilder extends Kind {
   readonly kind: JsonBuilder<Out<this, 0>>;
 }
 
@@ -199,7 +199,7 @@ const { concat }: Semigroup<JsonSchemaDefinitions> = {
   concat: (a) => (b) => Object.assign({}, a, b),
 };
 
-export const MonadJsonBuilder = MonadState as Monad<URI>;
+export const MonadJsonBuilder = MonadState as Monad<KindJsonBuilder>;
 
 export const sequenceArray = sequenceA(MonadJsonBuilder);
 
@@ -773,7 +773,7 @@ export function print<A>(jsonschema: JsonBuilder<A>): JsonSchema {
  *
  * @since 2.0.0
  */
-export const SchemableJsonBuilder: Schemable<URI> = {
+export const SchemableJsonBuilder: Schemable<KindJsonBuilder> = {
   unknown,
   string,
   number,
@@ -783,7 +783,7 @@ export const SchemableJsonBuilder: Schemable<URI> = {
   undefinable,
   record,
   array,
-  tuple: tuple as TupleSchemable<URI>["tuple"],
+  tuple: tuple as TupleSchemable<KindJsonBuilder>["tuple"],
   struct,
   partial,
   intersect,

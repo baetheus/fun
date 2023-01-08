@@ -11,7 +11,7 @@ import { isLeft, isRight } from "./either.ts";
 import { isSome } from "./option.ts";
 import { wait } from "./promise.ts";
 
-export interface URI extends Kind {
+export interface KindAsyncIterable extends Kind {
   readonly kind: AsyncIterable<Out<this, 0>>;
 }
 
@@ -316,9 +316,15 @@ export function take(n: number): <A>(ta: AsyncIterable<A>) => AsyncIterable<A> {
     });
 }
 
-export const MonadAsyncIterable: Monad<URI> = { of, ap, map, join, chain };
+export const MonadAsyncIterable: Monad<KindAsyncIterable> = {
+  of,
+  ap,
+  map,
+  join,
+  chain,
+};
 
-export const FilterableAsyncIterable: Filterable<URI> = {
+export const FilterableAsyncIterable: Filterable<KindAsyncIterable> = {
   filter,
   filterMap,
   partition,

@@ -43,7 +43,7 @@ export type Some<A> = Refresh<A> | Replete<A>;
 
 export type Loading<A> = Pending | Refresh<A>;
 
-export interface URI extends Kind {
+export interface KindDatum extends Kind {
   readonly kind: Datum<Out<this, 0>>;
 }
 
@@ -286,8 +286,12 @@ export function getOrd<A>(O: Ord<A>): Ord<Datum<A>> {
   );
 }
 
-export const MonadDatum: Monad<URI> = { of, ap, map, join, chain };
+export const MonadDatum: Monad<KindDatum> = { of, ap, map, join, chain };
 
-export const AltDatum: Alt<URI> = { alt, map };
+export const AltDatum: Alt<KindDatum> = { alt, map };
 
-export const TraversableDatum: Traversable<URI> = { map, reduce, traverse };
+export const TraversableDatum: Traversable<KindDatum> = {
+  map,
+  reduce,
+  traverse,
+};

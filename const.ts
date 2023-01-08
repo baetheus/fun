@@ -14,11 +14,11 @@ import { identity } from "./fn.ts";
 
 export type Const<E, _ = never> = E;
 
-export interface URI extends Kind {
+export interface KindConst extends Kind {
   readonly kind: Const<Out<this, 1>, Out<this, 0>>;
 }
 
-export interface RightURI<B> extends Kind {
+export interface KindRightConst<B> extends Kind {
   readonly kind: Const<B, Out<this, 0>>;
 }
 
@@ -71,20 +71,20 @@ export const getMonoid: <E, A>(
 
 export const getApply = <E>(
   S: Semigroup<E>,
-): Apply<RightURI<E>> => ({
+): Apply<KindRightConst<E>> => ({
   map: (_) => (ta) => ta,
   ap: (tfai) => (ta) => make(S.concat(ta)(tfai)),
 });
 
 export const getApplicative = <E>(
   M: Monoid<E>,
-): Applicative<RightURI<E>> => ({
+): Applicative<KindRightConst<E>> => ({
   of: () => make(M.empty()),
   ...getApply(M),
 });
 
-export const FunctorConst: Functor<URI> = { map };
+export const FunctorConst: Functor<KindConst> = { map };
 
-export const ContravariantConst: Contravariant<URI> = { contramap };
+export const ContravariantConst: Contravariant<KindConst> = { contramap };
 
-export const BifunctorConst: Bifunctor<URI> = { bimap, mapLeft };
+export const BifunctorConst: Bifunctor<KindConst> = { bimap, mapLeft };

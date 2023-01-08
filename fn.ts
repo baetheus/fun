@@ -42,7 +42,7 @@ export type AnyFn = Fn<any, any>;
  * covariant parameter A corresponding to the 0th
  * index of any Substitutions and a contravariant
  * parameter D corresponding to the 0th index of
- * any Substititions. The Fn URI is unique in that
+ * any Substititions. The Fn KindFn is unique in that
  * it constrains the Fn type to taking a single
  * argument for the purposes of type substitution
  * while the implementations of Fn combinators such
@@ -51,7 +51,7 @@ export type AnyFn = Fn<any, any>;
  *
  * @since 2.0.0
  */
-export interface URI extends Kind {
+export interface KindFn extends Kind {
   readonly kind: Fn<In<this, 0>, Out<this, 0>>;
 }
 
@@ -854,7 +854,7 @@ export function compose<A, I>(
  *
  * @since 2.0.0
  */
-export const ProfunctorFn: Profunctor<URI> = { dimap };
+export const ProfunctorFn: Profunctor<KindFn> = { dimap };
 
 /**
  * The canonical implementation of Functor for Fn. It contains
@@ -862,7 +862,7 @@ export const ProfunctorFn: Profunctor<URI> = { dimap };
  *
  * @since 2.0.0
  */
-export const FunctorFn: Functor<URI> = { map };
+export const FunctorFn: Functor<KindFn> = { map };
 
 /**
  * The canonical implementation of Apply for Fn. It contains
@@ -870,7 +870,7 @@ export const FunctorFn: Functor<URI> = { map };
  *
  * @since 2.0.0
  */
-export const ApplyFn: Apply<URI> = { map, ap };
+export const ApplyFn: Apply<KindFn> = { map, ap };
 
 /**
  * The canonical implementation of Applicative for Fn. It contains
@@ -878,7 +878,7 @@ export const ApplyFn: Apply<URI> = { map, ap };
  *
  * @since 2.0.0
  */
-export const ApplicativeFn: Applicative<URI> = { of, ap, map };
+export const ApplicativeFn: Applicative<KindFn> = { of, ap, map };
 
 /**
  * The canonical implementation of Chain for Fn. It contains
@@ -886,7 +886,7 @@ export const ApplicativeFn: Applicative<URI> = { of, ap, map };
  *
  * @since 2.0.0
  */
-export const ChainFn: Chain<URI> = { ap, map, chain };
+export const ChainFn: Chain<KindFn> = { ap, map, chain };
 
 /**
  * The canonical implementation of Monad for Fn. It contains
@@ -894,7 +894,7 @@ export const ChainFn: Chain<URI> = { ap, map, chain };
  *
  * @since 2.0.0
  */
-export const MonadFn: Monad<URI> = { of, ap, map, join, chain };
+export const MonadFn: Monad<KindFn> = { of, ap, map, join, chain };
 
 /**
  * The canonical implementation of Contravariant for Fn. It contains
@@ -902,7 +902,7 @@ export const MonadFn: Monad<URI> = { of, ap, map, join, chain };
  *
  * @since 2.0.0
  */
-export const ContravariantFn: Contravariant<URI> = { contramap };
+export const ContravariantFn: Contravariant<KindFn> = { contramap };
 
 /**
  * The canonical implementation of Category for Fn. It contains
@@ -910,4 +910,4 @@ export const ContravariantFn: Contravariant<URI> = { contramap };
  *
  * @since 2.0.0
  */
-export const CategoryFn: Category<URI> = { id, compose };
+export const CategoryFn: Category<KindFn> = { id, compose };
