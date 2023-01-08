@@ -82,30 +82,156 @@ export function sign(n: number): Ordering {
   return n < 0 ? -1 : n > 0 ? 1 : 0;
 }
 
+/**
+ * Construct a curried less than function over A from Ord<A>.
+ *
+ * @example
+ * ```ts
+ * import * as O from "./ord.ts";
+ * import { OrdNumber } from "./number.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const lt = O.lt(OrdNumber);
+ *
+ * const result1 = pipe(1, lt(2)); // true
+ * const result2 = pipe(2, lt(1)); // false
+ * const result3 = pipe(1, lt(1)); // false
+ * ```
+ *
+ * @since 2.0.0
+ */
 export function lt<A>(ord: Ord<A>): (snd: A) => (fst: A) => boolean {
   return (snd) => (fst): boolean => ord.compare(fst, snd) === -1;
 }
 
+/**
+ * Construct a curried less than or equal to function over A from Ord<A>.
+ *
+ * @example
+ * ```ts
+ * import * as O from "./ord.ts";
+ * import { OrdNumber } from "./number.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const lte = O.lte(OrdNumber);
+ *
+ * const result1 = pipe(1, lte(2)); // true
+ * const result2 = pipe(2, lte(1)); // false
+ * const result3 = pipe(1, lte(1)); // true
+ * ```
+ *
+ * @since 2.0.0
+ */
 export function lte<A>(ord: Ord<A>): (snd: A) => (fst: A) => boolean {
   return (snd) => (fst) => ord.compare(fst, snd) !== 1;
 }
 
+/**
+ * Construct a curried greater than or equal to function over A from Ord<A>.
+ *
+ * @example
+ * ```ts
+ * import * as O from "./ord.ts";
+ * import { OrdNumber } from "./number.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const gte = O.gte(OrdNumber);
+ *
+ * const result1 = pipe(1, gte(2)); // false
+ * const result2 = pipe(2, gte(1)); // true
+ * const result3 = pipe(1, gte(1)); // true
+ * ```
+ *
+ * @since 2.0.0
+ */
 export function gte<A>(ord: Ord<A>): (snd: A) => (fst: A) => boolean {
   return (snd) => (fst) => ord.compare(fst, snd) !== -1;
 }
 
+/**
+ * Construct a curried greater than function over A from Ord<A>.
+ *
+ * @example
+ * ```ts
+ * import * as O from "./ord.ts";
+ * import { OrdNumber } from "./number.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const gt = O.gt(OrdNumber);
+ *
+ * const result1 = pipe(1, gt(2)); // false
+ * const result2 = pipe(2, gt(1)); // true
+ * const result3 = pipe(1, gt(1)); // false
+ * ```
+ *
+ * @since 2.0.0
+ */
 export function gt<A>(ord: Ord<A>): (snd: A) => (fst: A) => boolean {
   return (snd) => (fst) => ord.compare(fst, snd) === 1;
 }
 
+/**
+ * Construct a minimum function over A from Ord<A>.
+ *
+ * @example
+ * ```ts
+ * import * as O from "./ord.ts";
+ * import { OrdNumber } from "./number.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const min = O.min(OrdNumber);
+ *
+ * const result1 = pipe(1, min(2)); // 1
+ * const result2 = pipe(2, min(1)); // 1
+ * const result3 = pipe(1, min(1)); // 1
+ * ```
+ *
+ * @since 2.0.0
+ */
 export function min<A>(ord: Ord<A>): (snd: A) => (fst: A) => A {
   return (snd) => (fst) => ord.compare(fst, snd) !== 1 ? fst : snd;
 }
 
+/**
+ * Construct a maximum function over A from Ord<A>.
+ *
+ * @example
+ * ```ts
+ * import * as O from "./ord.ts";
+ * import { OrdNumber } from "./number.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const max = O.max(OrdNumber);
+ *
+ * const result1 = pipe(1, max(2)); // 2
+ * const result2 = pipe(2, max(1)); // 2
+ * const result3 = pipe(1, max(1)); // 1
+ * ```
+ *
+ * @since 2.0.0
+ */
 export function max<A>(ord: Ord<A>): (snd: A) => (fst: A) => A {
   return (snd) => (fst) => ord.compare(fst, snd) !== -1 ? fst : snd;
 }
 
+/**
+ * Construct an inclusive clamp function over A from Ord<A>.
+ *
+ * @example
+ * ```ts
+ * import * as O from "./ord.ts";
+ * import { OrdNumber } from "./number.ts";
+ *
+ * const clamp = O.clamp(OrdNumber);
+ * const clamp1 = clamp(0, 10)
+ *
+ * const result1 = clamp1(-1); // 0
+ * const result2 = clamp1(1); // 1
+ * const result3 = clamp1(100); // 10
+ * ```
+ *
+ * @since 2.0.0
+ */
 export function clamp<A>(ord: Ord<A>): (low: A, high: A) => (value: A) => A {
   const _min = min(ord);
   const _max = max(ord);
@@ -116,6 +242,24 @@ export function clamp<A>(ord: Ord<A>): (low: A, high: A) => (value: A) => A {
   };
 }
 
+/**
+ * Construct an exclusive between function over A from Ord<A>.
+ *
+ * @example
+ * ```ts
+ * import * as O from "./ord.ts";
+ * import { OrdNumber } from "./number.ts";
+ *
+ * const between = O.between(OrdNumber);
+ * const between1 = between(0, 10)
+ *
+ * const result1 = between1(-1); // false
+ * const result2 = between1(1); // true
+ * const result3 = between1(100); // false
+ * ```
+ *
+ * @since 2.0.0
+ */
 export function between<A>(
   ord: Ord<A>,
 ): (low: A, high: A) => (value: A) => boolean {
