@@ -210,21 +210,21 @@ Deno.test("Either chainLeft", () => {
   assertEquals(chainLeft(E.left(1)), E.right(1));
 });
 
-// Deno.test("Datum Do, bind, bindTo", () => {
-//   assertEquals(
-//     pipe(
-//       E.Do(),
-//       E.bind("one", () => E.right(1)),
-//       E.bind("two", ({ one }) => E.right(one + one)),
-//       E.map(({ one, two }) => one + two),
-//     ),
-//     E.right(3),
-//   );
-//   assertEquals(
-//     pipe(
-//       E.right(1),
-//       E.bindTo("one"),
-//     ),
-//     E.right({ one: 1 }),
-//   );
-// });
+Deno.test("Datum Do, bind, bindTo", () => {
+  assertEquals(
+    pipe(
+      E.Do(),
+      E.bind("one", () => E.right(1)),
+      E.bind("two", ({ one }) => E.right(one + one)),
+      E.map(({ one, two }) => one + two),
+    ),
+    E.right(3),
+  );
+  assertEquals(
+    pipe(
+      E.right(1),
+      E.bindTo("one"),
+    ),
+    E.right({ one: 1 }),
+  );
+});
