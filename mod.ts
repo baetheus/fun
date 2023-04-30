@@ -11,7 +11,6 @@ export * as category from "./category.ts";
 export * as chain from "./chain.ts";
 export * as const from "./const.ts";
 export * as contravariant from "./contravariant.ts";
-export * as decode_error from "./decode_error.ts";
 export * as decoder from "./decoder.ts";
 export * as either from "./either.ts";
 export * as eq from "./eq.ts";

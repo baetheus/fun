@@ -1305,7 +1305,7 @@ export function traverse<T extends Kind>(
   first: Optic<U, S, $<T, [A, B, C], [D], [E]>>,
 ) => Optic<Align<U, FoldTag>, S, A> {
   return compose(fold(
-    T.reduce((as, a) => as.concat(a), A.empty()),
+    T.reduce((as, a) => [...as, a], A.empty()),
     T.map,
   ));
 }

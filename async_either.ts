@@ -1,3 +1,13 @@
+/**
+ * The AsyncEither datastructure represents an asynchronous operation that can
+ * fail. At its heart it is implemented as `() => Promise<Either<B, A>>`. This
+ * thunk makes it a performant but lazy operation at the expense of stack
+ * safety.
+ *
+ * @module AsyncEither
+ *
+ * @since 2.0.0
+ */
 import type { Kind, Out } from "./kind.ts";
 import type { Alt } from "./alt.ts";
 import type { Bifunctor } from "./bifunctor.ts";
@@ -6,7 +16,7 @@ import type { Monad } from "./monad.ts";
 import type { Async } from "./async.ts";
 
 import * as E from "./either.ts";
-import * as T from "./async.ts";
+import * as A from "./async.ts";
 import * as P from "./promise.ts";
 import { handleThrow, identity, pipe } from "./fn.ts";
 import { resolve } from "./promise.ts";
@@ -19,68 +29,74 @@ import { resolve } from "./promise.ts";
  */
 export type AsyncEither<L, R> = Async<Either<L, R>>;
 
+/**
+ * Specifies AsyncEither as a Higher Kinded Type, with covariant
+ * parameter A corresponding to the 0th index of any substitutions and covariant
+ * parameter B corresponding to the 1st index of any substitutions.
+ *
+ * @since 2.0.0
+ */
 export interface KindAsyncEither extends Kind {
   readonly kind: AsyncEither<Out<this, 1>, Out<this, 0>>;
 }
 
 /**
- * Constructs a AsyncEither from a value and wraps it in an inner *Left*.
- * Traditionally signaling a failure
+ * Constructs a AsyncEither from a value and wraps it in an inner *Left*
+ * traditionally signaling a failure.
  *
+ * @example
  * ```ts
- * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
- * import * as TE from "./async_either.ts";
- * import * as E from "./either.ts";
+ * import * as AE from "./async_either.ts";
  *
- * const computation = TE.left<number, number>(1);
- * const result = await computation();
+ * const left = AE.left(1);
  *
- * assertEquals(result, E.left(1));
+ * const result = await left(); // Left(1);
  * ```
+ *
+ * @since 2.0.0
  */
-export function left<A = never, B = never>(left: B): AsyncEither<B, A> {
-  return T.of(E.left(left));
+export function left<B, A = never>(left: B): AsyncEither<B, A> {
+  return A.of(E.left(left));
 }
 
 /**
- * Constructs a AsyncEither from a value and wraps it in an inner *Right*.
- * Traditionally signaling a successful computation
+ * Constructs a AsyncEither from a value and wraps it in an inner *Right*
+ * traditionally signaling a successful computation.
  *
+ * @example
  * ```ts
- * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
- * import * as TE from "./async_either.ts";
- * import * as E from "./either.ts";
+ * import * as AE from "./async_either.ts";
  *
- * const computation = TE.right<number, number>(1);
- * const result = await computation();
+ * const right = AE.right(1);
  *
- * assertEquals(result, E.right(1));
+ * const result = await right(); // Right(1)
  * ```
+ *
+ * @since 2.0.0
  */
 export function right<A = never, B = never>(right: A): AsyncEither<B, A> {
-  return T.of(E.right(right));
+  return A.of(E.right(right));
 }
 
 /**
  * Wraps a Async of A in a try-catch block which upon failure returns B instead.
  * Upon success returns a *Right<A>* and *Left<B>* for a failure.
  *
+ * @example
  * ```ts
- * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
  * import * as TE from "./async_either.ts";
  * import * as E from "./either.ts";
  *
- * const _fetch = TE.tryCatch(
+ * const tryFetch = TE.tryCatch(
  *   fetch,
  *   (error, args) => ({ message: "Fetch Error", error, args })
  * );
  *
- * const t1 = await _fetch("blah")();
- * assertEquals(t1.tag, "Left");
- *
- * const t2 = await _fetch("https://deno.land/")();
- * assertEquals(t2.tag, "Right");
+ * const result1 = await tryFetch("blah")(); // Left(ErrorStruct)
+ * const result2 = await tryFetch("https://deno.land/")(); // Right(*Deno Website*)
  * ```
+ *
+ * @since 2.0.0
  */
 export function tryCatch<AS extends unknown[], A, B>(
   fasr: (...as: AS) => A | PromiseLike<A>,
@@ -97,28 +113,76 @@ export function tryCatch<AS extends unknown[], A, B>(
 }
 
 /**
- * Lift an always succeeding async computation (Async) into a AsyncEither
+ * Lift an always succeeding async computation (Async) into a AsyncEither.
+ *
+ * @example
+ * ```ts
+ * import * as AE from "./async_either.ts";
+ * import * as A from "./async.ts";
+ *
+ * const value = AE.fromAsync(A.of(1));
+ *
+ * const result1 = await value(); // Right(1)
+ * ```
+ *
+ * @since 2.0.0
  */
 export function fromAsync<A, B = never>(ta: Async<A>): AsyncEither<B, A> {
-  return () => ta().then(E.right);
+  return pipe(ta, A.map(E.right));
 }
 
 /**
- * Lifts an Either<B,A> into a AsyncEither<B,A>
+ * Lifts an Either<B,A> into a AsyncEither<B, A>.
+ *
+ * @example
+ * ```ts
+ * import * as AE from "./async_either.ts";
+ * import * as E from "./either.ts";
+ *
+ * const value1 = AE.fromEither(E.right(1));
+ * const value2 = AE.fromEither(E.left("Error!"));
+ *
+ * const result1 = await value1(); // Right(1)
+ * const result2 = await value2(); // Left("Error!")
+ * ```
+ *
+ * @since 2.0.0
  */
 export function fromEither<A, B>(ta: Either<B, A>): AsyncEither<B, A> {
   return () => resolve(ta);
 }
 
 /**
- * Pointed constructor of(A) => AsyncEither<B,A>
+ * Construct an AsyncEither<B, A> from a value A.
+ *
+ * @example
+ * ```ts
+ * import * as AE from "./async_either.ts";
+ *
+ * const value = AE.of(1);
+ *
+ * const result = await value(); // Right(1)
+ * ```
+ *
+ * @since 2.0.0
  */
 export function of<A, B = never>(a: A): AsyncEither<B, A> {
   return right(a);
 }
 
 /**
- * Pointed constructor throwError(B) => AsyncEither<B, never>
+ * Construct an AsyncEither<B, A> from a value B.
+ *
+ * @example
+ * ```ts
+ * import * as AE from "./async_either.ts";
+ *
+ * const value = AE.throwError("Error!");
+ *
+ * const result = await value(); // Left("Error!");
+ * ```
+ *
+ * @since 2.0.0
  */
 export function throwError<A = never, B = never>(b: B): AsyncEither<B, A> {
   return left(b);
@@ -127,34 +191,50 @@ export function throwError<A = never, B = never>(b: B): AsyncEither<B, A> {
 /**
  * A dual map function that maps over both *Left* and *Right* side of
  * a AsyncEither.
+ *
+ * @example
+ * ```ts
+ * import * as AE from "./async_either.ts";
+ * import {  } from "./fn.ts";
+ *
+ * const work = f
+ * ```
+ *
+ * @since 2.0.0
  */
 export function bimap<A, B, I, J>(
   fbj: (b: B) => J,
   fai: (a: A) => I,
 ): (ta: AsyncEither<B, A>) => AsyncEither<J, I> {
-  return (ta) => pipe(ta, T.map(E.bimap(fbj, fai)));
+  return (ta) => pipe(ta, A.map(E.bimap(fbj, fai)));
 }
 
 /**
  * Map a function over the *Right* side of a AsyncEither
+ *
+ * @since 2.0.0
  */
 export function map<A, I>(
   fai: (a: A) => I,
 ): <B>(ta: AsyncEither<B, A>) => AsyncEither<B, I> {
-  return (ta) => pipe(ta, T.map(E.map(fai)));
+  return (ta) => pipe(ta, A.map(E.map(fai)));
 }
 
 /**
  * Map a function over the *Left* side of a AsyncEither
+ *
+ * @since 2.0.0
  */
 export function mapLeft<B, J>(
   fbj: (b: B) => J,
 ): <A>(ta: AsyncEither<B, A>) => AsyncEither<J, A> {
-  return (ta) => pipe(ta, T.map(E.mapLeft(fbj)));
+  return (ta) => pipe(ta, A.map(E.mapLeft(fbj)));
 }
 
 /**
  * Apply an argument to a function under the *Right* side.
+ *
+ * @since 2.0.0
  */
 export function apParallel<A, B>(
   ua: AsyncEither<B, A>,
@@ -168,6 +248,8 @@ export function apParallel<A, B>(
 
 /**
  * Sequentially apply arguments
+ *
+ * @since 2.0.0
  */
 export function apSequential<A, B>(
   ua: AsyncEither<B, A>,
@@ -196,6 +278,8 @@ export function apSequential<A, B>(
  *
  * assertEquals(await ta(), E.right(4))
  * ```
+ *
+ * @since 2.0.0
  */
 export function chain<A, I, J>(
   fati: (a: A) => AsyncEither<J, I>,
@@ -238,6 +322,8 @@ export function chainFirst<A, I, J>(
  *
  * assertEquals(await ta(), E.right(4))
  * ```
+ *
+ * @since 2.0.0
  */
 export function chainLeft<B, J, I>(
   fbtj: (b: B) => AsyncEither<J, I>,
@@ -266,6 +352,8 @@ export function chainLeft<B, J, I>(
  *
  * assertEquals(await ta(), E.right(4))
  * ```
+ *
+ * @since 2.0.0
  */
 export function join<A, B, J>(
   tta: AsyncEither<J, AsyncEither<B, A>>,
@@ -290,6 +378,8 @@ export function join<A, B, J>(
  *
  * assertEquals(await ta(), E.right(2))
  * ```
+ *
+ * @since 2.0.0
  */
 export function alt<I, J>(
   ti: AsyncEither<J, I>,
@@ -312,12 +402,14 @@ export function alt<I, J>(
  *
  * const hello = flow(
  *   TE.match(() => "World", identity),
- *   T.map((name) => `Hello ${name}!`),
+ *   A.map((name) => `Hello ${name}!`),
  * );
  *
  * assertEquals(await hello(TE.right("Functional!"))(), "Hello Functional!!");
  * assertEquals(await hello(TE.left(Error))(), "Hello World!");
  * ```
+ *
+ * @since 2.0.0
  */
 export function match<L, R, B>(
   onLeft: (left: L) => B,
