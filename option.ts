@@ -30,6 +30,8 @@ import type { Traversable } from "./traversable.ts";
 import { isNotNil } from "./nilable.ts";
 import { fromCompare } from "./ord.ts";
 import { flow, handleThrow, identity, pipe } from "./fn.ts";
+import { bind as bind_ } from "./chain.ts";
+import { bindTo as bindTo_ } from "./functor.ts";
 
 /**
  * The None type represents the non-existence of a value.
@@ -103,7 +105,7 @@ export const none: Option<never> = { tag: "None" };
  * @since 2.0.0
  */
 export function some<A>(value: A): Option<A> {
-  return ({ tag: "Some", value });
+  return { tag: "Some", value };
 }
 
 /**
@@ -157,9 +159,7 @@ export function fromNullable<A>(a: A): Option<NonNullable<A>> {
 export function fromPredicate<A, B extends A>(
   refinement: Refinement<A, B>,
 ): (a: A) => Option<B>;
-export function fromPredicate<A>(
-  refinement: Predicate<A>,
-): (a: A) => Option<A>;
+export function fromPredicate<A>(refinement: Predicate<A>): (a: A) => Option<A>;
 export function fromPredicate<A>(predicate: Predicate<A>) {
   return (a: A): Option<A> => (predicate(a) ? some(a) : none);
 }
@@ -234,7 +234,7 @@ export function match<A, B>(onNone: () => B, onSome: (a: A) => B) {
  * @since 2.0.0
  */
 export function getOrElse<B>(onNone: () => B) {
-  return (ta: Option<B>): B => isNone(ta) ? onNone() : ta.value;
+  return (ta: Option<B>): B => (isNone(ta) ? onNone() : ta.value);
 }
 
 /**
@@ -358,7 +358,7 @@ export function of<A>(a: A): Option<A> {
  * @since 2.0.0
  */
 export function map<A, I>(fai: (a: A) => I): (ua: Option<A>) => Option<I> {
-  return (ua) => isNone(ua) ? none : some(fai(ua.value));
+  return (ua) => (isNone(ua) ? none : some(fai(ua.value)));
 }
 
 /**
@@ -443,7 +443,7 @@ export function ap<A>(
 export function chain<A, I>(
   fati: (a: A) => Option<I>,
 ): (ta: Option<A>) => Option<I> {
-  return (ua) => isNone(ua) ? ua : fati(ua.value);
+  return (ua) => (isNone(ua) ? ua : fati(ua.value));
 }
 
 /**
@@ -482,7 +482,7 @@ export function join<A>(taa: Option<Option<A>>): Option<A> {
  * @since 2.0.0
  */
 export function alt<A>(second: Option<A>): (first: Option<A>) => Option<A> {
-  return (first) => isNone(first) ? second : first;
+  return (first) => (isNone(first) ? second : first);
 }
 
 /**
@@ -559,7 +559,7 @@ export function filter<A>(
   predicate: Predicate<A>,
 ): (ta: Option<A>) => Option<A> {
   const _exists = exists(predicate);
-  return (ta) => _exists(ta) ? ta : none;
+  return (ta) => (_exists(ta) ? ta : none);
 }
 
 /**
@@ -677,7 +677,7 @@ export function reduce<A, O>(
   reducer: (accumulator: O, current: A) => O,
   initial: O,
 ): (ua: Option<A>) => O {
-  return (ua) => isSome(ua) ? reducer(initial, ua.value) : initial;
+  return (ua) => (isSome(ua) ? reducer(initial, ua.value) : initial);
 }
 
 /**
@@ -818,9 +818,9 @@ export const TraversableOption: Traversable<KindOption> = {
  * @since 2.0.0
  */
 export function getShow<A>({ show }: Show<A>): Show<Option<A>> {
-  return ({
+  return {
     show: (ma) => (isNone(ma) ? "None" : `${"Some"}(${show(ma.value)})`),
-  });
+  };
 }
 
 /**
@@ -842,13 +842,13 @@ export function getShow<A>({ show }: Show<A>): Show<Option<A>> {
  * @since 2.0.0
  */
 export function getEq<A>(S: Eq<A>): Eq<Option<A>> {
-  return ({
+  return {
     equals: (a) => (b) =>
       a === b ||
-      ((isSome(a) && isSome(b))
+      (isSome(a) && isSome(b)
         ? S.equals(a.value)(b.value)
-        : (isNone(a) && isNone(b))),
-  });
+        : isNone(a) && isNone(b)),
+  };
 }
 
 /**
@@ -897,13 +897,11 @@ export function getOrd<A>(O: Ord<A>): Ord<Option<A>> {
  *
  * @since 2.0.0
  */
-export function getSemigroup<A>(
-  S: Semigroup<A>,
-): Semigroup<Option<A>> {
-  return ({
+export function getSemigroup<A>(S: Semigroup<A>): Semigroup<Option<A>> {
+  return {
     concat: (x) => (y) =>
       isNone(x) ? y : isNone(y) ? x : of(S.concat(x.value)(y.value)),
-  });
+  };
 }
 
 /**
@@ -927,8 +925,14 @@ export function getSemigroup<A>(
  * @since 2.0.0
  */
 export function getMonoid<A>(M: Monoid<A>): Monoid<Option<A>> {
-  return ({
+  return {
     ...getSemigroup(M),
     empty: constNone,
-  });
+  };
 }
+
+export const Do = <A>() => of<A>(<A> {});
+
+export const bind = bind_(MonadOption);
+
+export const bindTo = bindTo_(MonadOption);

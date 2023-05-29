@@ -20,5 +20,3 @@ export const getCategoryMonoid = <A>(M: Monoid<A>): Category<Fix<A>> => ({
   id: M.empty,
   compose: M.concat,
 });
-
-

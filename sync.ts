@@ -5,6 +5,8 @@ import type { Monad } from "./monad.ts";
 import type { Traversable } from "./traversable.ts";
 
 import { constant, flow, pipe } from "./fn.ts";
+import { bind as bind_ } from "./chain.ts";
+import { bindTo as bindTo_ } from "./functor.ts";
 
 export type Sync<A> = () => A;
 
@@ -58,3 +60,9 @@ export const MonadSync: Monad<KindSync> = { of, ap, map, join, chain };
 export const ExtendsSync: Extend<KindSync> = { map, extend };
 
 export const TraversableSync: Traversable<KindSync> = { map, reduce, traverse };
+
+export const Do = <A>() => of<A>(<A> {});
+
+export const bind = bind_(MonadSync);
+
+export const bindTo = bindTo_(MonadSync);

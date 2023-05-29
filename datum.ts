@@ -12,6 +12,8 @@ import type { Traversable } from "./traversable.ts";
 import { fromCompare } from "./ord.ts";
 import { isNotNil } from "./nilable.ts";
 import { flow, identity, pipe } from "./fn.ts";
+import { bind as bind_ } from "./chain.ts";
+import { bindTo as bindTo_ } from "./functor.ts";
 
 /**
  * TODO: Lets get a monoid in here for tracking progress.
@@ -52,11 +54,11 @@ export const initial: Initial = { tag: "Initial" };
 export const pending: Pending = { tag: "Pending" };
 
 export function refresh<D>(value: D): Datum<D> {
-  return ({ tag: "Refresh", value });
+  return { tag: "Refresh", value };
 }
 
 export function replete<D>(value: D): Datum<D> {
-  return ({ tag: "Replete", value });
+  return { tag: "Replete", value };
 }
 
 export function constInitial<A = never>(): Datum<A> {
@@ -80,15 +82,7 @@ export function tryCatch<A>(fa: () => A): Datum<A> {
 }
 
 export function toLoading<A>(ta: Datum<A>): Datum<A> {
-  return pipe(
-    ta,
-    match(
-      constPending,
-      constPending,
-      refresh,
-      refresh,
-    ),
-  );
+  return pipe(ta, match(constPending, constPending, refresh, refresh));
 }
 
 export function isInitial<A>(ta: Datum<A>): ta is Initial {
@@ -160,12 +154,10 @@ export function map<A, I>(fai: (a: A) => I): (ta: Datum<A>) => Datum<I> {
   );
 }
 
-export function ap<A>(
-  ua: Datum<A>,
-): <I>(ufai: Datum<(a: A) => I>) => Datum<I> {
+export function ap<A>(ua: Datum<A>): <I>(ufai: Datum<(a: A) => I>) => Datum<I> {
   switch (ua.tag) {
     case "Initial":
-      return (ufai) => isLoading(ufai) ? pending : initial;
+      return (ufai) => (isLoading(ufai) ? pending : initial);
     case "Pending":
       return constPending;
     case "Replete":
@@ -178,19 +170,14 @@ export function ap<A>(
           ? pending
           : initial;
     case "Refresh":
-      return (ufai) => isSome(ufai) ? refresh(ufai.value(ua.value)) : pending;
+      return (ufai) => (isSome(ufai) ? refresh(ufai.value(ua.value)) : pending);
   }
 }
 
 export function chain<A, I>(
   fati: (a: A) => Datum<I>,
 ): (ta: Datum<A>) => Datum<I> {
-  return match(
-    constInitial,
-    constPending,
-    fati,
-    flow(fati, toLoading),
-  );
+  return match(constInitial, constPending, fati, flow(fati, toLoading));
 }
 
 export function join<A>(taa: Datum<Datum<A>>): Datum<A> {
@@ -198,14 +185,14 @@ export function join<A>(taa: Datum<Datum<A>>): Datum<A> {
 }
 
 export function alt<A>(tb: Datum<A>): (ta: Datum<A>) => Datum<A> {
-  return (ta) => isSome(ta) ? ta : tb;
+  return (ta) => (isSome(ta) ? ta : tb);
 }
 
 export function reduce<A, O>(
   foao: (o: O, a: A) => O,
   o: O,
 ): (ta: Datum<A>) => O {
-  return (ta) => isSome(ta) ? foao(o, ta.value) : o;
+  return (ta) => (isSome(ta) ? foao(o, ta.value) : o);
 }
 
 export function traverse<V extends Kind>(
@@ -217,58 +204,66 @@ export function traverse<V extends Kind>(
     match(
       () => A.of(constInitial()),
       () => A.of(constPending()),
-      (a) => pipe(favi(a), A.map((i) => replete(i))),
-      (a) => pipe(favi(a), A.map((i) => refresh(i))),
+      (a) =>
+        pipe(
+          favi(a),
+          A.map((i) => replete(i)),
+        ),
+      (a) =>
+        pipe(
+          favi(a),
+          A.map((i) => refresh(i)),
+        ),
     );
 }
 
 export function getShow<A>({ show }: Show<A>): Show<Datum<A>> {
-  return ({
+  return {
     show: match(
       () => `Initial`,
       () => `Pending`,
       (a) => `Replete(${show(a)})`,
       (a) => `Refresh(${show(a)})`,
     ),
-  });
+  };
 }
 
-export function getSemigroup<A>(
-  S: Semigroup<A>,
-): Semigroup<Datum<A>> {
-  return ({
+export function getSemigroup<A>(S: Semigroup<A>): Semigroup<Datum<A>> {
+  return {
     concat: (mx) =>
       match(
         () => mx,
         () => toLoading(mx),
         (v) =>
           isSome(mx)
-            ? (isRefresh(mx)
+            ? isRefresh(mx)
               ? refresh(S.concat(mx.value)(v))
-              : replete(S.concat(mx.value)(v)))
-            : (isPending(mx) ? refresh(v) : replete(v)),
-        (v) => isSome(mx) ? refresh(S.concat(mx.value)(v)) : refresh(v),
+              : replete(S.concat(mx.value)(v))
+            : isPending(mx)
+            ? refresh(v)
+            : replete(v),
+        (v) => (isSome(mx) ? refresh(S.concat(mx.value)(v)) : refresh(v)),
       ),
-  });
+  };
 }
 
 export function getMonoid<A>(S: Semigroup<A>): Monoid<Datum<A>> {
-  return ({
+  return {
     ...getSemigroup(S),
     empty: constInitial,
-  });
+  };
 }
 
 export function getEq<A>(S: Eq<A>): Eq<Datum<A>> {
-  return ({
+  return {
     equals: (b) =>
       match(
         () => isInitial(b),
         () => isPending(b),
-        (v) => isReplete(b) ? S.equals(b.value)(v) : false,
-        (v) => isRefresh(b) ? S.equals(b.value)(v) : false,
+        (v) => (isReplete(b) ? S.equals(b.value)(v) : false),
+        (v) => (isRefresh(b) ? S.equals(b.value)(v) : false),
       ),
-  });
+  };
 }
 
 export function getOrd<A>(O: Ord<A>): Ord<Datum<A>> {
@@ -276,11 +271,11 @@ export function getOrd<A>(O: Ord<A>): Ord<Datum<A>> {
     pipe(
       fst,
       match(
-        () => isInitial(snd) ? 0 : -1,
-        () => isInitial(snd) ? 1 : isPending(snd) ? 0 : -1,
+        () => (isInitial(snd) ? 0 : -1),
+        () => (isInitial(snd) ? 1 : isPending(snd) ? 0 : -1),
         (value) =>
           isNone(snd) ? 1 : isReplete(snd) ? O.compare(value, snd.value) : -1,
-        (value) => isRefresh(snd) ? O.compare(value, snd.value) : 1,
+        (value) => (isRefresh(snd) ? O.compare(value, snd.value) : 1),
       ),
     )
   );
@@ -295,3 +290,9 @@ export const TraversableDatum: Traversable<KindDatum> = {
   reduce,
   traverse,
 };
+
+export const Do = <A>() => of<A>(<A> {});
+
+export const bind = bind_(MonadDatum);
+
+export const bindTo = bindTo_(MonadDatum);

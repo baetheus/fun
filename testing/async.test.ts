@@ -19,6 +19,9 @@ function throwAsync(n: number): Promise<number> {
   return Promise.resolve(n);
 }
 
+const assertEqualsT = async <A>(actual: A.Async<A>, expected: A.Async<A>) =>
+  assertEquals(await actual(), await expected());
+
 Deno.test("Async of", async () => {
   assertEquals(await A.of(0)(), 0);
 });
@@ -44,7 +47,10 @@ Deno.test("Async of", async () => {
 
 Deno.test("Async apParallel", async () => {
   assertEquals(
-    await pipe(A.of((n: number) => n + 1), A.apParallel(A.of(1)))(),
+    await pipe(
+      A.of((n: number) => n + 1),
+      A.apParallel(A.of(1)),
+    )(),
     2,
   );
 });
@@ -58,31 +64,34 @@ Deno.test("Async join", async () => {
 });
 
 Deno.test("Async chain", async () => {
-  assertEquals(await pipe(A.of(1), A.chain((n) => A.of(n + 1)))(), 2);
-});
-
-Deno.test("Async apSeq", async () => {
   assertEquals(
-    await pipe(A.of((n: number) => n + 1), A.apSequential(A.of(1)))(),
+    await pipe(
+      A.of(1),
+      A.chain((n) => A.of(n + 1)),
+    )(),
     2,
   );
 });
 
-// Deno.test("Async Do, bind, bindTo", () => {
-//   assertEquals(
-//     pipe(
-//       A.Do<number, number, number>(),
-//       A.bind("one", () => A.of(1)),
-//       A.bind("two", ({ one }) => A.of(one + one)),
-//       A.map(({ one, two }) => one + two),
-//     ),
-//     A.of(3),
-//   );
-//   assertEquals(
-//     pipe(
-//       A.of(1),
-//       A.bindTo("one"),
-//     ),
-//     A.of({ one: 1 }),
-//   );
-// });
+Deno.test("Async apSeq", async () => {
+  assertEquals(
+    await pipe(
+      A.of((n: number) => n + 1),
+      A.apSequential(A.of(1)),
+    )(),
+    2,
+  );
+});
+
+Deno.test("Async Do, bind, bindTo", () => {
+  assertEqualsT(
+    pipe(
+      A.Do<number>(),
+      A.bind("one", () => A.of(1)),
+      A.bind("two", ({ one }) => A.of(one + one)),
+      A.map(({ one, two }) => one + two),
+    ),
+    A.of(3),
+  );
+  assertEqualsT(pipe(A.of(1), A.bindTo("one")), A.of({ one: 1 }));
+});

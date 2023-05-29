@@ -11,6 +11,8 @@ import type { Kind, Out } from "./kind.ts";
 import type { Monad } from "./monad.ts";
 import type { Predicate } from "./predicate.ts";
 import type { Show } from "./show.ts";
+import { bind as bind_ } from "./chain.ts";
+import { bindTo as bindTo_ } from "./functor.ts";
 
 import { identity, pipe } from "./fn.ts";
 
@@ -106,6 +108,12 @@ export function alt<A>(tb: Nilable<A>): (ta: Nilable<A>) => Nilable<A> {
 }
 
 export const MonadNilable: Monad<KindNilable> = { of, ap, map, join, chain };
+
+export const Do = <A>() => of<A>(<A> {});
+
+export const bind = bind_(MonadNilable);
+
+export const bindTo = bindTo_(MonadNilable);
 
 export const AltNilable: Alt<KindNilable> = { alt, map };
 

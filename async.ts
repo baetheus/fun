@@ -4,6 +4,8 @@ import type { Sync } from "./sync.ts";
 
 import { resolve, wait } from "./promise.ts";
 import { handleThrow } from "./fn.ts";
+import { bind as bind_ } from "./chain.ts";
+import { bindTo as bindTo_ } from "./functor.ts";
 
 export type Async<A> = Sync<Promise<A>>;
 
@@ -78,3 +80,9 @@ export const MonadAsyncSequential: Monad<KindAsync> = {
   join,
   chain,
 };
+
+export const Do = <A>() => of<A>(<A> {});
+
+export const bind = bind_(MonadAsyncSequential);
+
+export const bindTo = bindTo_(MonadAsyncSequential);

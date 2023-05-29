@@ -155,21 +155,21 @@ Deno.test("AsyncEither match", async () => {
   assertEquals(await fold(AE.left("asdf"))(), "asdf");
 });
 
-// Deno.test("AsyncEither Do, bind, bindTo", () => {
-//   assertEqualsT(
-//     pipe(
-//       AE.Do<number, number, number>(),
-//       AE.bind("one", () => AE.right(1)),
-//       AE.bind("two", ({ one }) => AE.right(one + one)),
-//       AE.map(({ one, two }) => one + two),
-//     ),
-//     AE.right(3),
-//   );
-//   assertEqualsT(
-//     pipe(
-//       AE.right(1),
-//       AE.bindTo("one"),
-//     ),
-//     AE.right({ one: 1 }),
-//   );
-// });
+Deno.test("AsyncEither Do, bind, bindTo", () => {
+  assertEqualsT(
+    pipe(
+      AE.Do<number>(),
+      AE.bind("one", () => AE.right(1)),
+      AE.bind("two", ({ one }) => AE.right(one + one)),
+      AE.map(({ one, two }) => one + two),
+    ),
+    AE.right(3),
+  );
+  assertEqualsT(
+    pipe(
+      AE.right(1),
+      AE.bindTo("one"),
+    ),
+    AE.right({ one: 1 }),
+  );
+});

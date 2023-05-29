@@ -19,7 +19,10 @@ Deno.test("State put", () => {
 });
 
 Deno.test("State modify", () => {
-  assertEqualsS(S.modify((n: number) => n + 1), S.put(2));
+  assertEqualsS(
+    S.modify((n: number) => n + 1),
+    S.put(2),
+  );
 });
 
 Deno.test("State gets", () => {
@@ -34,8 +37,7 @@ Deno.test("State of", () => {
   assertEqualsS(S.of(1), S.id<number>());
 });
 
-Deno.test("State ap", () => {
-});
+Deno.test("State ap", () => {});
 
 Deno.test("State map", () => {
   assertEqualsS(pipe(S.id<number>(), S.map(add)), S.state(2, 1));
@@ -50,7 +52,10 @@ Deno.test("State join", () => {
 
 Deno.test("State chain", () => {
   assertEqualsS(
-    pipe(S.id<number>(), S.chain((n) => S.gets((m) => n + m))),
+    pipe(
+      S.id<number>(),
+      S.chain((n) => S.gets((m) => n + m)),
+    ),
     S.state(2, 1),
   );
 });
@@ -63,21 +68,15 @@ Deno.test("State execute", () => {
   assertEquals(pipe(S.id<number>(), S.execute(0)), 0);
 });
 
-// Deno.test("State Do, bind, bindTo", () => {
-//   assertEqualsS(
-//     pipe(
-//       S.Do<number, number, number>(),
-//       S.bind("one", () => S.make(1, 1)),
-//       S.bind("two", ({ one }) => S.make(one + one, 1)),
-//       S.map(({ one, two }) => one + two),
-//     ),
-//     S.make(3, 1),
-//   );
-//   assertEqualsS(
-//     pipe(
-//       S.make(1, 1),
-//       S.bindTo("one"),
-//     ),
-//     S.make({ one: 1 }, 1),
-//   );
-// });
+Deno.test("State Do, bind, bindTo", () => {
+  assertEqualsS(
+    pipe(
+      S.Do<number>(),
+      S.bind("one", () => S.state(1, 1)),
+      S.bind("two", ({ one }) => S.state(one + one, 1)),
+      S.map(({ one, two }) => one + two),
+    ),
+    S.state(3, 1),
+  );
+  assertEqualsS(pipe(S.state(1, 1), S.bindTo("one")), S.state({ one: 1 }, 1));
+});

@@ -39,7 +39,10 @@ Deno.test("Option tryCatch", () => {
 });
 
 Deno.test("Option match", () => {
-  const match = O.match(() => 0, (n: number) => n);
+  const match = O.match(
+    () => 0,
+    (n: number) => n,
+  );
   assertEquals(match(O.none), 0);
   assertEquals(match(O.some(1)), 1);
 });
@@ -104,7 +107,7 @@ Deno.test("Option join", () => {
 });
 
 Deno.test("Option chain", () => {
-  const fati = (n: number) => n === 0 ? O.none : O.some(n);
+  const fati = (n: number) => (n === 0 ? O.none : O.some(n));
   assertEquals(pipe(O.some(0), O.chain(fati)), O.none);
   assertEquals(pipe(O.some(1), O.chain(fati)), O.some(1));
   assertEquals(pipe(O.none, O.chain(fati)), O.none);
@@ -118,7 +121,7 @@ Deno.test("Option reduce", () => {
 
 Deno.test("Option traverse", () => {
   const t1 = O.traverse(O.MonadOption);
-  const t2 = t1((n: number) => n === 0 ? O.none : O.some(1));
+  const t2 = t1((n: number) => (n === 0 ? O.none : O.some(1)));
   assertEquals(t2(O.none), O.some(O.none));
   assertEquals(t2(O.some(0)), O.none);
   assertEquals(t2(O.some(1)), O.some(O.some(1)));
@@ -168,7 +171,12 @@ Deno.test("Option partitionMap", () => {
 });
 
 Deno.test("Option extend", () => {
-  const extend = O.extend(O.match(() => -1, (n: number) => n + 1));
+  const extend = O.extend(
+    O.match(
+      () => -1,
+      (n: number) => n + 1,
+    ),
+  );
   assertEquals(extend(O.some(0)), O.some(1));
   assertEquals(extend(O.none), O.some(-1));
 });
@@ -223,21 +231,15 @@ Deno.test("Option getMonoid", () => {
   assertEquals(empty(), O.none);
 });
 
-// Deno.test("Option Do, bind, bindTo", () => {
-//   assertEquals(
-//     pipe(
-//       O.Do(),
-//       O.bind("one", () => O.some(1)),
-//       O.bind("two", ({ one }) => O.some(one + one)),
-//       O.map(({ one, two }) => one + two),
-//     ),
-//     O.some(3),
-//   );
-//   assertEquals(
-//     pipe(
-//       O.some(1),
-//       O.bindTo("one"),
-//     ),
-//     O.some({ one: 1 }),
-//   );
-// });
+Deno.test("Option Do, bind, bindTo", () => {
+  assertEquals(
+    pipe(
+      O.Do(),
+      O.bind("one", () => O.some(1)),
+      O.bind("two", ({ one }) => O.some(one + one)),
+      O.map(({ one, two }) => one + two),
+    ),
+    O.some(3),
+  );
+  assertEquals(pipe(O.some(1), O.bindTo("one")), O.some({ one: 1 }));
+});

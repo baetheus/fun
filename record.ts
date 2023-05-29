@@ -217,10 +217,7 @@ export function map<A, I>(
  *
  * @since 2.0.0
  */
-export function reduce<A, O>(
-  foao: (o: O, a: A, i: string) => O,
-  o: O,
-) {
+export function reduce<A, O>(foao: (o: O, a: A, i: string) => O, o: O) {
   return (rec: ReadonlyRecord<A>): O => {
     let result = o;
     for (const key in rec) {
@@ -281,13 +278,8 @@ export function collect<I>(
  *
  * @since 2.0.0
  */
-export function collapse<A>(
-  M: Monoid<A>,
-): (ua: ReadonlyRecord<A>) => A {
-  return reduce(
-    (first: A, second: A) => M.concat(second)(first),
-    M.empty(),
-  );
+export function collapse<A>(M: Monoid<A>): (ua: ReadonlyRecord<A>) => A {
+  return reduce((first: A, second: A) => M.concat(second)(first), M.empty());
 }
 
 /**
@@ -340,11 +332,7 @@ export function traverse<V extends Kind>(
       a: A,
       key: string,
     ): $<V, [Record<string, I>, J, K], [L], [M]> =>
-      pipe(
-        vis,
-        A.map(pusher(key)),
-        A.ap(favi(a, key)),
-      );
+      pipe(vis, A.map(pusher(key)), A.ap(favi(a, key)));
 
     return (ua) => pipe(ua, reduce(reducer, A.of({})));
   };
@@ -366,14 +354,53 @@ export function traverse<V extends Kind>(
  * Either<string | number, [number, string]>
  */
 // deno-fmt-ignore
-type Sequence<U extends Kind, R extends ReadonlyRecord<AnySub<U>>> = $<U, [
-    { [K in keyof R]: R[K] extends $<U, [infer A, infer _, infer _], any[], any[]> ? A : never; },
-    { [K in keyof R]: R[K] extends $<U, [infer _, infer B, infer _], any[], any[]> ? B : never; }[keyof R],
-    { [K in keyof R]: R[K] extends $<U, [infer _, infer _, infer C], any[], any[]> ? C : never; }[keyof R],
-  ], [
-    Intersect< { [K in keyof R]: R[K] extends $<U, any[], [infer D], any[]> ? D : never; }[keyof R] >,
-  ], [
-    Intersect< { [K in keyof R]: R[K] extends $<U, any[], any[], [infer E]> ? E : never; }[keyof R] >,
+type Sequence<U extends Kind, R extends ReadonlyRecord<AnySub<U>>> = $<
+  U,
+  [
+    {
+      [K in keyof R]: R[K] extends $<
+        U,
+        [infer A, infer _, infer _],
+        any[],
+        any[]
+      >
+        ? A
+        : never;
+    },
+    {
+      [K in keyof R]: R[K] extends $<
+        U,
+        [infer _, infer B, infer _],
+        any[],
+        any[]
+      >
+        ? B
+        : never;
+    }[keyof R],
+    {
+      [K in keyof R]: R[K] extends $<
+        U,
+        [infer _, infer _, infer C],
+        any[],
+        any[]
+      >
+        ? C
+        : never;
+    }[keyof R]
+  ],
+  [
+    Intersect<
+      {
+        [K in keyof R]: R[K] extends $<U, any[], [infer D], any[]> ? D : never;
+      }[keyof R]
+    >
+  ],
+  [
+    Intersect<
+      {
+        [K in keyof R]: R[K] extends $<U, any[], any[], [infer E]> ? E : never;
+      }[keyof R]
+    >
   ]
 >;
 
@@ -675,9 +702,7 @@ export function lookupWithKey(key: string) {
  * @since 2.0.0
  */
 export function deleteAt(key: string) {
-  return <A>(
-    rec: ReadonlyRecord<A>,
-  ): ReadonlyRecord<A> => {
+  return <A>(rec: ReadonlyRecord<A>): ReadonlyRecord<A> => {
     if (Object.hasOwn(rec, key)) {
       const out = { ...rec };
       delete out[key];
@@ -711,9 +736,7 @@ export function deleteAt(key: string) {
  * @since 2.0.0
  */
 export function deleteAtWithValue(key: string) {
-  return <A>(
-    rec: ReadonlyRecord<A>,
-  ): Pair<ReadonlyRecord<A>, Option<A>> => {
+  return <A>(rec: ReadonlyRecord<A>): Pair<ReadonlyRecord<A>, Option<A>> => {
     if (Object.hasOwn(rec, key)) {
       const out = { ...rec };
       const value = rec[key];
@@ -986,11 +1009,12 @@ export const TraversableRecord: Traversable<KindReadonlyRecord> = {
  * @since 2.0.0
  */
 export function getShow<A>(SA: Show<A>): Show<ReadonlyRecord<A>> {
-  return ({
+  return {
     show: (ua) =>
       `{${
-        Object.entries(ua).map(([key, value]) => `${key}: ${SA.show(value)}`)
+        Object.entries(ua)
+          .map(([key, value]) => `${key}: ${SA.show(value)}`)
           .join(", ")
       }}`,
-  });
+  };
 }

@@ -125,21 +125,21 @@ Deno.test("SyncEither chainLeft", () => {
   assertEqualsIO(chainLeft(SE.left(1)), SE.right(2));
 });
 
-// Deno.test("Datum Do, bind, bindTo", () => {
-//   assertEqualsIO(
-//     pipe(
-//       SE.Do(),
-//       SE.bind("one", () => SE.right(1)),
-//       SE.bind("two", ({ one }) => SE.right(one + one)),
-//       SE.map(({ one, two }) => one + two),
-//     ),
-//     SE.right(3),
-//   );
-//   assertEqualsIO(
-//     pipe(
-//       SE.right(1),
-//       SE.bindTo("one"),
-//     ),
-//     SE.right({ one: 1 }),
-//   );
-// });
+Deno.test("Datum Do, bind, bindTo", () => {
+  assertEqualsIO(
+    pipe(
+      SE.Do(),
+      SE.bind("one", () => SE.right(1)),
+      SE.bind("two", ({ one }) => SE.right(one + one)),
+      SE.map(({ one, two }) => one + two),
+    ),
+    SE.right(3),
+  );
+  assertEqualsIO(
+    pipe(
+      SE.right(1),
+      SE.bindTo("one"),
+    ),
+    SE.right({ one: 1 }),
+  );
+});

@@ -9,6 +9,9 @@ import type { Either } from "./either.ts";
 
 import * as E from "./either.ts";
 import * as I from "./sync.ts";
+import { bind as bind_ } from "./chain.ts";
+import { bindTo as bindTo_ } from "./functor.ts";
+
 import { constant, flow, identity, pipe } from "./fn.ts";
 
 export type SyncEither<L, R> = Sync<Either<L, R>>;
@@ -119,7 +122,14 @@ export function reduce<A, O>(
   foao: (o: O, a: A) => O,
   o: O,
 ): <B>(ta: SyncEither<B, A>) => O {
-  return (ta) => pipe(ta(), E.match(() => o, (a) => foao(o, a)));
+  return (ta) =>
+    pipe(
+      ta(),
+      E.match(
+        () => o,
+        (a) => foao(o, a),
+      ),
+    );
 }
 
 export const BifunctorSyncEither: Bifunctor<KindSyncEither> = {
@@ -140,3 +150,9 @@ export const AltSyncEither: Alt<KindSyncEither> = { alt, map };
 export const ExtendsSyncEither: Extend<KindSyncEither> = { map, extend };
 
 export const FoldableSyncEither: Foldable<KindSyncEither> = { reduce };
+
+export const Do = <A>() => of<A>(<A> {});
+
+export const bind = bind_(MonadSyncEither);
+
+export const bindTo = bindTo_(MonadSyncEither);

@@ -30,11 +30,17 @@ Deno.test("Nilable fromPredicate", () => {
 
 Deno.test("Nilable tryCatch", () => {
   assertEquals(N.tryCatch(todo), N.nil);
-  assertEquals(N.tryCatch(() => 1), 1);
+  assertEquals(
+    N.tryCatch(() => 1),
+    1,
+  );
 });
 
 Deno.test("Nilable match", () => {
-  const match = N.match(() => 0, (n: number) => n);
+  const match = N.match(
+    () => 0,
+    (n: number) => n,
+  );
   assertEquals(match(null), 0);
   assertEquals(match(undefined), 0);
   assertEquals(match(1), 1);
@@ -118,27 +124,21 @@ Deno.test("Nilable alt", () => {
 });
 
 Deno.test("Nilable chain", () => {
-  const chain = N.chain((n: number) => n === 0 ? N.nil : n);
+  const chain = N.chain((n: number) => (n === 0 ? N.nil : n));
   assertEquals(chain(undefined), N.nil);
   assertEquals(chain(null), N.nil);
   assertEquals(chain(1), 1);
 });
 
-// Deno.test("Nilable Do, bind, bindTo", () => {
-//   assertEquals(
-//     pipe(
-//       N.Do(),
-//       N.bind("one", () => N.make(1)),
-//       N.bind("two", ({ one }) => N.make(one + one)),
-//       N.map(({ one, two }) => one + two),
-//     ),
-//     N.make(3),
-//   );
-//   assertEquals(
-//     pipe(
-//       N.make(1),
-//       N.bindTo("one"),
-//     ),
-//     N.make({ one: 1 }),
-//   );
-// });
+Deno.test("Nilable Do, bind, bindTo", () => {
+  assertEquals(
+    pipe(
+      N.Do(),
+      N.bind("one", () => N.make(1)),
+      N.bind("two", ({ one }) => N.make(one + one)),
+      N.map(({ one, two }) => one + two),
+    ),
+    N.make(3),
+  );
+  assertEquals(pipe(N.make(1), N.bindTo("one")), N.make({ one: 1 }));
+});

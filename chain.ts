@@ -7,9 +7,9 @@ import type { Apply } from "./apply.ts";
  */
 export interface Chain<U extends Kind> extends TypeClass<U>, Apply<U> {
   readonly chain: <A, I, J = never, K = never, D = unknown, E = unknown>(
-    fati: (a: A) => $<U, [I, J, K], [D], [E]>
+    fati: (a: A) => $<U, [I, J, K], [D], [E]>,
   ) => <B = never, C = never>(
-    ta: $<U, [A, B, C], [D], [E]>
+    ta: $<U, [A, B, C], [D], [E]>,
   ) => $<U, [I, B | J, C | K], [D], [E]>;
 }
 
@@ -20,15 +20,15 @@ export interface Chain<U extends Kind> extends TypeClass<U>, Apply<U> {
 export interface ChainRec<U extends Kind> extends TypeClass<U>, Chain<U> {
   readonly chainRec: <A, B, I, J = never, K = never, D = unknown, E = unknown>(
     fati: (a: A) => $<U, [I, J, K], [D], [E]>,
-    a: A
+    a: A,
   ) => $<U, [B, J, K], [D], [E]>;
 }
 
 // chainFirst
 export function chainFirst<U extends Kind>(
-  M: Chain<U>
+  M: Chain<U>,
 ): <A, I, J = never, K = never, D = unknown, E = unknown>(
-  f: (a: A) => $<U, [I, J, K], [D], [E]>
+  f: (a: A) => $<U, [I, J, K], [D], [E]>,
 ) => <B, C>(ma: $<U, [A, B, C], [D], [E]>) => $<U, [A, B, C], [D], [E]> {
   // @ts-expect-error <type-errors> TODO: @baetheus
   return (f) => (ma) => M.chain((a) => M.map(() => a)(f(a)))(ma);
@@ -36,7 +36,7 @@ export function chainFirst<U extends Kind>(
 
 // bind
 export function bind<U extends Kind>(
-  M: Chain<U>
+  M: Chain<U>,
 ): <
   N extends string,
   A,
@@ -46,12 +46,12 @@ export function bind<U extends Kind>(
   J = never,
   K = never,
   D = unknown,
-  E = unknown
+  E = unknown,
 >(
   name: Exclude<N, keyof A>,
-  f: (a: A) => $<U, [I, J, K], [D], [E]>
+  f: (a: A) => $<U, [I, J, K], [D], [E]>,
 ) => <B, C>(
-  ma: $<U, [A, B, C], [D], [E]>
+  ma: $<U, [A, B, C], [D], [E]>,
 ) => $<
   U,
   [{ readonly [K in keyof A | N]: K extends keyof A ? A[K] : I }],

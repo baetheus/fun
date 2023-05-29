@@ -12,6 +12,8 @@ import type { InOut, Kind, Out } from "./kind.ts";
 import type { Monad } from "./monad.ts";
 
 import { flow, identity, pipe } from "./fn.ts";
+import { bind as bind_ } from "./chain.ts";
+import { bindTo as bindTo_ } from "./functor.ts";
 
 /**
  * The State<E, A> type represents the core State structure. The input/output
@@ -315,3 +317,9 @@ export function execute<S>(s: S): <A>(ta: State<S, A>) => S {
  * @since 2.0.0
  */
 export const MonadState: Monad<KindState> = { of, ap, map, join, chain };
+
+export const Do = <A>() => of<A, A>(<A> {});
+
+export const bind = bind_(MonadState);
+
+export const bindTo = bindTo_(MonadState);

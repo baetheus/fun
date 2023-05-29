@@ -19,6 +19,8 @@ import type { Predicate } from "./predicate.ts";
 import type { Refinement } from "./refinement.ts";
 import type { Fn } from "./fn.ts";
 import type { Either } from "./either.ts";
+import { bind as bind_ } from "./chain.ts";
+import { bindTo as bindTo_ } from "./functor.ts";
 
 import * as E from "./either.ts";
 import * as F from "./fn.ts";
@@ -698,3 +700,9 @@ export function getRightMonad<B>(
     chain,
   });
 }
+
+export const Do = <A>() => of<A>(<A> {});
+
+export const bind = bind_(MonadFnEither);
+
+export const bindTo = bindTo_(MonadFnEither);

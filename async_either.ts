@@ -20,6 +20,8 @@ import * as A from "./async.ts";
 import * as P from "./promise.ts";
 import { handleThrow, identity, pipe } from "./fn.ts";
 import { resolve } from "./promise.ts";
+import { bind as bind_ } from "./chain.ts";
+import { bindTo as bindTo_ } from "./functor.ts";
 
 /**
  * The AsyncEither type can best be thought of as an asynchronous function that
@@ -445,3 +447,9 @@ export const MonadAsyncEitherSequential: Monad<KindAsyncEither> = {
   join,
   chain,
 };
+
+export const Do = <A>() => of<A>(<A> {});
+
+export const bind = bind_(MonadAsyncEitherSequential);
+
+export const bindTo = bindTo_(MonadAsyncEitherSequential);
