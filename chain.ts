@@ -30,13 +30,24 @@ export function chainFirst<U extends Kind>(
 ): <A, I, J = never, K = never, D = unknown, E = unknown>(
   f: (a: A) => $<U, [I, J, K], [D], [E]>
 ) => <B, C>(ma: $<U, [A, B, C], [D], [E]>) => $<U, [A, B, C], [D], [E]> {
+  // @ts-expect-error <type-errors> TODO: @baetheus
   return (f) => (ma) => M.chain((a) => M.map(() => a)(f(a)))(ma);
 }
 
 // bind
 export function bind<U extends Kind>(
   M: Chain<U>
-): <N extends string, A, I, J = never, K = never, D = unknown, E = unknown>(
+): <
+  N extends string,
+  A,
+  B,
+  C,
+  I,
+  J = never,
+  K = never,
+  D = unknown,
+  E = unknown
+>(
   name: Exclude<N, keyof A>,
   f: (a: A) => $<U, [I, J, K], [D], [E]>
 ) => <B, C>(
@@ -48,6 +59,7 @@ export function bind<U extends Kind>(
   [E]
 > {
   return (name, f) =>
+    // @ts-expect-error <type-errors> TODO: @baetheus
     M.chain((a) =>
       M.map((b) => Object.assign({}, a, { [name]: b }) as any)(f(a))
     );
