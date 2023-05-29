@@ -101,14 +101,14 @@ export function right<A = never, B = never>(right: A): AsyncEither<B, A> {
  */
 export function tryCatch<AS extends unknown[], A, B>(
   fasr: (...as: AS) => A | PromiseLike<A>,
-  onThrow: (e: unknown, as: AS) => B
+  onThrow: (e: unknown, as: AS) => B,
 ): (...as: AS) => AsyncEither<B, A> {
   return (...as) => {
     const _onThrow = (e: unknown) => E.left(onThrow(e, as));
     return handleThrow(
       () => fasr(...as),
       (a) => resolve(a).then(E.right).catch(_onThrow),
-      (e) => resolve(_onThrow(e))
+      (e) => resolve(_onThrow(e)),
     );
   };
 }
@@ -207,7 +207,7 @@ export function throwError<A = never, B = never>(b: B): AsyncEither<B, A> {
  */
 export function bimap<A, B, I, J>(
   fbj: (b: B) => J,
-  fai: (a: A) => I
+  fai: (a: A) => I,
 ): (ta: AsyncEither<B, A>) => AsyncEither<J, I> {
   return (ta) => pipe(ta, A.map(E.bimap(fbj, fai)));
 }
@@ -218,7 +218,7 @@ export function bimap<A, B, I, J>(
  * @since 2.0.0
  */
 export function map<A, I>(
-  fai: (a: A) => I
+  fai: (a: A) => I,
 ): <B>(ta: AsyncEither<B, A>) => AsyncEither<B, I> {
   return (ta) => pipe(ta, A.map(E.map(fai)));
 }
@@ -229,7 +229,7 @@ export function map<A, I>(
  * @since 2.0.0
  */
 export function mapLeft<B, J>(
-  fbj: (b: B) => J
+  fbj: (b: B) => J,
 ): <A>(ta: AsyncEither<B, A>) => AsyncEither<J, A> {
   return (ta) => pipe(ta, A.map(E.mapLeft(fbj)));
 }
@@ -240,12 +240,12 @@ export function mapLeft<B, J>(
  * @since 2.0.0
  */
 export function apParallel<A, B>(
-  ua: AsyncEither<B, A>
+  ua: AsyncEither<B, A>,
 ): <I, J>(ufai: AsyncEither<J, (a: A) => I>) => AsyncEither<B | J, I> {
   return (ufai) => () =>
     pipe(
       P.all(ufai(), ua()),
-      P.map(([efai, ea]) => pipe(efai, E.ap(ea)))
+      P.map(([efai, ea]) => pipe(efai, E.ap(ea))),
     );
 }
 
@@ -255,7 +255,7 @@ export function apParallel<A, B>(
  * @since 2.0.0
  */
 export function apSequential<A, B>(
-  ua: AsyncEither<B, A>
+  ua: AsyncEither<B, A>,
 ): <I, J = never>(ufai: AsyncEither<J, (a: A) => I>) => AsyncEither<B | J, I> {
   return (ufai) => async () => {
     const ea = await ua();
@@ -285,7 +285,7 @@ export function apSequential<A, B>(
  * @since 2.0.0
  */
 export function chain<A, I, J>(
-  fati: (a: A) => AsyncEither<J, I>
+  fati: (a: A) => AsyncEither<J, I>,
 ): <B>(ta: AsyncEither<B, A>) => AsyncEither<B | J, I> {
   return (ta) => async () => {
     const ea = await ta();
@@ -294,7 +294,7 @@ export function chain<A, I, J>(
 }
 
 export function chainFirst<A, I, J>(
-  fati: (a: A) => AsyncEither<J, I>
+  fati: (a: A) => AsyncEither<J, I>,
 ): <B>(ta: AsyncEither<B, A>) => AsyncEither<B | J, A> {
   return (ta) => async () => {
     const ea = await ta();
@@ -329,7 +329,7 @@ export function chainFirst<A, I, J>(
  * @since 2.0.0
  */
 export function chainLeft<B, J, I>(
-  fbtj: (b: B) => AsyncEither<J, I>
+  fbtj: (b: B) => AsyncEither<J, I>,
 ): <A>(ta: AsyncEither<B, A>) => AsyncEither<J, A | I> {
   return (ta) => async () => {
     const ea = await ta();
@@ -359,7 +359,7 @@ export function chainLeft<B, J, I>(
  * @since 2.0.0
  */
 export function join<A, B, J>(
-  tta: AsyncEither<J, AsyncEither<B, A>>
+  tta: AsyncEither<J, AsyncEither<B, A>>,
 ): AsyncEither<B | J, A> {
   return pipe(tta, chain(identity));
 }
@@ -385,7 +385,7 @@ export function join<A, B, J>(
  * @since 2.0.0
  */
 export function alt<I, J>(
-  ti: AsyncEither<J, I>
+  ti: AsyncEither<J, I>,
 ): <A, B>(ta: AsyncEither<B, A>) => AsyncEither<B | J, A | I> {
   return (ta) => async () => {
     const ea = await ta();
@@ -416,7 +416,7 @@ export function alt<I, J>(
  */
 export function match<L, R, B>(
   onLeft: (left: L) => B,
-  onRight: (right: R) => B
+  onRight: (right: R) => B,
 ): (ta: AsyncEither<L, R>) => Async<B> {
   return (ta) => () => ta().then(E.match<L, R, B>(onLeft, onRight));
 }
@@ -449,7 +449,7 @@ export const MonadAsyncEitherSequential: Monad<KindAsyncEither> = {
   chain,
 };
 
-export const Do = <A>() => of<A>(<A>{});
+export const Do = <A>() => of<A>(<A> {});
 
 export const bind = bind_(MonadAsyncEitherSequential);
 
