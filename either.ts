@@ -228,6 +228,14 @@ export function map<A, I>(
   return (ta) => isLeft(ta) ? ta : right(fai(ta.right));
 }
 
+export const tap = <B, A>(
+  fa: (a: A) => void,
+): (ta: Either<B, A>) => Either<B, A> =>
+  map((a: A) => {
+    fa(a);
+    return a;
+  });
+
 export function chainLeft<B, I, J>(
   fbj: (b: B) => Either<J, I>,
 ): <A>(ta: Either<B, A>) => Either<J, A | I> {
@@ -258,6 +266,14 @@ export function mapLeft<B, J>(
 ): <A>(ta: Either<B, A>) => Either<J, A> {
   return (ta) => isLeft(ta) ? left(fbj(ta.left)) : ta;
 }
+
+export const tapLeft = <B, A>(
+  fb: (b: B) => void,
+): (ta: Either<B, A>) => Either<B, A> =>
+  mapLeft((b: B) => {
+    fb(b);
+    return b;
+  });
 
 export function alt<A, J>(
   tb: Either<J, A>,

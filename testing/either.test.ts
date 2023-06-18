@@ -1,10 +1,17 @@
-import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
+import {
+  assertEquals,
+  assertThrows,
+} from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
 import * as E from "../either.ts";
 import * as O from "../option.ts";
 import * as N from "../number.ts";
 import * as Ord from "../ord.ts";
 import { pipe } from "../fn.ts";
+
+const crash = <A>(_: A) => {
+  throw new Error("crash");
+};
 
 Deno.test("Either left", () => {
   assertEquals(E.left(1), { tag: "Left", left: 1 });
@@ -208,6 +215,16 @@ Deno.test("Either chainLeft", () => {
   assertEquals(chainLeft(E.right(1)), E.right(1));
   assertEquals(chainLeft(E.left(0)), E.left(0));
   assertEquals(chainLeft(E.left(1)), E.right(1));
+});
+
+Deno.test("Either tap", () => {
+  assertEquals(E.left(1), E.tap(crash)(E.left(1)));
+  assertThrows(() => E.tap(crash)(E.right(1)), Error, "crash");
+});
+
+Deno.test("Either tapLeft", () => {
+  assertEquals(E.right(1), E.tapLeft(crash)(E.right(1)));
+  assertThrows(() => E.tapLeft(crash)(E.left(1)), Error, "crash");
 });
 
 // Deno.test("Datum Do, bind, bindTo", () => {
