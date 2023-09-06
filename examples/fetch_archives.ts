@@ -120,8 +120,7 @@ const searchUrl = (term: string) =>
 // Decode a queryResponse and lift a result into an AsyncEither
 const decodeQueryResponse = flow(
   QueryResponse(D.SchemableDecoder), // Try to decode an unknown into a QueryResponse
-  D.extract, // Take the error object and turn it into a printable string
-  E.mapLeft(decodeError), // Wrap the error in a DecodeError
+  E.mapSecond(flow(D.draw, decodeError)), // Wrap the error in a DecodeError
   AE.fromEither, // Lift the Either response into an AsyncEither
 );
 
@@ -131,8 +130,8 @@ const decodeQueryResponse = flow(
 const fetchFromArchive = flow(
   searchUrl, // First build a search URL
   fetchAsyncEither, // Then apply it to fetch, wrapping the response
-  AE.chain(jsonResponse), // Then decode the response as json if successful
-  AE.chain(decodeQueryResponse), // Then decode the result as a QueryResponse
+  AE.flatmap(jsonResponse), // Then decode the response as json if successful
+  AE.flatmap(decodeQueryResponse), // Then decode the result as a QueryResponse
 );
 
 // If we just wanted to print the response we could do so like this
@@ -153,10 +152,10 @@ const getData = pipe(
 // The last part is to run the query and map the response to the getData function
 pipe(
   fetchFromArchive("Chimamanda"), // Fetch and Parse a request for items with Chimamanda in them
-  AE.map(getData.view), // Take any "good" response and extract an array of titles, dates, and descriptions
+  AE.map((n) => getData.view(n)), // Take any "good" response and extract an array of titles, dates, and descriptions
   // This line actually runs our program and outputs the results
   // to either stderr or stdout depending on the result
-  AE.fold(
+  AE.match(
     foldErrors((e) => console.error("FetchError", e), console.error),
     console.log,
   ),

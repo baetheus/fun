@@ -1,15 +1,13 @@
 import type { $, Kind, Out } from "./kind.ts";
-import type { Alt } from "./alt.ts";
-import type { Applicative } from "./applicative.ts";
-import type { Monad } from "./monad.ts";
-import type { Monoid } from "./monoid.ts";
-import type { Ord } from "./ord.ts";
-import type { Semigroup } from "./semigroup.ts";
-import type { Eq } from "./eq.ts";
-import type { Show } from "./show.ts";
+import type { Applicable } from "./applicable.ts";
+import type { Flatmappable } from "./flatmappable.ts";
+import type { Sortable } from "./sortable.ts";
+import type { Initializable } from "./initializable.ts";
+import type { Comparable } from "./comparable.ts";
+import type { Showable } from "./showable.ts";
 import type { Traversable } from "./traversable.ts";
 
-import { fromCompare } from "./ord.ts";
+import { fromSort } from "./sortable.ts";
 import { isNotNil } from "./nilable.ts";
 import { flow, identity, pipe } from "./fn.ts";
 
@@ -143,12 +141,8 @@ export function getOrElse<A>(onNone: () => A) {
   return match<A, A>(onNone, onNone, identity, identity);
 }
 
-export function of<A>(a: A): Datum<A> {
+export function wrap<A>(a: A): Datum<A> {
   return replete(a);
-}
-
-export function throwError<A = never>(): Datum<A> {
-  return initial;
 }
 
 export function map<A, I>(fai: (a: A) => I): (ta: Datum<A>) => Datum<I> {
@@ -160,7 +154,7 @@ export function map<A, I>(fai: (a: A) => I): (ta: Datum<A>) => Datum<I> {
   );
 }
 
-export function ap<A>(
+export function apply<A>(
   ua: Datum<A>,
 ): <I>(ufai: Datum<(a: A) => I>) => Datum<I> {
   switch (ua.tag) {
@@ -182,7 +176,7 @@ export function ap<A>(
   }
 }
 
-export function chain<A, I>(
+export function flatmap<A, I>(
   fati: (a: A) => Datum<I>,
 ): (ta: Datum<A>) => Datum<I> {
   return match(
@@ -191,10 +185,6 @@ export function chain<A, I>(
     fati,
     flow(fati, toLoading),
   );
-}
-
-export function join<A>(taa: Datum<Datum<A>>): Datum<A> {
-  return pipe(taa, chain(identity));
 }
 
 export function alt<A>(tb: Datum<A>): (ta: Datum<A>) => Datum<A> {
@@ -209,20 +199,20 @@ export function reduce<A, O>(
 }
 
 export function traverse<V extends Kind>(
-  A: Applicative<V>,
+  A: Applicable<V>,
 ): <A, I, J, K, L, M>(
   favi: (a: A) => $<V, [I, J, K], [L], [M]>,
 ) => (ta: Datum<A>) => $<V, [Datum<I>, J, K], [L], [M]> {
   return (favi) =>
     match(
-      () => A.of(constInitial()),
-      () => A.of(constPending()),
-      (a) => pipe(favi(a), A.map((i) => replete(i))),
-      (a) => pipe(favi(a), A.map((i) => refresh(i))),
+      () => A.wrap(constInitial()),
+      () => A.wrap(constPending()),
+      (a) => pipe(favi(a), A.map(replete)),
+      (a) => pipe(favi(a), A.map(refresh)),
     );
 }
 
-export function getShow<A>({ show }: Show<A>): Show<Datum<A>> {
+export function getShowableDatum<A>({ show }: Showable<A>): Showable<Datum<A>> {
   return ({
     show: match(
       () => `Initial`,
@@ -233,62 +223,59 @@ export function getShow<A>({ show }: Show<A>): Show<Datum<A>> {
   });
 }
 
-export function getSemigroup<A>(
-  S: Semigroup<A>,
-): Semigroup<Datum<A>> {
+export function getInitializableDatum<A>(
+  S: Initializable<A>,
+): Initializable<Datum<A>> {
   return ({
-    concat: (mx) =>
+    combine: (mx) =>
       match(
         () => mx,
         () => toLoading(mx),
         (v) =>
           isSome(mx)
             ? (isRefresh(mx)
-              ? refresh(S.concat(mx.value)(v))
-              : replete(S.concat(mx.value)(v)))
+              ? refresh(S.combine(mx.value)(v))
+              : replete(S.combine(mx.value)(v)))
             : (isPending(mx) ? refresh(v) : replete(v)),
-        (v) => isSome(mx) ? refresh(S.concat(mx.value)(v)) : refresh(v),
+        (v) => isSome(mx) ? refresh(S.combine(mx.value)(v)) : refresh(v),
       ),
+    init: constInitial,
   });
 }
 
-export function getMonoid<A>(S: Semigroup<A>): Monoid<Datum<A>> {
+export function getComparableDatum<A>(S: Comparable<A>): Comparable<Datum<A>> {
   return ({
-    ...getSemigroup(S),
-    empty: constInitial,
-  });
-}
-
-export function getEq<A>(S: Eq<A>): Eq<Datum<A>> {
-  return ({
-    equals: (b) =>
+    compare: (b) =>
       match(
         () => isInitial(b),
         () => isPending(b),
-        (v) => isReplete(b) ? S.equals(b.value)(v) : false,
-        (v) => isRefresh(b) ? S.equals(b.value)(v) : false,
+        (v) => isReplete(b) ? S.compare(b.value)(v) : false,
+        (v) => isRefresh(b) ? S.compare(b.value)(v) : false,
       ),
   });
 }
 
-export function getOrd<A>(O: Ord<A>): Ord<Datum<A>> {
-  return fromCompare((fst, snd) =>
+export function getSortableDatum<A>(O: Sortable<A>): Sortable<Datum<A>> {
+  return fromSort((fst, snd) =>
     pipe(
       fst,
       match(
         () => isInitial(snd) ? 0 : -1,
         () => isInitial(snd) ? 1 : isPending(snd) ? 0 : -1,
         (value) =>
-          isNone(snd) ? 1 : isReplete(snd) ? O.compare(value, snd.value) : -1,
-        (value) => isRefresh(snd) ? O.compare(value, snd.value) : 1,
+          isNone(snd) ? 1 : isReplete(snd) ? O.sort(value, snd.value) : -1,
+        (value) => isRefresh(snd) ? O.sort(value, snd.value) : 1,
       ),
     )
   );
 }
 
-export const MonadDatum: Monad<KindDatum> = { of, ap, map, join, chain };
-
-export const AltDatum: Alt<KindDatum> = { alt, map };
+export const FlatmappableDatum: Flatmappable<KindDatum> = {
+  apply,
+  flatmap,
+  map,
+  wrap,
+};
 
 export const TraversableDatum: Traversable<KindDatum> = {
   map,

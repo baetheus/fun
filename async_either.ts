@@ -9,16 +9,15 @@
  * @since 2.0.0
  */
 import type { Kind, Out } from "./kind.ts";
-import type { Alt } from "./alt.ts";
-import type { Bifunctor } from "./bifunctor.ts";
+import type { Bimappable } from "./bimappable.ts";
 import type { Either } from "./either.ts";
-import type { Monad } from "./monad.ts";
+import type { Flatmappable } from "./flatmappable.ts";
 import type { Async } from "./async.ts";
 
 import * as E from "./either.ts";
 import * as A from "./async.ts";
 import * as P from "./promise.ts";
-import { handleThrow, identity, pipe } from "./fn.ts";
+import { handleThrow, pipe } from "./fn.ts";
 import { resolve } from "./promise.ts";
 
 /**
@@ -26,6 +25,8 @@ import { resolve } from "./promise.ts";
  * returns an `Either`. ie. `async () => Promise<Either<B, A>>`. This
  * forms the basis of most Promise based asynchronous communication in
  * TypeScript.
+ *
+ * @since 2.0.0
  */
 export type AsyncEither<L, R> = Async<Either<L, R>>;
 
@@ -56,7 +57,7 @@ export interface KindAsyncEither extends Kind {
  * @since 2.0.0
  */
 export function left<B, A = never>(left: B): AsyncEither<B, A> {
-  return A.of(E.left(left));
+  return A.wrap(E.left(left));
 }
 
 /**
@@ -75,7 +76,7 @@ export function left<B, A = never>(left: B): AsyncEither<B, A> {
  * @since 2.0.0
  */
 export function right<A = never, B = never>(right: A): AsyncEither<B, A> {
-  return A.of(E.right(right));
+  return A.wrap(E.right(right));
 }
 
 /**
@@ -120,7 +121,7 @@ export function tryCatch<AS extends unknown[], A, B>(
  * import * as AE from "./async_either.ts";
  * import * as A from "./async.ts";
  *
- * const value = AE.fromAsync(A.of(1));
+ * const value = AE.fromAsync(A.wrap(1));
  *
  * const result1 = await value(); // Right(1)
  * ```
@@ -159,14 +160,14 @@ export function fromEither<A, B>(ta: Either<B, A>): AsyncEither<B, A> {
  * ```ts
  * import * as AE from "./async_either.ts";
  *
- * const value = AE.of(1);
+ * const value = AE.wrap(1);
  *
  * const result = await value(); // Right(1)
  * ```
  *
  * @since 2.0.0
  */
-export function of<A, B = never>(a: A): AsyncEither<B, A> {
+export function wrap<A, B = never>(a: A): AsyncEither<B, A> {
   return right(a);
 }
 
@@ -177,36 +178,15 @@ export function of<A, B = never>(a: A): AsyncEither<B, A> {
  * ```ts
  * import * as AE from "./async_either.ts";
  *
- * const value = AE.throwError("Error!");
+ * const value = AE.fail("Error!");
  *
  * const result = await value(); // Left("Error!");
  * ```
  *
  * @since 2.0.0
  */
-export function throwError<A = never, B = never>(b: B): AsyncEither<B, A> {
+export function fail<A = never, B = never>(b: B): AsyncEither<B, A> {
   return left(b);
-}
-
-/**
- * A dual map function that maps over both *Left* and *Right* side of
- * a AsyncEither.
- *
- * @example
- * ```ts
- * import * as AE from "./async_either.ts";
- * import {  } from "./fn.ts";
- *
- * const work = f
- * ```
- *
- * @since 2.0.0
- */
-export function bimap<A, B, I, J>(
-  fbj: (b: B) => J,
-  fai: (a: A) => I,
-): (ta: AsyncEither<B, A>) => AsyncEither<J, I> {
-  return (ta) => pipe(ta, A.map(E.bimap(fbj, fai)));
 }
 
 /**
@@ -225,10 +205,10 @@ export function map<A, I>(
  *
  * @since 2.0.0
  */
-export function mapLeft<B, J>(
+export function mapSecond<B, J>(
   fbj: (b: B) => J,
 ): <A>(ta: AsyncEither<B, A>) => AsyncEither<J, A> {
-  return (ta) => pipe(ta, A.map(E.mapLeft(fbj)));
+  return (ta) => pipe(ta, A.map(E.mapSecond(fbj)));
 }
 
 /**
@@ -236,13 +216,13 @@ export function mapLeft<B, J>(
  *
  * @since 2.0.0
  */
-export function apParallel<A, B>(
+export function apply<A, B>(
   ua: AsyncEither<B, A>,
 ): <I, J>(ufai: AsyncEither<J, (a: A) => I>) => AsyncEither<B | J, I> {
   return (ufai) => () =>
     pipe(
       P.all(ufai(), ua()),
-      P.map(([efai, ea]) => pipe(efai, E.ap(ea))),
+      P.map(([efai, ea]) => pipe(efai, E.apply(ea))),
     );
 }
 
@@ -251,13 +231,13 @@ export function apParallel<A, B>(
  *
  * @since 2.0.0
  */
-export function apSequential<A, B>(
+export function applySequential<A, B>(
   ua: AsyncEither<B, A>,
 ): <I, J = never>(ufai: AsyncEither<J, (a: A) => I>) => AsyncEither<B | J, I> {
   return (ufai) => async () => {
     const ea = await ua();
     const efai = await ufai();
-    return pipe(efai, E.ap(ea));
+    return pipe(efai, E.apply(ea));
   };
 }
 
@@ -271,9 +251,9 @@ export function apSequential<A, B>(
  * import { pipe } from "./fn.ts";
  *
  * const ta = pipe(
- *   TE.of(1),
- *   TE.chain(n => TE.of(n*2)),
- *   TE.chain(n => TE.of(n**2))
+ *   TE.wrap(1),
+ *   TE.flatmap(n => TE.wrap(n*2)),
+ *   TE.flatmap(n => TE.wrap(n**2))
  * )
  *
  * assertEquals(await ta(), E.right(4))
@@ -281,7 +261,7 @@ export function apSequential<A, B>(
  *
  * @since 2.0.0
  */
-export function chain<A, I, J>(
+export function flatmap<A, I, J>(
   fati: (a: A) => AsyncEither<J, I>,
 ): <B>(ta: AsyncEither<B, A>) => AsyncEither<B | J, I> {
   return (ta) => async () => {
@@ -290,7 +270,10 @@ export function chain<A, I, J>(
   };
 }
 
-export function chainFirst<A, I, J>(
+/**
+ * @since 2.0.0
+ */
+export function flatmapFirst<A, I, J>(
   fati: (a: A) => AsyncEither<J, I>,
 ): <B>(ta: AsyncEither<B, A>) => AsyncEither<B | J, A> {
   return (ta) => async () => {
@@ -315,9 +298,9 @@ export function chainFirst<A, I, J>(
  * import { pipe } from "./fn.ts";
  *
  * const ta = pipe(
- *   TE.throwError(1),
- *   TE.chainLeft(n => TE.of(n*2)),
- *   TE.chain(n => TE.of(n**2))
+ *   TE.fail(1),
+ *   TE.recover(n => TE.wrap(n*2)),
+ *   TE.flatmap(n => TE.wrap(n**2))
  * )
  *
  * assertEquals(await ta(), E.right(4))
@@ -325,40 +308,13 @@ export function chainFirst<A, I, J>(
  *
  * @since 2.0.0
  */
-export function chainLeft<B, J, I>(
+export function recover<B, J, I>(
   fbtj: (b: B) => AsyncEither<J, I>,
 ): <A>(ta: AsyncEither<B, A>) => AsyncEither<J, A | I> {
   return (ta) => async () => {
     const ea = await ta();
     return E.isLeft(ea) ? fbtj(ea.left)() : ea;
   };
-}
-
-/**
- * Flatten a AsyncEither wrapped in a AsyncEither
- *
- * ```ts
- * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
- * import * as TE from "./async_either.ts";
- * import * as E from "./either.ts";
- * import { pipe } from "./fn.ts";
- *
- * const ta = pipe(
- *   TE.of(1),
- *   TE.map(n => TE.of(n*2)),
- *   TE.join,
- *   TE.chain(n => TE.of(n**2))
- * )
- *
- * assertEquals(await ta(), E.right(4))
- * ```
- *
- * @since 2.0.0
- */
-export function join<A, B, J>(
-  tta: AsyncEither<J, AsyncEither<B, A>>,
-): AsyncEither<B | J, A> {
-  return pipe(tta, chain(identity));
 }
 
 /**
@@ -372,8 +328,8 @@ export function join<A, B, J>(
  * import { pipe } from "./fn.ts";
  *
  * const ta = pipe(
- *   TE.throwError(1),
- *   TE.alt(TE.of(2)),
+ *   TE.fail(1),
+ *   TE.alt(TE.wrap(2)),
  * )
  *
  * assertEquals(await ta(), E.right(2))
@@ -394,24 +350,9 @@ export function alt<I, J>(
  * Fold away the inner Either from the `AsyncEither` leaving us with the
  * result of our computation in the form of a `Async`
  *
- * ```ts
- * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
- * import * as TE from "./async_either.ts";
- * import * as T from "./async.ts";
- * import { flow, identity } from "./fn.ts";
- *
- * const hello = flow(
- *   TE.match(() => "World", identity),
- *   A.map((name) => `Hello ${name}!`),
- * );
- *
- * assertEquals(await hello(TE.right("Functional!"))(), "Hello Functional!!");
- * assertEquals(await hello(TE.left(Error))(), "Hello World!");
- * ```
- *
  * @since 2.0.0
  */
-export function match<L, R, B>(
+export function match<L = unknown, R = unknown, B = never>(
   onLeft: (left: L) => B,
   onRight: (right: R) => B,
 ): (ta: AsyncEither<L, R>) => Async<B> {
@@ -423,25 +364,31 @@ export function match<L, R, B>(
 //  (ta: AsyncEither<E, A>): AsyncEither<E, A> =>
 //    () => Promise.race([ta(), wait(ms).then(flow(onTimeout, E.left))]);
 
-export const BifunctorAsyncEither: Bifunctor<KindAsyncEither> = {
-  bimap,
-  mapLeft,
-};
-
-export const MonadAsyncEitherParallel: Monad<KindAsyncEither> = {
-  of,
-  ap: apParallel,
+/**
+ * @since 2.0.0
+ */
+export const BimappableAsyncEither: Bimappable<KindAsyncEither> = {
   map,
-  join,
-  chain,
+  mapSecond,
 };
 
-export const AltAsyncEither: Alt<KindAsyncEither> = { alt, map };
-
-export const MonadAsyncEitherSequential: Monad<KindAsyncEither> = {
-  of,
-  ap: apSequential,
+/**
+ * @since 2.0.0
+ */
+export const FlatmappableAsyncEitherParallel: Flatmappable<KindAsyncEither> = {
+  wrap,
+  apply,
   map,
-  join,
-  chain,
+  flatmap,
 };
+
+/**
+ * @since 2.0.0
+ */
+export const FlatmappableAsyncEitherSequential: Flatmappable<KindAsyncEither> =
+  {
+    wrap,
+    apply: applySequential,
+    map,
+    flatmap,
+  };

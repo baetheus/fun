@@ -30,27 +30,20 @@ Deno.test("State make", () => {
   assertEqualsS(S.state(1, 1), S.id<number>());
 });
 
-Deno.test("State of", () => {
-  assertEqualsS(S.of(1), S.id<number>());
+Deno.test("State wrap", () => {
+  assertEqualsS(S.wrap(1), S.id<number>());
 });
 
-Deno.test("State ap", () => {
+Deno.test("State apply", () => {
 });
 
 Deno.test("State map", () => {
   assertEqualsS(pipe(S.id<number>(), S.map(add)), S.state(2, 1));
 });
 
-Deno.test("State join", () => {
+Deno.test("State flatmap", () => {
   assertEqualsS(
-    S.join(S.gets((n: number) => S.gets((m: number) => n + m))),
-    S.state(2, 1),
-  );
-});
-
-Deno.test("State chain", () => {
-  assertEqualsS(
-    pipe(S.id<number>(), S.chain((n) => S.gets((m) => n + m))),
+    pipe(S.id<number>(), S.flatmap((n) => S.gets((m) => n + m))),
     S.state(2, 1),
   );
 });

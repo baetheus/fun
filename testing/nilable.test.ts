@@ -73,28 +73,28 @@ Deno.test("Nilable isNotNil", () => {
   assertEquals(N.isNotNil(""), true);
 });
 
-Deno.test("Nilable getShow", () => {
-  const { show } = N.getShow({ show: (n: number) => n.toString() });
+Deno.test("Nilable getShowable", () => {
+  const { show } = N.getShowable({ show: (n: number) => n.toString() });
   assertEquals(show(undefined), "nil");
   assertEquals(show(null), "nil");
   assertEquals(show(1), "1");
 });
 
-Deno.test("Nilable of", () => {
-  assertEquals(N.of(1), 1);
+Deno.test("Nilable wrap", () => {
+  assertEquals(N.wrap(1), 1);
 });
 
-Deno.test("Nilable throwError", () => {
-  assertEquals(N.throwError(), N.nil);
+Deno.test("Nilable fail", () => {
+  assertEquals(N.fail(), N.nil);
 });
 
-Deno.test("Nilable ap", () => {
+Deno.test("Nilable apply", () => {
   const add = (n: number) => n + 1;
 
-  assertEquals(pipe(N.of(add), N.ap(N.of(1))), N.of(2));
-  assertEquals(pipe(N.of(add), N.ap(N.constNil())), N.nil);
-  assertEquals(pipe(N.constNil(), N.ap(N.of(1))), N.nil);
-  assertEquals(pipe(N.constNil(), N.ap(N.constNil())), N.nil);
+  assertEquals(pipe(N.wrap(add), N.apply(N.wrap(1))), N.wrap(2));
+  assertEquals(pipe(N.wrap(add), N.apply(N.constNil())), N.nil);
+  assertEquals(pipe(N.constNil(), N.apply(N.wrap(1))), N.nil);
+  assertEquals(pipe(N.constNil(), N.apply(N.constNil())), N.nil);
 });
 
 Deno.test("Nilable map", () => {
@@ -104,24 +104,18 @@ Deno.test("Nilable map", () => {
   assertEquals(map(1), 2);
 });
 
-Deno.test("Nilable join", () => {
-  assertEquals(N.join(undefined), N.nil);
-  assertEquals(N.join(null), N.nil);
-  assertEquals(N.of(1), 1);
-});
-
 Deno.test("Nilable alt", () => {
-  assertEquals(pipe(N.of(1), N.alt(N.of(2))), N.of(1));
-  assertEquals(pipe(N.of(1), N.alt(N.throwError())), N.of(1));
-  assertEquals(pipe(N.throwError(), N.alt(N.of(1))), N.of(1));
-  assertEquals(pipe(N.throwError(), N.alt(N.throwError())), N.throwError());
+  assertEquals(pipe(N.wrap(1), N.alt(N.wrap(2))), N.wrap(1));
+  assertEquals(pipe(N.wrap(1), N.alt(N.fail())), N.wrap(1));
+  assertEquals(pipe(N.fail(), N.alt(N.wrap(1))), N.wrap(1));
+  assertEquals(pipe(N.fail(), N.alt(N.fail())), N.fail());
 });
 
-Deno.test("Nilable chain", () => {
-  const chain = N.chain((n: number) => n === 0 ? N.nil : n);
-  assertEquals(chain(undefined), N.nil);
-  assertEquals(chain(null), N.nil);
-  assertEquals(chain(1), 1);
+Deno.test("Nilable flatmap", () => {
+  const flatmap = N.flatmap((n: number) => n === 0 ? N.nil : n);
+  assertEquals(flatmap(undefined), N.nil);
+  assertEquals(flatmap(null), N.nil);
+  assertEquals(flatmap(1), 1);
 });
 
 // Deno.test("Nilable Do, bind, bindTo", () => {

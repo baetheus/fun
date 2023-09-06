@@ -1,15 +1,16 @@
-import type { Alt } from "./alt.ts";
-import type { Bifunctor } from "./bifunctor.ts";
-import type { Extend } from "./extend.ts";
-import type { Foldable } from "./foldable.ts";
 import type { Kind, Out } from "./kind.ts";
-import type { Monad } from "./monad.ts";
+import type { Bimappable } from "./bimappable.ts";
+import type { Applicable } from "./applicable.ts";
+import type { Mappable } from "./mappable.ts";
+import type { Failable } from "./failable.ts";
+import type { Reducible } from "./reducible.ts";
+import type { Flatmappable } from "./flatmappable.ts";
 import type { Sync } from "./sync.ts";
 import type { Either } from "./either.ts";
 
 import * as E from "./either.ts";
 import * as I from "./sync.ts";
-import { constant, flow, identity, pipe } from "./fn.ts";
+import { constant, flow, pipe } from "./fn.ts";
 
 export type SyncEither<L, R> = Sync<Either<L, R>>;
 
@@ -18,11 +19,11 @@ export interface KindSyncEither extends Kind {
 }
 
 export function left<A = never, B = never>(left: B): SyncEither<B, A> {
-  return I.of(E.left(left));
+  return I.wrap(E.left(left));
 }
 
 export function right<A = never, B = never>(right: A): SyncEither<B, A> {
-  return I.of(E.right(right));
+  return I.wrap(E.right(right));
 }
 
 export function tryCatch<A = never, B = never>(
@@ -46,18 +47,18 @@ export function fromSync<A = never, B = never>(ta: Sync<A>): SyncEither<B, A> {
   return flow(ta, E.right);
 }
 
-export function of<A = never, B = never>(a: A): SyncEither<B, A> {
+export function wrap<A = never, B = never>(a: A): SyncEither<B, A> {
   return right(a);
 }
 
-export function throwError<A = never, B = never>(b: B): SyncEither<B, A> {
+export function fail<A = never, B = never>(b: B): SyncEither<B, A> {
   return left(b);
 }
 
-export function ap<B, A>(
+export function apply<B, A>(
   ua: SyncEither<B, A>,
 ): <J, I>(ufai: SyncEither<J, (a: A) => I>) => SyncEither<B | J, I> {
-  return (ufai) => flow(ufai, E.ap(ua()));
+  return (ufai) => flow(ufai, E.apply(ua()));
 }
 
 export function map<A, I>(
@@ -66,7 +67,13 @@ export function map<A, I>(
   return I.map(E.map(fai));
 }
 
-export function chain<A, I, J>(
+export function mapSecond<B, J>(
+  fbj: (b: B) => J,
+): <A>(ta: SyncEither<B, A>) => SyncEither<J, A> {
+  return I.map(E.mapSecond(fbj));
+}
+
+export function flatmap<A, I, J>(
   faui: (a: A) => SyncEither<J, I>,
 ): <B>(ua: SyncEither<B, A>) => SyncEither<B | J, I> {
   return (ua) => () => {
@@ -75,13 +82,7 @@ export function chain<A, I, J>(
   };
 }
 
-export function join<A, B, J>(
-  ta: SyncEither<J, SyncEither<B, A>>,
-): SyncEither<B | J, A> {
-  return pipe(ta, chain(identity));
-}
-
-export function chainLeft<B, J, I>(
+export function recover<B, J, I>(
   fbui: (b: B) => SyncEither<J, I>,
 ): <A>(ua: SyncEither<B, A>) => SyncEither<J, A | I> {
   return (ua) => () => {
@@ -90,29 +91,10 @@ export function chainLeft<B, J, I>(
   };
 }
 
-export function bimap<A, B, I, J>(
-  fbj: (b: B) => J,
-  fai: (a: A) => I,
-): (ta: SyncEither<B, A>) => SyncEither<J, I> {
-  return I.map(E.bimap(fbj, fai));
-}
-
-export function mapLeft<B, J>(
-  fbj: (b: B) => J,
-): <A>(ta: SyncEither<B, A>) => SyncEither<J, A> {
-  return I.map(E.mapLeft(fbj));
-}
-
 export function alt<A = never, B = never>(
   tb: SyncEither<B, A>,
 ): (ta: SyncEither<B, A>) => SyncEither<B, A> {
   return (ta) => flow(ta, E.match(tb, E.right));
-}
-
-export function extend<A, I, B>(
-  ftai: (ta: SyncEither<B, A>) => I,
-): (ta: SyncEither<B, A>) => SyncEither<B, I> {
-  return flow(ftai, right);
 }
 
 export function reduce<A, O>(
@@ -122,21 +104,34 @@ export function reduce<A, O>(
   return (ta) => pipe(ta(), E.match(() => o, (a) => foao(o, a)));
 }
 
-export const BifunctorSyncEither: Bifunctor<KindSyncEither> = {
-  bimap,
-  mapLeft,
-};
+export const MappableSyncEither: Mappable<KindSyncEither> = { map };
 
-export const MonadSyncEither: Monad<KindSyncEither> = {
-  of,
-  ap,
+export const BimappableSyncEither: Bimappable<KindSyncEither> = {
   map,
-  join,
-  chain,
+  mapSecond,
 };
 
-export const AltSyncEither: Alt<KindSyncEither> = { alt, map };
+export const ApplicableSyncEither: Applicable<KindSyncEither> = {
+  apply,
+  map,
+  wrap,
+};
 
-export const ExtendsSyncEither: Extend<KindSyncEither> = { map, extend };
+export const FlatmappableSyncEither: Flatmappable<KindSyncEither> = {
+  apply,
+  flatmap,
+  map,
+  wrap,
+};
 
-export const FoldableSyncEither: Foldable<KindSyncEither> = { reduce };
+export const FailableSyncEither: Failable<KindSyncEither> = {
+  alt,
+  apply,
+  fail,
+  flatmap,
+  map,
+  recover,
+  wrap,
+};
+
+export const ReducibleSyncEither: Reducible<KindSyncEither> = { reduce };

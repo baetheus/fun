@@ -5,8 +5,6 @@ import {
 } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
 import * as F from "../fn.ts";
-import * as P from "../pair.ts";
-import * as E from "../either.ts";
 import { pipe } from "../fn.ts";
 
 const add = (n: number) => n + 1;
@@ -15,6 +13,18 @@ Deno.test("Fn unary", () => {
   const variadic = (a: number, b: string) => a + b.length;
   const unary = F.unary(variadic);
   assertEquals(unary([1, "Hello"]), variadic(1, "Hello"));
+});
+
+Deno.test("Fn curry2", () => {
+  const curry = F.curry2((n: number, m: number) => n + m);
+  assertEquals(curry(1)(2), 3);
+});
+
+Deno.test("Fn uncurry2", () => {
+  const uncurry = F.uncurry2((second: number) => (first: number) =>
+    first + second
+  );
+  assertEquals(uncurry(1, 2), 3);
 });
 
 Deno.test("Fn tryThunk", () => {
@@ -47,12 +57,6 @@ Deno.test("Fn memoize", () => {
   const memo = F.memoize(obj);
 
   assertEquals(memo(1), memo(1));
-});
-
-Deno.test("Fn apply", () => {
-  const fab = (n: number) => n + 1;
-  const apply = F.apply(1);
-  assertEquals(apply(fab), 2);
 });
 
 Deno.test("Fn todo", () => {
@@ -104,6 +108,24 @@ Deno.test("Fn flow", () => {
   const r7 = F.flow(fab, fab, fab, fab, fab, fab, fab);
   const r8 = F.flow(fab, fab, fab, fab, fab, fab, fab, fab);
   const r9 = F.flow(fab, fab, fab, fab, fab, fab, fab, fab, fab);
+  const r10 = F.flow(fab, fab, fab, fab, fab, fab, fab, fab, fab, fab);
+  const r11 = F.flow(fab, fab, fab, fab, fab, fab, fab, fab, fab, fab, fab);
+  const r12 = F.flow(
+    ...([
+      fab,
+      fab,
+      fab,
+      fab,
+      fab,
+      fab,
+      fab,
+      fab,
+      fab,
+      fab,
+      fab,
+      fab,
+    ] as unknown as [typeof fab]),
+  );
 
   assertEquals(r1(0), 1);
   assertEquals(r2(0), 2);
@@ -114,40 +136,38 @@ Deno.test("Fn flow", () => {
   assertEquals(r7(0), 7);
   assertEquals(r8(0), 8);
   assertEquals(r9(0), 9);
+  assertEquals(r10(0), 10);
+  assertEquals(r11(0), 11);
+  assertEquals(r12(0), 12);
 });
 
 Deno.test("Fn of", () => {
-  const a = F.of(1);
+  const a = F.wrap(1);
   assertEquals(a(null), 1);
 });
 
 Deno.test("Fn ap", () => {
   assertEquals(
-    pipe(F.of((n: number) => n + 1), F.ap(F.of(1)))(null),
-    F.of(2)(null),
+    pipe(F.wrap((n: number) => n + 1), F.apply(F.wrap(1)))(null),
+    F.wrap(2)(null),
   );
 });
 
 Deno.test("Fn map", () => {
-  assertEquals(pipe(F.of(0), F.map(add))(null), F.of(1)(null));
+  assertEquals(pipe(F.wrap(0), F.map(add))(null), F.wrap(1)(null));
 });
 
-Deno.test("Fn join", () => {
-  assertEquals(pipe(F.of(F.of(0)), F.join)(null), F.of(0)(null));
+Deno.test("Fn flatmap", () => {
+  const flatmap = F.flatmap((n: number) => F.wrap(n + 1));
+  assertEquals(flatmap(F.wrap(0))(null), F.wrap(1)(null));
 });
 
-Deno.test("Fn chain", () => {
-  const chain = F.chain((n: number) => F.of(n + 1));
-  assertEquals(chain(F.of(0))(null), F.of(1)(null));
-});
-
-Deno.test("Fn contramap", () => {
+Deno.test("Fn premap", () => {
   assertEquals(
     pipe(
       F.id<number>(),
-      F.contramap((s: string) => s.length),
-      F.apply("Hello"),
-    ),
+      F.premap((s: string) => s.length),
+    )("Hello"),
     5,
   );
 });
@@ -157,8 +177,7 @@ Deno.test("Fn dimap", () => {
     pipe(
       F.id<number>(),
       F.dimap((s: string) => s.length, (n) => 2 * n),
-      F.apply("Hello"),
-    ),
+    )("Hello"),
     10,
   );
 });

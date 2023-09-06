@@ -2,30 +2,30 @@ import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
 import * as S from "../string.ts";
 import * as O from "../option.ts";
-import { ap, pipe } from "../fn.ts";
+import { pipe } from "../fn.ts";
 
-Deno.test("String equals", () => {
+Deno.test("String compare", () => {
   const hello = "Hello";
   const hi = "hi";
 
-  assertEquals(pipe(hello, S.equals(hi)), false);
-  assertEquals(pipe(hi, S.equals(hi)), true);
+  assertEquals(pipe(hello, S.compare(hi)), false);
+  assertEquals(pipe(hi, S.compare(hi)), true);
 });
 
-Deno.test("String concat", () => {
-  assertEquals(pipe("Hello", S.concat("World")), "HelloWorld");
+Deno.test("String combine", () => {
+  assertEquals(pipe("Hello", S.combine("World")), "HelloWorld");
 });
 
-Deno.test("String empty", () => {
-  assertEquals(S.empty(), "");
+Deno.test("String init", () => {
+  assertEquals(S.init(), "");
 });
 
-Deno.test("String compare", () => {
-  assertEquals(S.compare("aa", "aa"), 0);
-  assertEquals(S.compare("aa", "ab"), -1);
-  assertEquals(S.compare("ab", "aa"), 1);
-  assertEquals(S.compare("aa", "bb"), -1);
-  assertEquals(S.compare("a", "aa"), -1);
+Deno.test("String sort", () => {
+  assertEquals(S.sort("aa", "aa"), 0);
+  assertEquals(S.sort("aa", "ab"), -1);
+  assertEquals(S.sort("ab", "aa"), 1);
+  assertEquals(S.sort("aa", "bb"), -1);
+  assertEquals(S.sort("a", "aa"), -1);
 });
 
 Deno.test("String isString", () => {
@@ -44,15 +44,18 @@ Deno.test("String length", () => {
 });
 
 Deno.test("String split", () => {
+  const splitEmpty = S.split("");
   const splitSpace = S.split(" ");
   const splitWords = S.split(/\s+/);
   const splitHello = S.split("Hello");
 
-  assertEquals(splitHello("Garage"), ["Garage"]);
+  assertEquals(splitEmpty(""), [""]);
+  assertEquals(splitEmpty("Hello"), ["H", "e", "l", "l", "o"]);
   assertEquals(splitSpace(""), [""]);
   assertEquals(splitSpace("Hello  World"), ["Hello", "", "World"]);
   assertEquals(splitWords(""), [""]);
   assertEquals(splitWords("Hello  World"), ["Hello", "World"]);
+  assertEquals(splitHello("Garage"), ["Garage"]);
 });
 
 Deno.test("String includes", () => {

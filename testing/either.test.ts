@@ -3,15 +3,15 @@ import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 import * as E from "../either.ts";
 import * as O from "../option.ts";
 import * as N from "../number.ts";
-import * as Ord from "../ord.ts";
+import * as Sortable from "../sortable.ts";
 import { pipe } from "../fn.ts";
 
 Deno.test("Either left", () => {
   assertEquals(E.left(1), { tag: "Left", left: 1 });
 });
 
-Deno.test("Either throwError", () => {
-  assertEquals(E.throwError(1), { tag: "Left", left: 1 });
+Deno.test("Either fail", () => {
+  assertEquals(E.fail(1), { tag: "Left", left: 1 });
 });
 
 Deno.test("Either right", () => {
@@ -50,11 +50,10 @@ Deno.test("Either tryCatchWrap", () => {
 Deno.test("Either fromPredicate", () => {
   const fromPredicate = E.fromPredicate(
     (n: unknown): n is number => typeof n === "number",
-    () => "unknown",
   );
 
   assertEquals(fromPredicate(0), E.right(0));
-  assertEquals(fromPredicate("asdf"), E.left("unknown"));
+  assertEquals(fromPredicate("asdf"), E.left("asdf"));
 });
 
 Deno.test("Either match", () => {
@@ -104,20 +103,20 @@ Deno.test("Either isRight", () => {
   assertEquals(E.isRight(E.right(1)), true);
 });
 
-Deno.test("Either getShow", () => {
-  const Show = E.getShow(
+Deno.test("Either getShowable", () => {
+  const Showable = E.getShowable(
     { show: (n: number) => n.toString() },
     { show: (n: number) => n.toString() },
   );
 
-  assertEquals(Show.show(E.left(1)), "Left(1)");
-  assertEquals(Show.show(E.right(1)), "Right(1)");
+  assertEquals(Showable.show(E.left(1)), "Left(1)");
+  assertEquals(Showable.show(E.right(1)), "Right(1)");
 });
 
 Deno.test("Either getSetoid", () => {
-  const Setoid = E.getEq(N.EqNumber, N.EqNumber);
-  const right = Setoid.equals(E.right(1));
-  const left = Setoid.equals(E.left(1));
+  const Setoid = E.getComparable(N.ComparableNumber, N.ComparableNumber);
+  const right = Setoid.compare(E.right(1));
+  const left = Setoid.compare(E.left(1));
 
   assertEquals(right(E.right(1)), true);
   assertEquals(right(E.right(2)), false);
@@ -130,9 +129,9 @@ Deno.test("Either getSetoid", () => {
   assertEquals(left(E.left(2)), false);
 });
 
-Deno.test("Either getOrd", () => {
-  const ord = E.getOrd(N.OrdNumber, N.OrdNumber);
-  const lte = Ord.lte(ord);
+Deno.test("Either getSortable", () => {
+  const ord = E.getSortable(N.SortableNumber, N.SortableNumber);
+  const lte = Sortable.lte(ord);
   const right = lte(E.right(2));
   const left = lte(E.left(2));
 
@@ -151,21 +150,26 @@ Deno.test("Either getOrd", () => {
   assertEquals(left(E.left(3)), false);
 });
 
-Deno.test("Either getLeftSemigroup", () => {
-  const Semigroup = E.getLeftSemigroup<number, number>(N.SemigroupNumberSum);
-  const right = Semigroup.concat(E.right(1));
-  const left = Semigroup.concat(E.left(1));
+Deno.test("Either getLeftInitializable", () => {
+  const Initializable = E.getLeftInitializable<number, number>(
+    N.InitializableNumberSum,
+  );
+  const right = Initializable.combine(E.right(1));
+  const left = Initializable.combine(E.left(1));
 
   assertEquals(right(E.right(1)), E.right(1));
   assertEquals(right(E.left(1)), E.right(1));
   assertEquals(left(E.right(1)), E.right(1));
   assertEquals(left(E.left(1)), E.left(2));
+  assertEquals(Initializable.init(), E.left(0));
 });
 
-Deno.test("Either getRightSemigroup", () => {
-  const Semigroup = E.getRightSemigroup<number, number>(N.SemigroupNumberSum);
-  const right = Semigroup.concat(E.right(1));
-  const left = Semigroup.concat(E.left(1));
+Deno.test("Either getRightInitializable", () => {
+  const Initializable = E.getRightInitializable<number, number>(
+    N.InitializableNumberSum,
+  );
+  const right = Initializable.combine(E.right(1));
+  const left = Initializable.combine(E.left(1));
 
   assertEquals(right(E.right(1)), E.right(2));
   assertEquals(right(E.left(1)), E.left(1));
@@ -173,10 +177,12 @@ Deno.test("Either getRightSemigroup", () => {
   assertEquals(left(E.left(1)), E.left(1));
 });
 
-Deno.test("Either getRightMonoid", () => {
-  const Monoid = E.getRightMonoid<number, number>(N.MonoidNumberSum);
+Deno.test("Either getRightInitializable", () => {
+  const Initializable = E.getRightInitializable<number, number>(
+    N.InitializableNumberSum,
+  );
 
-  assertEquals(Monoid.empty(), E.right(N.MonoidNumberSum.empty()));
+  assertEquals(Initializable.init(), E.right(N.InitializableNumberSum.init()));
 });
 
 Deno.test("Either reduce", () => {
@@ -186,6 +192,55 @@ Deno.test("Either reduce", () => {
   assertEquals(reduce(E.right(1)), 1);
 });
 
+Deno.test("Either map", () => {
+  assertEquals(pipe(E.right(1), E.map((n) => n + 1)), E.right(2));
+  assertEquals(pipe(E.left(1), E.map((n: number) => n + 1)), E.left(1));
+});
+
+Deno.test("Either mapSecond", () => {
+  assertEquals(pipe(E.right(1), E.mapSecond((n: number) => n + 1)), E.right(1));
+  assertEquals(pipe(E.left(1), E.mapSecond((n: number) => n + 1)), E.left(2));
+});
+
+Deno.test("Either apply", () => {
+  assertEquals(pipe(E.left(1), E.apply(E.left(2))), E.left(2));
+  assertEquals(pipe(E.left(1), E.apply(E.right(2))), E.left(1));
+  assertEquals(
+    pipe(E.right((n: number) => n + 1), E.apply(E.left(1))),
+    E.left(1),
+  );
+  assertEquals(
+    pipe(E.right((n: number) => n + 1), E.apply(E.right(2))),
+    E.right(3),
+  );
+});
+
+Deno.test("Either flatmap", () => {
+  assertEquals(pipe(E.right(1), E.flatmap((n) => E.right(n + 1))), E.right(2));
+  assertEquals(pipe(E.right(1), E.flatmap((n) => E.left(n + 1))), E.left(2));
+  assertEquals(pipe(E.left(1), E.flatmap((n) => E.right(n + 1))), E.left(1));
+  assertEquals(pipe(E.left(1), E.flatmap((n) => E.left(n + 1))), E.left(1));
+});
+
+Deno.test("Either flatmapFirst", () => {
+  assertEquals(
+    pipe(E.right(1), E.flatmapFirst((n) => E.right(n + 1))),
+    E.right(1),
+  );
+  assertEquals(
+    pipe(E.right(1), E.flatmapFirst((n) => E.left(n + 1))),
+    E.left(2),
+  );
+  assertEquals(
+    pipe(E.left(1), E.flatmapFirst((n) => E.right(n + 1))),
+    E.left(1),
+  );
+  assertEquals(
+    pipe(E.left(1), E.flatmapFirst((n) => E.left(n + 1))),
+    E.left(1),
+  );
+});
+
 Deno.test("Either alt", () => {
   assertEquals(pipe(E.left(1), E.alt(E.left(2))), E.left(2));
   assertEquals(pipe(E.left(1), E.alt(E.right(1))), E.right(1));
@@ -193,21 +248,33 @@ Deno.test("Either alt", () => {
   assertEquals(pipe(E.right(1), E.alt(E.right(2))), E.right(1));
 });
 
-Deno.test("Either join", () => {
-  assertEquals(E.join(E.left(1)), E.left(1));
-  assertEquals(E.join(E.right(E.left(1))), E.left(1));
-  assertEquals(E.join(E.right(E.right(1))), E.right(1));
+Deno.test("Either recover", () => {
+  const recover = E.recover((n: number) => n === 0 ? E.left(n) : E.right(n));
+
+  assertEquals(recover(E.right(0)), E.right(0));
+  assertEquals(recover(E.right(1)), E.right(1));
+  assertEquals(recover(E.left(0)), E.left(0));
+  assertEquals(recover(E.left(1)), E.right(1));
 });
 
-Deno.test("Either chainLeft", () => {
-  const chainLeft = E.chainLeft((n: number) =>
-    n === 0 ? E.left(n) : E.right(n)
+Deno.test("Either traverse", () => {
+  const traverse = E.traverse(O.ApplicableOption);
+  assertEquals(
+    pipe(E.right(1), traverse((n) => O.some(n))),
+    O.some(E.right(1)),
   );
-
-  assertEquals(chainLeft(E.right(0)), E.right(0));
-  assertEquals(chainLeft(E.right(1)), E.right(1));
-  assertEquals(chainLeft(E.left(0)), E.left(0));
-  assertEquals(chainLeft(E.left(1)), E.right(1));
+  assertEquals(
+    pipe(E.left(1), traverse((n) => O.some(n))),
+    O.some(E.left(1)),
+  );
+  assertEquals(
+    pipe(E.right(1), traverse(() => O.none)),
+    O.none,
+  );
+  assertEquals(
+    pipe(E.left(1), traverse(() => O.none)),
+    O.some(E.left(1)),
+  );
 });
 
 // Deno.test("Datum Do, bind, bindTo", () => {

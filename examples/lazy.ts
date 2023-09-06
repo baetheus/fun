@@ -14,8 +14,6 @@
  */
 
 import type { Hold, In, Kind, Out } from "../kind.ts";
-import type { Monad } from "../monad.ts";
-import type { Category } from "../category.ts";
 
 import { pipe } from "../fn.ts";
 import * as A from "../array.ts";

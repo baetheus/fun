@@ -1,22 +1,23 @@
 /**
  * Pair represents a pair of values. It can be thought of as a tuple
  * of two, or first and second, or separated values.
+ *
+ * @module Pair
+ * @since 2.0.0
  */
 
 import type { $, Kind, Out } from "./kind.ts";
-import type { Applicative } from "./applicative.ts";
-import type { Bifunctor } from "./bifunctor.ts";
-import type { Comonad } from "./comonad.ts";
-import type { Extend } from "./extend.ts";
-import type { Foldable } from "./foldable.ts";
-import type { Functor } from "./functor.ts";
-import type { Monad } from "./monad.ts";
-import type { Monoid } from "./monoid.ts";
-import type { Show } from "./show.ts";
+import type { Applicable } from "./applicable.ts";
+import type { Bimappable } from "./bimappable.ts";
+import type { Flatmappable } from "./flatmappable.ts";
+import type { Initializable } from "./initializable.ts";
+import type { Mappable } from "./mappable.ts";
+import type { Reducible } from "./reducible.ts";
+import type { Showable } from "./showable.ts";
 import type { Traversable } from "./traversable.ts";
 
-import { createMonad } from "./monad.ts";
-import { dual } from "./monoid.ts";
+import { createFlatmappable } from "./flatmappable.ts";
+import { dual } from "./combinable.ts";
 import { pipe } from "./fn.ts";
 
 /**
@@ -119,7 +120,7 @@ export function merge<A, I>(ua: Pair<(a: A) => I, A>): I {
  *
  * const double = flow(
  *   P.dup<number>,
- *   P.mapLeft(n => (m: number) => n + m),
+ *   P.mapSecond(n => (m: number) => n + m),
  *   P.mergeSecond,
  * );
  *
@@ -185,7 +186,7 @@ export function getSecond<A, B>([_, second]: Pair<A, B>): B {
  * const result = pipe(
  *   37,
  *   P.first("Brandon"),
- *   P.mapLeft(n => n + 1),
+ *   P.mapSecond(n => n + 1),
  * ); // ["Brandon", 38]
  * ```
  *
@@ -272,13 +273,13 @@ export function map<A, I>(
  *
  * const result = pipe(
  *   P.pair(1, 2),
- *   P.mapLeft(String),
+ *   P.mapSecond(String),
  * ); // [1, '2']
  * ```
  *
  * @since 2.0.0
  */
-export function mapLeft<B, J>(
+export function mapSecond<B, J>(
   fbj: (a: B) => J,
 ): <A>(ta: Pair<A, B>) => Pair<A, J> {
   return ([first, second]) => pair(first, fbj(second));
@@ -309,45 +310,20 @@ export function bimap<A, B, I, J>(
 }
 
 /**
- * Just like the first function, extract returns the first
+ * Just like the first function, unwrap returns the first
  * value in a pair.
  *
  * @example
  * ```ts
- * import { pair, extract } from "./pair.ts";
+ * import { pair, unwrap } from "./pair.ts";
  *
- * const result = extract(pair(1, 2)); // 1
+ * const result = unwrap(pair(1, 2)); // 1
  * ```
  *
  * @since 2.0.0
  */
-export function extract<A, B>([first]: Pair<A, B>): A {
+export function unwrap<A, B>([first]: Pair<A, B>): A {
   return first;
-}
-
-/**
- * Creates a new pair by constructing a first value from
- * the whole pair and keeping the second value from the
- * original pair. Can be used somewhat like a
- * superpowered Reader.
- *
- * @example
- * ```ts
- * import { extend, pair } from "./pair.ts";
- * import { pipe } from "./fn.ts";
- *
- * const result = pipe(
- *   pair("Brandon", 37),
- *   extend(([name, age]) => `${name} is ${age}`)
- * ); // ["Brandon is 37", 37];
- * ```
- *
- * @since 2.0.0
- */
-export function extend<A, B, I>(
-  ftai: (ua: Pair<A, B>) => I,
-): (ua: Pair<A, B>) => Pair<I, B> {
-  return (ua) => pair(ftai(ua), ua[1]);
 }
 
 /**
@@ -375,15 +351,15 @@ export function reduce<A, B, O>(
 }
 
 /**
- * Traverse a pair using another algebraic structure's Applicative.
+ * Traverse a pair using another algebraic structure's Applicable.
  *
  * @example
  * ```ts
  * import { traverse, pair } from "./pair.ts";
- * import { some, ApplicativeOption, fromPredicate } from "./option.ts";
+ * import { some, ApplicableOption, fromPredicate } from "./option.ts";
  * import { pipe } from "./fn.ts";
  *
- * const traverseOption = traverse(ApplicativeOption);
+ * const traverseOption = traverse(ApplicableOption);
  * const startsWithB = fromPredicate(
  *   (name: string) => name.startsWith("B")
  * );
@@ -401,7 +377,7 @@ export function reduce<A, B, O>(
  *
  * @since 2.0.0
  */
-export function traverse<V extends Kind>(A: Applicative<V>) {
+export function traverse<V extends Kind>(A: Applicable<V>) {
   return <A, I, J, K, L, M>(
     favi: (a: A) => $<V, [I, J, K], [L], [M]>,
   ): <B>(ua: Pair<A, B>) => $<V, [Pair<I, B>, J, K], [L], [M]> =>
@@ -413,52 +389,46 @@ export function traverse<V extends Kind>(A: Applicative<V>) {
 }
 
 /**
- * The canonical Functor instance for Pair. Contains the
+ * The canonical Mappable instance for Pair. Contains the
  * map method.
  *
  * @since 2.0.0
  */
-export const FunctorPair: Functor<KindPair> = { map };
+export const MappablePair: Mappable<KindPair> = { map };
 
 /**
- * The canonical Bifunctor instance for Pair. Contains the
- * bimap and mapLeft methods.
+ * The canonical Bimappable instance for Pair. Contains the
+ * bimap and mapSecond methods.
  *
  * @since 2.0.0
  */
-export const BifunctorPair: Bifunctor<KindPair> = { mapLeft, bimap };
+export const BimappablePair: Bimappable<KindPair> = { mapSecond, map };
 
 /**
- * The canonical Comonad instance for Pair. Contains the
- * extract, extend, and map methods.
- *
- * @since 2.0.0
- */
-export const ComonadPair: Comonad<KindPair> = { extract, extend, map };
-
-/**
- * The canonical Extend instance for Pair. Contains the
- * extend and map methods.
- *
- * @since 2.0.0
- */
-export const ExtendPair: Extend<KindPair> = { extend, map };
-
-/**
- * The canonical Foldable instance for Pair. Contains the
+ * The canonical Reducible instance for Pair. Contains the
  * reduce method.
  *
  * @since 2.0.0
  */
-export const FoldablePair: Foldable<KindPair> = { reduce };
+export const ReduciblePair: Reducible<KindPair> = { reduce };
 
 /**
- * The canonical Traversable instance for Pair. Contains the
- * map, reduce, and traverse methods.
- *
  * @since 2.0.0
  */
 export const TraversablePair: Traversable<KindPair> = { map, reduce, traverse };
+
+/**
+ * Creates a Showable instance for a pair, wrapping the Showable instances provided
+ * for the first and second values.
+ */
+export function getShowable<A, B>(
+  SA: Showable<A>,
+  SB: Showable<B>,
+): Showable<Pair<A, B>> {
+  return {
+    show: ([first, second]) => `Pair(${SA.show(first)}, ${SB.show(second)})`,
+  };
+}
 
 /**
  * A Kind implementation used to fix the second parameter in a Pair.
@@ -471,43 +441,35 @@ export interface KindRightPair<B> extends Kind {
 }
 
 /**
- * Creates a Monad instance for Pair where the second parameter is
+ * Creates a Flatmappable instance for Pair where the second parameter is
  * concatenated according to the Monoid instance passed in.
  *
  * @example
  * ```ts
- * import { MonoidNumberSum } from "./number.ts";
- * import { getRightMonad, pair } from "./pair.ts";
+ * import { InitializableNumberSum } from "./number.ts";
+ * import { getRightFlatmappable, pair } from "./pair.ts";
  * import { pipe } from "./fn.ts";
  *
- * const Monad = getRightMonad(MonoidNumberSum);
+ * const Flatmappable = getRightFlatmappable(InitializableNumberSum);
  *
  * const ageOneYear = (name: string) => pair(name, 1);
  *
  * const result = pipe(
  *   pair("Brandon", 36), // Pair(Name, Age)
- *   Monad.chain(ageOneYear),
- *   Monad.chain(ageOneYear)
+ *   Flatmappable.flatmap(ageOneYear),
+ *   Flatmappable.flatmap(ageOneYear)
  * ); // ["Brandon", 38]
  * ```
  *
  * @since 2.0.0
  */
-export function getRightMonad<L>(M: Monoid<L>): Monad<KindRightPair<L>> {
-  const { empty, concat } = dual(M);
-  return createMonad<KindRightPair<L>>({
-    of: (a) => pair(a, empty()),
-    chain: (fati) => ([first, second]) =>
-      pipe(fati(first), mapLeft(concat(second))),
+export function getRightFlatmappable<L>(
+  I: Initializable<L>,
+): Flatmappable<KindRightPair<L>> {
+  const { combine } = dual(I);
+  return createFlatmappable<KindRightPair<L>>({
+    wrap: (a) => pair(a, I.init()),
+    flatmap: (fati) => ([first, second]) =>
+      pipe(fati(first), mapSecond(combine(second))),
   });
-}
-
-/**
- * Creates a Show instance for a pair, wrapping the Show instances provided
- * for the first and second values.
- */
-export function getShow<A, B>(SA: Show<A>, SB: Show<B>): Show<Pair<A, B>> {
-  return {
-    show: ([first, second]) => `Pair(${SA.show(first)}, ${SB.show(second)})`,
-  };
 }

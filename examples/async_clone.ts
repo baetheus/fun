@@ -1,6 +1,7 @@
 import { tee } from "https://raw.githubusercontent.com/denoland/deno_std/0.136.0/async/tee.ts";
+
 import * as A from "../async_iterable.ts";
-import { pipe } from "../fns.ts";
+import { pipe } from "../fn.ts";
 
 // Creates a stateful AsyncIterable
 const makeTest = (value: number) => ({

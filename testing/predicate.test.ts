@@ -7,11 +7,11 @@ import * as P from "../predicate.ts";
 import * as R from "../refinement.ts";
 import { pipe } from "../fn.ts";
 
-Deno.test("Predicate contramap", () => {
+Deno.test("Predicate premap", () => {
   const isGreaterThan3 = (n: number) => n > 3;
   const isLongerThan3 = pipe(
     isGreaterThan3,
-    P.contramap((s: string) => s.length),
+    P.premap((s: string) => s.length),
   );
 
   assertEquals(isLongerThan3("Hello"), true);
@@ -22,7 +22,7 @@ Deno.test("Predicate not", () => {
   const isGreaterThan3 = (n: number) => n > 3;
   const isLongerThan3 = pipe(
     isGreaterThan3,
-    P.contramap((s: string) => s.length),
+    P.premap((s: string) => s.length),
   );
   const isNotLongerThan3 = P.not(isLongerThan3);
 
@@ -56,24 +56,24 @@ Deno.test("Predicate and", () => {
   assertEquals(isPositiveInteger(-2.2), false);
 });
 
-Deno.test("Predicate ContravariantPredicate", () => {
-  assertStrictEquals(P.ContravariantPredicate.contramap, P.contramap);
+Deno.test("Predicate PremappablePredicate", () => {
+  assertStrictEquals(P.PremappablePredicate.premap, P.premap);
 });
 
-Deno.test("Predicate getSemigroupAny", () => {
-  assertStrictEquals(P.getSemigroupAny().concat, P.or);
+Deno.test("Predicate getInitializableAny", () => {
+  assertStrictEquals(P.getInitializableAny().combine, P.or);
 });
 
-Deno.test("Predicate getSemigroupAll", () => {
-  assertStrictEquals(P.getSemigroupAll().concat, P.and);
+Deno.test("Predicate getInitializableAll", () => {
+  assertStrictEquals(P.getInitializableAll().combine, P.and);
 });
 
-Deno.test("Predicate getMonoidAny", () => {
-  assertStrictEquals(P.getMonoidAny().concat, P.or);
-  assertEquals(P.getMonoidAny<number>().empty()(0), false);
+Deno.test("Predicate getInitializableAny", () => {
+  assertStrictEquals(P.getInitializableAny().combine, P.or);
+  assertEquals(P.getInitializableAny<number>().init()(0), false);
 });
 
-Deno.test("Predicate getMonoidAll", () => {
-  assertStrictEquals(P.getMonoidAll().concat, P.and);
-  assertEquals(P.getMonoidAll<number>().empty()(0), true);
+Deno.test("Predicate getInitializableAll", () => {
+  assertStrictEquals(P.getInitializableAll().combine, P.and);
+  assertEquals(P.getInitializableAll<number>().init()(0), true);
 });

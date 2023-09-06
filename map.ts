@@ -1,23 +1,24 @@
-import type { Bifunctor } from "./bifunctor.ts";
-import type { Functor } from "./functor.ts";
 import type { Kind, Out } from "./kind.ts";
-import type { Monoid } from "./monoid.ts";
+import type { Bimappable } from "./bimappable.ts";
+import type { Combinable } from "./combinable.ts";
+import type { Comparable } from "./comparable.ts";
+import type { Mappable } from "./mappable.ts";
 import type { Option } from "./option.ts";
-import type { Ord } from "./ord.ts";
-import type { Semigroup } from "./semigroup.ts";
-import type { Eq } from "./eq.ts";
-import type { Show } from "./show.ts";
+import type { Reducible } from "./reducible.ts";
+import type { Showable } from "./showable.ts";
+import type { Sortable } from "./sortable.ts";
 
 import * as O from "./option.ts";
 import * as A from "./array.ts";
-import { fromEquals } from "./eq.ts";
+import { fromCompare } from "./comparable.ts";
+import { fromCombine } from "./combinable.ts";
 import { flow, pipe } from "./fn.ts";
 
 export interface KindReadonlyMap extends Kind {
   readonly kind: ReadonlyMap<Out<this, 1>, Out<this, 0>>;
 }
 
-export function empty<K, A>(): ReadonlyMap<K, A> {
+export function init<K, A>(): ReadonlyMap<K, A> {
   return new Map();
 }
 
@@ -27,6 +28,12 @@ export function singleton<K, A>(k: K, a: A): ReadonlyMap<K, A> {
 
 export function isEmpty<A, B>(ta: ReadonlyMap<B, A>): boolean {
   return ta.size === 0;
+}
+
+export function readonlyMap<K = never, A = never>(
+  ...pairs: [K, A][]
+): ReadonlyMap<K, A> {
+  return new Map(pairs);
 }
 
 export function map<A, I>(
@@ -54,7 +61,7 @@ export function bimap<A, B, I, J>(
   };
 }
 
-export function mapLeft<B, J>(
+export function mapSecond<B, J>(
   fbj: (b: B) => J,
 ): <A>(ta: ReadonlyMap<B, A>) => ReadonlyMap<J, A> {
   return (ta) => {
@@ -71,11 +78,12 @@ export function size<K, A>(d: ReadonlyMap<K, A>): number {
 }
 
 export function lookupWithKey<K>(
-  S: Eq<K>,
+  S: Comparable<K>,
 ): (k: K) => <A>(ta: ReadonlyMap<K, A>) => Option<[K, A]> {
   return (k) => (ta) => {
+    const _compare = S.compare(k);
     for (const [ka, a] of ta.entries()) {
-      if (S.equals(ka)(k)) {
+      if (_compare(ka)) {
         return O.some([ka, a]);
       }
     }
@@ -84,7 +92,7 @@ export function lookupWithKey<K>(
 }
 
 export function lookup<K>(
-  S: Eq<K>,
+  S: Comparable<K>,
 ): (k: K) => <A>(ta: ReadonlyMap<K, A>) => Option<A> {
   const _lookupWithKey = lookupWithKey(S);
   return (k) => {
@@ -99,20 +107,20 @@ export function lookup<K>(
 }
 
 export function member<K>(
-  S: Eq<K>,
+  S: Comparable<K>,
 ): (k: K) => <A>(ta: ReadonlyMap<K, A>) => boolean {
   const lookupKey = lookup(S);
   return (k) => (m) => pipe(lookupKey(k)(m), O.isSome);
 }
 
 export function elem<A>(
-  S: Eq<A>,
+  S: Comparable<A>,
 ): (a: A) => <K>(m: ReadonlyMap<K, A>) => boolean {
   return (a) => {
-    const eq = S.equals(a);
+    const _compare = S.compare(a);
     return (ta) => {
       for (const b of ta.values()) {
-        if (eq(b)) {
+        if (_compare(b)) {
           return true;
         }
       }
@@ -122,32 +130,35 @@ export function elem<A>(
 }
 
 export function entries<B>(
-  O: Ord<B>,
+  O: Sortable<B>,
 ): <A>(ta: ReadonlyMap<B, A>) => ReadonlyArray<[B, A]> {
   return (ta) =>
-    Array.from(ta.entries()).sort(([left], [right]) => O.compare(left, right));
+    Array.from(ta.entries()).sort(([left], [right]) => O.sort(left, right));
 }
 
-export function keys<K>(O: Ord<K>): <A>(ta: ReadonlyMap<K, A>) => K[] {
-  return (ta) => Array.from(ta.keys()).sort(O.compare);
+export function keys<K>(O: Sortable<K>): <A>(ta: ReadonlyMap<K, A>) => K[] {
+  return (ta) => Array.from(ta.keys()).sort(O.sort);
 }
 
-export function values<A>(O: Ord<A>): <K>(ta: ReadonlyMap<K, A>) => A[] {
-  return (ta) => Array.from(ta.values()).sort(O.compare);
+export function values<A>(O: Sortable<A>): <K>(ta: ReadonlyMap<K, A>) => A[] {
+  return (ta) => Array.from(ta.values()).sort(O.sort);
 }
 
-export function reduce<B, A, O>(foao: (o: O, a: A, b: B) => O, o: O) {
+export function reduce<B, A, O>(
+  reducer: (accumulator: O, value: A, key: B) => O,
+  initial: O,
+) {
   return (ua: ReadonlyMap<B, A>): O => {
-    let out = o;
-    for (const [b, a] of ua.entries()) {
-      out = foao(o, a, b);
+    let result = initial;
+    for (const [key, value] of ua.entries()) {
+      result = reducer(result, value, key);
     }
-    return out;
+    return result;
   };
 }
 
 export function collect<B>(
-  O: Ord<B>,
+  O: Sortable<B>,
 ): <A, I>(
   fai: (b: B, a: A) => I,
 ) => (ta: ReadonlyMap<B, A>) => ReadonlyArray<I> {
@@ -160,7 +171,7 @@ export function collect<B>(
 }
 
 export function deleteAt<B>(
-  S: Eq<B>,
+  S: Comparable<B>,
 ): (key: B) => <A>(map: ReadonlyMap<B, A>) => ReadonlyMap<B, A> {
   const _lookup = lookupWithKey(S);
   return (key) => (map) =>
@@ -178,7 +189,7 @@ export function deleteAt<B>(
 }
 
 export function insert<B>(
-  S: Eq<B>,
+  S: Comparable<B>,
 ) {
   const _lookup = lookupWithKey(S);
   return <A>(value: A) =>
@@ -205,14 +216,14 @@ export function insert<B>(
 }
 
 export function insertAt<B>(
-  S: Eq<B>,
+  S: Comparable<B>,
 ) {
   const _insert = insert(S);
   return (key: B) => <A>(value: A) => _insert(value)(key);
 }
 
 export function modify<B>(
-  S: Eq<B>,
+  S: Comparable<B>,
 ): <A>(
   modifyFn: (a: A) => A,
 ) => (key: B) => (ta: ReadonlyMap<B, A>) => ReadonlyMap<B, A> {
@@ -232,7 +243,7 @@ export function modify<B>(
 }
 
 export function modifyAt<B>(
-  S: Eq<B>,
+  S: Comparable<B>,
 ): (
   key: B,
 ) => <A>(
@@ -242,19 +253,19 @@ export function modifyAt<B>(
 }
 
 export function update<B>(
-  S: Eq<B>,
+  S: Comparable<B>,
 ): <A>(value: A) => (key: B) => (map: ReadonlyMap<B, A>) => ReadonlyMap<B, A> {
   return (value) => (key) => modify(S)(() => value)(key);
 }
 
 export function updateAt<B>(
-  S: Eq<B>,
+  S: Comparable<B>,
 ): (key: B) => <A>(value: A) => (map: ReadonlyMap<B, A>) => ReadonlyMap<B, A> {
   return (key) => (value) => modify(S)(() => value)(key);
 }
 
 export function pop<B>(
-  S: Eq<B>,
+  S: Comparable<B>,
 ): (b: B) => <A>(ta: ReadonlyMap<B, A>) => Option<[A, ReadonlyMap<B, A>]> {
   const _lookup = lookup(S);
   const _deleteAt = deleteAt(S);
@@ -270,16 +281,17 @@ export function pop<B>(
 }
 
 export function isSubmap<K, A>(
-  SK: Eq<K>,
-  SA: Eq<A>,
+  SK: Comparable<K>,
+  SA: Comparable<A>,
 ): (second: ReadonlyMap<K, A>) => (first: ReadonlyMap<K, A>) => boolean {
   const _lookupWithKey = lookupWithKey(SK);
   return (second) => {
     return (first) => {
       for (const [mk, ma] of second.entries()) {
+        const _compare = SA.compare(ma);
         const matches = pipe(
           _lookupWithKey(mk)(first),
-          O.exists(([_, ca]) => SA.equals(ma)(ca)),
+          O.exists(([_, ca]) => _compare(ca)),
         );
         if (!matches) {
           return false;
@@ -290,14 +302,16 @@ export function isSubmap<K, A>(
   };
 }
 
-export const FunctorMap: Functor<KindReadonlyMap> = { map };
+export const MappableMap: Mappable<KindReadonlyMap> = { map };
 
-export const BifunctorMap: Bifunctor<KindReadonlyMap> = { bimap, mapLeft };
+export const BimappableMap: Bimappable<KindReadonlyMap> = { map, mapSecond };
 
-export function getShow<K, A>(
-  SK: Show<K>,
-  SA: Show<A>,
-): Show<ReadonlyMap<K, A>> {
+export const ReducibleMap: Reducible<KindReadonlyMap> = { reduce };
+
+export function getShowable<K, A>(
+  SK: Showable<K>,
+  SA: Showable<A>,
+): Showable<ReadonlyMap<K, A>> {
   return ({
     show: (ta) => {
       const elements = Array.from(ta).map(([k, a]) =>
@@ -308,41 +322,39 @@ export function getShow<K, A>(
   });
 }
 
-export function getEq<K, A>(
-  SK: Eq<K>,
-  SA: Eq<A>,
-): Eq<ReadonlyMap<K, A>> {
+export function getComparable<K, A>(
+  SK: Comparable<K>,
+  SA: Comparable<A>,
+): Comparable<ReadonlyMap<K, A>> {
   const submap = isSubmap(SK, SA);
-  return fromEquals((first, second) =>
+  return fromCompare((second) => (first) =>
     submap(second)(first) && submap(first)(second)
   );
 }
 
-export function getMonoid<K, A>(
-  SK: Eq<K>,
-  SA: Semigroup<A>,
-): Monoid<ReadonlyMap<K, A>> {
+export function getCombinable<K, A>(
+  SK: Comparable<K>,
+  SA: Combinable<A>,
+): Combinable<ReadonlyMap<K, A>> {
   const lookupKey = lookupWithKey(SK);
-  return {
-    concat: (a) => (b) => {
-      if (isEmpty(a)) {
-        return b;
-      }
-      if (isEmpty(b)) {
-        return a;
-      }
-      const r = new Map(a);
-      for (const [bk, ba] of b) {
-        pipe(
-          lookupKey(bk)(a),
-          O.match(
-            () => r.set(bk, ba),
-            ([ak, aa]) => r.set(ak, SA.concat(aa)(ba)),
-          ),
-        );
-      }
-      return r;
-    },
-    empty,
-  };
+  return fromCombine((second) => (first) => {
+    if (isEmpty(first)) {
+      return second;
+    }
+    if (isEmpty(second)) {
+      return first;
+    }
+    const r = new Map(first);
+    for (const [bk, ba] of second) {
+      const _combine = SA.combine(ba);
+      pipe(
+        lookupKey(bk)(first),
+        O.match(
+          () => r.set(bk, ba),
+          ([ak, aa]) => r.set(ak, _combine(aa)),
+        ),
+      );
+    }
+    return r;
+  });
 }

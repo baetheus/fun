@@ -9,7 +9,7 @@
  * @module State
  */
 import type { InOut, Kind, Out } from "./kind.ts";
-import type { Monad } from "./monad.ts";
+import type { Flatmappable } from "./flatmappable.ts";
 
 import { flow, identity, pipe } from "./fn.ts";
 
@@ -110,7 +110,7 @@ export function gets<E, A>(fea: (e: E) => A): State<E, A> {
  *
  * const state = pipe(
  *   S.id<number>(),
- *   S.chain(n => pipe(S.id<number>(), S.map(m => m + n))),
+ *   S.flatmap(n => pipe(S.id<number>(), S.map(m => m + n))),
  * );
  *
  * const result = state(100); // [2, 1]
@@ -148,14 +148,14 @@ export function modify<E>(fee: (e: E) => E): State<E, void> {
  * ```ts
  * import * as S from "./state.ts";
  *
- * const state = S.of(1);
+ * const state = S.wrap(1);
  *
  * const result = state(null); // [1, null]
  * ```
  *
  * @since 2.0.0
  */
-export function of<A, E = unknown>(a: A): State<E, A> {
+export function wrap<A, E = unknown>(a: A): State<E, A> {
   return (e) => [a, e];
 }
 
@@ -197,7 +197,7 @@ export function map<A, I>(
  * const work = pipe(
  *   S.id<string>(),
  *   S.map(s => (n: number) => s.repeat(n)),
- *   S.ap(S.gets(s => s.length))
+ *   S.apply(S.gets(s => s.length))
  * );
  *
  * const result1 = work("Hi"); // ["HiHi", "Hi"]
@@ -207,7 +207,7 @@ export function map<A, I>(
  *
  * @since 2.0.0
  */
-export function ap<E, A>(
+export function apply<E, A>(
   ua: State<E, A>,
 ): <I>(ufai: State<E, (a: A) => I>) => State<E, I> {
   return (ufai) => (s1) => {
@@ -228,7 +228,7 @@ export function ap<E, A>(
  *
  * const state = pipe(
  *   S.id<number>(),
- *   S.chain(n => S.of(n + 1)),
+ *   S.flatmap(n => S.wrap(n + 1)),
  * );
  *
  * const result1 = state(1); // [2, 1]
@@ -237,33 +237,10 @@ export function ap<E, A>(
  *
  * @since 2.0.0
  */
-export function chain<A, E, I>(
+export function flatmap<A, E, I>(
   fati: (a: A) => State<E, I>,
 ): (ta: State<E, A>) => State<E, I> {
   return (ta) => flow(ta, ([a, s]) => fati(a)(s));
-}
-
-/**
- * Collapse nested State<E, State<E, A>> into State<E, A>.
- *
- * @example
- * ```ts
- * import * as S from "./state.ts";
- * import { pipe } from "./fn.ts";
- *
- * const nested = pipe(
- *   S.id<number>(),
- *   S.map(n => S.of<number, number>(n + 1)),
- *   S.join,
- * );
- *
- * const result = nested(1); // [2, 1]
- * ```
- *
- * @since 2.0.0
- */
-export function join<A, B>(tta: State<B, State<B, A>>): State<B, A> {
-  return pipe(tta, chain(identity));
 }
 
 /**
@@ -309,9 +286,14 @@ export function execute<S>(s: S): <A>(ta: State<S, A>) => S {
 }
 
 /**
- * The canonical implementation of Monad for State. It contains
- * the methods of, ap, map, join, and chain.
+ * The canonical implementation of Flatmappable for State. It contains
+ * the methods wrap, apply, map, join, and flatmap.
  *
  * @since 2.0.0
  */
-export const MonadState: Monad<KindState> = { of, ap, map, join, chain };
+export const FlatmappableState: Flatmappable<KindState> = {
+  apply,
+  flatmap,
+  map,
+  wrap,
+};

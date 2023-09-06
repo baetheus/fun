@@ -25,8 +25,8 @@ const inc = (n: number) => n + 1;
 
 Deno.test("Optics _unsafeCast", () => {
   const lens = O.lens<number, number>(identity, identity);
-  const affine = O.affineFold<number, number>(Op.of, identity);
-  const fold = O.fold<number, number>(A.of, identity);
+  const affine = O.affineFold<number, number>(Op.wrap, identity);
+  const fold = O.fold<number, number>(A.wrap, identity);
 
   assertExists(O._unsafeCast(lens, O.LensTag));
   assertExists(O._unsafeCast(lens, O.AffineTag));
@@ -61,8 +61,8 @@ Deno.test("Optics modifier", () => {
 });
 
 Deno.test("Optics reviewer", () => {
-  const rev = O.reviewer(E.of);
-  assertStrictEquals(rev.review, E.of);
+  const rev = O.reviewer(E.wrap);
+  assertStrictEquals(rev.review, E.wrap);
 });
 
 Deno.test("Optics optic", () => {
@@ -80,13 +80,13 @@ Deno.test("Optics optic", () => {
     O.AffineTag,
     identity,
     Op.map,
-    Op.of,
+    Op.wrap,
   );
 
   assertStrictEquals(optic2.tag, O.AffineTag);
   assertStrictEquals(optic2.view, identity);
   assertStrictEquals(optic2.modify, Op.map);
-  assertStrictEquals(optic2.review, Op.of);
+  assertStrictEquals(optic2.review, Op.wrap);
 });
 
 Deno.test("Optic lens", () => {
@@ -185,22 +185,22 @@ Deno.test("Optic fromPredicate", () => {
   assertEquals(positive.review(0), 0);
   assertEquals(positive.review(1), 1);
 
-  const nonempty = O.fromPredicate((
+  const noninit = O.fromPredicate((
     arr: number[],
   ): arr is [number, ...number[]] => arr.length > 0);
 
-  assertEquals(nonempty.view([]), Op.none);
-  assertEquals(nonempty.view([1]), Op.some([1]));
+  assertEquals(noninit.view([]), Op.none);
+  assertEquals(noninit.view([1]), Op.some([1]));
   assertEquals(
-    nonempty.modify(([head, ...rest]) => [inc(head), ...rest.map(inc)])([]),
+    noninit.modify(([head, ...rest]) => [inc(head), ...rest.map(inc)])([]),
     [],
   );
   assertEquals(
-    nonempty.modify(([head, ...rest]) => [inc(head), ...rest.map(inc)])([1, 2]),
+    noninit.modify(([head, ...rest]) => [inc(head), ...rest.map(inc)])([1, 2]),
     [2, 3],
   );
-  assertEquals(nonempty.review([1, 2]), [1, 2]);
-  assertStrictEquals(nonempty.tag, O.AffineTag);
+  assertEquals(noninit.review([1, 2]), [1, 2]);
+  assertStrictEquals(noninit.tag, O.AffineTag);
 });
 
 Deno.test("Optic view", () => {
@@ -232,8 +232,8 @@ Deno.test("Optic id", () => {
 
 Deno.test("Optic compost", () => {
   const lens = O.id<number>();
-  const affine = O.affineFold<number, number>(Op.of, identity);
-  const fold = O.fold<number, number>(A.of, identity);
+  const affine = O.affineFold<number, number>(Op.wrap, identity);
+  const fold = O.fold<number, number>(A.wrap, identity);
 
   const ll = pipe(lens, O.compose(lens));
   const la = pipe(lens, O.compose(affine));
@@ -287,16 +287,16 @@ Deno.test("Optic composeReviewer", () => {
 
   assertEquals(trivial.review(1), 1);
 
-  const some = <A>() => O.prism<Op.Option<A>, A>(identity, Op.of, Op.map);
-  const arr = <A>() => O.refold<ReadonlyArray<A>, A>(identity, A.of, A.map);
+  const some = <A>() => O.prism<Op.Option<A>, A>(identity, Op.wrap, Op.map);
+  const arr = <A>() => O.refold<ReadonlyArray<A>, A>(identity, A.wrap, A.map);
   const opArr = pipe(some<ReadonlyArray<number>>(), O.composeReviewer(arr()));
 
   assertEquals(opArr.review(1), Op.some([1]));
 });
 
-Deno.test("Optic of", () => {
+Deno.test("Optic wrap", () => {
   const value = { one: 1 };
-  assertStrictEquals(O.of(value).view(null), value);
+  assertStrictEquals(O.wrap(value).view(null), value);
 });
 
 Deno.test("Optic imap", () => {
@@ -321,7 +321,7 @@ Deno.test("Optic ap", () => {
     O.filter((p) => p.age > 18),
   );
 
-  const formatted = pipe(fmt, O.ap(adults));
+  const formatted = pipe(fmt, O.apply(adults));
 
   const fmt1 = (p: Person) => `${p.name} is ${p.age}`;
   const fmt2 = (p: Person) => `At ${p.age} we have ${p.name}`;
@@ -445,7 +445,7 @@ Deno.test("Optic filter", () => {
 });
 
 Deno.test("Optic atMap", () => {
-  const atMap = O.atMap(N.EqNumber);
+  const atMap = O.atMap(N.ComparableNumber);
   const one = pipe(O.id<ReadonlyMap<number, number>>(), atMap(1));
 
   const double = pipe(one, O.modify(Op.map(inc)));
@@ -489,7 +489,7 @@ Deno.test("Optic traverse", () => {
   assertEquals(increase(s2), { tree: T.tree(2, [T.tree(3, [T.tree(4)])]) });
 });
 
-Deno.test("Optic concatAll", () => {
+Deno.test("Optic combineAll", () => {
   type Person = { name: string; age: number };
   type People = readonly Person[];
 
@@ -497,7 +497,7 @@ Deno.test("Optic concatAll", () => {
     O.id<People>(),
     O.array,
     O.prop("age"),
-    O.concatAll(N.MonoidNumberSum, identity),
+    O.combineAll(N.InitializableNumberSum, identity),
   );
 
   const people: People = [
@@ -535,9 +535,9 @@ Deno.test("Optic set", () => {
   const optic = pipe(O.id<ReadonlySet<number>>(), O.set);
   const incr = pipe(optic, O.modify(inc));
 
-  assertEquals(optic.view(S.empty()), []);
+  assertEquals(optic.view(S.init()), []);
   assertEquals(optic.view(S.set(1, 2)), [1, 2]);
-  assertEquals(incr(S.empty()), S.empty());
+  assertEquals(incr(S.init()), S.init());
   assertEquals(incr(S.set(1, 2)), S.set(2, 3));
 });
 

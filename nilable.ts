@@ -1,16 +1,7 @@
-/** *****************************************************************************
- * Nilable
- * Note: The Nilable Functor is not a true Functor as it does not satisfy the functor laws.
- * However, it is still fairly useful.
- *
- * Nilable is a type like Maybe/Option that uses undefined/null in lieu of tagged unions.
- * *****************************************************************************/
-
-import type { Alt } from "./alt.ts";
 import type { Kind, Out } from "./kind.ts";
-import type { Monad } from "./monad.ts";
 import type { Predicate } from "./predicate.ts";
-import type { Show } from "./show.ts";
+import type { Showable } from "./showable.ts";
+import type { Flatmappable } from "./flatmappable.ts";
 
 import { identity, pipe } from "./fn.ts";
 
@@ -73,15 +64,15 @@ export function isNotNil<A>(ta: Nilable<A>): ta is NonNullable<A> {
   return !isNil(ta);
 }
 
-export function of<A>(a: A): Nilable<A> {
+export function wrap<A>(a: A): Nilable<A> {
   return a;
 }
 
-export function throwError<A = never>(): Nilable<A> {
+export function fail<A = never>(): Nilable<A> {
   return nil;
 }
 
-export function ap<A>(
+export function apply<A>(
   ua: Nilable<A>,
 ): <I>(ufai: Nilable<(a: A) => I>) => Nilable<I> {
   return (ufai) => isNil(ua) ? nil : isNil(ufai) ? nil : ufai(ua);
@@ -91,11 +82,7 @@ export function map<A, I>(fai: (a: A) => I): (ta: Nilable<A>) => Nilable<I> {
   return (ta) => isNil(ta) ? nil : fai(ta);
 }
 
-export function join<A>(tta: Nilable<Nilable<A>>): Nilable<A> {
-  return pipe(tta, chain(identity));
-}
-
-export function chain<A, I>(
+export function flatmap<A, I>(
   fati: (a: A) => Nilable<I>,
 ): (ta: Nilable<A>) => Nilable<I> {
   return (ta) => isNil(ta) ? nil : fati(ta);
@@ -105,10 +92,13 @@ export function alt<A>(tb: Nilable<A>): (ta: Nilable<A>) => Nilable<A> {
   return (ta) => isNil(ta) ? tb : ta;
 }
 
-export const MonadNilable: Monad<KindNilable> = { of, ap, map, join, chain };
+export const FlatmappableNilable: Flatmappable<KindNilable> = {
+  apply,
+  flatmap,
+  map,
+  wrap,
+};
 
-export const AltNilable: Alt<KindNilable> = { alt, map };
-
-export function getShow<A>({ show }: Show<A>): Show<Nilable<A>> {
+export function getShowable<A>({ show }: Showable<A>): Showable<Nilable<A>> {
   return { show: (ma) => (isNil(ma) ? "nil" : show(ma)) };
 }

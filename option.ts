@@ -6,30 +6,28 @@
  * @module Option
  * @since 2.0.0
  */
+
 import type { $, Kind, Out } from "./kind.ts";
-import type { Alt } from "./alt.ts";
-import type { Applicative } from "./applicative.ts";
-import type { Apply } from "./apply.ts";
-import type { Chain } from "./chain.ts";
-import type { Extend } from "./extend.ts";
+import type { Applicable } from "./applicable.ts";
+import type { Comparable } from "./comparable.ts";
 import type { Either } from "./either.ts";
 import type { Filterable } from "./filterable.ts";
-import type { Foldable } from "./foldable.ts";
-import type { Functor } from "./functor.ts";
-import type { Monad } from "./monad.ts";
-import type { Monoid } from "./monoid.ts";
-import type { Ord } from "./ord.ts";
+import type { Flatmappable } from "./flatmappable.ts";
+import type { Initializable } from "./initializable.ts";
+import type { Mappable } from "./mappable.ts";
 import type { Pair } from "./pair.ts";
 import type { Predicate } from "./predicate.ts";
+import type { Reducible } from "./reducible.ts";
 import type { Refinement } from "./refinement.ts";
-import type { Semigroup } from "./semigroup.ts";
-import type { Eq } from "./eq.ts";
-import type { Show } from "./show.ts";
+import type { Showable } from "./showable.ts";
+import type { Sortable } from "./sortable.ts";
 import type { Traversable } from "./traversable.ts";
+import type { Wrappable } from "./wrappable.ts";
 
 import { isNotNil } from "./nilable.ts";
-import { fromCompare } from "./ord.ts";
-import { flow, handleThrow, identity, pipe } from "./fn.ts";
+import { fromCompare } from "./comparable.ts";
+import { fromSort } from "./sortable.ts";
+import { flow, handleThrow, pipe } from "./fn.ts";
 
 /**
  * The None type represents the non-existence of a value.
@@ -108,8 +106,24 @@ export function some<A>(value: A): Option<A> {
 
 /**
  * The constNone is a thunk that returns the canonical none instance.
+ *
+ * @since 2.0.0
  */
 export function constNone<A = never>(): Option<A> {
+  return none;
+}
+
+/**
+ * @since 2.0.0
+ */
+export function init<A = never>(): Option<A> {
+  return none;
+}
+
+/**
+ * Fail is an alias of constNone.
+ */
+export function fail<A = never>(): Option<A> {
   return none;
 }
 
@@ -310,35 +324,19 @@ export function isSome<A>(m: Option<A>): m is Some<A> {
 }
 
 /**
- * Returns none, always. This is the empty function used by getMonoid.
- *
- * @example
- * ```ts
- * import * as O from "./option.ts";
- *
- * const result = O.empty(); // None
- * ```
- *
- * @since 2.0.0
- */
-export function empty<A = never>(): Option<A> {
-  return none;
-}
-
-/**
  * Create an Option by wrapping any value A in Some.
  *
  * @example
  * ```ts
  * import * as O from "./option.ts";
  *
- * const result1 = O.of(1); // Some(1)
- * const result2 = O.of("Hello"); // Some("Hello")
+ * const result1 = O.wrap(1); // Some(1)
+ * const result2 = O.wrap("Hello"); // Some("Hello")
  * ```
  *
  * @since 2.0.0
  */
-export function of<A>(a: A): Option<A> {
+export function wrap<A>(a: A): Option<A> {
   return some(a);
 }
 
@@ -389,7 +387,7 @@ export function map<A, I>(fai: (a: A) => I): (ua: Option<A>) => Option<I> {
 export function mapNullable<A, I>(
   f: (a: A) => I | null | undefined,
 ): (ua: Option<A>) => Option<I> {
-  return chain(flow(f, fromNullable));
+  return flatmap(flow(f, fromNullable));
 }
 
 /**
@@ -404,17 +402,17 @@ export function mapNullable<A, I>(
  *
  * const result1 = pipe(
  *   O.some((n: number) => n + 1),
- *   O.ap(O.some(1)),
+ *   O.apply(O.some(1)),
  * ); // Some(2)
  * const result2 = pipe(
  *   O.some((n: number) => n + 1),
- *   O.ap(O.none),
+ *   O.apply(O.none),
  * ); // None
  * ```
  *
  * @since 2.0.0
  */
-export function ap<A>(
+export function apply<A>(
   ua: Option<A>,
 ): <I>(ufai: Option<(a: A) => I>) => Option<I> {
   return (ufai) =>
@@ -434,34 +432,16 @@ export function ap<A>(
  *
  * const result = pipe(
  *   O.some(1),
- *   O.chain(n => n > 0 ? O.some(n) : O.none),
+ *   O.flatmap(n => n > 0 ? O.some(n) : O.none),
  * ); // Some(1)
  * ```
  *
  * @since 2.0.0
  */
-export function chain<A, I>(
+export function flatmap<A, I>(
   fati: (a: A) => Option<I>,
 ): (ta: Option<A>) => Option<I> {
   return (ua) => isNone(ua) ? ua : fati(ua.value);
-}
-
-/**
- * Flatten a nested Option<Option<A>> into an Option<A>.
- *
- * @example
- * ```ts
- * import * as O from "./option.ts";
- *
- * const result1 = O.join(O.some(O.some(1))); // Some(1)
- * const result2 = O.join(O.some(O.none)); // None
- * const result3 = O.join(O.none); // None
- * ```
- *
- * @since 2.0.0
- */
-export function join<A>(taa: Option<Option<A>>): Option<A> {
-  return pipe(taa, chain(identity));
 }
 
 /**
@@ -483,29 +463,6 @@ export function join<A>(taa: Option<Option<A>>): Option<A> {
  */
 export function alt<A>(second: Option<A>): (first: Option<A>) => Option<A> {
   return (first) => isNone(first) ? second : first;
-}
-
-/**
- * Extend an Option by mapping it to a concrete value.
- *
- * @example
- * ```ts
- * import * as O from "./option.ts";
- * import { identity } from "./fn.ts";
- *
- * const match = O.match(() => 0, identity);
- * const extend = O.extend(match);
- *
- * const result1 = extend(O.some(1)); // Some(1);
- * const result2 = extend(O.none); // Some(0);
- * ```
- *
- * @since 2.0.0
- */
-export function extend<A, I>(
-  ftai: (ta: Option<A>) => I,
-): (ta: Option<A>) => Option<I> {
-  return flow(ftai, some);
 }
 
 /**
@@ -564,14 +521,14 @@ export function filter<A>(
 
 /**
  * Apply a filter and mapping operation at the same time against an Option. This
- * is equivalent to the chain function for Option.
+ * is equivalent to the flatmap function for Option.
  *
  * @example
  * ```ts
  * import * as O from "./option.ts";
  *
- * const nonempty = (str: string) => str.length > 0 ? O.some(str.length) : O.none;
- * const filterMap = O.filterMap(nonempty);
+ * const noninit = (str: string) => str.length > 0 ? O.some(str.length) : O.none;
+ * const filterMap = O.filterMap(noninit);
  *
  * const result1 = filterMap(O.some("Hello")); // Some(5);
  * const result2 = filterMap(O.some("")); // None
@@ -583,7 +540,7 @@ export function filter<A>(
 export function filterMap<A, I>(
   fai: (a: A) => Option<I>,
 ): (ua: Option<A>) => Option<I> {
-  return chain(fai);
+  return flatmap(fai);
 }
 
 /**
@@ -614,9 +571,9 @@ export function partition<A>(
   predicate: Predicate<A>,
 ): (ua: Option<A>) => Pair<Option<A>, Option<A>> {
   type Output = Pair<Option<A>, Option<A>>;
-  const empty: Output = [none, none];
+  const init: Output = [none, none];
   return (ua) =>
-    isNone(ua) ? empty : predicate(ua.value) ? [ua, none] : [none, ua];
+    isNone(ua) ? init : predicate(ua.value) ? [ua, none] : [none, ua];
 }
 
 /**
@@ -643,10 +600,10 @@ export function partitionMap<A, I, J>(
   fai: (a: A) => Either<J, I>,
 ): (ua: Option<A>) => Pair<Option<I>, Option<J>> {
   type Output = Pair<Option<I>, Option<J>>;
-  const empty: Output = [none, none];
+  const init: Output = [none, none];
   return (ua) => {
     if (isNone(ua)) {
-      return empty;
+      return init;
     }
     const result = fai(ua.value);
     return result.tag === "Right"
@@ -681,7 +638,7 @@ export function reduce<A, O>(
 }
 
 /**
- * Traverse over an Option<A> using the supplied Applicative. This allows one to
+ * Traverse over an Option<A> using the supplied Applicable. This allows one to
  * turn an Option<A> into Kind<V, Option<I>>.
  *
  * @example
@@ -691,7 +648,7 @@ export function reduce<A, O>(
  * import { pipe } from "./fn.ts";
  *
  * const toRange = (n: number) => A.range(n);
- * const traverse = pipe(toRange, O.traverse(A.ApplicativeArray));
+ * const traverse = pipe(toRange, O.traverse(A.ApplicableArray));
  *
  * const result1 = traverse(O.some(3)); // [Some(0), Some(1), Some(2)];
  * const result2 = traverse(O.none); // [None]
@@ -700,7 +657,7 @@ export function reduce<A, O>(
  * @since 2.0.0
  */
 export function traverse<V extends Kind>(
-  A: Applicative<V>,
+  A: Applicable<V>,
 ): <A, I, J, K, L, M>(
   favi: (a: A) => $<V, [I, J, K], [L], [M]>,
 ) => (ta: Option<A>) => $<V, [Option<I>, J, K], [L], [M]> {
@@ -708,70 +665,27 @@ export function traverse<V extends Kind>(
     favi: (a: A) => $<V, [I, J, K], [L], [M]>,
   ): (ta: Option<A>) => $<V, [Option<I>, J, K], [L], [M]> =>
     match(
-      () => A.of(constNone()),
+      () => A.wrap(constNone()),
       (a) => pipe(favi(a), A.map(some)),
     );
 }
 
 /**
- * The canonical implementation of Functor for Option. It contains
- * the method map.
+ * The canonical implementation of Wrappable for Option.
  *
  * @since 2.0.0
  */
-export const FunctorOption: Functor<KindOption> = { map };
+export const WrappableOption: Wrappable<KindOption> = { wrap };
 
 /**
- * The canonical implementation of Apply for Option. It contains
- * the methods ap and map.
+ * The canonical implementation of Mappable for Option.
  *
  * @since 2.0.0
  */
-export const ApplyOption: Apply<KindOption> = { ap, map };
+export const MappableOption: Mappable<KindOption> = { map };
 
 /**
- * The canonical implementation of Applicative for Option. It contains
- * the methods of, ap, and map.
- *
- * @since 2.0.0
- */
-export const ApplicativeOption: Applicative<KindOption> = { of, ap, map };
-
-/**
- * The canonical implementation of Chain for Option. It contains
- * the methods ap, map, and chain.
- *
- * @since 2.0.0
- */
-export const ChainOption: Chain<KindOption> = { ap, map, chain };
-
-/**
- * The canonical implementation of Monad for Option. It contains
- * the methods of, ap, map, join, and chain.
- *
- * @since 2.0.0
- */
-export const MonadOption: Monad<KindOption> = { of, ap, map, join, chain };
-
-/**
- * The canonical implementation of Alt for Option. It contains
- * the methods alt and map
- *
- * @since 2.0.0
- */
-export const AltOption: Alt<KindOption> = { alt, map };
-
-/**
- * The canonical implementation of Extend for Option. It contains
- * the methods map and extend
- *
- * @since 2.0.0
- */
-export const ExtendsOption: Extend<KindOption> = { map, extend };
-
-/**
- * The canonical implementation of Filterable for Option. It contains
- * the methods filter, filterMap, partition, and partitionMap.
+ * The canonical implementation of Filterable for Option.
  *
  * @since 2.0.0
  */
@@ -783,16 +697,14 @@ export const FilterableOption: Filterable<KindOption> = {
 };
 
 /**
- * The canonical implementation of Foldable for Option. It contains
- * the method reduce.
+ * The canonical implementation of Reducible for Option.
  *
  * @since 2.0.0
  */
-export const FoldableOption: Foldable<KindOption> = { reduce };
+export const ReducibleOption: Reducible<KindOption> = { reduce };
 
 /**
- * The canonical implementation of Traversable for Option. It contains
- * the methods map, reduce, and traverse.
+ * The canonical implementation of Traversable for Option.
  *
  * @since 2.0.0
  */
@@ -803,84 +715,49 @@ export const TraversableOption: Traversable<KindOption> = {
 };
 
 /**
- * Create an instance of Show for Option<A> given an instance of Show for A.
+ * The canonical implementation of Applicable for Option.
+ *
+ * @since 2.0.0
+ */
+export const ApplicableOption: Applicable<KindOption> = { wrap, map, apply };
+
+/**
+ * The canonical implementation of Flatmappable for Option.
+ *
+ * @since 2.0.0
+ */
+export const FlatmappableOption: Flatmappable<KindOption> = {
+  wrap,
+  map,
+  apply,
+  flatmap,
+};
+
+/**
+ * Create an instance of Showable for Option<A> given an instance of Showable for A.
  *
  * @example
  * ```ts
  * import * as O from "./option.ts";
  *
- * const Show = O.getShow({ show: (n: number) => n.toString() }); // Show<Option<number>>
+ * const Showable = O.getShowable({ show: (n: number) => n.toString() }); // Showable<Option<number>>
  *
- * const result1 = Show.show(O.some(1)); // "Some(1)"
- * const result2 = Show.show(O.none); // "None"
+ * const result1 = Showable.show(O.some(1)); // "Some(1)"
+ * const result2 = Showable.show(O.none); // "None"
  * ```
  *
  * @since 2.0.0
  */
-export function getShow<A>({ show }: Show<A>): Show<Option<A>> {
+export function getShowable<A>(
+  { show }: Showable<A>,
+): Showable<Option<A>> {
   return ({
     show: (ma) => (isNone(ma) ? "None" : `${"Some"}(${show(ma.value)})`),
   });
 }
 
 /**
- * Create an instance of Eq<Option<A>> given an instance of Eq<A>.
- *
- * @example
- * ```ts
- * import * as O from "./option.ts";
- * import * as N from "./number.ts";
- *
- * const Eq = O.getEq(N.EqNumber);
- *
- * const result1 = Eq.equals(O.some(1))(O.some(2)); // false
- * const result2 = Eq.equals(O.some(1))(O.some(1)); // true
- * const result3 = Eq.equals(O.none)(O.none); // true
- * const result4 = Eq.equals(O.some(1))(O.none); // false
- * ```
- *
- * @since 2.0.0
- */
-export function getEq<A>(S: Eq<A>): Eq<Option<A>> {
-  return ({
-    equals: (a) => (b) =>
-      a === b ||
-      ((isSome(a) && isSome(b))
-        ? S.equals(a.value)(b.value)
-        : (isNone(a) && isNone(b))),
-  });
-}
-
-/**
- * Create an instance of Ord<Option<A>> given an instance of Ord<A>.
- *
- * @example
- * ```ts
- * import * as O from "./option.ts";
- * import * as N from "./number.ts";
- *
- * const Ord = O.getOrd(N.OrdNumber);
- *
- * const result1 = Ord.compare(O.some(1), O.some(2)); // 1
- * const result2 = Ord.compare(O.some(1), O.some(1)); // 0
- * const result3 = Ord.compare(O.none, O.none); // 0
- * const result4 = Ord.compare(O.none, O.some(1)); // -1
- * ```
- *
- * @since 2.0.0
- */
-export function getOrd<A>(O: Ord<A>): Ord<Option<A>> {
-  return fromCompare((fst, snd) =>
-    isNone(fst)
-      ? isNone(snd) ? 0 : -1
-      : isNone(snd)
-      ? 1
-      : O.compare(fst.value, snd.value)
-  );
-}
-
-/**
- * Create an instance of Semigroup<Option<A>> given an instance of Semigroup<A>.
+ * Create an instance of Comparable<Option<A>> given an instance of Comparable<A>.
  *
  * @example
  * ```ts
@@ -888,47 +765,82 @@ export function getOrd<A>(O: Ord<A>): Ord<Option<A>> {
  * import * as N from "./number.ts";
  * import { pipe } from "./fn.ts";
  *
- * const { concat } = O.getSemigroup(N.SemigroupNumberSum);
+ * const { compare } = O.getComparable(N.ComparableNumber);
  *
- * const result1 = pipe(O.some(1), concat(O.some(1))); // Some(2)
- * const result2 = pipe(O.none, concat(O.some(1))); // Some(1)
- * const result3 = pipe(O.some(1), concat(O.none)); // Some(1)
+ * const result1 = pipe(O.some(1), compare(O.some(2))); // false
+ * const result2 = pipe(O.some(1), compare(O.some(1))); // true
+ * const result3 = pipe(O.none, compare(O.none)); // true
+ * const result4 = pipe(O.some(1), compare(O.none)); // false
  * ```
  *
  * @since 2.0.0
  */
-export function getSemigroup<A>(
-  S: Semigroup<A>,
-): Semigroup<Option<A>> {
-  return ({
-    concat: (x) => (y) =>
-      isNone(x) ? y : isNone(y) ? x : of(S.concat(x.value)(y.value)),
-  });
+export function getComparable<A>(
+  { compare }: Comparable<A>,
+): Comparable<Option<A>> {
+  return fromCompare((second) => (first) =>
+    isSome(first) && isSome(second)
+      ? compare(second.value)(first.value)
+      : isNone(first) && isNone(second)
+  );
 }
 
 /**
- * Create an instance of Monoid<Option<A>> given an instance of Monoid<A>.
+ * Create an instance of Sortable<Option<A>> given an instance of Sortable<A>.
  *
  * @example
  * ```ts
  * import * as O from "./option.ts";
  * import * as N from "./number.ts";
- * import * as M from "./monoid.ts";
  *
- * const monoid = O.getMonoid(N.MonoidNumberSum);
- * const concatAll = M.concatAll(monoid);
+ * const { sort } = O.getSortable(N.SortableNumber);
  *
- * const result1 = concatAll([O.some(1), O.some(2), O.some(3)]); // Some(6)
- * const result2 = concatAll([O.some(1), O.some(2), O.none]); // Some(3)
- * const result3 = concatAll([O.none, O.none, O.none]); // None
- * const result4 = concatAll([]); // None
+ * const result1 = sort(O.some(1), O.some(2)); // 1
+ * const result2 = sort(O.some(1), O.some(1)); // 0
+ * const result3 = sort(O.none, O.none); // 0
+ * const result4 = sort(O.none, O.some(1)); // -1
  * ```
  *
  * @since 2.0.0
  */
-export function getMonoid<A>(M: Monoid<A>): Monoid<Option<A>> {
+export function getSortable<A>({ sort }: Sortable<A>): Sortable<Option<A>> {
+  return fromSort((fst, snd) =>
+    isNone(fst)
+      ? isNone(snd) ? 0 : -1
+      : isNone(snd)
+      ? 1
+      : sort(fst.value, snd.value)
+  );
+}
+
+/**
+ * Create an instance of Initializable<Option<A>> given an instance of Initializable<A>.
+ *
+ * @example
+ * ```ts
+ * import * as O from "./option.ts";
+ * import * as N from "./number.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const { combine } = O.getInitializable(N.InitializableNumberSum);
+ *
+ * const result1 = pipe(O.some(1), combine(O.some(1))); // Some(2)
+ * const result2 = pipe(O.none, combine(O.some(1))); // Some(1)
+ * const result3 = pipe(O.some(1), combine(O.none)); // Some(1)
+ * ```
+ *
+ * @since 2.0.0
+ */
+export function getInitializable<A>(
+  { combine }: Initializable<A>,
+): Initializable<Option<A>> {
   return ({
-    ...getSemigroup(M),
-    empty: constNone,
+    init: () => none,
+    combine: (second) => (first) =>
+      isNone(first)
+        ? second
+        : isNone(second)
+        ? first
+        : wrap(combine(second.value)(first.value)),
   });
 }

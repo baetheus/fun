@@ -10,13 +10,13 @@
  * @module Newtype
  */
 
-import type { Monoid } from "./monoid.ts";
-import type { Ord } from "./ord.ts";
-import type { Semigroup } from "./semigroup.ts";
-import type { Eq } from "./eq.ts";
-import type { Predicate } from "./predicate.ts";
+import type { Combinable } from "./combinable.ts";
+import type { Comparable } from "./comparable.ts";
+import type { Initializable } from "./initializable.ts";
 import type { Iso, Prism } from "./optics.ts";
 import type { Option } from "./option.ts";
+import type { Predicate } from "./predicate.ts";
+import type { Sortable } from "./sortable.ts";
 
 import { fromPredicate } from "./option.ts";
 import { iso as _iso, prism as _prism } from "./optics.ts";
@@ -82,87 +82,88 @@ export type ToValue<T extends Newtype<unknown, unknown>> = T[typeof Value];
 export type AnyNewtype = Newtype<unknown, unknown>;
 
 /**
- * Retype an existing Eq from an inner type to a Newtype.
+ * Retype an existing Comparable from an inner type to a Newtype.
  *
  * @example
  * ```ts
- * import { Newtype, getEq } from "./newtype.ts";
+ * import { Newtype, getComparable } from "./newtype.ts";
  * import * as N from "./number.ts";
  *
  * type Integer = Newtype<'Integer', number>;
  *
- * const eqInteger = getEq<Integer>(N.EqNumber);
+ * const eqInteger = getComparable<Integer>(N.ComparableNumber);
  * ```
  *
  * @since 2.0.0
  */
-export function getEq<T extends AnyNewtype>(
-  eq: Eq<ToValue<T>>,
-): Eq<T> {
-  return eq as Eq<T>;
+export function getComparable<T extends AnyNewtype>(
+  eq: Comparable<ToValue<T>>,
+): Comparable<T> {
+  return eq as Comparable<T>;
 }
 
 /**
- * Retype an existing Ord from an inner type to a Newtype.
+ * Retype an existing Sortable from an inner type to a Newtype.
  *
  * @example
  * ```ts
- * import { Newtype, getOrd } from "./newtype.ts";
+ * import { Newtype, getSortable } from "./newtype.ts";
  * import * as N from "./number.ts";
  *
  * type Integer = Newtype<'Integer', number>;
  *
- * const ordInteger = getOrd<Integer>(N.OrdNumber);
+ * const ordInteger = getSortable<Integer>(N.SortableNumber);
  * ```
  *
  * @since 2.0.0
  */
-export function getOrd<T extends AnyNewtype>(ord: Ord<ToValue<T>>): Ord<T> {
-  return ord as Ord<T>;
+export function getSortable<T extends AnyNewtype>(
+  ord: Sortable<ToValue<T>>,
+): Sortable<T> {
+  return ord as Sortable<T>;
 }
 
 /**
- * Retype an existing Semigroup from an inner type to a Newtype.
+ * Retype an existing Combinable from an inner type to a Newtype.
  *
  * @example
  * ```ts
- * import { Newtype, getSemigroup } from "./newtype.ts";
+ * import { Newtype, getCombinable } from "./newtype.ts";
  * import * as N from "./number.ts";
  *
  * type Integer = Newtype<'Integer', number>;
  *
- * const semigroupInteger = getSemigroup<Integer>(N.SemigroupNumberSum);
+ * const monoidInteger = getCombinable<Integer>(N.InitializableNumberSum);
  * ```
  *
  * @since 2.0.0
  */
-export function getSemigroup<T extends AnyNewtype>(
-  semigroup: Semigroup<ToValue<T>>,
-): Semigroup<T> {
-  return semigroup as unknown as Semigroup<T>;
+export function getCombinable<T extends AnyNewtype>(
+  combinable: Combinable<ToValue<T>>,
+): Combinable<T> {
+  return combinable as unknown as Combinable<T>;
 }
 
 /**
- * Retype an existing Monoid from an inner type to a Newtype.
+ * Retype an existing Initializable from an inner type to a Newtype.
  *
  * @example
  * ```ts
- * import { Newtype, getMonoid } from "./newtype.ts";
+ * import { Newtype, getInitializable } from "./newtype.ts";
  * import * as N from "./number.ts";
  *
  * type Integer = Newtype<'Integer', number>;
  *
- * const monoidInteger = getMonoid<Integer>(N.MonoidNumberSum);
+ * const monoidInteger = getInitializable<Integer>(N.InitializableNumberSum);
  * ```
  *
  * @since 2.0.0
  */
-export function getMonoid<T extends AnyNewtype>(
-  monoid: Monoid<ToValue<T>>,
-): Monoid<T> {
-  return monoid as unknown as Monoid<T>;
+export function getInitializable<T extends AnyNewtype>(
+  initializable: Initializable<ToValue<T>>,
+): Initializable<T> {
+  return initializable as unknown as Initializable<T>;
 }
-
 // deno-lint-ignore no-explicit-any
 const _anyIso: Iso<any, any> = _iso(unsafeCoerce, unsafeCoerce);
 

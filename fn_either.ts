@@ -8,13 +8,10 @@
  */
 
 import type { In, Kind, Out } from "./kind.ts";
-import type { Alt } from "./alt.ts";
-import type { Bifunctor } from "./bifunctor.ts";
-import type { Monad } from "./monad.ts";
-import type { Semigroup } from "./semigroup.ts";
-import type { Contravariant } from "./contravariant.ts";
-import type { Category } from "./category.ts";
-import type { Profunctor } from "./profunctor.ts";
+import type { Bimappable } from "./bimappable.ts";
+import type { Flatmappable } from "./flatmappable.ts";
+import type { Combinable } from "./combinable.ts";
+import type { Premappable } from "./premappable.ts";
 import type { Predicate } from "./predicate.ts";
 import type { Refinement } from "./refinement.ts";
 import type { Fn } from "./fn.ts";
@@ -61,7 +58,7 @@ export type AnyFnEither = FnEither<any, any, any>;
  * it constrains the FnEither type to taking a single
  * argument for the purposes of type substitution
  * while the implementations of FnEither combinators such
- * as map, chain, etc are mostly variadic (multiple
+ * as map, flatmap, etc are mostly variadic (multiple
  * arguments).
  *
  * @since 2.0.0
@@ -77,7 +74,7 @@ export interface KindFnEither extends Kind {
  * parameter D corresponding to the 0th index of
  * any Substititions. KindRightFnEither curries the Left parameter
  * of the output Either. This is useful when one
- * needs to Fix the Left output with a Semigroup or
+ * needs to Fix the Left output with a Combinable or
  * some other collection algebraic structure.
  *
  * @since 2.0.0
@@ -136,7 +133,7 @@ export function tryCatch<D extends unknown[], B, A>(
 export function left<B, D = unknown, A = never>(
   left: B,
 ): FnEither<D, B, A> {
-  return F.of(E.left(left));
+  return F.wrap(E.left(left));
 }
 
 /**
@@ -156,7 +153,7 @@ export function left<B, D = unknown, A = never>(
 export function right<A, D = unknown, B = never>(
   right: A,
 ): FnEither<D, B, A> {
-  return F.of(E.right(right));
+  return F.wrap(E.right(right));
 }
 
 /**
@@ -182,7 +179,7 @@ export function right<A, D = unknown, B = never>(
 export function fromEither<A, B, D = unknown>(
   ua: Either<B, A>,
 ): FnEither<D, B, A> {
-  return F.of(ua);
+  return F.wrap(ua);
 }
 
 /**
@@ -240,7 +237,7 @@ export function fromPredicate<A>(
 /**
  * An alias for right. Creates a FnEither from a value. The created
  * FnEither does not require any arguments, but can widen when used
- * in a chain.
+ * in a flatmap.
  *
  * @example
  * ```ts
@@ -250,7 +247,7 @@ export function fromPredicate<A>(
  * const computation = pipe(
  *   FE.id<number>(), // Ask for a number
  *   FE.map(n => n + 1), // Add one
- *   FE.chain(_ => FE.of("Hello")), // Forget about the number
+ *   FE.flatmap(_ => FE.wrap("Hello")), // Forget about the number
  * );
  *
  * const result = computation(1); // Right("Hello")
@@ -258,7 +255,7 @@ export function fromPredicate<A>(
  *
  * @since 2.0.0
  */
-export function of<A, D = unknown, B = never>(
+export function wrap<A, D = unknown, B = never>(
   a: A,
 ): FnEither<D, B, A> {
   return right(a);
@@ -278,18 +275,18 @@ export function of<A, D = unknown, B = never>(
  * const person = (name: string) => (age: number): Person => ({ name, age });
  *
  * const result = pipe(
- *   FE.of(person),
- *   FE.ap(FE.of("Brandon")),
- *   FE.ap(FE.of(37)),
+ *   FE.wrap(person),
+ *   FE.apply(FE.wrap("Brandon")),
+ *   FE.apply(FE.wrap(37)),
  * ); // FnEither<[], never, Person>
  * ```
  *
  * @since 2.0.0
  */
-export function ap<D, B, A>(
+export function apply<D, B, A>(
   ua: FnEither<D, B, A>,
 ): <L, I, J>(ufai: FnEither<L, J, (a: A) => I>) => FnEither<D & L, B | J, I> {
-  return (ufai) => (d) => F.pipe(ufai(d), E.ap(ua(d)));
+  return (ufai) => (d) => F.pipe(ufai(d), E.apply(ua(d)));
 }
 
 /**
@@ -383,23 +380,23 @@ export function map<A, I>(
  *
  * const result1 = pipe(
  *   FE.id<number>(),
- *   FE.mapLeft((n: number) => n + 1),
+ *   FE.mapSecond((n: number) => n + 1),
  * )(0); // Right(0)
  *
  * const result2 = pipe(
  *   FE.idLeft<number>(),
- *   FE.mapLeft(n => n + 1),
+ *   FE.mapSecond(n => n + 1),
  * )(0); // Left(1)
  * ```
  *
  * @since 2.0.0
  */
-export function mapLeft<B, J>(
+export function mapSecond<B, J>(
   fbj: (b: B) => J,
 ): <A = never, D = unknown>(
   ua: FnEither<D, B, A>,
 ) => FnEither<D, J, A> {
-  return F.map(E.mapLeft(fbj));
+  return F.map(E.mapSecond(fbj));
 }
 
 /**
@@ -422,7 +419,7 @@ export function mapLeft<B, J>(
 export function join<D, A, B, L, J>(
   tua: FnEither<L, J, FnEither<D, B, A>>,
 ): FnEither<D & L, B | J, A> {
-  return (d) => F.pipe(tua(d), E.chain(F.apply(d)));
+  return (d) => F.pipe(tua(d), E.flatmap((fn) => fn(d)));
 }
 
 /**
@@ -436,13 +433,13 @@ export function join<D, A, B, L, J>(
  *
  * const result = pipe(
  *   FE.id<string>(),
- *   FE.chain(s => FE.right(s.length)),
+ *   FE.flatmap(s => FE.right(s.length)),
  * )("Hello"); // Right(5)
  * ```
  *
  * @since 2.0.0
  */
-export function chain<A, L = unknown, J = never, I = never>(
+export function flatmap<A, L = unknown, J = never, I = never>(
   fati: (a: A) => FnEither<L, J, I>,
 ): <D = unknown, B = never>(
   ua: FnEither<D, B, A>,
@@ -464,14 +461,14 @@ export function chain<A, L = unknown, J = never, I = never>(
  *
  * const result = pipe(
  *   FE.id<string, number>(),
- *   FE.chain(s => FE.left(s.length)),
- *   FE.chainLeft(n => FE.right(String(n))),
+ *   FE.flatmap(s => FE.left(s.length)),
+ *   FE.recover(n => FE.right(String(n))),
  * )("Hello"); // Right("5")
  * ```
  *
  * @since 2.0.0
  */
-export function chainLeft<B, L = unknown, I = never, J = never>(
+export function recover<B, L = unknown, I = never, J = never>(
   fbtj: (b: B) => FnEither<L, J, I>,
 ): <D = unknown, A = never>(
   ua: FnEither<D, B, A>,
@@ -493,7 +490,7 @@ export function chainLeft<B, L = unknown, I = never, J = never>(
  * // This has type FnEither<[Date], never, number>
  * const computation = pipe(
  *   FE.id<number>(),
- *   FE.contramap((d: Date) => d.valueOf()),
+ *   FE.premap((d: Date) => d.valueOf()),
  * );
  *
  * const result = computation(new Date(0)); // Right(0)
@@ -501,7 +498,7 @@ export function chainLeft<B, L = unknown, I = never, J = never>(
  *
  * @since 2.0.0
  */
-export function contramap<L, D>(
+export function premap<L, D>(
   fld: (l: L) => D,
 ): <A, B>(ua: FnEither<D, B, A>) => FnEither<L, B, A> {
   return (ua) => F.flow(fld, ua);
@@ -534,13 +531,13 @@ export function dimap<A, I, L, D>(
   fld: (l: L) => D,
   fai: (a: A) => I,
 ): <B>(ua: FnEither<D, B, A>) => FnEither<L, B, I> {
-  return F.flow(contramap(fld), map(fai));
+  return F.flow(premap(fld), map(fai));
 }
 
 /**
  * Perform the same function as Reader ask. Given a type A
  * (and optionally a type B), return a FnEither<[A], B, A>.
- * This is useful for starting a FnEither chain.
+ * This is useful for starting a FnEither flatmap.
  *
  * @example
  * ```ts
@@ -562,7 +559,7 @@ export function id<A, B = never>(): FnEither<A, B, A> {
 /**
  * Perform the same function as Reader askLeft. Given a type B
  * (and optionally a type A), return a FnEither<[B], B, A>.
- * This is useful for starting a FnEither chain with a left value.
+ * This is useful for starting a FnEither flatmap with a left value.
  *
  * @example
  * ```ts
@@ -610,91 +607,74 @@ export function compose<A, I, J>(
 ): <B, D>(
   first: FnEither<D, B, A>,
 ) => FnEither<D, B | J, I> {
-  return (first) => F.flow(first, E.chain(second));
+  return (first) => F.flow(first, E.flatmap(second));
 }
 
 /**
- * The canonical implementation of Bifunctor for FnEither. It contains
- * the methods bimap and mapLeft.
+ * The canonical implementation of Bimappable for FnEither. It contains
+ * the methods bimap and mapSecond.
  *
  * @since 2.0.0
  */
-export const BifunctorFnEither: Bifunctor<KindFnEither> = { bimap, mapLeft };
+export const BimappableFnEither: Bimappable<KindFnEither> = {
+  map,
+  mapSecond,
+};
 
 /**
- * The canonical implementation of Monad for FnEither. It contains
- * the methods of, ap, map, join, and chain.
+ * The canonical implementation of Flatmappable for FnEither. It contains
+ * the methods wrap, apply, map, and flatmap.
  *
  * @since 2.0.0
  */
-export const MonadFnEither: Monad<KindFnEither> = { of, ap, map, join, chain };
+export const FlatmappableFnEither: Flatmappable<KindFnEither> = {
+  wrap,
+  apply,
+  map,
+  flatmap,
+};
 
 /**
- * The canonical implementation of Alt for FnEither. It contains
- * the methods alt and map
+ * The canonical implementation of Premappable for FnEither. It contains
+ * the method premap.
  *
  * @since 2.0.0
  */
-export const AltFnEither: Alt<KindFnEither> = { alt, map };
+export const PremappableFnEither: Premappable<KindFnEither> = { premap };
 
 /**
- * The canonical implementation of Contravariant for FnEither. It contains
- * the method contramap.
- *
- * @since 2.0.0
- */
-export const ContravariantFnEither: Contravariant<KindFnEither> = { contramap };
-
-/**
- * The canonical implementation of Profunctor for FnEither. It contains
- * the method dimap.
- *
- * @since 2.0.0
- */
-export const ProfunctorFnEither: Profunctor<KindFnEither> = { dimap };
-
-/**
- * The canonical implementation of Category for FnEither. It contains
- * the methods of and compose.
- *
- * @since 2.0.0
- */
-export const CategoryFnEither: Category<KindFnEither> = { id, compose };
-
-/**
- * Create a Monad for FnEither where left values are combined using the
- * supplied Semigroup.
+ * Create a Flatmappable for FnEither where left values are combined using the
+ * supplied Combinable.
  *
  * @example
  * ```ts
  * import * as FE from "./fn_either.ts";
- * import { SemigroupNumberSum } from "./number.ts";
+ * import { InitializableNumberSum } from "./number.ts";
  * import { pipe } from "./fn.ts";
  *
- * const { ap } = FE.getRightMonad(SemigroupNumberSum);
+ * const { apply } = FE.getRightFlatmappable(InitializableNumberSum);
  *
  * const result1 = pipe(
  *   FE.left(1),
- *   ap(FE.left(1)),
+ *   apply(FE.left(1)),
  * ); // Left(2)
  * ```
  *
  * @since 2.0.0
  */
-export function getRightMonad<B>(
-  { concat }: Semigroup<B>,
-): Monad<KindRightFnEither<B>> {
+export function getRightFlatmappable<B>(
+  { combine }: Combinable<B>,
+): Flatmappable<KindRightFnEither<B>> {
   return ({
-    of,
-    ap: (ua) => (ufai) => (c) => {
+    wrap,
+    apply: (ua) => (ufai) => (c) => {
       const efai = ufai(c);
       const ea = ua(c);
       return E.isLeft(efai)
-        ? (E.isLeft(ea) ? E.left(concat(efai.left)(ea.left)) : efai)
+        ? (E.isLeft(ea) ? E.left(combine(efai.left)(ea.left)) : efai)
         : (E.isLeft(ea) ? ea : E.right(efai.right(ea.right)));
     },
     map,
-    join,
-    chain,
+    flatmap,
   });
 }

@@ -3,7 +3,7 @@ import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 import * as D from "../datum.ts";
 import * as O from "../option.ts";
 import * as N from "../number.ts";
-import * as Ord from "../ord.ts";
+import * as Sortable from "../sortable.ts";
 import { pipe } from "../fn.ts";
 
 Deno.test("Datum initial", () => {
@@ -120,8 +120,8 @@ Deno.test("Datum getOrElse", () => {
   assertEquals(get(D.refresh(2)), 2);
 });
 
-Deno.test("Datum getShow", () => {
-  const { show } = D.getShow({ show: (n: number) => n.toString() });
+Deno.test("Datum getShowableDatum", () => {
+  const { show } = D.getShowableDatum({ show: (n: number) => n.toString() });
 
   assertEquals(show(D.initial), "Initial");
   assertEquals(show(D.pending), "Pending");
@@ -129,12 +129,12 @@ Deno.test("Datum getShow", () => {
   assertEquals(show(D.refresh(1)), "Refresh(1)");
 });
 
-Deno.test("Datum getSemigroup", () => {
-  const Semigroup = D.getSemigroup(N.SemigroupNumberSum);
-  const initial = Semigroup.concat(D.initial);
-  const pending = Semigroup.concat(D.pending);
-  const replete = Semigroup.concat(D.replete(1));
-  const refresh = Semigroup.concat(D.refresh(1));
+Deno.test("Datum getInitializableDatum", () => {
+  const Combinable = D.getInitializableDatum(N.InitializableNumberSum);
+  const initial = Combinable.combine(D.initial);
+  const pending = Combinable.combine(D.pending);
+  const replete = Combinable.combine(D.replete(1));
+  const refresh = Combinable.combine(D.refresh(1));
 
   assertEquals(initial(D.initial), D.initial);
   assertEquals(initial(D.pending), D.pending);
@@ -157,18 +157,12 @@ Deno.test("Datum getSemigroup", () => {
   assertEquals(refresh(D.refresh(1)), D.refresh(2));
 });
 
-Deno.test("Datum getMonoid", () => {
-  const Monoid = D.getMonoid(N.MonoidNumberSum);
-
-  assertEquals(Monoid.empty(), D.initial);
-});
-
-Deno.test("Datum getSetoid", () => {
-  const Setoid = D.getEq(N.EqNumber);
-  const initial = Setoid.equals(D.initial);
-  const pending = Setoid.equals(D.pending);
-  const replete = Setoid.equals(D.replete(1));
-  const refresh = Setoid.equals(D.refresh(1));
+Deno.test("Datum getComparableDatum", () => {
+  const Setoid = D.getComparableDatum(N.ComparableNumber);
+  const initial = Setoid.compare(D.initial);
+  const pending = Setoid.compare(D.pending);
+  const replete = Setoid.compare(D.replete(1));
+  const refresh = Setoid.compare(D.refresh(1));
 
   assertEquals(initial(D.initial), true);
   assertEquals(initial(D.pending), false);
@@ -193,9 +187,9 @@ Deno.test("Datum getSetoid", () => {
   assertEquals(refresh(D.refresh(2)), false);
 });
 
-Deno.test("Datum getOrd", () => {
-  const ord = D.getOrd(N.OrdNumber);
-  const lte = Ord.lte(ord);
+Deno.test("Datum getSortableDatum", () => {
+  const ord = D.getSortableDatum(N.SortableNumber);
+  const lte = Sortable.lte(ord);
 
   const initial = lte(D.initial);
   const pending = lte(D.pending);
@@ -228,30 +222,30 @@ Deno.test("Datum getOrd", () => {
 });
 
 Deno.test("Datum of", () => {
-  assertEquals(D.of(1), D.replete(1));
+  assertEquals(D.wrap(1), D.replete(1));
 });
 
 Deno.test("Datum ap", () => {
   const add = (n: number) => n + 1;
-  assertEquals(pipe(D.replete(add), D.ap(D.replete(1))), D.replete(2));
-  assertEquals(pipe(D.replete(add), D.ap(D.refresh(1))), D.refresh(2));
-  assertEquals(pipe(D.replete(add), D.ap(D.pending)), D.pending);
-  assertEquals(pipe(D.replete(add), D.ap(D.initial)), D.initial);
+  assertEquals(pipe(D.replete(add), D.apply(D.replete(1))), D.replete(2));
+  assertEquals(pipe(D.replete(add), D.apply(D.refresh(1))), D.refresh(2));
+  assertEquals(pipe(D.replete(add), D.apply(D.pending)), D.pending);
+  assertEquals(pipe(D.replete(add), D.apply(D.initial)), D.initial);
 
-  assertEquals(pipe(D.refresh(add), D.ap(D.replete(1))), D.refresh(2));
-  assertEquals(pipe(D.refresh(add), D.ap(D.refresh(1))), D.refresh(2));
-  assertEquals(pipe(D.refresh(add), D.ap(D.pending)), D.pending);
-  assertEquals(pipe(D.refresh(add), D.ap(D.initial)), D.pending);
+  assertEquals(pipe(D.refresh(add), D.apply(D.replete(1))), D.refresh(2));
+  assertEquals(pipe(D.refresh(add), D.apply(D.refresh(1))), D.refresh(2));
+  assertEquals(pipe(D.refresh(add), D.apply(D.pending)), D.pending);
+  assertEquals(pipe(D.refresh(add), D.apply(D.initial)), D.pending);
 
-  assertEquals(pipe(D.pending, D.ap(D.replete(1))), D.pending);
-  assertEquals(pipe(D.pending, D.ap(D.refresh(1))), D.pending);
-  assertEquals(pipe(D.pending, D.ap(D.pending)), D.pending);
-  assertEquals(pipe(D.pending, D.ap(D.initial)), D.pending);
+  assertEquals(pipe(D.pending, D.apply(D.replete(1))), D.pending);
+  assertEquals(pipe(D.pending, D.apply(D.refresh(1))), D.pending);
+  assertEquals(pipe(D.pending, D.apply(D.pending)), D.pending);
+  assertEquals(pipe(D.pending, D.apply(D.initial)), D.pending);
 
-  assertEquals(pipe(D.initial, D.ap(D.replete(1))), D.initial);
-  assertEquals(pipe(D.initial, D.ap(D.refresh(1))), D.pending);
-  assertEquals(pipe(D.initial, D.ap(D.pending)), D.pending);
-  assertEquals(pipe(D.initial, D.ap(D.initial)), D.initial);
+  assertEquals(pipe(D.initial, D.apply(D.replete(1))), D.initial);
+  assertEquals(pipe(D.initial, D.apply(D.refresh(1))), D.pending);
+  assertEquals(pipe(D.initial, D.apply(D.pending)), D.pending);
+  assertEquals(pipe(D.initial, D.apply(D.initial)), D.initial);
 });
 
 Deno.test("Datum map", () => {
@@ -263,28 +257,37 @@ Deno.test("Datum map", () => {
   assertEquals(map(D.refresh(1)), D.refresh(2));
 });
 
-Deno.test("Datum join", () => {
-  assertEquals(D.join(D.initial), D.initial);
-  assertEquals(D.join(D.pending), D.pending);
-  assertEquals(D.join(D.replete(D.initial)), D.initial);
-  assertEquals(D.join(D.replete(D.pending)), D.pending);
-  assertEquals(D.join(D.replete(D.replete(1))), D.replete(1));
-  assertEquals(D.join(D.replete(D.refresh(1))), D.refresh(1));
-  assertEquals(D.join(D.refresh(D.initial)), D.pending);
-  assertEquals(D.join(D.refresh(D.pending)), D.pending);
-  assertEquals(D.join(D.refresh(D.replete(1))), D.refresh(1));
-  assertEquals(D.join(D.refresh(D.refresh(1))), D.refresh(1));
+Deno.test("Datum flatmap", () => {
+  const flatmap = D.flatmap((n: number) => n === 0 ? D.initial : D.replete(n));
+
+  assertEquals(flatmap(D.initial), D.initial);
+  assertEquals(flatmap(D.pending), D.pending);
+  assertEquals(flatmap(D.replete(0)), D.initial);
+  assertEquals(flatmap(D.replete(1)), D.replete(1));
+  assertEquals(flatmap(D.refresh(0)), D.pending);
+  assertEquals(flatmap(D.refresh(1)), D.refresh(1));
 });
 
-Deno.test("Datum chain", () => {
-  const chain = D.chain((n: number) => n === 0 ? D.initial : D.replete(n));
+Deno.test("Datum alt", () => {
+  assertEquals(pipe(D.initial, D.alt(D.initial)), D.initial);
+  assertEquals(pipe(D.initial, D.alt(D.pending)), D.pending);
+  assertEquals(pipe(D.initial, D.alt(D.replete(1))), D.replete(1));
+  assertEquals(pipe(D.initial, D.alt(D.refresh(1))), D.refresh(1));
 
-  assertEquals(chain(D.initial), D.initial);
-  assertEquals(chain(D.pending), D.pending);
-  assertEquals(chain(D.replete(0)), D.initial);
-  assertEquals(chain(D.replete(1)), D.replete(1));
-  assertEquals(chain(D.refresh(0)), D.pending);
-  assertEquals(chain(D.refresh(1)), D.refresh(1));
+  assertEquals(pipe(D.pending, D.alt(D.initial)), D.initial);
+  assertEquals(pipe(D.pending, D.alt(D.pending)), D.pending);
+  assertEquals(pipe(D.pending, D.alt(D.replete(1))), D.replete(1));
+  assertEquals(pipe(D.pending, D.alt(D.refresh(1))), D.refresh(1));
+
+  assertEquals(pipe(D.replete(1), D.alt(D.initial)), D.replete(1));
+  assertEquals(pipe(D.replete(1), D.alt(D.pending)), D.replete(1));
+  assertEquals(pipe(D.replete(1), D.alt(D.replete(2))), D.replete(1));
+  assertEquals(pipe(D.replete(1), D.alt(D.refresh(2))), D.replete(1));
+
+  assertEquals(pipe(D.refresh(1), D.alt(D.initial)), D.refresh(1));
+  assertEquals(pipe(D.refresh(1), D.alt(D.pending)), D.refresh(1));
+  assertEquals(pipe(D.refresh(1), D.alt(D.replete(2))), D.refresh(1));
+  assertEquals(pipe(D.refresh(1), D.alt(D.refresh(2))), D.refresh(1));
 });
 
 Deno.test("Datum reduce", () => {
@@ -297,7 +300,7 @@ Deno.test("Datum reduce", () => {
 });
 
 Deno.test("Datum traverse", () => {
-  const traverse = D.traverse(O.MonadOption);
+  const traverse = D.traverse(O.FlatmappableOption);
   const add = traverse(O.fromPredicate((n: number) => n > 0));
 
   assertEquals(add(D.initial), O.some(D.initial));

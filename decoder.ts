@@ -11,23 +11,19 @@
  * @since 2.0.0
  */
 
-import type { In, Kind, Out } from "./kind.ts";
-import type { Alt } from "./alt.ts";
+import type { In, Kind, Out, Spread } from "./kind.ts";
 import type { AnyArray, NonEmptyArray } from "./array.ts";
-import type { Applicative } from "./applicative.ts";
-import type { Apply } from "./apply.ts";
-import type { Chain } from "./chain.ts";
+import type { Applicable } from "./applicable.ts";
+import type { Combinable } from "./combinable.ts";
 import type { Either } from "./either.ts";
+import type { Flatmappable } from "./flatmappable.ts";
 import type { FnEither } from "./fn_either.ts";
 import type { Forest } from "./tree.ts";
-import type { Functor } from "./functor.ts";
 import type { Literal, Schemable } from "./schemable.ts";
-import type { Monad } from "./monad.ts";
-import type { Monoid } from "./monoid.ts";
+import type { Mappable } from "./mappable.ts";
 import type { Predicate } from "./predicate.ts";
 import type { ReadonlyRecord } from "./record.ts";
 import type { Refinement } from "./refinement.ts";
-import type { Semigroup } from "./semigroup.ts";
 
 import * as FE from "./fn_either.ts";
 import * as TR from "./tree.ts";
@@ -37,6 +33,7 @@ import * as R from "./record.ts";
 import * as O from "./option.ts";
 import * as S from "./schemable.ts";
 import * as G from "./refinement.ts";
+import { fromCombine } from "./combinable.ts";
 import { flow, memoize, pipe } from "./fn.ts";
 
 /**
@@ -141,8 +138,8 @@ export type Intersection = {
 /**
  * The Many type is used to represent zero or more DecodeErrors without
  * context. It's purpose is to be used as both Empty and a target for
- * concatenation of DecodeErrors that are neither Union or Intersection types.
- * This allows us to build a Monoid over DecodeError.
+ * combineenation of DecodeErrors that are neither Union or Intersection types.
+ * This allows us to build a Combinable over DecodeError.
  *
  * @since 2.0.0
  */
@@ -406,7 +403,7 @@ export function unionErr(
 ): DecodeError {
   const _errors = pipe(
     errors,
-    A.chain((err) => isUnion(err) ? err.errors : [err]),
+    A.flatmap((err) => isUnion(err) ? err.errors : [err]),
   ) as unknown as typeof errors;
   return { tag: "Union", errors: _errors };
 }
@@ -419,7 +416,7 @@ export function unionErr(
  * import * as D from "./decoder.ts";
  *
  * const result = D.intersectionErr(
- *   D.leafErr(1, "expected nonempty string"),
+ *   D.leafErr(1, "expected noninit string"),
  *   D.leafErr(1, "expected string with no spaces"),
  * );
  * ```
@@ -431,7 +428,7 @@ export function intersectionErr(
 ): DecodeError {
   const _errors = pipe(
     errors,
-    A.chain((err) => isIntersection(err) ? err.errors : [err]),
+    A.flatmap((err) => isIntersection(err) ? err.errors : [err]),
   ) as unknown as typeof errors;
   return { tag: "Intersection", errors: _errors };
 }
@@ -444,7 +441,7 @@ export function intersectionErr(
  * import * as D from "./decoder.ts";
  *
  * const result1 = D.manyErr(
- *   D.leafErr(1, "expected nonempty string"),
+ *   D.leafErr(1, "expected noninit string"),
  *   D.leafErr(1, "expected string with no spaces"),
  * );
  * const result2 = D.manyErr();
@@ -457,7 +454,7 @@ export function manyErr(
 ): DecodeError {
   const _errors = pipe(
     errors,
-    A.chain((err) => isMany(err) ? err.errors : [err]),
+    A.flatmap((err) => isMany(err) ? err.errors : [err]),
   );
   return { tag: "Many", errors: _errors };
 }
@@ -538,8 +535,8 @@ function onLeaf(value: unknown, reason: string): Forest<string> {
     stringify(value),
     O.map((str) => `cannot decode ${str}, should be ${reason}`),
     O.getOrElse(() => `cannot decode or render, should be ${reason}`),
-    TR.of,
-    A.of,
+    TR.wrap,
+    A.wrap,
   );
 }
 
@@ -548,7 +545,7 @@ function onLeaf(value: unknown, reason: string): Forest<string> {
  * draw a DecodeError tree.
  */
 function onWrap(context: string, error: DecodeError): Forest<string> {
-  return [TR.of(context, toForest(error))];
+  return [TR.wrap(context, toForest(error))];
 }
 
 /**
@@ -560,7 +557,7 @@ function onKey(
   property: Property,
   error: DecodeError,
 ): Forest<string> {
-  return [TR.of(`${property} property "${key}"`, toForest(error))];
+  return [TR.wrap(`${property} property "${key}"`, toForest(error))];
 }
 
 /**
@@ -572,7 +569,7 @@ function onIndex(
   property: Property,
   error: DecodeError,
 ): Forest<string> {
-  return [TR.of(`${property} index ${index}`, toForest(error))];
+  return [TR.wrap(`${property} index ${index}`, toForest(error))];
 }
 
 /**
@@ -583,7 +580,7 @@ function onUnion(
   errors: readonly [DecodeError, DecodeError, ...DecodeError[]],
 ): Forest<string> {
   return [
-    TR.of(`cannot decode union (any of)`, pipe(errors, A.chain(toForest))),
+    TR.wrap(`cannot decode union (any of)`, pipe(errors, A.flatmap(toForest))),
   ];
 }
 
@@ -595,9 +592,9 @@ function onIntersection(
   errors: readonly [DecodeError, DecodeError, ...DecodeError[]],
 ): Forest<string> {
   return [
-    TR.of(
+    TR.wrap(
       `cannot decode intersection (all of)`,
-      pipe(errors, A.chain(toForest)),
+      pipe(errors, A.flatmap(toForest)),
     ),
   ];
 }
@@ -607,7 +604,7 @@ function onIntersection(
  * used to draw a DecodeError tree.
  */
 function onMany(errors: readonly DecodeError[]): Forest<string> {
-  return pipe(errors, A.chain(toForest));
+  return pipe(errors, A.flatmap(toForest));
 }
 
 /**
@@ -650,18 +647,18 @@ export function draw(err: DecodeError): string {
 }
 
 /**
- * Construct an empty DecodeError. This is a many that contains no errors.
+ * Construct an init DecodeError. This is a many that contains no errors.
  *
  * @example
  * ```ts
  * import * as D from "./decoder.ts";
  *
- * const result = D.empty(); // DecodeError
+ * const result = D.init(); // DecodeError
  * ```
  *
  * @since 2.0.0
  */
-export function empty(): DecodeError {
+export function init(): DecodeError {
   return manyErr();
 }
 
@@ -677,13 +674,13 @@ export function empty(): DecodeError {
  *
  * const result = pipe(
  *   D.leafErr(1, "string"),
- *   D.concat(D.leafErr("hello", "number")),
+ *   D.combine(D.leafErr("hello", "number")),
  * ); // Many[Leaf, Leaf]
  * ```
  *
  * @since 2.0.0
  */
-export function concat(
+export function combine(
   second: DecodeError,
 ): (first: DecodeError) => DecodeError {
   return (first) =>
@@ -695,25 +692,14 @@ export function concat(
 }
 
 /**
- * The canonical implementation of Semigroup for DecodeError. It contains
- * the method concat.
+ * The canonical implementation of Combinable for DecodeError. It contains
+ * the methods combine and init.
  *
  * @since 2.0.0
  */
-export const SemigroupDecodeError: Semigroup<DecodeError> = {
-  concat,
-};
-
-/**
- * The canonical implementation of Monoid for DecodeError. It contains
- * the methods concat and empty.
- *
- * @since 2.0.0
- */
-export const MonoidDecodeError: Monoid<DecodeError> = {
-  concat,
-  empty,
-};
+export const CombinableDecodeError: Combinable<DecodeError> = fromCombine(
+  combine,
+);
 
 /**
  * The Decoded<A> type is an alias of Either<DecodeError, A>. This is the output
@@ -799,39 +785,40 @@ export function fromDecodeError<A = never>(err: DecodeError): Decoded<A> {
  *
  * const result1 = pipe(
  *   D.failure(1, "string"),
- *   D.extract,
+ *   D.unwrap,
  * ); // Left("cannot decode 1, should be string")
  * const result2 = pipe(
  *   D.success(1),
- *   D.extract
+ *   D.unwrap
  * ); // Right(1)
  * ```
  *
  * @since 2.0.0
  */
-export function extract<A>(ta: Decoded<A>): Either<string, A> {
-  return pipe(ta, E.mapLeft(draw));
+export function unwrap<A>(ta: Decoded<A>): Either<string, A> {
+  return pipe(ta, E.mapSecond(draw));
 }
 
 /**
- * The canonical instance of Monad for Decoded. It contains the methods of, ap, map,
- * join, and chain.
+ * The canonical instance of Flatmappable for Decoded. It contains the methods of, ap, map,
+ * join, and flatmap.
  *
  * @since 2.0.0
  */
-export const MonadDecoded: Monad<KindDecoded> = E.getRightMonad(
-  SemigroupDecodeError,
-);
+export const FlatmappableDecoded: Flatmappable<KindDecoded> = E
+  .getRightFlatmappable(
+    CombinableDecodeError,
+  );
 
 /**
  * A traversal over a Record of Decoded results.
  */
-const traverseRecord = R.traverse(MonadDecoded);
+const traverseRecord = R.traverse(FlatmappableDecoded);
 
 /**
  * A traversal over an Array of Decoded results.
  */
-const traverseArray = A.traverse(MonadDecoded);
+const traverseArray = A.traverse(FlatmappableDecoded);
 
 /**
  * The Decoder<D, A> type represents a function that parses some input D into a
@@ -876,7 +863,7 @@ export interface KindDecoder extends Kind {
  *
  * const nonEmpty = D.fromPredicate(
  *   (s: string) => s.length > 0, // Predicate
- *   "nonempty string"
+ *   "noninit string"
  * );
  * const string = D.fromPredicate(R.string, "string");
  * const nonEmptyString = pipe(
@@ -913,15 +900,15 @@ export function fromPredicate<A>(
  * ```ts
  * import * as D from "./decoder.ts";
  *
- * const one = D.of("one");
+ * const one = D.wrap("one");
  *
  * const result = one(null); // Right("one")
  * ```
  *
  * @since 2.0.0
  */
-export function of<A, D = unknown>(a: A): Decoder<D, A> {
-  return MonadDecoder.of(a);
+export function wrap<A, D = unknown>(a: A): Decoder<D, A> {
+  return FlatmappableDecoder.wrap(a);
 }
 
 /**
@@ -937,18 +924,18 @@ export function of<A, D = unknown>(a: A): Decoder<D, A> {
  * const person = (name: string) => (age: number): Person => ({ name, age });
  *
  * const result = pipe(
- *   D.of(person),
- *   D.ap(D.of("Brandon")),
- *   D.ap(D.of(37)),
+ *   D.wrap(person),
+ *   D.apply(D.wrap("Brandon")),
+ *   D.apply(D.wrap(37)),
  * ); // Decoder<unknown, Person>
  * ```
  *
  * @since 2.0.0
  */
-export function ap<A, D = unknown>(
+export function apply<A, D = unknown>(
   ua: Decoder<D, A>,
 ): <I>(ufai: Decoder<D, (a: A) => I>) => Decoder<D, I> {
-  return MonadDecoder.ap(ua);
+  return FlatmappableDecoder.apply(ua);
 }
 
 /**
@@ -1010,18 +997,7 @@ export function alt<A, D>(
 export function map<A, I>(
   fai: (a: A) => I,
 ): <D = unknown>(ua: Decoder<D, A>) => Decoder<D, I> {
-  return MonadDecoder.map(fai);
-}
-
-/**
- * Collapse a Decoder that returns a Decoder into a new Decoder.
- *
- * @since 2.0.0
- */
-export function join<D, A>(
-  uua: Decoder<D, Decoder<D, A>>,
-): Decoder<D, A> {
-  return MonadDecoder.join(uua);
+  return FlatmappableDecoder.map(fai);
 }
 
 /**
@@ -1029,10 +1005,10 @@ export function join<D, A>(
  *
  * @since 2.0.0
  */
-export function chain<A, I, D = unknown>(
+export function flatmap<A, I, D = unknown>(
   faui: (a: A) => Decoder<D, I>,
 ): (ua: Decoder<D, A>) => Decoder<D, I> {
-  return MonadDecoder.chain(faui);
+  return FlatmappableDecoder.flatmap(faui);
 }
 
 /**
@@ -1050,7 +1026,7 @@ export function chain<A, I, D = unknown>(
  * );
  *
  * const result1 = decoder(1); // Right(1)
- * const result2 = D.extract(decoder("d"));
+ * const result2 = D.unwrap(decoder("d"));
  * // Left(`like the song
  * // └─ cannot decode "d", should be "a", "b", "c", 1, 2, 3`)
  *
@@ -1061,7 +1037,7 @@ export function chain<A, I, D = unknown>(
 export function annotate(
   context: string,
 ): <D, A>(decoder: Decoder<D, A>) => Decoder<D, A> {
-  return FE.mapLeft((error) => wrapErr(context, error));
+  return FE.mapSecond((error) => wrapErr(context, error));
 }
 
 /**
@@ -1124,7 +1100,7 @@ export function compose<B, C>(
  *
  * const fromStr = pipe(
  *   D.tuple(D.string, D.string),
- *   D.contramap((s) => [s, s] as const),
+ *   D.premap((s) => [s, s] as const),
  * );
  *
  * const result1 = fromStr("hello"); // Right(["hello", "hello"])
@@ -1133,15 +1109,15 @@ export function compose<B, C>(
  *
  * @since 2.0.0
  */
-export function contramap<L, D>(
+export function premap<L, D>(
   fld: (l: L) => D,
 ): <A>(ua: Decoder<D, A>) => Decoder<L, A> {
-  return FE.contramap(fld);
+  return FE.premap(fld);
 }
 
 /**
  * Map over the input and output of a Decoder. This is effectively a combination
- * of map and contramap in a single operator.
+ * of map and premap in a single operator.
  *
  * @example
  * ```ts
@@ -1180,7 +1156,7 @@ export function dimap<A, I, L, D>(
  *
  * const nonEmptyString = pipe(
  *   D.string,
- *   D.refine(s => s.length > 0, "nonempty"),
+ *   D.refine(s => s.length > 0, "noninit"),
  * );
  *
  * const result1 = nonEmptyString(null); // Left(DecodeError)
@@ -1426,10 +1402,10 @@ export function json<A>(decoder: Decoder<unknown, A>): Decoder<unknown, A> {
  */
 export function intersect<B, I>(
   second: Decoder<B, I>,
-): <A>(first: Decoder<B, A>) => Decoder<B, S.Spread<A & I>> {
-  return <A>(first: Decoder<B, A>): Decoder<B, S.Spread<A & I>> => (a) => {
-    const fst = first(a) as Decoded<S.Spread<A & I>>;
-    const snd = second(a) as Decoded<S.Spread<A & I>>;
+): <A>(first: Decoder<B, A>) => Decoder<B, Spread<A & I>> {
+  return <A>(first: Decoder<B, A>): Decoder<B, Spread<A & I>> => (a) => {
+    const fst = first(a) as Decoded<Spread<A & I>>;
+    const snd = second(a) as Decoded<Spread<A & I>>;
 
     if (E.isRight(snd) && E.isRight(fst)) {
       return success(
@@ -1571,11 +1547,11 @@ export function record<A>(
 ): Decoder<unknown, ReadonlyRecord<A>> {
   return flow(
     _record,
-    E.chain(flow(
+    E.flatmap(flow(
       traverseRecord((a, index) =>
-        pipe(items(a), E.mapLeft((e) => keyErr(index, e)))
+        pipe(items(a), E.mapSecond((e) => keyErr(index, e)))
       ),
-      E.mapLeft((e) => wrapErr("cannot decode record", e)),
+      E.mapSecond((e) => wrapErr("cannot decode record", e)),
     )),
   );
 }
@@ -1611,11 +1587,11 @@ export function array<A>(
 ): Decoder<unknown, ReadonlyArray<A>> {
   return flow(
     _array,
-    E.chain(flow(
+    E.flatmap(flow(
       traverseArray((a, index) =>
-        pipe(items(a), E.mapLeft((e) => indexErr(index, e)))
+        pipe(items(a), E.mapSecond((e) => indexErr(index, e)))
       ),
-      E.mapLeft((e) => wrapErr("cannot decode array", e)),
+      E.mapSecond((e) => wrapErr("cannot decode array", e)),
     )),
   );
 }
@@ -1642,16 +1618,16 @@ export function tuple<A extends AnyArray>(
 ): Decoder<unknown, { readonly [K in keyof A]: A[K] }> {
   return flow(
     arrayN(items.length),
-    E.chain(
+    E.flatmap(
       traverseArray((a, index) => {
         const decoder: AnyDecoder = items[index];
         return pipe(
           decoder(a),
-          E.mapLeft((e) => indexErr(index, e, "required")),
+          E.mapSecond((e) => indexErr(index, e, "required")),
         );
       }),
     ),
-    E.mapLeft((e) => wrapErr("cannot decode tuple", e)),
+    E.mapSecond((e) => wrapErr("cannot decode tuple", e)),
   ) as Decoder<unknown, { [K in keyof A]: A[K] }>;
 }
 
@@ -1669,7 +1645,7 @@ const traverseStruct =
       traverseRecord((decoder, key) =>
         pipe(
           decoder(a[key]),
-          E.mapLeft((e) => keyErr(key, e, "required")),
+          E.mapSecond((e) => keyErr(key, e, "required")),
         )
       ),
     );
@@ -1699,8 +1675,8 @@ export function struct<A>(
 ): Decoder<unknown, { readonly [K in keyof A]: A[K] }> {
   return flow(
     _record,
-    E.chain(traverseStruct(items)),
-    E.mapLeft((e) => wrapErr("cannot decode struct", e)),
+    E.flatmap(traverseStruct(items)),
+    E.mapSecond((e) => wrapErr("cannot decode struct", e)),
   ) as Decoder<unknown, { [K in keyof A]: A[K] }>;
 }
 
@@ -1792,7 +1768,7 @@ export function partial<A>(
 ): Decoder<unknown, { readonly [K in keyof A]?: A[K] }> {
   return flow(
     _record,
-    E.chain(traversePartial(items)),
+    E.flatmap(traversePartial(items)),
     E.bimap((e) => wrapErr("cannot decode partial struct", e), compactRecord),
   ) as Decoder<unknown, { readonly [K in keyof A]: A[K] }>;
 }
@@ -1838,7 +1814,8 @@ export function lazy<D, A>(
   decoder: () => Decoder<D, A>,
 ): Decoder<D, A> {
   const get = memoize<void, Decoder<D, A>>(decoder);
-  return (u) => pipe(get()(u), E.mapLeft((e) => wrapErr(`lazy type ${id}`, e)));
+  return (u) =>
+    pipe(get()(u), E.mapSecond((e) => wrapErr(`lazy type ${id}`, e)));
 }
 
 /**
@@ -1853,54 +1830,31 @@ export interface KindUnknownDecoder extends Kind {
 }
 
 /**
- * The canonical implementation of Functor for Decoder. It contains
+ * The canonical implementation of Mappable for Decoder. It contains
  * the method map.
  *
  * @since 2.0.0
  */
-export const FunctorDecoder: Functor<KindDecoder> = { map };
+export const MappableDecoder: Mappable<KindDecoder> = { map };
 
 /**
- * The canonical implementation of Apply for Decoder. It contains
- * the methods ap and map.
- *
- * @since 2.0.0
- */
-export const ApplyDecoder: Apply<KindDecoder> = { ap, map };
-
-/**
- * The canonical implementation of Applicative for Decoder. It contains
+ * The canonical implementation of Applicable for Decoder. It contains
  * the methods of, ap, and map.
  *
  * @since 2.0.0
  */
-export const ApplicativeDecoder: Applicative<KindDecoder> = { of, ap, map };
+export const ApplicableDecoder: Applicable<KindDecoder> = { wrap, apply, map };
 
 /**
- * The canonical implementation of Chain for Decoder. It contains
- * the methods ap, map, and chain.
+ * The canonical implementation of Flatmappable for Decoder. It contains
+ * the methods of, ap, map, join, and flatmap.
  *
  * @since 2.0.0
  */
-export const ChainDecoder: Chain<KindDecoder> = { ap, map, chain };
-
-/**
- * The canonical implementation of Monad for Decoder. It contains
- * the methods of, ap, map, join, and chain.
- *
- * @since 2.0.0
- */
-export const MonadDecoder: Monad<KindDecoder> = FE.getRightMonad(
-  SemigroupDecodeError,
-);
-
-/**
- * The canonical implementation of Alt for Decoder. It contains
- * the methods alt and map
- *
- * @since 2.0.0
- */
-export const AltDecoder: Alt<KindDecoder> = { alt, map };
+export const FlatmappableDecoder: Flatmappable<KindDecoder> = FE
+  .getRightFlatmappable(
+    CombinableDecodeError,
+  );
 
 /**
  * The canonical implementation of Schemable for Decoder. It contains

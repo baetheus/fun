@@ -20,11 +20,11 @@ function throwAsync(n: number): Promise<number> {
 }
 
 Deno.test("Async of", async () => {
-  assertEquals(await A.of(0)(), 0);
+  assertEquals(await A.wrap(0)(), 0);
 });
 
 Deno.test("Async delay", async () => {
-  assertEquals(await pipe(A.of(0), A.delay(200))(), 0);
+  assertEquals(await pipe(A.wrap(0), A.delay(200))(), 0);
 });
 
 Deno.test("Async fromSync", async () => {
@@ -39,31 +39,27 @@ Deno.test("Async tryCatch", async () => {
 });
 
 Deno.test("Async of", async () => {
-  assertEquals(await A.of(1)(), 1);
+  assertEquals(await A.wrap(1)(), 1);
 });
 
-Deno.test("Async apParallel", async () => {
+Deno.test("Async apply", async () => {
   assertEquals(
-    await pipe(A.of((n: number) => n + 1), A.apParallel(A.of(1)))(),
+    await pipe(A.wrap((n: number) => n + 1), A.apply(A.wrap(1)))(),
     2,
   );
 });
 
 Deno.test("Async map", async () => {
-  assertEquals(await pipe(A.of(1), A.map(add))(), 2);
+  assertEquals(await pipe(A.wrap(1), A.map(add))(), 2);
 });
 
-Deno.test("Async join", async () => {
-  assertEquals(await A.join(A.of(A.of(1)))(), 1);
-});
-
-Deno.test("Async chain", async () => {
-  assertEquals(await pipe(A.of(1), A.chain((n) => A.of(n + 1)))(), 2);
+Deno.test("Async flatmap", async () => {
+  assertEquals(await pipe(A.wrap(1), A.flatmap((n) => A.wrap(n + 1)))(), 2);
 });
 
 Deno.test("Async apSeq", async () => {
   assertEquals(
-    await pipe(A.of((n: number) => n + 1), A.apSequential(A.of(1)))(),
+    await pipe(A.wrap((n: number) => n + 1), A.applySequential(A.wrap(1)))(),
     2,
   );
 });
@@ -72,17 +68,17 @@ Deno.test("Async apSeq", async () => {
 //   assertEquals(
 //     pipe(
 //       A.Do<number, number, number>(),
-//       A.bind("one", () => A.of(1)),
-//       A.bind("two", ({ one }) => A.of(one + one)),
+//       A.bind("one", () => A.wrap(1)),
+//       A.bind("two", ({ one }) => A.wrap(one + one)),
 //       A.map(({ one, two }) => one + two),
 //     ),
-//     A.of(3),
+//     A.wrap(3),
 //   );
 //   assertEquals(
 //     pipe(
-//       A.of(1),
+//       A.wrap(1),
 //       A.bindTo("one"),
 //     ),
-//     A.of({ one: 1 }),
+//     A.wrap({ one: 1 }),
 //   );
 // });

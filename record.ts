@@ -1,5 +1,4 @@
 // deno-lint-ignore-file no-explicit-any
-
 /**
  * ReadonlyRecord is a readonly product structure that operates
  * like a Map. Keys are always strings and Key/Value pairs
@@ -10,22 +9,22 @@
  */
 
 import type { $, AnySub, Intersect, Kind, Out } from "./kind.ts";
-import type { Applicative } from "./applicative.ts";
+import type { Applicable } from "./applicable.ts";
 import type { Either } from "./either.ts";
-import type { Eq } from "./eq.ts";
+import type { Comparable } from "./comparable.ts";
 import type { Filterable } from "./filterable.ts";
-import type { Foldable } from "./foldable.ts";
-import type { Functor } from "./functor.ts";
-import type { Monoid } from "./monoid.ts";
+import type { Reducible } from "./reducible.ts";
+import type { Mappable } from "./mappable.ts";
+import type { Initializable } from "./initializable.ts";
 import type { Option } from "./option.ts";
 import type { Pair } from "./pair.ts";
-import type { Show } from "./show.ts";
+import type { Showable } from "./showable.ts";
 import type { Traversable } from "./traversable.ts";
 
 import { isRight } from "./either.ts";
 import { isSome, none, some } from "./option.ts";
 import { pair } from "./pair.ts";
-import { identity, pipe } from "./fn.ts";
+import { identity, pipe, uncurry2 } from "./fn.ts";
 
 /**
  * ReadonlyRecord<A> is an alias of Readonly<Record<string, A>>.
@@ -34,6 +33,13 @@ import { identity, pipe } from "./fn.ts";
  * @since 2.0.0
  */
 export type ReadonlyRecord<A> = Readonly<Record<string, A>>;
+
+/**
+ * A type used to constrain an input to a ReadonlyRecord with any values.
+ *
+ * @since 2.0.0
+ */
+export type AnyReadonlyRecord = ReadonlyRecord<any>;
 
 /**
  * Extract the inner type of a ReadonlyRecord
@@ -232,17 +238,17 @@ export function reduce<A, O>(
 
 /**
  * Collect all values in a ReadonlyRecord<A> into a single
- * value I by using a Monoid<I> and a mapping function
- * from A to I. This is effectively reduce using a Monoid
+ * value I by using a Combinable<I> and a mapping function
+ * from A to I. This is effectively reduce using a Combinable
  * for the initial value.
  *
  * @example
  * ```ts
  * import * as R from "./record.ts";
- * import { MonoidNumberSum } from "./number.ts";
+ * import { InitializableNumberSum } from "./number.ts";
  * import { pipe } from "./fn.ts";
  *
- * const collectSum = R.collect(MonoidNumberSum);
+ * const collectSum = R.collect(InitializableNumberSum);
  * const collectLengths = collectSum((s: string) => s.length);
  *
  * const result = collectLengths({ one: "one", two: "two" }); // 6
@@ -251,12 +257,12 @@ export function reduce<A, O>(
  * @since 2.0.0
  */
 export function collect<I>(
-  M: Monoid<I>,
+  M: Initializable<I>,
 ): <A>(fai: (a: A, index: string) => I) => (ua: ReadonlyRecord<A>) => I {
   return <A>(fai: (a: A, index: string) => I) => {
     const reducer = reduce(
-      (i, a: A, index) => M.concat(fai(a, index))(i),
-      M.empty(),
+      (i, a: A, index) => M.combine(fai(a, index))(i),
+      M.init(),
     );
     return (ua: ReadonlyRecord<A>) => reducer(ua);
   };
@@ -264,30 +270,27 @@ export function collect<I>(
 
 /**
  * Collect all values in a ReadonlyRecord<A> into a single
- * value I by using a Monoid<I>.This is effectively reduce
- * using a Monoid for the initial value and combination.
+ * value I by using a Combinable<I>. This is effectively reduce
+ * using a Combinable for the initial value and combination.
  *
  * @example
  * ```ts
  * import * as R from "./record.ts";
- * import { MonoidNumberSum } from "./number.ts";
+ * import { InitializableNumberSum } from "./number.ts";
  * import { pipe } from "./fn.ts";
  *
  * const result = pipe(
  *   { one: 1, two: 2, three: 3 },
- *   R.collapse(MonoidNumberSum),
+ *   R.collapse(InitializableNumberSum),
  * ); // 6
  * ```
  *
  * @since 2.0.0
  */
 export function collapse<A>(
-  M: Monoid<A>,
+  M: Initializable<A>,
 ): (ua: ReadonlyRecord<A>) => A {
-  return reduce(
-    (first: A, second: A) => M.concat(second)(first),
-    M.empty(),
-  );
+  return reduce(uncurry2(M.combine), M.init());
 }
 
 /**
@@ -307,7 +310,7 @@ export function collapse<A>(
  * import * as O from "./option.ts";
  * import { pipe } from "./fn.ts";
  *
- * const traverseOption = R.traverse(O.ApplicativeOption);
+ * const traverseOption = R.traverse(O.ApplicableOption);
  * const swapOption = traverseOption((o: O.Option<number>) => o);
  *
  * const result1 = swapOption({ one: O.some(1), two: O.some(2) });
@@ -319,7 +322,7 @@ export function collapse<A>(
  * @since 2.0.0
  */
 export function traverse<V extends Kind>(
-  A: Applicative<V>,
+  A: Applicable<V>,
 ): <A, I, J = never, K = never, L = unknown, M = unknown>(
   favi: (value: A, key: string) => $<V, [I, J, K], [L], [M]>,
 ) => (ua: ReadonlyRecord<A>) => $<V, [ReadonlyRecord<I>, J, K], [L], [M]> {
@@ -343,10 +346,10 @@ export function traverse<V extends Kind>(
       pipe(
         vis,
         A.map(pusher(key)),
-        A.ap(favi(a, key)),
+        A.apply(favi(a, key)),
       );
 
-    return (ua) => pipe(ua, reduce(reducer, A.of({})));
+    return (ua) => pipe(ua, reduce(reducer, A.wrap({})));
   };
 }
 
@@ -388,7 +391,7 @@ type Sequence<U extends Kind, R extends ReadonlyRecord<AnySub<U>>> = $<U, [
  * import * as R from "./record.ts";
  * import * as O from "./option.ts";
  *
- * const sequence = R.sequence(O.ApplicativeOption);
+ * const sequence = R.sequence(O.ApplicableOption);
  *
  * const result1 = sequence({ one: O.some(1), two: O.some("Hello")}); // Some({ one: 1, two: "Hello"})
  * const result2 = sequence({ one: O.none, two: O.some("Uh Oh")}); // None
@@ -397,7 +400,7 @@ type Sequence<U extends Kind, R extends ReadonlyRecord<AnySub<U>>> = $<U, [
  * @since 2.0.0
  */
 export function sequence<V extends Kind>(
-  A: Applicative<V>,
+  A: Applicable<V>,
 ): <VS extends ReadonlyRecord<AnySub<V>>>(
   values: NonEmptyRecord<VS>,
 ) => Sequence<V, VS> {
@@ -725,19 +728,19 @@ export function deleteAtWithValue(key: string) {
 }
 
 /**
- * Given an instance of Eq<A> for the values in a ReadonlyRecord<A>
+ * Given an instance of Comparable<A> for the values in a ReadonlyRecord<A>
  * return a curried function `second => first => boolean` that returns
  * true when first is a subrecord of second.
  *
  * @example
  * ```ts
  * import * as R from "./record.ts";
- * import { EqNumber } from "./number.ts";
+ * import { ComparableNumber } from "./number.ts";
  * import { pipe } from "./fn.ts";
  *
  * const first = { one: 1, two: 2 };
  * const second = { one: 1, two: 2, three: 3 };
- * const isSub = R.isSubrecord(EqNumber);
+ * const isSub = R.isSubrecord(ComparableNumber);
  *
  * const result1 = pipe(
  *   first,
@@ -752,11 +755,11 @@ export function deleteAtWithValue(key: string) {
  * @since 2.0.0
  */
 export function isSubrecord<A>(
-  S: Eq<A>,
+  S: Comparable<A>,
 ): (second: ReadonlyRecord<A>) => (first: ReadonlyRecord<A>) => boolean {
   return (second) => (first) => {
     for (const key in first) {
-      if (!Object.hasOwn(second, key) || !S.equals(second[key])(first[key])) {
+      if (!Object.hasOwn(second, key) || !S.compare(second[key])(first[key])) {
         return false;
       }
     }
@@ -941,20 +944,20 @@ export const FilterableRecord: Filterable<KindReadonlyRecord> = {
 };
 
 /**
- * The canonical implementation of Functor for ReadonlyRecord. It contains
+ * The canonical implementation of Mappable for ReadonlyRecord. It contains
  * the method map.
  *
  * @since 2.0.0
  */
-export const FunctorRecord: Functor<KindReadonlyRecord> = { map };
+export const MappableRecord: Mappable<KindReadonlyRecord> = { map };
 
 /**
- * The canonical implementation of Foldable for ReadonlyRecord. It contains
+ * The canonical implementation of Reducible for ReadonlyRecord. It contains
  * the method reduce.
  *
  * @since 2.0.0
  */
-export const FoldableRecord: Foldable<KindReadonlyRecord> = { reduce };
+export const ReducibleRecord: Reducible<KindReadonlyRecord> = { reduce };
 
 /**
  * The canonical implementation of Traversable for ReadonlyRecord. It contains
@@ -969,15 +972,15 @@ export const TraversableRecord: Traversable<KindReadonlyRecord> = {
 };
 
 /**
- * Given a Show for the inner values of a ReadonlyRecord<A>, return an instance
- * of Show for ReadonlyRecord<A>.
+ * Given a Showable for the inner values of a ReadonlyRecord<A>, return an instance
+ * of Showable for ReadonlyRecord<A>.
  *
  * @example
  * ```ts
  * import * as R from "./record.ts";
- * import { ShowNumber } from "./number.ts";
+ * import { ShowableNumber } from "./number.ts";
  *
- * const { show } = R.getShow(ShowNumber);
+ * const { show } = R.getShowable(ShowableNumber);
  *
  * const result = show({ one: 1, two: 2, three: 3 });
  * // "{one: 1, two: 2, three: 3}"
@@ -985,7 +988,7 @@ export const TraversableRecord: Traversable<KindReadonlyRecord> = {
  *
  * @since 2.0.0
  */
-export function getShow<A>(SA: Show<A>): Show<ReadonlyRecord<A>> {
+export function getShowable<A>(SA: Showable<A>): Showable<ReadonlyRecord<A>> {
   return ({
     show: (ua) =>
       `{${

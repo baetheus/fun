@@ -5,8 +5,6 @@ import {
 
 import * as P from "../promise.ts";
 import * as E from "../either.ts";
-import * as N from "../number.ts";
-import { concatAll } from "../semigroup.ts";
 import { pipe, todo } from "../fn.ts";
 
 Deno.test("Promise deferred", async () => {
@@ -76,7 +74,7 @@ Deno.test("Promise wait", async () => {
 
 Deno.test("Promise delay", async () => {
   const start = Date.now();
-  const waiter = pipe(P.of(1), P.delay(200));
+  const waiter = pipe(P.wrap(1), P.delay(200));
   await waiter;
   const end = Date.now();
   assertEquals(end - start >= 100, true);
@@ -92,8 +90,8 @@ Deno.test("Promise reject", async () => {
 });
 
 Deno.test("Promise then", async () => {
-  assertEquals(await pipe(P.of(1), P.then((n) => n + 1)), 2);
-  assertEquals(await pipe(P.of(1), P.then((n) => P.of(n + 1))), 2);
+  assertEquals(await pipe(P.wrap(1), P.then((n) => n + 1)), 2);
+  assertEquals(await pipe(P.wrap(1), P.then((n) => P.wrap(n + 1))), 2);
 });
 
 Deno.test("Promise catchError", async () => {
@@ -101,10 +99,10 @@ Deno.test("Promise catchError", async () => {
 });
 
 Deno.test("Promise all", async () => {
-  assertEquals(await P.all(P.of(1), P.of("Hello")), [1, "Hello"]);
+  assertEquals(await P.all(P.wrap(1), P.wrap("Hello")), [1, "Hello"]);
   assertEquals(
     await pipe(
-      P.all(P.of(1), P.reject("Hello")),
+      P.all(P.wrap(1), P.reject("Hello")),
       P.catchError(() => [0, "Goodbye"]),
     ),
     [0, "Goodbye"],
@@ -123,32 +121,25 @@ Deno.test({
 });
 
 Deno.test("Promise of", async () => {
-  assertEquals(await P.of(1), 1);
+  assertEquals(await P.wrap(1), 1);
 });
 
 Deno.test("Promise ap", async () => {
   assertEquals(
     await pipe(
-      P.of((n: number) => n + 1),
-      P.ap(P.of(1)),
+      P.wrap((n: number) => n + 1),
+      P.apply(P.wrap(1)),
     ),
     2,
   );
 });
 
 Deno.test("Promise map", async () => {
-  assertEquals(await pipe(P.of(1), P.map((n) => n + 1)), 2);
+  assertEquals(await pipe(P.wrap(1), P.map((n) => n + 1)), 2);
 });
 
-Deno.test("Promise chain", async () => {
-  assertEquals(await pipe(P.of(1), P.chain((n) => P.of(n + 1))), 2);
-});
-
-Deno.test("Promise join", async () => {
-  // This is a farce
-  const fake = P.of(1) as unknown as Promise<Promise<number>>;
-
-  assertEquals(await P.join(fake), 1);
+Deno.test("Promise flatmap", async () => {
+  assertEquals(await pipe(P.wrap(1), P.flatmap((n) => P.wrap(n + 1))), 2);
 });
 
 Deno.test("Promise tryCatch", async () => {
@@ -165,31 +156,19 @@ Deno.test("Promise tryCatch", async () => {
   assertEquals(await catchAsync(1), -1);
 });
 
-Deno.test("Promise FunctorPromise", () => {
-  assertStrictEquals(P.FunctorPromise.map, P.map);
+Deno.test("Promise MappablePromise", () => {
+  assertStrictEquals(P.MappablePromise.map, P.map);
 });
 
-Deno.test("Promise ApplyPromise", () => {
-  assertStrictEquals(P.ApplyPromise.ap, P.ap);
-  assertStrictEquals(P.ApplyPromise.map, P.map);
+Deno.test("Promise ApplicablePromise", () => {
+  assertStrictEquals(P.ApplicablePromise.apply, P.apply);
+  assertStrictEquals(P.ApplicablePromise.map, P.map);
+  assertStrictEquals(P.ApplicablePromise.wrap, P.wrap);
 });
 
-Deno.test("Promise ApplicativePromise", () => {
-  assertStrictEquals(P.ApplicativePromise.ap, P.ap);
-  assertStrictEquals(P.ApplicativePromise.map, P.map);
-  assertStrictEquals(P.ApplicativePromise.of, P.of);
-});
-
-Deno.test("Promise ChainPromise", () => {
-  assertStrictEquals(P.ChainPromise.ap, P.ap);
-  assertStrictEquals(P.ChainPromise.map, P.map);
-  assertStrictEquals(P.ChainPromise.chain, P.chain);
-});
-
-Deno.test("Promise MonadPromise", () => {
-  assertStrictEquals(P.MonadPromise.of, P.of);
-  assertStrictEquals(P.MonadPromise.ap, P.ap);
-  assertStrictEquals(P.MonadPromise.map, P.map);
-  assertStrictEquals(P.MonadPromise.join, P.join);
-  assertStrictEquals(P.MonadPromise.chain, P.chain);
+Deno.test("Promise FlatmappablePromise", () => {
+  assertStrictEquals(P.FlatmappablePromise.wrap, P.wrap);
+  assertStrictEquals(P.FlatmappablePromise.apply, P.apply);
+  assertStrictEquals(P.FlatmappablePromise.map, P.map);
+  assertStrictEquals(P.FlatmappablePromise.flatmap, P.flatmap);
 });

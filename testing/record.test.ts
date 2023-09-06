@@ -92,32 +92,32 @@ Deno.test("Record reduce", () => {
 Deno.test("Record collect", () => {
   const collect = pipe(
     (s: string) => s.length,
-    R.collect(N.MonoidNumberMax),
+    R.collect(N.InitializableNumberMax),
   );
 
-  assertEquals(collect({}), N.MonoidNumberMax.empty());
+  assertEquals(collect({}), N.InitializableNumberMax.init());
   assertEquals(collect(value3), 5);
   assertEquals(collect(value4), 3);
 });
 
 Deno.test("Record collapse", () => {
   const collapse = pipe(
-    R.collapse(N.MonoidNumberMax),
+    R.collapse(N.InitializableNumberMax),
   );
 
-  assertEquals(collapse({}), N.MonoidNumberMax.empty());
+  assertEquals(collapse({}), N.InitializableNumberMax.init());
   assertEquals(collapse(value1), 3);
   assertEquals(collapse(value2), 2);
 });
 
 Deno.test("Record traverse", () => {
-  const t1 = R.traverse(O.MonadOption);
+  const t1 = R.traverse(O.FlatmappableOption);
   const t2 = t1((n: number) => n === 0 ? O.none : O.some(n));
   assertEquals(t2({}), O.some({}));
   assertEquals(t2({ a: 0, b: 1 }), O.none);
   assertEquals(t2({ a: 1, b: 2 }), O.some({ a: 1, b: 2 }));
 
-  const it1 = R.traverse(O.MonadOption);
+  const it1 = R.traverse(O.FlatmappableOption);
   const it2 = it1((a: number, i: string) =>
     a === 0 ? O.some(i) : O.some(a.toString())
   );
@@ -204,7 +204,7 @@ Deno.test("Record deleteAtWithValue", () => {
 });
 
 Deno.test("Record isSubrecord", () => {
-  const isSub = R.isSubrecord(N.EqNumber);
+  const isSub = R.isSubrecord(N.ComparableNumber);
   assertEquals(pipe(value1, isSub(value2)), false);
   assertEquals(pipe(value2, isSub(value1)), true);
 });
@@ -258,7 +258,7 @@ Deno.test("Record FilterableRecord", () => {
 });
 
 Deno.test("Record FunctoRecord", () => {
-  assertStrictEquals(R.FunctorRecord.map, R.map);
+  assertStrictEquals(R.MappableRecord.map, R.map);
 });
 
 Deno.test("Record TraversableRecord", () => {
@@ -267,8 +267,8 @@ Deno.test("Record TraversableRecord", () => {
   assertStrictEquals(R.TraversableRecord.traverse, R.traverse);
 });
 
-Deno.test("Record getShow", () => {
-  const { show } = R.getShow({ show: (n: number) => n.toString() });
+Deno.test("Record getShowable", () => {
+  const { show } = R.getShowable({ show: (n: number) => n.toString() });
   assertEquals(show({}), "{}");
   assertEquals(show({ a: 1, b: 2 }), "{a: 1, b: 2}");
 });

@@ -1,14 +1,12 @@
-import type { Applicative } from "./applicative.ts";
-import type { Apply } from "./apply.ts";
-import type { Bifunctor } from "./bifunctor.ts";
-import type { Contravariant } from "./contravariant.ts";
-import type { Functor } from "./functor.ts";
+import type { Applicable } from "./applicable.ts";
+import type { Bimappable } from "./bimappable.ts";
+import type { Premappable } from "./premappable.ts";
+import type { Mappable } from "./mappable.ts";
 import type { Kind, Out } from "./kind.ts";
-import type { Monoid } from "./monoid.ts";
-import type { Ord } from "./ord.ts";
-import type { Semigroup } from "./semigroup.ts";
-import type { Eq } from "./eq.ts";
-import type { Show } from "./show.ts";
+import type { Initializable } from "./initializable.ts";
+import type { Sortable } from "./sortable.ts";
+import type { Comparable } from "./comparable.ts";
+import type { Showable } from "./showable.ts";
 
 import { identity } from "./fn.ts";
 
@@ -32,7 +30,7 @@ export function map<A, I>(
   return identity;
 }
 
-export function contramap<A, I>(
+export function premap<A, I>(
   _fai: (a: A) => I,
 ): <B = never>(ta: Const<B, I>) => Const<B, A> {
   return identity;
@@ -45,46 +43,37 @@ export function bimap<A, B, I, J>(
   return (tab) => make(fbj(tab));
 }
 
-export function mapLeft<B, J>(
+export function mapSecond<B, J>(
   fbj: (b: B) => J,
 ): <A = never>(tab: Const<B, A>) => Const<J, A> {
   return bimap(fbj, identity);
 }
 
-export const getShow = <E, A>(S: Show<E>): Show<Const<E, A>> => ({
+export const getShowable = <E, A>(S: Showable<E>): Showable<Const<E, A>> => ({
   show: (c) => `Const(${S.show(c)})`,
 });
 
-export const getEq: <E, A>(
-  E: Eq<E>,
-) => Eq<Const<E, A>> = identity;
+export const getComparableConst: <E, A>(
+  E: Comparable<E>,
+) => Comparable<Const<E, A>> = identity;
 
-export const getOrd: <E, A>(O: Ord<E>) => Ord<Const<E, A>> = identity;
+export const getSortable: <E, A>(O: Sortable<E>) => Sortable<Const<E, A>> =
+  identity;
 
-export const getSemigroup: <E, A>(
-  S: Semigroup<E>,
-) => Semigroup<Const<E, A>> = identity;
+export const getInitializableConst: <E, A>(
+  M: Initializable<E>,
+) => Initializable<Const<E, A>> = identity;
 
-export const getMonoid: <E, A>(
-  M: Monoid<E>,
-) => Monoid<Const<E, A>> = identity;
-
-export const getApply = <E>(
-  S: Semigroup<E>,
-): Apply<KindRightConst<E>> => ({
-  map: (_) => (ta) => ta,
-  ap: (tfai) => (ta) => make(S.concat(ta)(tfai)),
+export const getApplicable = <E>(
+  I: Initializable<E>,
+): Applicable<KindRightConst<E>> => ({
+  apply: (tfai) => (ta) => make(I.combine(ta)(tfai)),
+  map: () => (ta) => ta,
+  wrap: () => make(I.init()),
 });
 
-export const getApplicative = <E>(
-  M: Monoid<E>,
-): Applicative<KindRightConst<E>> => ({
-  of: () => make(M.empty()),
-  ...getApply(M),
-});
+export const MappableConst: Mappable<KindConst> = { map };
 
-export const FunctorConst: Functor<KindConst> = { map };
+export const PremappableConst: Premappable<KindConst> = { premap };
 
-export const ContravariantConst: Contravariant<KindConst> = { contramap };
-
-export const BifunctorConst: Bifunctor<KindConst> = { bimap, mapLeft };
+export const BimappableConst: Bimappable<KindConst> = { map, mapSecond };

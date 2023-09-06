@@ -1,25 +1,23 @@
 import type { Kind, Out } from "./kind.ts";
-import type { Applicative } from "./applicative.ts";
-import type { Apply } from "./apply.ts";
-import type { Chain } from "./chain.ts";
+import type { Applicable } from "./applicable.ts";
 import type { Either } from "./either.ts";
-import type { Functor } from "./functor.ts";
-import type { Monad } from "./monad.ts";
+import type { Mappable } from "./mappable.ts";
+import type { Flatmappable } from "./flatmappable.ts";
 
 import * as E from "./either.ts";
-import { flow, handleThrow, identity, pipe } from "./fn.ts";
+import { flow, handleThrow, pipe } from "./fn.ts";
 
 /**
  * A type for Promise over any, useful as an extension target for
  * functions that take any Promise and do not need to
- * extract the type.
+ * unwrap the type.
  *  @since 2.0.0
  */
 // deno-lint-ignore no-explicit-any
 export type AnyPromise = Promise<any>;
 
 /**
- * A type level extractor, used to pull the inner type from a Promise.
+ * A type level unwrapor, used to pull the inner type from a Promise.
  *
  * @since 2.0.0
  */
@@ -148,16 +146,16 @@ export function wait(ms: number): Promise<void> {
 /**
  * Delay the resolution of an existing Promise. This does not
  * affect the original promise directly, it only waits for
- * a ms milliseconds before chaining into the original promise.
+ * a ms milliseconds before flatmaping into the original promise.
  *
  * @example
  * ```ts
- * import { of, delay } from "./promise.ts";
+ * import { wrap, delay } from "./promise.ts";
  * import { pipe } from "./fn.ts";
  *
  * // Waits 250 milliseconds before returning
  * const result = await pipe(
- *   of(1),
+ *   wrap(1),
  *   delay(250),
  * ); // 1
  * ```
@@ -207,11 +205,11 @@ export function reject(
  *
  * @example
  * ```ts
- * import { of, then } from "./promise.ts";
+ * import { wrap, then } from "./promise.ts";
  * import { pipe } from "./fn.ts";
  *
  * const result = await pipe(
- *   of(1),
+ *   wrap(1),
  *   then(n => n + 1),
  * ); // 2
  * ```
@@ -251,9 +249,9 @@ export function catchError<A>(
  *
  * @example
  * ```ts
- * import { all, of } from "./promise.ts";
+ * import { all, wrap } from "./promise.ts";
  *
- * const result = await all(of(1), of("Hello")); // [1, "Hello"]
+ * const result = await all(wrap(1), wrap("Hello")); // [1, "Hello"]
  * ```
  *
  * @since 2.0.0
@@ -273,7 +271,7 @@ export function all<T extends AnyPromise[]>(
  *
  * @example
  * ```ts
- * import { wait, map, race, of } from "./promise.ts";
+ * import { wait, map, race, wrap } from "./promise.ts";
  * import { pipe } from "./fn.ts";
  *
  * const one = pipe(wait(200), map(() => "one"));
@@ -297,14 +295,14 @@ export function race<T extends AnyPromise[]>(
  *
  * @example
  * ```ts
- * import { of } from "./promise.ts";
+ * import { wrap } from "./promise.ts";
  *
- * const result = await of(1); // 1
+ * const result = await wrap(1); // 1
  * ```
  *
  * @since 2.0.0
  */
-export function of<A>(a: A | PromiseLike<A>): Promise<A> {
+export function wrap<A>(a: A | PromiseLike<A>): Promise<A> {
   return resolve(a);
 }
 
@@ -317,7 +315,7 @@ export function of<A>(a: A | PromiseLike<A>): Promise<A> {
  *
  * @example
  * ```ts
- * import { of, ap } from "./promise.ts";
+ * import { wrap, apply } from "./promise.ts";
  * import { pipe } from "./fn.ts";
  *
  * type Person = { name: string, age: number };
@@ -325,15 +323,15 @@ export function of<A>(a: A | PromiseLike<A>): Promise<A> {
  * const person = (name: string) => (age: number): Person => ({ name, age });
  *
  * const result = pipe(
- *   of(person),
- *   ap(of("Brandon")),
- *   ap(of(37)),
+ *   wrap(person),
+ *   apply(wrap("Brandon")),
+ *   apply(wrap(37)),
  * ); // Promise<Person>
  * ```
  *
  * @since 2.0.0
  */
-export function ap<A>(
+export function apply<A>(
   ua: Promise<A>,
 ): <I>(ufai: Promise<(a: A) => I>) => Promise<I> {
   return (ufai) =>
@@ -352,11 +350,11 @@ export function ap<A>(
  *
  * @example
  * ```ts
- * import { of, map } from "./promise.ts";
+ * import { wrap, map } from "./promise.ts";
  * import { pipe } from "./fn.ts";
  *
  * const result = await pipe(
- *   of(1),
+ *   wrap(1),
  *   map(n => n + 1),
  * ); // 2
  * ```
@@ -368,37 +366,26 @@ export function map<A, I>(fai: (a: A) => I): (ua: Promise<A>) => Promise<I> {
 }
 
 /**
- * Create a new Promise by chaining over the result of an existing Promise.
+ * Create a new Promise by flatmaping over the result of an existing Promise.
  * This is effectively Promise.then.
  *
  * @example
  * ```ts
- * import { of, chain } from "./promise.ts";
+ * import { wrap, flatmap } from "./promise.ts";
  * import { pipe } from "./fn.ts";
  *
  * const result = await pipe(
- *   of(1),
- *   chain(n => of(n + 1)),
+ *   wrap(1),
+ *   flatmap(n => wrap(n + 1)),
  * ); // 2
  * ```
  *
  * @since 2.0.0
  */
-export function chain<A, I>(
+export function flatmap<A, I>(
   faui: (a: A) => Promise<I>,
 ): (ua: Promise<A>) => Promise<I> {
   return then(faui);
-}
-
-/**
- * This function theoretically flattens A Promise<Promise<A>>. However,
- * there is a need for this function in Monad. Since there is no way
- * to actually create the input of this function, there is no example.
- *
- * @since 2.0.0
- */
-export function join<A>(uua: Promise<Promise<A>>): Promise<A> {
-  return pipe(uua, chain(identity));
 }
 
 /**
@@ -408,7 +395,7 @@ export function join<A>(uua: Promise<Promise<A>>): Promise<A> {
  *
  * @example
  * ```ts
- * import { tryCatch, reject, of } from "./promise.ts";
+ * import { tryCatch, reject, wrap } from "./promise.ts";
  * import { pipe, todo } from "./fn.ts";
  * // Note that todo will always throw synchronously.
  *
@@ -432,47 +419,36 @@ export function tryCatch<D extends unknown[], A>(
 ): (...args: D) => Promise<A> {
   return handleThrow(
     handle,
-    (a, args) => of(a).catch((err) => onThrow(err, args)),
-    flow(onThrow, of),
+    (a, args) => wrap(a).catch((err) => onThrow(err, args)),
+    flow(onThrow, wrap),
   );
 }
 
 /**
- * The canonical implementation of Functor for Promise. It contains
+ * The canonical implementation of Mappable for Promise. It contains
  * the method map.
  *
  * @since 2.0.0
  */
-export const FunctorPromise: Functor<KindPromise> = { map };
+export const MappablePromise: Mappable<KindPromise> = { map };
 
 /**
- * The canonical implementation of Apply for Promise. It contains
- * the methods ap and map.
+ * The canonical implementation of Applicable for Promise. It contains
+ * the methods wrap, apply, and map.
  *
  * @since 2.0.0
  */
-export const ApplyPromise: Apply<KindPromise> = { map, ap };
+export const ApplicablePromise: Applicable<KindPromise> = { wrap, map, apply };
 
 /**
- * The canonical implementation of Applicative for Promise. It contains
- * the methods of, ap, and map.
+ * The canonical implementation of Flatmappable for Promise. It contains
+ * the methods wrap, apply, map, and flatmap.
  *
  * @since 2.0.0
  */
-export const ApplicativePromise: Applicative<KindPromise> = { of, map, ap };
-
-/**
- * The canonical implementation of Chain for Promise. It contains
- * the methods ap, map, and chain.
- *
- * @since 2.0.0
- */
-export const ChainPromise: Chain<KindPromise> = { ap, map, chain };
-
-/**
- * The canonical implementation of Monad for Promise. It contains
- * the methods of, ap, map, join, and chain.
- *
- * @since 2.0.0
- */
-export const MonadPromise: Monad<KindPromise> = { of, ap, map, join, chain };
+export const FlatmappablePromise: Flatmappable<KindPromise> = {
+  apply,
+  flatmap,
+  map,
+  wrap,
+};

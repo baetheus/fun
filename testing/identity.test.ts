@@ -6,23 +6,22 @@ import { pipe } from "../fn.ts";
 const add = (n: number) => n + 1;
 
 Deno.test("Identity of", () => {
-  assertEquals(I.of(1), 1);
+  assertEquals(I.wrap(1), 1);
 });
 
 Deno.test("Identity ap", () => {
-  assertEquals(pipe(I.of((n: number) => n + 1), I.ap(I.of(1))), I.of(2));
+  assertEquals(
+    pipe(I.wrap((n: number) => n + 1), I.apply(I.wrap(1))),
+    I.wrap(2),
+  );
 });
 
 Deno.test("Identity map", () => {
   const map = I.map(add);
-  assertEquals(map(I.of(1)), I.of(2));
+  assertEquals(map(I.wrap(1)), I.wrap(2));
 });
 
-Deno.test("Identity join", () => {
-  assertEquals(I.join(I.of(I.of(1))), I.of(1));
-});
-
-Deno.test("Identity chain", () => {
-  const chain = I.chain((n: number) => I.of(n + 1));
-  assertEquals(chain(I.of(1)), I.of(2));
+Deno.test("Identity flatmap", () => {
+  const flatmap = I.flatmap((n: number) => I.wrap(n + 1));
+  assertEquals(flatmap(I.wrap(1)), I.wrap(2));
 });

@@ -1,38 +1,37 @@
 /**
  * This file contains a collection of utilities and
- * algebraic structure implemenuations for ReadonlyArray
+ * algebraic structure implementations for ReadonlyArray
  * in JavaScript.
  *
- * @todo Look into lodash for perf hints on array iterating in its various
- * forms.
- *
  * @module Array
+ * @since 2.0.0
  */
 
 import type { $, AnySub, Intersect, Kind, Out } from "./kind.ts";
-import type { Alt } from "./alt.ts";
-import type { Applicative } from "./applicative.ts";
-import type { Functor } from "./functor.ts";
-import type { Apply } from "./apply.ts";
-import type { Chain } from "./chain.ts";
-import type { Filterable } from "./filterable.ts";
-import type { Foldable } from "./foldable.ts";
-import type { Monad } from "./monad.ts";
-import type { Monoid } from "./monoid.ts";
-import type { Option } from "./option.ts";
+import type { Applicable } from "./applicable.ts";
+import type { Comparable } from "./comparable.ts";
 import type { Either } from "./either.ts";
-import type { Ord } from "./ord.ts";
+import type { Filterable } from "./filterable.ts";
+import type { Flatmappable } from "./flatmappable.ts";
+import type { Initializable } from "./initializable.ts";
+import type { Mappable } from "./mappable.ts";
+import type { Option } from "./option.ts";
 import type { Pair } from "./pair.ts";
-import type { Semigroup } from "./semigroup.ts";
-import type { Eq } from "./eq.ts";
-import type { Show } from "./show.ts";
+import type { Reducible } from "./reducible.ts";
+import type { Showable } from "./showable.ts";
+import type { Sortable } from "./sortable.ts";
 import type { Traversable } from "./traversable.ts";
+import type { Wrappable } from "./wrappable.ts";
 
 import { pair } from "./pair.ts";
 import { isRight } from "./either.ts";
-import { fromCompare, sign } from "./ord.ts";
+import { fromCompare } from "./comparable.ts";
+import { fromSort, sign } from "./sortable.ts";
 import { isSome, none, some } from "./option.ts";
 import { identity, pipe } from "./fn.ts";
+
+const NameReadonlyArray = "ReadonlyArray";
+type NameReadonlyArray = typeof NameReadonlyArray;
 
 /**
  * This type can be used as a placeholder for an array of any type.
@@ -43,7 +42,7 @@ import { identity, pipe } from "./fn.ts";
 export type AnyArray = ReadonlyArray<any>;
 
 /**
- * This type alias extracts the inner type of a ReadonlyArray.
+ * This type alias unwraps the inner type of a ReadonlyArray.
  *
  * @since 2.0.0
  */
@@ -58,12 +57,21 @@ export type TypeOf<T> = T extends ReadonlyArray<infer A> ? A : never;
 export type NonEmptyArray<A> = readonly [A, ...A[]];
 
 /**
+ * This type can be used as a placeholder for a non-init array of any type.
+ *
+ * @since 2.0.0
+ */
+// deno-lint-ignore no-explicit-any
+export type AnyNonEmptyArray = NonEmptyArray<any>;
+
+/**
  * Specifies ReadonlyArray as a Higher Kinded Type, with covariant
  * parameter A corresponding to the 0th index of any substitutions.
  *
  * @since 2.0.0
  */
 export interface KindArray extends Kind {
+  readonly name: NameReadonlyArray;
   readonly kind: ReadonlyArray<Out<this, 0>>;
 }
 
@@ -196,7 +204,7 @@ export function _unsafeJoin<A>(
  * ```ts
  * import * as A from "./array.ts";
  *
- * const arr = A.of(1);
+ * const arr = A.wrap(1);
  *
  * const result1 = A.isOutOfBounds(0, arr); // false
  * const result2 = A.isOutOfBounds(-1, arr); // true
@@ -211,14 +219,14 @@ export function isOutOfBounds<A>(index: number, ua: ReadonlyArray<A>): boolean {
 
 /**
  * This predicate over ReadonlyArray<A> returns true when called with an
- * empty array, otherwise it returns false.
+ * default array, otherwise it returns false.
  *
  * @example
  * ```ts
  * import * as A from "./array.ts";
  *
- * const arr1 = A.empty<number>();
- * const arr2 = A.of(1);
+ * const arr1 = A.init<number>();
+ * const arr2 = A.wrap(1);
  *
  * const result1 = A.isEmpty(arr1); // true
  * const result2 = A.isEmpty(arr2); // false
@@ -239,7 +247,7 @@ export function isEmpty<A>(ua: ReadonlyArray<A>): boolean {
  * import * as A from "./array.ts";
  *
  * const arr1 = [1]
- * const arr2 = A.empty<number>();
+ * const arr2 = A.init<number>();
  *
  * const result1 = A.isNonEmpty(arr1);
  * // true and arr1 has type NonEmptyArray<number>
@@ -303,18 +311,18 @@ export function range(
 }
 
 /**
- * Create an empty array of type A (defaulting to never).
+ * Create an init array of type A (defaulting to never).
  *
  * @example
  * ```ts
  * import * as A from "./array.ts";
  *
- * const result = A.empty<number>(); // ReadonlyArray<number>
+ * const result = A.init<number>(); // ReadonlyArray<number>
  * ```
  *
  * @since 2.0.0
  */
-export function empty<A = never>(): ReadonlyArray<A> {
+export function init<A = never>(): ReadonlyArray<A> {
   return [];
 }
 
@@ -325,17 +333,17 @@ export function empty<A = never>(): ReadonlyArray<A> {
  * ```ts
  * import * as A from "./array.ts";
  *
- * const result = A.of(1); // [1] of type NonEmptyArray<number>
+ * const result = A.wrap(1); // [1] of type NonEmptyArray<number>
  * ```
  *
  * @since 2.0.0
  */
-export function of<A>(a: A): NonEmptyArray<A> {
+export function wrap<A>(a: A): NonEmptyArray<A> {
   return [a];
 }
 
 /**
- * Given two arrays first and second, if first is empty the return second,
+ * Given two arrays first and second, if first is default the return second,
  * otherwise return first.
  *
  * @example
@@ -344,8 +352,8 @@ export function of<A>(a: A): NonEmptyArray<A> {
  * import { pipe } from "./fn.ts";
  *
  * const result1 = pipe(
- *   A.empty<number>(),
- *   A.alt(A.of(1)),
+ *   A.init<number>(),
+ *   A.alt(A.wrap(1)),
  * ); // [1]
  * const result2 = pipe(
  *   A.array(1, 2, 3),
@@ -362,7 +370,7 @@ export function alt<A>(
 }
 
 /**
- * Apply the function fai: (A, index) => I to every element in the array ua.
+ * Applicable the function fai: (A, index) => I to every element in the array ua.
  *
  * @example
  * ```ts
@@ -444,20 +452,22 @@ export function reduce<A, O>(
  *
  * const result = pipe(
  *   A.range(3, 1),
- *   A.concat(A.range(3, 3, -1)),
+ *   A.combine(A.range(3, 3, -1))
  * ); // [1, 2, 3, 3, 2, 1]
  * ```
  *
  * @since 2.0.0
  */
-export function concat<A>(
+export function combine<A>(
   second: ReadonlyArray<A>,
 ): (first: ReadonlyArray<A>) => ReadonlyArray<A> {
-  if (isEmpty(second)) {
-    return identity;
-  }
-
   return (first) => {
+    if (isEmpty(second)) {
+      return first;
+    } else if (isEmpty(first)) {
+      return second;
+    }
+
     const firstLength = first.length;
     const length = firstLength + second.length;
     const result = Array(length);
@@ -525,13 +535,13 @@ export function join<A>(
  *
  * const result = pipe(
  *   A.range(3, 1, 3), // [1, 4, 7]
- *   A.chain(n => [n, n + 1, n + 2]), // ie. 1 -> [1, 2, 3]
+ *   A.flatmap(n => [n, n + 1, n + 2]), // ie. 1 -> [1, 2, 3]
  * ); // [1, 2, 3, 4, 5, 6, 7, 8, 9]
  * ```
  *
  * @since 2.0.0
  */
-export function chain<A, I>(
+export function flatmap<A, I>(
   fati: (a: A, index: number) => ReadonlyArray<I>,
 ): (ua: ReadonlyArray<A>) => ReadonlyArray<I> {
   return (ua) => {
@@ -541,7 +551,9 @@ export function chain<A, I>(
 
     while (++index < length) {
       const chained = fati(ua[index], index);
-      // Mutates
+      // Mutates result
+      // This is okay because result is a local mutable variable
+      // in a tight loop
       _unsafeJoin(result, chained);
     }
 
@@ -562,14 +574,14 @@ export function chain<A, I>(
  * import { pipe } from "./fn.ts";
  *
  * const result = pipe(
- *   A.of((n: number) => n + 1),
- *   A.ap(A.array(1, 2, 3)),
+ *   A.wrap((n: number) => n + 1),
+ *   A.apply(A.array(1, 2, 3)),
  * ); // [2, 3, 4]
  * ```
  *
  * @since 2.0.0
  */
-export function ap<A>(
+export function apply<A>(
   ua: ReadonlyArray<A>,
 ): <I>(ufai: ReadonlyArray<(a: A, index: number) => I>) => ReadonlyArray<I> {
   return <I>(
@@ -764,7 +776,7 @@ export function partitionMap<A, I, J>(
 }
 
 /**
- * Traverse a ReadonlyArray<A> using an Applicative over V and a mapping
+ * Traverse a ReadonlyArray<A> using an Applicable over V and a mapping
  * function A => V<I>.
  *
  * @example
@@ -772,7 +784,7 @@ export function partitionMap<A, I, J>(
  * import * as A from "./array.ts";
  * import { pipe, identity } from "./fn.ts";
  *
- * const traverse = A.traverse(A.ApplicativeArray);
+ * const traverse = A.traverse(A.ApplicableArray);
  *
  * const result = pipe(
  *   [[1, 2], [3, 4]],
@@ -783,7 +795,7 @@ export function partitionMap<A, I, J>(
  * @since 2.0.0
  */
 export function traverse<V extends Kind>(
-  A: Applicative<V>,
+  A: Applicable<V>,
 ): <A, I, J = never, K = never, L = unknown, M = unknown>(
   favi: (a: A, i: number) => $<V, [I, J, K], [L], [M]>,
 ) => (ua: ReadonlyArray<A>) => $<V, [ReadonlyArray<I>, J, K], [L], [M]> {
@@ -796,12 +808,15 @@ export function traverse<V extends Kind>(
         pipe(
           vis,
           A.map(pusher),
-          A.ap(favi(a, index)),
+          A.apply(favi(a, index)),
         ),
-      A.of<I[], J, K, L, M>([] as I[]),
+      A.wrap<I[], J, K, L, M>([] as I[]),
     );
   };
 }
+
+// deno-lint-ignore no-explicit-any
+type ANY_ARR = any[];
 
 /**
  * The Sequence inverts a tuple of substitutions over V into V containing a
@@ -820,14 +835,14 @@ export function traverse<V extends Kind>(
  */
 // deno-fmt-ignore
 type Sequence<U extends Kind, R extends AnySub<U>[]> = $<U, [
-    { [K in keyof R]: R[K] extends $<U, [infer A, infer _, infer _], any[], any[]> ? A : never; },
-    { [K in keyof R]: R[K] extends $<U, [infer _, infer B, infer _], any[], any[]> ? B : never; }[number],
-    { [K in keyof R]: R[K] extends $<U, [infer _, infer _, infer C], any[], any[]> ? C : never; }[number],
-  ], [
-    Intersect<{ [K in keyof R]: R[K] extends $<U, any[], [infer D], any[]> ? D : never; }[number]>,
-  ], [
-    Intersect<{ [K in keyof R]: R[K] extends $<U, any[], any[], [infer E]> ? E : never; }[number]>,
-  ]
+  { [K in keyof R]: R[K] extends $<U, [infer A, infer _, infer _], ANY_ARR, ANY_ARR> ? A : never; },
+  { [K in keyof R]: R[K] extends $<U, [infer _, infer B, infer _], ANY_ARR, ANY_ARR> ? B : never; }[number],
+  { [K in keyof R]: R[K] extends $<U, [infer _, infer _, infer C], ANY_ARR, ANY_ARR> ? C : never; }[number],
+], [
+  Intersect<{ [K in keyof R]: R[K] extends $<U, ANY_ARR, [infer D], ANY_ARR> ? D : never; }[number]>,
+], [
+  Intersect<{ [K in keyof R]: R[K] extends $<U, ANY_ARR, ANY_ARR, [infer E]> ? E : never; }[number]>,
+]
 >;
 
 /**
@@ -841,7 +856,7 @@ type Sequence<U extends Kind, R extends AnySub<U>[]> = $<U, [
  * import * as A from "./array.ts";
  * import * as O from "./option.ts";
  *
- * const sequence = A.sequence(O.ApplicativeOption);
+ * const sequence = A.sequence(O.ApplicableOption);
  *
  * const result1 = sequence(O.some(1), O.some("Hello")); // Some([1, "Hello"])
  * const result2 = sequence(O.none, O.some("Uh Oh")); // None
@@ -850,10 +865,11 @@ type Sequence<U extends Kind, R extends AnySub<U>[]> = $<U, [
  * @since 2.0.0
  */
 export function sequence<V extends Kind>(
-  A: Applicative<V>,
+  A: Applicable<V>,
 ): <VS extends AnySub<V>[]>(
   ...ua: VS
 ) => Sequence<V, VS> {
+  // deno-lint-ignore no-explicit-any
   const sequence = traverse(A)(identity as any);
   return <VS extends AnySub<V>[]>(...vs: VS): Sequence<V, VS> =>
     sequence(vs) as Sequence<V, VS>;
@@ -1107,7 +1123,7 @@ export function deleteAt(index: number) {
  * according to the sort order defined by `O`.
  *
  * @example
- * import { ordNumber } from "./ord.ts";
+ * import { ordNumber } from "./sortable.ts";
  * import { sort } from './array.ts'
  *
  * sort(ordNumber)([3, 1, 2])
@@ -1116,23 +1132,23 @@ export function deleteAt(index: number) {
  * @category combinators
  */
 export function sort<B>(
-  O: Ord<B>,
+  O: Sortable<B>,
 ): <A extends B>(as: ReadonlyArray<A>) => ReadonlyArray<A> {
-  return (as) => as.slice().sort(O.compare);
+  return (as) => as.slice().sort(O.sort);
 }
 
 /**
- * Given an Ord over A, create a binary search function for a sorted
+ * Given an Sortable over A, create a binary search function for a sorted
  * ReadonlyArray<A> that returns the array index that the new value should
  * be inserted at in order to maintain a sorted array.
  *
  * @example
  * ```ts
  * import * as A from "./array.ts";
- * import { OrdNumber } from "./number.ts";
+ * import { SortableNumber } from "./number.ts";
  * import { pipe } from "./fn.ts";
  *
- * const search = A.binarySearch(OrdNumber);
+ * const search = A.binarySearch(SortableNumber);
  * const arr = A.range(100, 1); // [1, 2, ..., 100]
  *
  * const index1 = search(30.5, arr); // Index 29
@@ -1142,9 +1158,8 @@ export function sort<B>(
  * @since 2.0.0
  */
 export function binarySearch<A>(
-  ord: Ord<A>,
+  { sort }: Sortable<A>,
 ): (value: A, sorted: ReadonlyArray<A>) => number {
-  const { compare } = ord;
   return (value, sorted) => {
     let low = 0;
     let high = sorted.length;
@@ -1153,7 +1168,7 @@ export function binarySearch<A>(
     while (low < high) {
       middle = Math.floor((low + high) / 2);
       cursor = sorted[middle];
-      ordering = compare(value, cursor);
+      ordering = sort(value, cursor);
 
       if (ordering === 0) {
         return middle;
@@ -1168,7 +1183,7 @@ export function binarySearch<A>(
 }
 
 /**
- * Given an Ord<A> construct a curried insert function that inserts values into
+ * Given an Sortable<A> construct a curried insert function that inserts values into
  * a new array in a sorted fashion. Internally this uses binarySearch to find
  * the insertion index of any inserted items. Since the returned function will
  * always insert this function will always return a new array.
@@ -1176,8 +1191,8 @@ export function binarySearch<A>(
  * @example
  * ```ts
  * import * as A from "./array.ts";
- * import * as O from "./ord.ts";
- * import { OrdNumber } from "./number.ts";
+ * import * as O from "./sortable.ts";
+ * import { SortableNumber } from "./number.ts";
  * import { pipe } from "./fn.ts";
  *
  * type Person = { name: string, age: number };
@@ -1185,14 +1200,14 @@ export function binarySearch<A>(
  *   return { name, age };
  * }
  *
- * const OrdPerson = pipe(
- *   OrdNumber,
- *   O.contramap((p: Person) => p.age),
+ * const SortablePerson = pipe(
+ *   SortableNumber,
+ *   O.premap((p: Person) => p.age),
  * );
- * const insert = A.orderedInsert(OrdPerson);
+ * const insert = A.orderedInsert(SortablePerson);
  *
  * const result = pipe(
- *   A.empty(),
+ *   A.init(),
  *   insert(person("Brandon", 37)),
  *   insert(person("Emily", 32)),
  *   insert(
@@ -1211,7 +1226,7 @@ export function binarySearch<A>(
  * @since 2.0.0
  */
 export function orderedInsert<A>(
-  ord: Ord<A>,
+  ord: Sortable<A>,
 ): (
   ...values: NonEmptyArray<A>
 ) => (arr: ReadonlyArray<A>) => ReadonlyArray<A> {
@@ -1233,7 +1248,7 @@ export function orderedInsert<A>(
  * Collect the values of many arrays into an array of tuples. Each tuple
  * contains an element from each of the input arrays at a shared index. The number of
  * tuples in the returned array will match the minimum length of the input
- * arrays. ie. If any input array is empty, then the output array will be empty.
+ * arrays. ie. If any input array is default, then the output array will be default.
  *
  * @example
  * ```ts
@@ -1269,57 +1284,129 @@ export function zip<A extends ReadonlyArray<AnyArray>>(
 }
 
 /**
- * The canonical implementation of Functor for ReadonlyArray. It contains
- * the method map.
+ * Given an instance Comparable<A> create a Comparable<ReadonlyArray<A>>.
+ *
+ * @example
+ * ```ts
+ * import * as A from "./array.ts";
+ * import { ComparableNumber } from "./number.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const { compare } = A.getComparableArray(ComparableNumber);
+ *
+ * const result1 = pipe([1, 2, 3], compare([1, 2, 3])); // true
+ * const result2 = pipe(A.init(), compare([1, 2, 3])); // false
+ * const result3 = pipe([1, 2], compare([2, 1])); // false
+ * ```
  *
  * @since 2.0.0
  */
-export const FunctorArray: Functor<KindArray> = { map };
+export function getComparableArray<A>(
+  { compare }: Comparable<A>,
+): Comparable<ReadonlyArray<A>> {
+  return fromCompare((second) => (first) => {
+    if (first === second) {
+      return true;
+    } else if (first.length === second.length) {
+      return first.every((value, index) => compare(second[index])(value));
+    } else {
+      return false;
+    }
+  });
+}
 
 /**
- * The canonical implementation of Apply for ReadonlyArray. It contains
- * the methods ap and map.
+ * Given an instance Sortable<A> create a Sortable<ReadonlyArray<A>>.
+ *
+ * @example
+ * ```ts
+ * import * as A from "./array.ts";
+ * import { SortableNumber } from "./number.ts";
+ *
+ * const { sort } = A.getSortableArray(SortableNumber);
+ *
+ * const result1 = sort([1, 2], [1, 2]); // 0
+ * const result2 = sort([1, 2], [1]); // 1
+ * const result3 = sort([1, 2, 4], [1, 2, 3]); // -1
+ * ```
  *
  * @since 2.0.0
  */
-export const ApplyArray: Apply<KindArray> = { ap, map };
+export function getSortableArray<A>(
+  O: Sortable<A>,
+): Sortable<ReadonlyArray<A>> {
+  return fromSort((first, second) => {
+    const length = Math.min(first.length, second.length);
+    let index = -1;
+    // Compare all elements that exist in both arrays
+    while (++index < length) {
+      const ordering = O.sort(first[index], second[index]);
+      if (ordering !== 0) return ordering;
+    }
+    // If all compared elements are equal, longest array is greater
+    return sign(first.length - second.length);
+  });
+}
 
 /**
- * The canonical implementation of Applicative for ReadonlyArray. It contains
- * the methods of, ap, and map.
+ * Create an instance of Showable for ReadonlyArray<A> given an instance of Showable for
+ * A.
+ *
+ * @example
+ * ```ts
+ * import * as A from "./array.ts";
+ * import { ShowableNumber } from "./number.ts";
+ *
+ * const { show } = A.getShowableArray(ShowableNumber);
+ *
+ * const result = show([1, 2, 3]); // "ReadonlyArray[1, 2, 3]"
+ * ```
  *
  * @since 2.0.0
  */
-export const ApplicativeArray: Applicative<KindArray> = { of, ap, map };
+export function getShowableArray<A>(
+  { show }: Showable<A>,
+): Showable<ReadonlyArray<A>> {
+  return ({
+    show: (ua) => `ReadonlyArray[${ua.map(show).join(", ")}]`,
+  });
+}
 
 /**
- * The canonical implementation of Chain for ReadonlyArray. It contains
- * the methods of, map, and chain.
+ * Create an instance of Initializable<ReadonlyArray<A>> given a type A. This instance
+ * uses array compose and default as the instance methods for the Initializable.
+ *
+ * @example
+ * ```ts
+ * import * as A from "./array.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const { init, combine } = A.getInitializableArray<number>();
+ *
+ * const result = pipe(
+ *   init(), // []
+ *   combine([1, 2, 3]),
+ * ); // [1, 2, 3]
+ * ```
  *
  * @since 2.0.0
  */
-export const ChainArray: Chain<KindArray> = { ap, map, chain };
+export function getInitializableArray<A = never>(): Initializable<
+  ReadonlyArray<A>
+> {
+  return ({ init, combine });
+}
 
 /**
- * The canonical implementation of Monad for ReadonlyArray. It contains
- * the methods of, ap, map, join, and chain.
- *
  * @since 2.0.0
  */
-export const MonadArray: Monad<KindArray> = { of, ap, map, join, chain };
+export const ApplicableArray: Applicable<KindArray> = {
+  apply,
+  map,
+  wrap,
+};
 
 /**
- * The canonical implementation of Alt for ReadonlyArray. It contains
- * the methods alt and map.
- *
- * @since 2.0.0
- */
-export const AltArray: Alt<KindArray> = { alt, map };
-
-/**
- * The canonical implementation of Filterable for ReadonlyArray. It contains
- * the methods filter, filterMap, partition, and partitionMap.
- *
  * @since 2.0.0
  */
 export const FilterableArray: Filterable<KindArray> = {
@@ -1330,17 +1417,26 @@ export const FilterableArray: Filterable<KindArray> = {
 };
 
 /**
- * The canonical implementation of Foldable for ReadonlyArray. It contains
- * the method reduce.
- *
  * @since 2.0.0
  */
-export const FoldableArray: Foldable<KindArray> = { reduce };
+export const FlatmappableArray: Flatmappable<KindArray> = {
+  wrap,
+  map,
+  apply,
+  flatmap,
+};
 
 /**
- * The canonical implementation of Traversable for ReadonlyArray. It contains
- * the methods map, reduce, and traverse.
- *
+ * @since 2.0.0
+ */
+export const MappableArray: Mappable<KindArray> = { map };
+
+/**
+ * @since 2.0.0
+ */
+export const ReducibleArray: Reducible<KindArray> = { reduce };
+
+/**
  * @since 2.0.0
  */
 export const TraversableArray: Traversable<KindArray> = {
@@ -1350,134 +1446,6 @@ export const TraversableArray: Traversable<KindArray> = {
 };
 
 /**
- * Given an instance Eq<A> create a Eq<ReadonlyArray<A>>.
- *
- * @example
- * ```ts
- * import * as A from "./array.ts";
- * import { EqNumber } from "./number.ts";
- * import { pipe } from "./fn.ts";
- *
- * const { equals } = A.getEq(EqNumber);
- *
- * const result1 = pipe([1, 2, 3], equals([1, 2, 3])); // true
- * const result2 = pipe(A.empty(), equals([1, 2, 3])); // false
- * const result3 = pipe([1, 2], equals([2, 1])); // false
- * ```
- *
  * @since 2.0.0
  */
-export function getEq<A>(S: Eq<A>): Eq<ReadonlyArray<A>> {
-  return ({
-    equals: (a) => (b) => {
-      if (a === b) {
-        return true;
-      } else if (a.length !== b.length) {
-        return false;
-      } else {
-        return a.every((v, i) => S.equals(v)(b[i]));
-      }
-    },
-  });
-}
-
-/**
- * Given an instance Ord<A> create a Ord<ReadonlyArray<A>>.
- *
- * @example
- * ```ts
- * import * as A from "./array.ts";
- * import { OrdNumber } from "./number.ts";
- *
- * const { compare } = A.getOrd(OrdNumber);
- *
- * const result1 = compare([1, 2], [1, 2]); // 0
- * const result2 = compare([1, 2], [1]); // 1
- * const result3 = compare([1, 2, 4], [1, 2, 3]); // -1
- * ```
- *
- * @since 2.0.0
- */
-export function getOrd<A>(O: Ord<A>): Ord<ReadonlyArray<A>> {
-  return fromCompare((fst, snd) => {
-    const length = Math.min(fst.length, snd.length);
-    let index = -1;
-    // Compare all elements that exist in both arrays
-    while (++index < length) {
-      const ordering = O.compare(fst[index], snd[index]);
-      if (ordering !== 0) return ordering;
-    }
-    // If all compared elements are equal, longest array is greater
-    return sign(fst.length - snd.length);
-  });
-}
-
-/**
- * Create a Free semigroup over a type A using Array.concat.
- *
- * @example
- * ```ts
- * import * as A from "./array.ts";
- * import { pipe } from "./fn.ts";
- *
- * const { concat } = A.getSemigroup<number>();
- *
- * const result = pipe(
- *   [1, 2, 3],
- *   concat([4, 5, 6]),
- * ); // [1, 2, 3, 4, 5, 6]
- * ```
- *
- * @since 2.0.0
- */
-export function getSemigroup<A>(): Semigroup<ReadonlyArray<A>> {
-  return ({ concat });
-}
-
-/**
- * Create an instance of Show for ReadonlyArray<A> given an instance of Show for
- * A.
- *
- * @example
- * ```ts
- * import * as A from "./array.ts";
- * import { ShowNumber } from "./number.ts";
- *
- * const { show } = A.getShow(ShowNumber);
- *
- * const result = show([1, 2, 3]); // "ReadonlyArray[1, 2, 3]"
- * ```
- *
- * @since 2.0.0
- */
-export function getShow<A>({ show }: Show<A>): Show<ReadonlyArray<A>> {
-  return ({
-    show: (ua) => `ReadonlyArray[${ua.map(show).join(", ")}]`,
-  });
-}
-
-/**
- * Create an instance of Monoid<ReadonlyArray<A>> given a type A. This instance
- * uses array concat and empty as the instance methods for the Monoid.
- *
- * @example
- * ```ts
- * import * as A from "./array.ts";
- * import { pipe } from "./fn.ts";
- *
- * const monoid = A.getMonoid<number>();
- *
- * const result = pipe(
- *   monoid.empty(), // []
- *   monoid.concat([1, 2, 3]),
- * ); // [1, 2, 3]
- * ```
- *
- * @since 2.0.0
- */
-export function getMonoid<A = never>(): Monoid<ReadonlyArray<A>> {
-  return ({
-    empty,
-    concat,
-  });
-}
+export const WrappableArray: Wrappable<KindArray> = { wrap };

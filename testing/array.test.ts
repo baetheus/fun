@@ -9,11 +9,10 @@ import * as O from "../option.ts";
 import * as P from "../pair.ts";
 import * as N from "../number.ts";
 import * as E from "../either.ts";
-import * as Ord from "../ord.ts";
-import { EqBoolean } from "../boolean.ts";
+import { ComparableBoolean } from "../boolean.ts";
 import { pipe } from "../fn.ts";
 
-Deno.test("Array empty", () => assertEquals(A.empty(), []));
+Deno.test("Array init", () => assertEquals(A.init(), []));
 
 Deno.test("Array _unsafeUpdateAt", () => {
   const t1 = [1, 2, 3];
@@ -52,7 +51,7 @@ Deno.test("Array isEmpty", () => {
 });
 
 Deno.test("Array traverse", () => {
-  const traverseOption = A.traverse(O.MonadOption);
+  const traverseOption = A.traverse(O.FlatmappableOption);
 
   assertEquals(typeof traverseOption, "function");
 
@@ -61,35 +60,38 @@ Deno.test("Array traverse", () => {
 
   assertEquals(typeof sequence, "function");
 
-  assertEquals(sequence([O.some(1), O.some(2), O.some(3)]), O.some([1, 2, 3]));
+  assertEquals(
+    sequence([O.some(1), O.some(2), O.some(3)]),
+    O.some([1, 2, 3]),
+  );
   assertEquals(sequence([O.some(1), O.some(2), O.none]), O.none);
 
   assertEquals(add([1, 2, 3]), O.some([1, 3, 5]));
   assertEquals(add([]), O.some([]));
 });
 
-Deno.test("Array of", () => {
-  assertEquals(A.of(1), [1]);
+Deno.test("Array wrap", () => {
+  assertEquals(A.wrap(1), [1]);
 });
 
 Deno.test("Array alt", () => {
   const full = [1, 2, 3];
-  const empty1 = [] as number[];
-  const empty2 = [] as number[];
-  assertStrictEquals(pipe(full, A.alt(empty1)), full);
-  assertStrictEquals(pipe(empty1, A.alt(empty2)), empty2);
-  assertStrictEquals(pipe(empty1, A.alt(full)), full);
+  const init1 = [] as number[];
+  const init2 = [] as number[];
+  assertStrictEquals(pipe(full, A.alt(init1)), full);
+  assertStrictEquals(pipe(init1, A.alt(init2)), init2);
+  assertStrictEquals(pipe(init1, A.alt(full)), full);
 });
 
 Deno.test("Array ap", () => {
   const add = (n: number) => n + 1;
   const badd = (n: number) => n + 100;
-  assertEquals(pipe(A.of(add), A.ap(A.of(1))), A.of(2));
-  assertEquals(pipe(A.of(add), A.ap(A.empty())), A.empty());
-  assertEquals(pipe(A.empty(), A.ap(A.of(1))), A.empty());
-  assertEquals(pipe(A.empty(), A.ap(A.empty())), A.empty());
+  assertEquals(pipe(A.wrap(add), A.apply(A.wrap(1))), A.wrap(2));
+  assertEquals(pipe(A.wrap(add), A.apply(A.init())), A.init());
+  assertEquals(pipe(A.init(), A.apply(A.wrap(1))), A.init());
+  assertEquals(pipe(A.init(), A.apply(A.init())), A.init());
   assertEquals(
-    pipe(A.array(add, badd), A.ap(A.array(1, 2))),
+    pipe(A.array(add, badd), A.apply(A.array(1, 2))),
     A.array(2, 3, 101, 102),
   );
 });
@@ -99,9 +101,16 @@ Deno.test("Array join", () => {
   assertEquals(pipe([[1], [2], [3]], A.join), [1, 2, 3]);
 });
 
-Deno.test("Array chain", () => {
-  assertEquals(pipe([], A.chain((n: number) => [n, n + 1])), []);
-  assertEquals(pipe([1, 2, 3], A.chain((n) => [n, n + 1])), [1, 2, 2, 3, 3, 4]);
+Deno.test("Array flatmap", () => {
+  assertEquals(pipe([], A.flatmap((n: number) => [n, n + 1])), []);
+  assertEquals(pipe([1, 2, 3], A.flatmap((n) => [n, n + 1])), [
+    1,
+    2,
+    2,
+    3,
+    3,
+    4,
+  ]);
 });
 
 Deno.test("Array reduce", () => {
@@ -109,7 +118,7 @@ Deno.test("Array reduce", () => {
 });
 
 Deno.test("Array traverse", () => {
-  const traverse = A.traverse(A.MonadArray);
+  const traverse = A.traverse(A.FlatmappableArray);
 
   assertEquals(pipe([1, 2, 3], traverse((n) => [n])), [[1, 2, 3]]);
 });
@@ -123,9 +132,13 @@ Deno.test("Array indexedReduce", () => {
 });
 
 Deno.test("Array indexedTraverse", () => {
-  const traverse = A.traverse(A.MonadArray);
+  const traverse = A.traverse(A.FlatmappableArray);
 
-  assertEquals(pipe([1, 2, 3], traverse((n, i) => [n + i])), [[1, 3, 5]]);
+  assertEquals(pipe([1, 2, 3], traverse((n, i) => [n + i])), [[
+    1,
+    3,
+    5,
+  ]]);
 });
 
 Deno.test("Array filter", () => {
@@ -137,10 +150,13 @@ Deno.test("Array filterMap", () => {
   const fn = (str: string) =>
     str.length % 2 === 0 ? O.some(str.length) : O.none;
   assertEquals(pipe([], A.filterMap(fn)), []);
-  assertEquals(pipe(["H", "He", "Hel", "Hell", "Hello"], A.filterMap(fn)), [
-    2,
-    4,
-  ]);
+  assertEquals(
+    pipe(["H", "He", "Hel", "Hell", "Hello"], A.filterMap(fn)),
+    [
+      2,
+      4,
+    ],
+  );
 });
 
 Deno.test("Array partition", () => {
@@ -231,29 +247,29 @@ Deno.test("Array deleteAt", () => {
 
 Deno.test("Array sort", () => {
   const t1 = [] as number[];
-  const r1 = pipe(t1, A.sort(N.OrdNumber));
+  const r1 = pipe(t1, A.sort(N.SortableNumber));
   assertEquals(r1, t1);
   assertNotStrictEquals(r1, t1);
 
   const t2 = [1];
-  const r2 = pipe(t2, A.sort(N.OrdNumber));
+  const r2 = pipe(t2, A.sort(N.SortableNumber));
   assertEquals(r2, t2);
   assertNotStrictEquals(r2, t2);
 
   const t3 = [3, 1, 2];
-  const r3 = pipe(t3, A.sort(N.OrdNumber));
+  const r3 = pipe(t3, A.sort(N.SortableNumber));
   assertEquals(r3, [1, 2, 3]);
   assertEquals(t3, [3, 1, 2]);
 
   const t4 = A.range(0, 1_000);
-  const r4 = pipe(t4, A.sort(N.OrdNumber));
+  const r4 = pipe(t4, A.sort(N.SortableNumber));
   assertEquals(r4, t4);
   assertNotStrictEquals(r4, t4);
 });
 
 Deno.test("Array binarySearch", () => {
   const sorted = A.range(100);
-  const search = A.binarySearch(N.OrdNumber);
+  const search = A.binarySearch(N.SortableNumber);
   assertEquals(search(0, sorted), 0);
   assertEquals(search(50, sorted), 50);
   assertEquals(search(100, sorted), 100);
@@ -262,7 +278,7 @@ Deno.test("Array binarySearch", () => {
 
 Deno.test("Array orderedInsert", () => {
   const even = A.range(5, 0, 2);
-  const ins = A.orderedInsert(N.OrdNumber);
+  const ins = A.orderedInsert(N.SortableNumber);
   assertEquals(pipe(even, ins(7, 5, 3, 1, 9)), A.range(10));
   assertEquals(pipe([], ins(3, 5, 1)), [1, 3, 5]);
 });
@@ -292,48 +308,49 @@ Deno.test("Array range", () => {
   assertEquals(A.range(-1, 1, 1), []);
 });
 
-Deno.test("Array getEq", () => {
-  const eq = A.getEq(EqBoolean);
+Deno.test("Array getComparableArray", () => {
+  const eq = A.getComparableArray(ComparableBoolean);
   const values = [true, false];
 
-  assertEquals(eq.equals(values)(values), true);
-  assertEquals(eq.equals([])([]), true);
-  assertEquals(eq.equals([true])([]), false);
-  assertEquals(eq.equals([true])([false]), false);
-  assertEquals(eq.equals([true])([false, true]), false);
-  assertEquals(eq.equals([true, false])([true, false]), true);
+  assertEquals(eq.compare(values)(values), true);
+  assertEquals(eq.compare([])([]), true);
+  assertEquals(eq.compare([true])([]), false);
+  assertEquals(eq.compare([true])([false]), false);
+  assertEquals(eq.compare([true])([false, true]), false);
+  assertEquals(eq.compare([true, false])([true, false]), true);
 });
 
-Deno.test("Array getOrd", () => {
-  const ord = A.getOrd(N.OrdNumber);
-  const lte = Ord.lte(ord);
+Deno.test("Array getSortableArray", () => {
+  const ord = A.getSortableArray(N.SortableNumber);
 
-  assertEquals(lte([])([]), true);
-  assertEquals(lte([1])([]), true);
-  assertEquals(lte([1, 2])([1]), true);
-  assertEquals(lte([1, 2])([1, 1]), true);
-  assertEquals(lte([])([1]), false);
-  assertEquals(lte([1])([1, 2]), false);
-  assertEquals(lte([1, 2])([2, 1]), false);
+  assertEquals(ord.sort([], []), 0);
+  assertEquals(ord.sort([1], []), 1);
+  assertEquals(ord.sort([1, 2], [1]), 1);
+  assertEquals(ord.sort([1, 2], [1, 1]), 1);
+  assertEquals(ord.sort([], [1]), -1);
+  assertEquals(ord.sort([1], [1, 2]), -1);
+  assertEquals(ord.sort([1, 2], [2, 1]), -1);
 });
 
-Deno.test("Array getSemigroup", () => {
-  const semigroup = A.getSemigroup<number>();
+Deno.test("Array getInitializableArray", () => {
+  const semigroup = A.getInitializableArray<number>();
 
-  assertEquals(semigroup.concat([] as number[])([] as number[]), []);
-  assertEquals(semigroup.concat([4, 5, 6])([1, 2, 3]), [1, 2, 3, 4, 5, 6]);
+  assertEquals(semigroup.combine([])([]), []);
+  assertEquals(semigroup.combine([1])([]), [1]);
+  assertEquals(semigroup.combine([])([1]), [1]);
+  assertEquals(semigroup.combine([4, 5, 6])([1, 2, 3]), [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+  ]);
 });
 
-Deno.test("Array getShow", () => {
-  const show = A.getShow({ show: (n: number) => n.toString() });
+Deno.test("Array getShowableArray", () => {
+  const show = A.getShowableArray({ show: (n: number) => n.toString() });
 
   assertEquals(show.show([]), "ReadonlyArray[]");
   assertEquals(show.show([1, 2, 3]), "ReadonlyArray[1, 2, 3]");
-});
-
-Deno.test("Array getMonoid", () => {
-  const monoid = A.getMonoid<number>();
-
-  assertEquals(monoid.empty(), []);
-  assertEquals(monoid.concat([3, 4])([1, 2]), [1, 2, 3, 4]);
 });

@@ -7,13 +7,14 @@
 
 import type { Kind, Out } from "./kind.ts";
 import type { Literal, Schemable, TupleSchemable } from "./schemable.ts";
-import type { Monad } from "./monad.ts";
+import type { Flatmappable } from "./flatmappable.ts";
 import type { NonEmptyArray } from "./array.ts";
 import type { ReadonlyRecord } from "./record.ts";
-import type { Semigroup } from "./semigroup.ts";
+import type { Combinable } from "./combinable.ts";
 import type { State } from "./state.ts";
 
-import { MonadState } from "./state.ts";
+import { FlatmappableState } from "./state.ts";
+import { fromCombine } from "./combinable.ts";
 import { sequence as sequenceA } from "./array.ts";
 import { sequence as sequenceR } from "./record.ts";
 import { pipe } from "./fn.ts";
@@ -182,7 +183,7 @@ export type JsonSchema =
 export type JsonBuilder<_> = State<JsonSchemaDefinitions, JsonSchema>;
 
 /**
- * Given a JsonBuilder<T> this type will extract T for use in
+ * Given a JsonBuilder<T> this type will unwrap T for use in
  * type level programming.
  */
 export type TypeOf<T> = T extends JsonBuilder<infer A> ? A : never;
@@ -195,25 +196,25 @@ export interface KindJsonBuilder extends Kind {
 }
 
 // Concat JsonSchemaDefinitions
-const { concat }: Semigroup<JsonSchemaDefinitions> = {
-  concat: (a) => (b) => Object.assign({}, a, b),
-};
+const { combine }: Combinable<JsonSchemaDefinitions> = fromCombine(
+  (second) => (first) => Object.assign({}, first, second),
+);
 
-export const MonadJsonBuilder = MonadState as Monad<KindJsonBuilder>;
+export const FlatmappableJsonBuilder = FlatmappableState as Flatmappable<
+  KindJsonBuilder
+>;
 
-export const sequenceArray = sequenceA(MonadJsonBuilder);
+export const sequenceArray = sequenceA(FlatmappableJsonBuilder);
 
-export const sequenceRecord = sequenceR(MonadJsonBuilder);
+export const sequenceRecord = sequenceR(FlatmappableJsonBuilder);
 
-export const of = MonadJsonBuilder.of;
+export const wrap = FlatmappableJsonBuilder.wrap;
 
-export const ap = MonadJsonBuilder.ap;
+export const apply = FlatmappableJsonBuilder.apply;
 
-export const map = MonadJsonBuilder.map;
+export const map = FlatmappableJsonBuilder.map;
 
-export const join = MonadJsonBuilder.join;
-
-export const chain = MonadJsonBuilder.chain;
+export const flatmap = FlatmappableJsonBuilder.flatmap;
 
 /**
  * Creates a JsonBuilder of an unknown type
@@ -229,7 +230,7 @@ export const chain = MonadJsonBuilder.chain;
  * @since 2.0.0
  */
 export function unknown(): JsonBuilder<unknown> {
-  return of({});
+  return wrap({});
 }
 
 /**
@@ -247,7 +248,7 @@ export function unknown(): JsonBuilder<unknown> {
  * @since 2.0.0
  */
 export function string(): JsonBuilder<string> {
-  return of({ type: "string" });
+  return wrap({ type: "string" });
 }
 
 /**
@@ -265,7 +266,7 @@ export function string(): JsonBuilder<string> {
  * @since 2.0.0
  */
 export function number(): JsonBuilder<number> {
-  return of({ type: "number" });
+  return wrap({ type: "number" });
 }
 
 /**
@@ -283,7 +284,7 @@ export function number(): JsonBuilder<number> {
  * @since 2.0.0
  */
 export function boolean(): JsonBuilder<boolean> {
-  return of({ type: "boolean" });
+  return wrap({ type: "boolean" });
 }
 
 /**
@@ -301,7 +302,7 @@ export function boolean(): JsonBuilder<boolean> {
  * @since 2.0.0
  */
 export function date(): JsonBuilder<Date> {
-  return of({ type: "string", format: "date" });
+  return wrap({ type: "string", format: "date" });
 }
 
 /**
@@ -325,7 +326,7 @@ export function literal<A extends NonEmptyArray<Literal>>(
   const _literals = literals.map((l): Exclude<Literal | {}, undefined> =>
     l === undefined ? {} : l
   );
-  return of({ enum: _literals });
+  return wrap({ enum: _literals });
 }
 
 /**
@@ -477,7 +478,8 @@ export function struct<A>(
     map((properties) => ({
       type: "object",
       properties,
-      required: Object.keys(properties).sort(),
+      // deno-lint-ignore no-explicit-any
+      required: Object.keys(properties as any).sort(),
     })),
   ) as JsonBuilder<{ [K in keyof A]: A[K] }>;
 }
@@ -678,14 +680,9 @@ export function lazy<A>(id: string, fn: () => JsonBuilder<A>): JsonBuilder<A> {
     if (returnRef) {
       return [ref, s];
     }
-
     returnRef = true;
     const [schema, defs] = fn()(s);
-    const definitions = pipe(
-      { [id]: schema },
-      concat(defs),
-      concat(s),
-    );
+    const definitions = pipe({ [id]: schema }, combine(defs), combine(s));
     return [ref, definitions];
   };
 }

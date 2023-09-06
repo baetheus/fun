@@ -1,7 +1,16 @@
+/**
+ * The Predicate type represents unary functions that return boolean values.
+ * Typically, these functions indicate the existence of some quality for the
+ * values passed as inputs. Some simple examples of Predicates are postive for
+ * numbers, non-null values, etc.
+ *
+ * @module Predicate
+ * @since 2.0.0
+ */
+
 import type { In, Kind } from "./kind.ts";
-import type { Contravariant } from "./contravariant.ts";
-import type { Monoid } from "./monoid.ts";
-import type { Semigroup } from "./semigroup.ts";
+import type { Premappable } from "./premappable.ts";
+import type { Initializable } from "./initializable.ts";
 
 import { flow } from "./fn.ts";
 
@@ -52,13 +61,13 @@ export interface KindPredicate extends Kind {
  *
  * @example
  * ```ts
- * import { contramap } from "./predicate.ts";
+ * import { premap } from "./predicate.ts";
  * import { pipe } from "./fn.ts";
  *
  * const isGreaterThan3 = (n: number) => n > 3;
  * const isLongerThan3 = pipe(
  *   isGreaterThan3,
- *   contramap((s: string) => s.length),
+ *   premap((s: string) => s.length),
  * );
  *
  * const result1 = isLongerThan3("Hello"); // true
@@ -67,7 +76,7 @@ export interface KindPredicate extends Kind {
  *
  * @since 2.0.0
  */
-export function contramap<I, A>(
+export function premap<I, A>(
   fia: (i: I) => A,
 ): (ua: Predicate<A>) => Predicate<I> {
   return (ua) => flow(fia, ua);
@@ -150,32 +159,32 @@ export function and<A>(second: Predicate<A>) {
 }
 
 /**
- * The canonical implementation of Contravariant for Predicate. It contains
- * the method contramap.
+ * The canonical implementation of Premappable for Predicate. It contains
+ * the method premap.
  *
  * @since 2.0.0
  */
-export const ContravariantPredicate: Contravariant<KindPredicate> = {
-  contramap,
+export const PremappablePredicate: Premappable<KindPredicate> = {
+  premap,
 };
 
 /**
- * Get a Semigroup<Predicate<A>> for any type A that concats using the
+ * Get a Initializable<Predicate<A>> for any type A that combines using the
  * Predicate or function.
  *
  * @example
  * ```ts
- * import { getSemigroupAny } from "./predicate.ts";
+ * import { getInitializableAny } from "./predicate.ts";
  * import { pipe } from "./fn.ts";
  *
- * const SemigroupAny = getSemigroupAny<number>();
+ * const { combine } = getInitializableAny<number>();
  *
  * const lessThanZero = (n: number) => n < 0;
  * const greaterThanFifty = (n: number) => n > 50;
  *
  * const notBetweenZeroAndFifty = pipe(
  *   lessThanZero,
- *   SemigroupAny.concat(greaterThanFifty),
+ *   combine(greaterThanFifty),
  * );
  *
  * const result1 = notBetweenZeroAndFifty(10); // false
@@ -185,27 +194,30 @@ export const ContravariantPredicate: Contravariant<KindPredicate> = {
  *
  * @since 2.0.0
  */
-export function getSemigroupAny<A = never>(): Semigroup<Predicate<A>> {
-  return { concat: or };
+export function getInitializableAny<A = never>(): Initializable<Predicate<A>> {
+  return {
+    combine: or,
+    init: () => () => false,
+  };
 }
 
 /**
- * Get a Semigroup<Predicate<A>> for any type A that concats using the
+ * Get a Initializable<Predicate<A>> for any type A that combines using the
  * Predicate and function.
  *
  * @example
  * ```ts
- * import { getSemigroupAll } from "./predicate.ts";
+ * import { getInitializableAll } from "./predicate.ts";
  * import { pipe } from "./fn.ts";
  *
- * const SemigroupAll = getSemigroupAll<number>();
+ * const { combine } = getInitializableAll<number>();
  *
  * const greaterThanZero = (n: number) => n > 0;
  * const lessThanFifty = (n: number) => n < 50;
  *
  * const betweenZeroAndFifty = pipe(
  *   greaterThanZero,
- *   SemigroupAll.concat(lessThanFifty),
+ *   combine(lessThanFifty)
  * );
  *
  * const result1 = betweenZeroAndFifty(10); // true
@@ -215,26 +227,9 @@ export function getSemigroupAny<A = never>(): Semigroup<Predicate<A>> {
  *
  * @since 2.0.0
  */
-export function getSemigroupAll<A = never>(): Semigroup<Predicate<A>> {
-  return { concat: and };
-}
-
-/**
- * Get a Monoid<Predicate<A>> for any type A that concats using the
- * Predicate or function and defaults to false.
- *
- * @since 2.0.0
- */
-export function getMonoidAny<A = never>(): Monoid<Predicate<A>> {
-  return { concat: or, empty: () => () => false };
-}
-
-/**
- * Get a Monoid<Predicate<A>> for any type A that concats using the
- * Predicate and function and defaults to true.
- *
- * @since 2.0.0
- */
-export function getMonoidAll<A = never>(): Monoid<Predicate<A>> {
-  return { concat: and, empty: () => () => true };
+export function getInitializableAll<A = never>(): Initializable<Predicate<A>> {
+  return {
+    combine: and,
+    init: () => () => true,
+  };
 }

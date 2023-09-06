@@ -1,10 +1,16 @@
-import type { Monoid } from "./monoid.ts";
-import type { Ord, Ordering } from "./ord.ts";
-import type { Semigroup } from "./semigroup.ts";
-import type { Eq } from "./eq.ts";
-import type { Show } from "./show.ts";
+/**
+ * The boolean module contains combinators for working with boolean.
+ *
+ * @module number
+ * @since 2.0.0
+ */
 
-import { fromCompare } from "./ord.ts";
+import type { Ordering, Sortable } from "./sortable.ts";
+import type { Initializable } from "./initializable.ts";
+import type { Comparable } from "./comparable.ts";
+import type { Showable } from "./showable.ts";
+
+import { fromSort } from "./sortable.ts";
 
 /**
  * A function that always returns true.
@@ -34,6 +40,11 @@ export const constTrue = () => true;
  */
 export const constFalse = () => false;
 
+/**
+ * A type guard, indicating that a value is a boolean.
+ *
+ * @since 2.0.0
+ */
 export function isBoolean(a: unknown): a is boolean {
   return typeof a === "boolean";
 }
@@ -86,15 +97,15 @@ export function not(ua: boolean): boolean {
  *
  * @example
  * ```ts
- * import { equals } from "./boolean.ts";
+ * import { compare } from "./boolean.ts";
  *
- * const result1 = equals(true)(false); // false
- * const result2 = equals(true)(true); // true
+ * const result1 = compare(true)(false); // false
+ * const result2 = compare(true)(true); // true
  * ```
  *
  * @since 2.0.0
  */
-export function equals(second: boolean): (first: boolean) => boolean {
+export function compare(second: boolean): (first: boolean) => boolean {
   return (first) => first === second;
 }
 
@@ -105,16 +116,16 @@ export function equals(second: boolean): (first: boolean) => boolean {
  *
  * @example
  * ```ts
- * import { compare } from "./boolean.ts";
+ * import { sort } from "./boolean.ts";
  *
- * const result1 = compare(true, true); // 0
- * const result2 = compare(true, false); // 1
- * const result3 = compare(false, true); // -1
+ * const result1 = sort(true, true); // 0
+ * const result2 = sort(true, false); // 1
+ * const result3 = sort(false, true); // -1
  * ```
  *
  * @since 2.0.0
  */
-export function compare(first: boolean, second: boolean): Ordering {
+export function sort(first: boolean, second: boolean): Ordering {
   return first < second ? -1 : second < first ? 1 : 0;
 }
 
@@ -155,73 +166,51 @@ export function and(second: boolean): (first: boolean) => boolean {
 }
 
 /**
- * The canonical implementation of Ord for boolean. It contains
+ * The canonical implementation of Sortable for boolean. It contains
  * the method lt, lte, equals, gte, gt, min, max, clamp, between,
  * and compare.
  *
  * @since 2.0.0
  */
-export const OrdBoolean: Ord<boolean> = fromCompare(compare);
+export const SortableBoolean: Sortable<boolean> = fromSort(sort);
 
 /**
- * The canonical implementation of Eq for boolean. It contains
+ * The canonical implementation of Comparable for boolean. It contains
  * the method equals.
  *
  * @since 2.0.0
  */
-export const EqBoolean: Eq<boolean> = { equals };
+export const ComparableBoolean: Comparable<boolean> = { compare };
 
 /**
- * The canonical implementation of Semigroup for boolean that
+ * The canonical implementation of Initializable for boolean that
  * combines using the logical and operator. It contains the
- * method concat.
+ * method combine.
  *
  * @since 2.0.0
  */
-export const SemigroupBooleanAll: Semigroup<boolean> = {
-  concat: and,
+export const InitializableBooleanAll: Initializable<boolean> = {
+  combine: and,
+  init: constFalse,
 };
 
 /**
- * The canonical implementation of Semigroup for boolean that
+ * The canonical implementation of Initializable for boolean that
  * combines using the logical or operator. It contains the
- * method concat.
+ * method combine.
  *
  * @since 2.0.0
  */
-export const SemigroupBooleanAny: Semigroup<boolean> = {
-  concat: or,
+export const InitializableBooleanAny: Initializable<boolean> = {
+  combine: or,
+  init: constTrue,
 };
 
 /**
- * The canonical implementation of Monoid for boolean that
- * combines using the logical and operator. It contains the
- * methods concat and empty(constTrue).
- *
- * @since 2.0.0
- */
-export const MonoidBooleanAll: Monoid<boolean> = {
-  concat: and,
-  empty: constTrue,
-};
-
-/**
- * The canonical implementation of Monoid for boolean that
- * combines using the logical or operator. It contains the
- * methods concat and equal(constFalse).
- *
- * @since 2.0.0
- */
-export const MonoidBooleanAny: Monoid<boolean> = {
-  concat: or,
-  empty: constFalse,
-};
-
-/**
- * The canoncial implementation of Show for boolean. It
+ * The canoncial implementation of Showable for boolean. It
  * uses JSON.stringify to turn a boolean into a string.
  * It contains the method show.
  */
-export const ShowBoolean: Show<boolean> = {
+export const ShowableBoolean: Showable<boolean> = {
   show: JSON.stringify,
 };

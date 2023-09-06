@@ -1,15 +1,11 @@
-import type { Applicative } from "./applicative.ts";
-import type { Apply } from "./apply.ts";
-import type { Category } from "./category.ts";
-import type { Chain } from "./chain.ts";
-import type { Profunctor } from "./profunctor.ts";
-import type { Contravariant } from "./contravariant.ts";
-import type { Functor } from "./functor.ts";
 import type { In, Kind, Out } from "./kind.ts";
-import type { Monad } from "./monad.ts";
+import type { Premappable } from "./premappable.ts";
+import type { Mappable } from "./mappable.ts";
+import type { Flatmappable } from "./flatmappable.ts";
+import type { Applicable } from "./applicable.ts";
 
 /**
- * A Fn, also known as Reader or Environment, is a type over a variadic
+ * A Fn, also known as Reader or Environment, is a type over a
  * javascript function. ie. (a: number, b: string) => string can be
  * a Fn. As an algebraic data type, the associated type class instances
  * for Fn are limited to single variable inputs so they will look like
@@ -46,7 +42,7 @@ export type AnyFn = Fn<any, any>;
  * it constrains the Fn type to taking a single
  * argument for the purposes of type substitution
  * while the implementations of Fn combinators such
- * as map, chain, etc are mostly variadic (multiple
+ * as map, flatmap, etc are mostly variadic (multiple
  * arguments).
  *
  * @since 2.0.0
@@ -73,6 +69,22 @@ export interface KindFn extends Kind {
  */
 export function unary<D extends unknown[], A>(fda: (...d: D) => A): Fn<D, A> {
   return (d) => fda(...d);
+}
+
+/**
+ * @since 2.0.0
+ */
+export function curry2<A, B, C>(fn: (a: A, b: B) => C): (a: A) => (b: B) => C {
+  return (a) => (b) => fn(a, b);
+}
+
+/**
+ * @since 2.0.0
+ */
+export function uncurry2<A, B, C>(
+  fn: (b: B) => (a: A) => C,
+): (a: A, b: B) => C {
+  return (a, b) => fn(b)(a);
 }
 
 /**
@@ -570,16 +582,16 @@ export function pipe(
  *
  * @example
  * ```ts
- * import { of } from "./fn.ts";
+ * import { wrap } from "./fn.ts";
  *
- * const alwaysA = of("A");
+ * const alwaysA = wrap("A");
  *
  * const result = alwaysA(null); // "A"
  * ```
  *
  * @since 2.0.0
  */
-export function of<A, D = unknown>(a: A): Fn<D, A> {
+export function wrap<A, D = unknown>(a: A): Fn<D, A> {
   return () => a;
 }
 
@@ -603,14 +615,6 @@ export function constant<A>(a: A): () => A {
 }
 
 /**
- * Apply functions to an unknown function. Useful for pipeing values into
- * functions.
- */
-export function apply<D>(d: D): <A>(ua: Fn<D, A>) => A {
-  return (ua) => ua(d);
-}
-
-/**
  * Given L => A => I and D => A create a new Fn
  * D & L => I. In order to preserve type widening for
  * ap, it only handles unary functions.
@@ -618,22 +622,21 @@ export function apply<D>(d: D): <A>(ua: Fn<D, A>) => A {
  * @example
  * ```ts
  * import * as F from "./fn.ts";
- * import { ap, pipe } from "./fn.ts";
  *
  * type Person = { name: string, age: number };
  *
  * const person = (name: string) => (age: number): Person => ({ name, age });
  *
- * const result = pipe(
- *   F.of(person),
- *   F.ap(F.of("Brandon")),
- *   F.ap(F.of(37)),
+ * const result = F.pipe(
+ *   F.wrap(person),
+ *   F.apply(F.wrap("Brandon")),
+ *   F.apply(F.wrap(37)),
  * ); // Fn<[], Person>
  * ```
  *
  * @since 2.0.0
  */
-export function ap<D, A>(
+export function apply<D, A>(
   ua: Fn<D, A>,
 ): <I>(ufai: Fn<D, (a: A) => I>) => Fn<D, I> {
   return (ufai) => (d) => ufai(d)(ua(d));
@@ -646,9 +649,9 @@ export function ap<D, A>(
  *
  * @example
  * ```ts
- * import { map, of, pipe } from "./fn.ts";
+ * import { map, wrap, pipe } from "./fn.ts";
  *
- * const result = pipe(of(1), map(n => n + 1)); // 2
+ * const result = pipe(wrap(1), map(n => n + 1)); // 2
  * ```
  *
  * @since 2.0.0
@@ -660,30 +663,6 @@ export function map<A, I>(
 }
 
 /**
- * Collapse a curried function D => D => A into
- * D => A.
- *
- * @example
- * ```ts
- * import { join } from "./fn.ts";
- *
- * const add = (n: number) => (m: number) => m + n;
- * const dup = join(add);
- *
- * const result1 = dup(1); // 2
- * const result2 = dup(2); // 4
- * const result3 = dup(10); // 20
- * ```
- *
- * @since 2.0.0
- */
-export function join<A, D = unknown>(
-  tta: Fn<D, Fn<D, A>>,
-): Fn<D, A> {
-  return (d) => tta(d)(d);
-}
-
-/**
  * Create a new Fn by combining A => L => I with
  * D => A to produce D & L => I. This is equivalent
  * to ap with the first two arguments switched. It is
@@ -692,28 +671,28 @@ export function join<A, D = unknown>(
  *
  * @example
  * ```ts
- * import { pipe, chain } from "./fn.ts";
+ * import { pipe, flatmap } from "./fn.ts";
  * const add = (n: number) => (m: number) => n + m;
  *
- * const chainer = pipe(
+ * const flatmaper = pipe(
  *   (n: number) => n,
- *   chain(add),
- *   chain(add),
- *   chain(add),
- *   chain(add),
- *   chain(add),
+ *   flatmap(add),
+ *   flatmap(add),
+ *   flatmap(add),
+ *   flatmap(add),
+ *   flatmap(add),
  * );
  *
- * const result1 = chainer(1); // 6
- * const result2 = chainer(2); // 12
- * const result3 = chainer(3); // 18
+ * const result1 = flatmaper(1); // 6
+ * const result2 = flatmaper(2); // 12
+ * const result3 = flatmaper(3); // 18
  * ```
  *
  * @since 2.0.0
  */
-export function chain<A, I, D>(
-  fati: (a: A) => Fn<D, I>,
-): (ta: Fn<D, A>) => Fn<D, I> {
+export function flatmap<A, I, L>(
+  fati: (a: A) => Fn<L, I>,
+): <D>(ta: Fn<D, A>) => Fn<D & L, I> {
   return (ta) => (d) => fati(ta(d))(d);
 }
 
@@ -723,14 +702,14 @@ export function chain<A, I, D>(
  *
  * @example
  * ```ts
- * import { contramap, pipe } from "./fn.ts";
+ * import { premap, pipe } from "./fn.ts";
  *
  * const equalsZero = (n: number): boolean => n === 0;
  * const strLength = (s: string): number => s.length;
  *
  * const isEmpty = pipe(
  *   equalsZero,
- *   contramap(strLength),
+ *   premap(strLength),
  * );
  *
  * const result1 = isEmpty(""); // true
@@ -739,14 +718,14 @@ export function chain<A, I, D>(
  *
  * @since 2.0.0
  */
-export function contramap<L, D>(
+export function premap<L, D>(
   fld: (l: L) => D,
 ): <A>(ta: Fn<D, A>) => Fn<L, A> {
   return (ta) => (d) => ta(fld(d));
 }
 
 /**
- * A combination of contramap and map, dimap applies fld
+ * A combination of premap and map, dimap applies fld
  * to the input of a function and fai to the output.
  *
  * @example
@@ -848,66 +827,47 @@ export function compose<A, I>(
   return (first) => flow(first, second);
 }
 
-/**
- * The canonical implementation of Profunctor for Fn. It contains
- * the method dimap.
- *
- * @since 2.0.0
- */
-export const ProfunctorFn: Profunctor<KindFn> = { dimap };
+// /**
+//  * The canonical implementation of Profunctor for Fn. It contains
+//  * the method dimap.
+//  *
+//  * @since 2.0.0
+//  */
+// export const ProfunctorFn: Profunctor<KindFn> = { dimap };
 
 /**
- * The canonical implementation of Functor for Fn. It contains
+ * The canonical implementation of Mappable for Fn. It contains
  * the method map.
  *
  * @since 2.0.0
  */
-export const FunctorFn: Functor<KindFn> = { map };
+export const MappableFn: Mappable<KindFn> = { map };
 
 /**
- * The canonical implementation of Apply for Fn. It contains
- * the methods ap and map.
- *
- * @since 2.0.0
- */
-export const ApplyFn: Apply<KindFn> = { map, ap };
-
-/**
- * The canonical implementation of Applicative for Fn. It contains
+ * The canonical implementation of Applicable for Fn. It contains
  * the methods of, ap, and map.
  *
  * @since 2.0.0
  */
-export const ApplicativeFn: Applicative<KindFn> = { of, ap, map };
+export const ApplicableFn: Applicable<KindFn> = { apply, map, wrap };
 
 /**
- * The canonical implementation of Chain for Fn. It contains
- * the methods ap, map, and chain.
+ * The canonical implementation of Flatmappable for Fn. It contains
+ * the methods of, ap, map, join, and flatmap.
  *
  * @since 2.0.0
  */
-export const ChainFn: Chain<KindFn> = { ap, map, chain };
+export const FlatmappableFn: Flatmappable<KindFn> = {
+  apply,
+  flatmap,
+  map,
+  wrap,
+};
 
 /**
- * The canonical implementation of Monad for Fn. It contains
- * the methods of, ap, map, join, and chain.
+ * The canonical implementation of Premappable for Fn. It contains
+ * the method premap.
  *
  * @since 2.0.0
  */
-export const MonadFn: Monad<KindFn> = { of, ap, map, join, chain };
-
-/**
- * The canonical implementation of Contravariant for Fn. It contains
- * the method contramap.
- *
- * @since 2.0.0
- */
-export const ContravariantFn: Contravariant<KindFn> = { contramap };
-
-/**
- * The canonical implementation of Category for Fn. It contains
- * the methods id and compose.
- *
- * @since 2.0.0
- */
-export const CategoryFn: Category<KindFn> = { id, compose };
+export const PremappableFn: Premappable<KindFn> = { premap };

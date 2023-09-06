@@ -29,17 +29,17 @@
  * @since 2.0.0
  */
 import type { $, Kind } from "./kind.ts";
-import type { ReadonlyRecord } from "./record.ts";
-import type { Tree } from "./tree.ts";
+import type { Comparable } from "./comparable.ts";
+import type { Initializable } from "./initializable.ts";
 import type { Either } from "./either.ts";
-import type { Monad } from "./monad.ts";
-import type { Monoid } from "./monoid.ts";
+import type { Flatmappable } from "./flatmappable.ts";
 import type { Option } from "./option.ts";
 import type { Pair } from "./pair.ts";
 import type { Predicate } from "./predicate.ts";
+import type { ReadonlyRecord } from "./record.ts";
 import type { Refinement } from "./refinement.ts";
-import type { Eq } from "./eq.ts";
 import type { Traversable } from "./traversable.ts";
+import type { Tree } from "./tree.ts";
 
 import * as I from "./identity.ts";
 import * as O from "./option.ts";
@@ -51,7 +51,7 @@ import * as P from "./pair.ts";
 import { TraversableSet } from "./set.ts";
 import { TraversableTree } from "./tree.ts";
 import { isNotNil } from "./nilable.ts";
-import { concatAll as getConcatAll } from "./monoid.ts";
+import { getCombineAll } from "./initializable.ts";
 import { dimap, flow, identity, over, pipe } from "./fn.ts";
 
 /**
@@ -157,7 +157,7 @@ export function _unsafeCast<U extends Tag, V extends Tag, S, A>(
     return (s: S) => [viewer.view(s)] as ReturnType<Out>;
     // Lens => AffineFold
   } else if (tag === AffineTag && viewer.tag == LensTag) {
-    return (s) => O.of(viewer.view(s)) as ReturnType<Out>;
+    return (s) => O.wrap(viewer.view(s)) as ReturnType<Out>;
   }
   // Non-valid casts will throw an error at runtime.
   // This is not reachable with the combinators in this lib.
@@ -165,18 +165,18 @@ export function _unsafeCast<U extends Tag, V extends Tag, S, A>(
 }
 
 /**
- * Recover a Monad from an Optic Tag. The following cases are handled:
+ * Recover a Flatmappable from an Optic Tag. The following cases are handled:
  *
- * * LensTag => MonadIdentity
- * * AffineTag => MonadOption
- * * FoldTag => MonadArray
+ * * LensTag => FlatmappableIdentity
+ * * AffineTag => FlatmappableOption
+ * * FoldTag => FlatmappableArray
  */
-function getMonad<T extends Tag>(tag: T): Monad<ToKind<T>> {
+function getFlatmappable<T extends Tag>(tag: T): Flatmappable<ToKind<T>> {
   return (tag === FoldTag
-    ? A.MonadArray
+    ? A.FlatmappableArray
     : tag === AffineTag
-    ? O.MonadOption
-    : I.MonadIdentity) as unknown as Monad<ToKind<T>>;
+    ? O.FlatmappableOption
+    : I.FlatmappableIdentity) as unknown as Flatmappable<ToKind<T>>;
 }
 
 /**
@@ -586,16 +586,16 @@ export function fold<S, A>(
  *
  * const set = <A>() => O.refold<ReadonlySet<A>, A>(
  *   Array.from,
- *   S.of,
+ *   S.wrap,
  *   S.map,
  * );
  *
  * const numberSet = set<number>();
  *
  * const result1 = numberSet.view(S.set(1, 2, 3)); // [1, 2, 3]
- * const result2 = numberSet.view(S.empty()); // []
+ * const result2 = numberSet.view(S.init()); // []
  * const result3 = numberSet.review(1); // Set(1)
- * const result4 = numberSet.modify(n => n + 1)(S.of(1)); // Set(2)
+ * const result4 = numberSet.modify(n => n + 1)(S.wrap(1)); // Set(2)
  * ```
  *
  * @since 2.0.0
@@ -619,11 +619,11 @@ export function refold<S, A>(
  *
  * const isNonEmpty = <A>(arr: ReadonlyArray<A>): arr is NonEmptyArray<A> =>
  *   arr.length > 0;
- * const nonempty = O.fromPredicate(isNonEmpty<number>);
+ * const noninit = O.fromPredicate(isNonEmpty<number>);
  *
- * const result1 = nonempty.view([]); // None
- * const result2 = nonempty.view([1]); // Some([1]) as NonEmptyArray
- * const result3 = nonempty.review([1]); // [1] Cast NonEmptyArray as Array
+ * const result1 = noninit.view([]); // None
+ * const result2 = noninit.view([1]); // Some([1]) as NonEmptyArray
+ * const result3 = noninit.review([1]); // [1] Cast NonEmptyArray as Array
  * ```
  *
  * @since 2.0.0
@@ -749,7 +749,7 @@ export function replace<A>(a: A): <S>(
  *
  * const numberSet = O.refold<ReadonlySet<number>, number>(
  *   Array.from,
- *   S.of,
+ *   S.wrap,
  *   S.map,
  * );
  *
@@ -839,7 +839,7 @@ export function compose<V extends Tag, A, I>(
     first: Optic<U, S, A>,
   ): Optic<Align<U, V>, S, I> => {
     const tag = align(first.tag, second.tag);
-    const _chain = getMonad(tag).chain;
+    const _chain = getFlatmappable(tag).flatmap;
     const _first = _unsafeCast(first, tag);
     const _second = _unsafeCast(second, tag);
 
@@ -862,7 +862,7 @@ export function compose<V extends Tag, A, I>(
  *
  * const set = <A>() => O.refold<ReadonlySet<A>, A>(
  *   Array.from,
- *   S.of,
+ *   S.wrap,
  *   S.map,
  * );
  *
@@ -890,7 +890,7 @@ export function composeReviewer<A, I>(
  * ```ts
  * import * as O from "./optics.ts";
  *
- * const viewer = O.of(1);
+ * const viewer = O.wrap(1);
  *
  * const result1 = viewer.view(2); // 1
  * const result2 = viewer.view(100); // 1
@@ -898,7 +898,7 @@ export function composeReviewer<A, I>(
  *
  * @since 2.0.0
  */
-export function of<A, S = unknown>(a: A): Viewer<LensTag, S, A> {
+export function wrap<A, S = unknown>(a: A): Viewer<LensTag, S, A> {
   return viewer(LensTag, (_: S) => a);
 }
 
@@ -933,7 +933,7 @@ export function imap<A, I>(
 
 /**
  * Map over the Viewer portion of an optic. This effectively uses the map from
- * the Monad associated with the tag of the optic.
+ * the Flatmappable associated with the tag of the optic.
  *
  * @example
  * ```ts
@@ -956,7 +956,7 @@ export function map<A, I>(
   fai: (a: A) => I,
 ): <T extends Tag, S>(first: Viewer<T, S, A>) => Viewer<T, S, I> {
   return ({ tag, view }) => {
-    const _map = getMonad(tag).map;
+    const _map = getFlatmappable(tag).map;
     return viewer(tag, flow(view, _map(fai)));
   };
 }
@@ -980,7 +980,7 @@ export function map<A, I>(
  *   O.filter(p => p.age > 18)
  * );
  *
- * const formatted = pipe(fmt, O.ap(adults));
+ * const formatted = pipe(fmt, O.apply(adults));
  *
  * const result = formatted.view({
  *   people: [
@@ -993,14 +993,14 @@ export function map<A, I>(
  *
  * @since 2.0.0
  */
-export function ap<V extends Tag, S, A>(
+export function apply<V extends Tag, S, A>(
   second: Viewer<V, S, A> | Optic<V, S, A>,
 ): <U extends Tag, I>(
   first: Viewer<U, S, (a: A) => I> | Optic<U, S, (a: A) => I>,
 ) => Viewer<Align<U, V>, S, I> {
   return (first) => {
     const tag = align(first.tag, second.tag);
-    const _ap = getMonad(tag).ap;
+    const _ap = getFlatmappable(tag).apply;
     const _first = _unsafeCast(first, tag);
     const _second = _unsafeCast(second, tag);
     return viewer(tag, (s) => pipe(_first(s), _ap(_second(s))));
@@ -1227,7 +1227,7 @@ export function filter<A>(
 }
 
 /**
- * Construct a composable combinator from an instance of Eq and a key of a map.
+ * Construct a composable combinator from an instance of Comparable and a key of a map.
  * The combinator can then be composed with an existing optic to access or
  * remove the value in the map.
  *
@@ -1235,27 +1235,27 @@ export function filter<A>(
  * ```ts
  * import * as O from "./optics.ts";
  * import * as M from "./map.ts";
- * import { EqString, toLowerCase } from "./string.ts";
- * import { contramap } from "./eq.ts";
+ * import { ComparableString, toLowerCase } from "./string.ts";
+ * import { premap } from "./comparable.ts";
  * import { constNone } from "./option.ts";
  * import { pipe } from "./fn.ts";
  *
  * type Words = ReadonlyMap<string, number>;
  *
- * const insensitive = pipe(EqString, contramap(toLowerCase));
+ * const insensitive = pipe(ComparableString, premap(toLowerCase));
  *
  * const fun = pipe(O.id<Words>(), O.atMap(insensitive)("fun"));
  * const remove = pipe(fun, O.replace(constNone()));
  *
  * const result1 = pipe(fun, O.view(new Map([["FUN", 100]]))); // Some(100)
- * const result2 = pipe(fun, O.view(M.empty())); // None
+ * const result2 = pipe(fun, O.view(M.init())); // None
  * const result3 = remove(new Map([["FUN", 100], ["not", 10]]));
  * // Map("not": 10);
  * ```
  *
  * @since 2.0.0
  */
-export function atMap<B>(eq: Eq<B>): (key: B) => <U extends Tag, S, A>(
+export function atMap<B>(eq: Comparable<B>): (key: B) => <U extends Tag, S, A>(
   first: Optic<U, S, ReadonlyMap<B, A>>,
 ) => Optic<Align<U, LensTag>, S, Option<A>> {
   return (key) => {
@@ -1305,19 +1305,19 @@ export function traverse<T extends Kind>(
   first: Optic<U, S, $<T, [A, B, C], [D], [E]>>,
 ) => Optic<Align<U, FoldTag>, S, A> {
   return compose(fold(
-    T.reduce((as, a) => [...as, a], A.empty()),
+    T.reduce((as, a) => [...as, a], A.init()),
     T.map,
   ));
 }
 
 /**
- * Given a Monoid<I> and a function A -> I, collect all values A focused on by an
+ * Given a Combinable<I> and a function A -> I, collect all values A focused on by an
  * optic into a single value I.
  *
  * @example
  * ```ts
  * import * as O from "./optics.ts";
- * import { MonoidNumberSum } from "./number.ts";
+ * import { InitializableNumberSum } from "./number.ts";
  * import { pipe, identity } from "./fn.ts";
  *
  * type Person = { name: string, age: number };
@@ -1327,7 +1327,7 @@ export function traverse<T extends Kind>(
  *   O.id<People>(),
  *   O.array,
  *   O.prop("age"),
- *   O.concatAll(MonoidNumberSum, identity),
+ *   O.combineAll(InitializableNumberSum, identity),
  * );
  *
  * const people: People = [
@@ -1343,11 +1343,14 @@ export function traverse<T extends Kind>(
  *
  * @since 2.0.0
  */
-export function concatAll<A, I>(M: Monoid<I>, fai: (a: A) => I) {
-  const _concatAll = getConcatAll(M);
+export function combineAll<A, I>(
+  initializable: Initializable<I>,
+  fai: (a: A) => I,
+) {
+  const _combineAll = getCombineAll(initializable);
   return <U extends Tag, S>(first: Optic<U, S, A>): (s: S) => I => {
     const view = _unsafeCast(first, FoldTag);
-    return flow(view, A.map(fai), _concatAll);
+    return flow(view, A.map(fai), (is) => _combineAll(...is));
   };
 }
 
@@ -1486,7 +1489,7 @@ export const nilable: <U extends Tag, S, A>(
  */
 export const some: <U extends Tag, S, A>(
   optic: Optic<U, S, Option<A>>,
-) => Optic<Align<U, AffineTag>, S, A> = compose(prism(identity, O.of, O.map));
+) => Optic<Align<U, AffineTag>, S, A> = compose(prism(identity, O.wrap, O.map));
 
 /**
  * A preconstructed composed prism that focuses on the Right value of an Either.
@@ -1539,7 +1542,7 @@ export const right: <U extends Tag, S, B, A>(
 export const left: <U extends Tag, S, B, A>(
   optic: Optic<U, S, Either<B, A>>,
 ) => Optic<Align<U, AffineTag>, S, B> = compose(
-  prism(E.getLeft, E.left, E.mapLeft),
+  prism(E.getLeft, E.left, E.mapSecond),
 );
 
 /**
@@ -1586,4 +1589,4 @@ export const first: <U extends Tag, S, B, A>(
  */
 export const second: <U extends Tag, S, B, A>(
   optic: Optic<U, S, Pair<A, B>>,
-) => Optic<Align<U, LensTag>, S, B> = compose(lens(P.getSecond, P.mapLeft));
+) => Optic<Align<U, LensTag>, S, B> = compose(lens(P.getSecond, P.mapSecond));

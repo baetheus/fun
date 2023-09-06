@@ -4,7 +4,7 @@ import {
 } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
 import * as P from "../pair.ts";
-import { MonoidNumberSum, ShowNumber } from "../number.ts";
+import { InitializableNumberSum, ShowableNumber } from "../number.ts";
 import { pipe } from "../fn.ts";
 
 Deno.test("Pair pair", () => {
@@ -13,6 +13,26 @@ Deno.test("Pair pair", () => {
 
 Deno.test("Pair dup", () => {
   assertEquals(P.dup(1), [1, 1]);
+});
+
+Deno.test("Pair merge", () => {
+  assertEquals(
+    pipe(
+      P.pair((n: number) => n + 1, 1),
+      P.merge,
+    ),
+    2,
+  );
+});
+
+Deno.test("Pair mergeSecond", () => {
+  assertEquals(
+    pipe(
+      P.pair(1, (n: number) => n + 1),
+      P.mergeSecond,
+    ),
+    2,
+  );
 });
 
 Deno.test("Pair getFirst", () => {
@@ -39,26 +59,16 @@ Deno.test("Pair map", () => {
   assertEquals(pipe(P.pair(1, 2), P.map((n) => n + 1)), [2, 2]);
 });
 
-Deno.test("Pair mapLeft", () => {
-  assertEquals(pipe(P.pair(1, 2), P.mapLeft((n) => n + 1)), [1, 3]);
+Deno.test("Pair mapSecond", () => {
+  assertEquals(pipe(P.pair(1, 2), P.mapSecond((n) => n + 1)), [1, 3]);
 });
 
 Deno.test("Pair bimap", () => {
   assertEquals(pipe(P.pair(1, 2), P.bimap((n) => n + 1, (n) => n + 1)), [2, 3]);
 });
 
-Deno.test("Pair extract", () => {
-  assertEquals(P.extract(P.pair(1, 2)), 1);
-});
-
-Deno.test("Pair extend", () => {
-  assertEquals(
-    pipe(
-      P.pair(1, 2),
-      P.extend(([first, second]) => first + second),
-    ),
-    [3, 2],
-  );
+Deno.test("Pair unwrap", () => {
+  assertEquals(P.unwrap(P.pair(1, 2)), 1);
 });
 
 Deno.test("Pair reduce", () => {
@@ -69,7 +79,7 @@ Deno.test("Pair reduce", () => {
 });
 
 Deno.test("Pair traverse", () => {
-  const M = P.getRightMonad(MonoidNumberSum);
+  const M = P.getRightFlatmappable(InitializableNumberSum);
   const traversePair = P.traverse(M);
   assertEquals(
     pipe(
@@ -80,28 +90,17 @@ Deno.test("Pair traverse", () => {
   );
 });
 
-Deno.test("Pair FunctorPair", () => {
-  assertStrictEquals(P.FunctorPair.map, P.map);
+Deno.test("Pair MappablePair", () => {
+  assertStrictEquals(P.MappablePair.map, P.map);
 });
 
-Deno.test("Pair BifunctorPair", () => {
-  assertStrictEquals(P.BifunctorPair.bimap, P.bimap);
-  assertStrictEquals(P.BifunctorPair.mapLeft, P.mapLeft);
+Deno.test("Pair BimappablePair", () => {
+  assertStrictEquals(P.BimappablePair.map, P.map);
+  assertStrictEquals(P.BimappablePair.mapSecond, P.mapSecond);
 });
 
-Deno.test("Pair ComonadPair", () => {
-  assertStrictEquals(P.ComonadPair.extract, P.extract);
-  assertStrictEquals(P.ComonadPair.extend, P.extend);
-  assertStrictEquals(P.ComonadPair.map, P.map);
-});
-
-Deno.test("Pair ExtendPair", () => {
-  assertStrictEquals(P.ExtendPair.extend, P.extend);
-  assertStrictEquals(P.ExtendPair.map, P.map);
-});
-
-Deno.test("Pair FoldablePair", () => {
-  assertStrictEquals(P.FoldablePair.reduce, P.reduce);
+Deno.test("Pair ReduciblePair", () => {
+  assertStrictEquals(P.ReduciblePair.reduce, P.reduce);
 });
 
 Deno.test("Pair TraversablePair", () => {
@@ -110,13 +109,18 @@ Deno.test("Pair TraversablePair", () => {
   assertStrictEquals(P.TraversablePair.map, P.map);
 });
 
-Deno.test("Pair getRightMonad", () => {
-  // TODO Work on generic Monad tests
-  const { of, ap, map, join, chain } = P.getRightMonad(MonoidNumberSum);
+Deno.test("Pair getRightFlatmappable", () => {
+  // TODO Work on generic Flatmappable tests
+  const { apply, flatmap, map, wrap } = P.getRightFlatmappable(
+    InitializableNumberSum,
+  );
 
-  assertEquals(of(1), [1, MonoidNumberSum.empty()]);
+  assertEquals(wrap(1), [1, InitializableNumberSum.init()]);
   assertEquals(
-    pipe(P.pair((s: string) => s.toUpperCase(), 5), ap(P.pair("brandon", 10))),
+    pipe(
+      P.pair((s: string) => s.toUpperCase(), 5),
+      apply(P.pair("brandon", 10)),
+    ),
     [
       "BRANDON",
       15,
@@ -126,17 +130,16 @@ Deno.test("Pair getRightMonad", () => {
     "BRANDON",
     10,
   ]);
-  assertEquals(pipe(P.pair(P.pair("brandon", 10), 5), join), ["brandon", 15]);
   assertEquals(
     pipe(
       P.pair("brandon", 10),
-      chain((name) => P.pair(name.toUpperCase(), -5)),
+      flatmap((name) => P.pair(name.toUpperCase(), -5)),
     ),
     ["BRANDON", 5],
   );
 });
 
-Deno.test("Pair getShow", () => {
-  const { show } = P.getShow(ShowNumber, ShowNumber);
+Deno.test("Pair getShowable", () => {
+  const { show } = P.getShowable(ShowableNumber, ShowableNumber);
   assertEquals(show(P.pair(1, 2)), "Pair(1, 2)");
 });

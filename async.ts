@@ -1,6 +1,9 @@
 import type { Kind, Out } from "./kind.ts";
-import type { Monad } from "./monad.ts";
+import type { Applicable } from "./applicable.ts";
+import type { Flatmappable } from "./flatmappable.ts";
+import type { Mappable } from "./mappable.ts";
 import type { Sync } from "./sync.ts";
+import type { Wrappable } from "./wrappable.ts";
 
 import { resolve, wait } from "./promise.ts";
 import { handleThrow } from "./fn.ts";
@@ -9,10 +12,6 @@ export type Async<A> = Sync<Promise<A>>;
 
 export interface KindAsync extends Kind {
   readonly kind: Async<Out<this, 0>>;
-}
-
-export function of<A>(a: A): Async<A> {
-  return () => resolve(a);
 }
 
 export function delay(ms: number): <A>(ma: Async<A>) => Async<A> {
@@ -37,44 +36,41 @@ export function tryCatch<AS extends unknown[], A>(
   };
 }
 
+export function wrap<A>(a: A): Async<A> {
+  return () => resolve(a);
+}
+
 export function map<A, I>(fai: (a: A) => I): (ta: Async<A>) => Async<I> {
   return (ta) => () => ta().then(fai);
 }
 
-export function apParallel<A>(
+export function apply<A>(
   ua: Async<A>,
 ): <I>(ufai: Async<(a: A) => I>) => Async<I> {
   return (ufai) => () => Promise.all([ufai(), ua()]).then(([fai, a]) => fai(a));
 }
 
-export function apSequential<A>(
+export function applySequential<A>(
   ua: Async<A>,
 ): <I>(ufai: Async<(a: A) => I>) => Async<I> {
   return (ufai) => async () => (await ufai())(await ua());
 }
 
-export function join<A>(tta: Async<Async<A>>): Async<A> {
-  return () => tta().then((ta) => ta());
-}
-
-export function chain<A, I>(
+export function flatmap<A, I>(
   fati: (a: A) => Async<I>,
 ): (ta: Async<A>) => Async<I> {
   return (ta) => () => ta().then((a) => fati(a)());
 }
 
-export const MonadAsyncParallel: Monad<KindAsync> = {
-  of,
-  ap: apParallel,
-  map,
-  join,
-  chain,
-};
+export const WrappableAsync: Wrappable<KindAsync> = { wrap };
 
-export const MonadAsyncSequential: Monad<KindAsync> = {
-  of,
-  ap: apSequential,
+export const ApplicableAsync: Applicable<KindAsync> = { apply, map, wrap };
+
+export const MappableAsync: Mappable<KindAsync> = { map };
+
+export const FlatmappableAsync: Flatmappable<KindAsync> = {
+  apply,
+  flatmap,
   map,
-  join,
-  chain,
+  wrap,
 };

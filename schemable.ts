@@ -2,15 +2,16 @@
  * Schemable presents a unified algebra for parsing, decoding
  * guarding, or otherwise building typed js structures in
  * TypeScript.
+ *
+ * @module Schemable
+ * @since 2.0.0
  */
 
-import type { $, Kind, TypeClass } from "./kind.ts";
+import type { $, Hold, Kind, Spread } from "./kind.ts";
 import type { NonEmptyArray } from "./array.ts";
 import type { ReadonlyRecord } from "./record.ts";
 
 import { memoize } from "./fn.ts";
-
-export type Spread<A> = { [K in keyof A]: A[K] } extends infer B ? B : never;
 
 /**
  * These are the super-types that a Literal schema must extent.
@@ -26,91 +27,91 @@ export type Literal = string | number | boolean | null | undefined;
  *
  * @since 2.0.0
  */
-export type UnknownSchemable<U extends Kind> = TypeClass<U> & {
+export interface UnknownSchemable<U extends Kind> extends Hold<U> {
   readonly unknown: <B, C, D, E>() => $<U, [unknown, B, C], [D], [E]>;
-};
+}
 
 /**
  * Wraps a string type in Schemable.
  *
  * @since 2.0.0
  */
-export type StringSchemable<U extends Kind> = TypeClass<U> & {
+export interface StringSchemable<U extends Kind> extends Hold<U> {
   readonly string: <B, C, D, E>() => $<U, [string, B, C], [D], [E]>;
-};
+}
 
 /**
  * Wraps a number type in Schemable.
  *
  * @since 2.0.0
  */
-export type NumberSchemable<U extends Kind> = TypeClass<U> & {
+export interface NumberSchemable<U extends Kind> extends Hold<U> {
   readonly number: <B, C, D, E>() => $<U, [number, B, C], [D], [E]>;
-};
+}
 
 /**
  * Wraps a boolean type in Schemable.
  *
  * @since 2.0.0
  */
-export type BooleanSchemable<U extends Kind> = TypeClass<U> & {
+export interface BooleanSchemable<U extends Kind> extends Hold<U> {
   readonly boolean: <B, C, D, E>() => $<U, [boolean, B, C], [D], [E]>;
-};
+}
 
 /**
  * Wraps a union of literals in Schemable.
  *
  * @since 2.0.0
  */
-export type LiteralSchemable<U extends Kind> = TypeClass<U> & {
+export interface LiteralSchemable<U extends Kind> extends Hold<U> {
   readonly literal: <A extends NonEmptyArray<Literal>, B, C, D, E>(
     ...s: A
   ) => $<U, [A[number], B, C], [D], [E]>;
-};
+}
 
 /**
  * Takes a Schemable<A> and returns a Schemable<A | null>;
  *
  * @since 2.0.0
  */
-export type NullableSchemable<U extends Kind> = TypeClass<U> & {
+export interface NullableSchemable<U extends Kind> extends Hold<U> {
   readonly nullable: <A, B, C, D, E>(
     or: $<U, [A, B, C], [D], [E]>,
   ) => $<U, [A | null, B, C], [D], [E]>;
-};
+}
 
 /**
  * Takes a Schemable<A> and returns a Schemable<A | undefined>;
  *
  * @since 2.0.0
  */
-export type UndefinableSchemable<U extends Kind> = TypeClass<U> & {
+export interface UndefinableSchemable<U extends Kind> extends Hold<U> {
   readonly undefinable: <A, B, C, D, E>(
     or: $<U, [A, B, C], [D], [E]>,
   ) => $<U, [A | undefined, B, C], [D], [E]>;
-};
+}
 
 /**
  * Takes a Schemable<A> and returns a Schemable<ReadonlyRecord<A>>
  *
  * @since 2.0.0
  */
-export type RecordSchemable<U extends Kind> = TypeClass<U> & {
+export interface RecordSchemable<U extends Kind> extends Hold<U> {
   readonly record: <A, B, C, D, E>(
     codomain: $<U, [A, B, C], [D], [E]>,
   ) => $<U, [ReadonlyRecord<A>, B, C], [D], [E]>;
-};
+}
 
 /**
  * Takes a Schemable<A> and returns a Schemable<ReadonlyArray<A>>
  *
  * @since 2.0.0
  */
-export type ArraySchemable<U extends Kind> = TypeClass<U> & {
+export interface ArraySchemable<U extends Kind> extends Hold<U> {
   readonly array: <A, B, C, D, E>(
     item: $<U, [A, B, C], [D], [E]>,
   ) => $<U, [ReadonlyArray<A>, B, C], [D], [E]>;
-};
+}
 
 /**
  * Takes a tuple of Schemables and returns a Schemable
@@ -122,12 +123,12 @@ export type ArraySchemable<U extends Kind> = TypeClass<U> & {
  *
  * @since 2.0.0
  */
-export type TupleSchemable<U extends Kind> = TypeClass<U> & {
+export interface TupleSchemable<U extends Kind> extends Hold<U> {
   // deno-lint-ignore no-explicit-any
   readonly tuple: <A extends any[], B, C, D, E>(
     ...items: { readonly [K in keyof A]: $<U, [A[K], B, C], [D], [E]> }
   ) => $<U, [{ [K in keyof A]: A[K] }, B, C], [D], [E]>;
-};
+}
 
 /**
  * Takes a struct of Schemables and returns a Schemable
@@ -139,11 +140,11 @@ export type TupleSchemable<U extends Kind> = TypeClass<U> & {
  *
  * @since 2.0.0
  */
-export type StructSchemable<U extends Kind> = TypeClass<U> & {
+export interface StructSchemable<U extends Kind> extends Hold<U> {
   readonly struct: <A, B, C, D, E>(
     items: { readonly [K in keyof A]: $<U, [A[K], B, C], [D], [E]> },
   ) => $<U, [{ readonly [K in keyof A]: A[K] }, B, C], [D], [E]>;
-};
+}
 
 /**
  * Takes a struct of Schemables and returns a Schemable
@@ -155,11 +156,11 @@ export type StructSchemable<U extends Kind> = TypeClass<U> & {
  *
  * @since 2.0.0
  */
-export type PartialSchemable<U extends Kind> = TypeClass<U> & {
+export interface PartialSchemable<U extends Kind> extends Hold<U> {
   readonly partial: <A, B, C, D, E>(
     items: { readonly [K in keyof A]: $<U, [A[K], B, C], [D], [E]> },
   ) => $<U, [{ readonly [K in keyof A]?: A[K] }, B, C], [D], [E]>;
-};
+}
 
 /**
  * Takes two schemables, left and right, and returns
@@ -168,13 +169,13 @@ export type PartialSchemable<U extends Kind> = TypeClass<U> & {
  *
  * @since 2.0.0
  */
-export type IntersectSchemable<U extends Kind> = TypeClass<U> & {
+export interface IntersectSchemable<U extends Kind> extends Hold<U> {
   readonly intersect: <I, B, C, D, E>(
     right: $<U, [I, B, C], [D], [E]>,
   ) => <A>(
     left: $<U, [A, B, C], [D], [E]>,
   ) => $<U, [Spread<A & I>, B, C], [D], [E]>;
-};
+}
 
 /**
  * Takes two schemables, left and right, and returns
@@ -183,11 +184,11 @@ export type IntersectSchemable<U extends Kind> = TypeClass<U> & {
  *
  * @since 2.0.0
  */
-export type UnionSchemable<U extends Kind> = TypeClass<U> & {
+export interface UnionSchemable<U extends Kind> extends Hold<U> {
   readonly union: <I, B, C, D, E>(
     right: $<U, [I, B, C], [D], [E]>,
   ) => <A>(left: $<U, [A, B, C], [D], [E]>) => $<U, [A | I, B, C], [D], [E]>;
-};
+}
 
 /**
  * Takes an id and a thunk returning a schemable and
@@ -197,12 +198,12 @@ export type UnionSchemable<U extends Kind> = TypeClass<U> & {
  *
  * @since 2.0.0
  */
-export type LazySchemable<U extends Kind> = TypeClass<U> & {
+export interface LazySchemable<U extends Kind> extends Hold<U> {
   readonly lazy: <A, B, C, D, E>(
     id: string,
     f: () => $<U, [A, B, C], [D], [E]>,
   ) => $<U, [A, B, C], [D], [E]>;
-};
+}
 
 /**
  * A Schemable is the union of all schemable methods.
@@ -214,23 +215,24 @@ export type LazySchemable<U extends Kind> = TypeClass<U> & {
  *
  * @since 2.0.0
  */
-export type Schemable<U extends Kind> =
-  & TypeClass<U>
-  & UnknownSchemable<U>
-  & StringSchemable<U>
-  & NumberSchemable<U>
-  & BooleanSchemable<U>
-  & LiteralSchemable<U>
-  & NullableSchemable<U>
-  & UndefinableSchemable<U>
-  & RecordSchemable<U>
-  & ArraySchemable<U>
-  & TupleSchemable<U>
-  & StructSchemable<U>
-  & PartialSchemable<U>
-  & IntersectSchemable<U>
-  & UnionSchemable<U>
-  & LazySchemable<U>;
+export interface Schemable<U extends Kind>
+  extends
+    UnknownSchemable<U>,
+    StringSchemable<U>,
+    NumberSchemable<U>,
+    BooleanSchemable<U>,
+    LiteralSchemable<U>,
+    NullableSchemable<U>,
+    UndefinableSchemable<U>,
+    RecordSchemable<U>,
+    ArraySchemable<U>,
+    TupleSchemable<U>,
+    StructSchemable<U>,
+    PartialSchemable<U>,
+    IntersectSchemable<U>,
+    UnionSchemable<U>,
+    LazySchemable<U>,
+    Hold<U> {}
 
 /**
  * A Schema is the a function that takes a generic schemable and builds
@@ -250,9 +252,9 @@ export type Schema<A, B = unknown, C = unknown, D = unknown, E = unknown> = <
 export type TypeOf<T> = T extends Schema<infer A> ? A : unknown;
 
 // Helps inference in the schema function
-type InferSchema<U extends Kind, A, B, C, D, E> =
-  & TypeClass<U>
-  & ((S: Schemable<U>) => $<U, [A, B, C], [D], [E]>);
+type InferSchema<U extends Kind, A, B, C, D, E> = (
+  S: Schemable<U>,
+) => $<U, [A, B, C], [D], [E]>;
 
 /**
  * A helper function to build a generic Schema that can be used

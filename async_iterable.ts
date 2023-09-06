@@ -1,7 +1,7 @@
 import type { Filterable } from "./filterable.ts";
 import type { Option } from "./option.ts";
 import type { Kind, Out } from "./kind.ts";
-import type { Monad } from "./monad.ts";
+import type { Flatmappable } from "./flatmappable.ts";
 import type { Either } from "./either.ts";
 import type { Pair } from "./pair.ts";
 import type { Predicate } from "./predicate.ts";
@@ -15,23 +15,32 @@ export interface KindAsyncIterable extends Kind {
   readonly kind: AsyncIterable<Out<this, 0>>;
 }
 
-const isAsyncIterator = <A>(
-  o: (() => AsyncIterator<A>) | AsyncGenerator<A>,
-): o is AsyncGenerator<A> => Object.hasOwn(o, Symbol.asyncIterator);
-
-export function make<A>(
-  fa: (() => AsyncIterator<A>) | AsyncGenerator<A>,
+export function asyncIterable<A>(
+  fa: () => AsyncIterator<A>,
 ): AsyncIterable<A> {
-  if (isAsyncIterator(fa)) {
-    return fa;
-  }
   return { [Symbol.asyncIterator]: fa };
 }
 
 export function fromIterable<A>(ta: Iterable<A>): AsyncIterable<A> {
-  return make(async function* () {
+  return asyncIterable(async function* () {
     for (const a of ta) {
       yield a;
+    }
+  });
+}
+
+export function range(
+  count: number = Number.POSITIVE_INFINITY,
+  start = 0,
+  step = 1,
+): AsyncIterable<number> {
+  return asyncIterable(async function* () {
+    let index = Math.floor(count);
+    let value = start;
+    while (index > 0) {
+      yield value;
+      index--;
+      value += step;
     }
   });
 }
@@ -40,7 +49,7 @@ export function clone<A>(ta: AsyncIterable<A>): AsyncIterable<A> {
   const cache: Promise<IteratorResult<A>>[] = [];
   let iterator: AsyncIterator<A>;
 
-  return make(async function* () {
+  return asyncIterable(async function* () {
     if (iterator === undefined) {
       iterator = ta[Symbol.asyncIterator]();
     }
@@ -61,21 +70,17 @@ export function clone<A>(ta: AsyncIterable<A>): AsyncIterable<A> {
   });
 }
 
-export function of<A>(...a: A[]): AsyncIterable<A> {
-  return make(async function* () {
-    let index = -1;
-    const length = a.length;
-    while (++index < length) {
-      yield a[index];
-    }
+export function wrap<A>(a: A): AsyncIterable<A> {
+  return asyncIterable(async function* () {
+    yield a;
   });
 }
 
-export function ap<A>(
+export function apply<A>(
   ua: AsyncIterable<A>,
 ): <I>(ufai: AsyncIterable<(a: A) => I>) => AsyncIterable<I> {
   return (ufai) =>
-    make(async function* () {
+    asyncIterable(async function* () {
       for await (const fai of ufai) {
         for await (const a of ua) {
           yield fai(a);
@@ -88,30 +93,18 @@ export function map<A, I>(
   fai: (a: A) => I | PromiseLike<I>,
 ): (ta: AsyncIterable<A>) => AsyncIterable<I> {
   return (ta) =>
-    make(async function* () {
+    asyncIterable(async function* () {
       for await (const a of ta) {
         yield await fai(a);
       }
     });
 }
 
-export function join<A>(
-  tta: AsyncIterable<AsyncIterable<A>>,
-): AsyncIterable<A> {
-  return make(async function* () {
-    for await (const ta of tta) {
-      for await (const a of ta) {
-        yield a;
-      }
-    }
-  });
-}
-
-export function chain<A, I>(
+export function flatmap<A, I>(
   fati: (a: A) => AsyncIterable<I>,
 ): (ta: AsyncIterable<A>) => AsyncIterable<I> {
   return (ta) =>
-    make(async function* () {
+    asyncIterable(async function* () {
       for await (const a of ta) {
         for await (const i of fati(a)) {
           yield i;
@@ -121,8 +114,8 @@ export function chain<A, I>(
 }
 
 export function forEach<A>(
-  onValue: (a: A) => void | PromiseLike<void>,
-  onDone: () => void | PromiseLike<void> = () => {},
+  onValue: (a: A) => unknown | PromiseLike<unknown>,
+  onDone: () => unknown | PromiseLike<unknown> = () => {},
 ): (ta: AsyncIterable<A>) => PromiseLike<void> {
   return async (ta) => {
     for await (const a of ta) {
@@ -148,7 +141,7 @@ export function filter<A>(
   predicate: Predicate<A>,
 ): (ta: AsyncIterable<A>) => AsyncIterable<A> {
   return (ta) =>
-    make(async function* filter() {
+    asyncIterable(async function* filter() {
       for await (const a of ta) {
         if (predicate(a)) {
           yield a;
@@ -161,7 +154,7 @@ export function filterMap<A, I>(
   predicate: (a: A) => Option<I>,
 ): (ua: AsyncIterable<A>) => AsyncIterable<I> {
   return (ua) =>
-    make(
+    asyncIterable(
       async function* filterMap() {
         for await (const a of ua) {
           const result = predicate(a);
@@ -185,14 +178,14 @@ export function partition<A>(
   return (ua) => {
     const cloned = clone(ua);
     return [
-      make(async function* partitionFirst() {
+      asyncIterable(async function* partitionFirst() {
         for await (const a of cloned) {
           if (predicate(a)) {
             yield a;
           }
         }
       }),
-      make(async function* partitionFirst() {
+      asyncIterable(async function* partitionFirst() {
         for await (const a of cloned) {
           if (!predicate(a)) {
             yield a;
@@ -209,7 +202,7 @@ export function partitionMap<A, I, J>(
   return (ua) => {
     const cloned = clone(ua);
     return [
-      make(async function* partitionFirst() {
+      asyncIterable(async function* partitionFirst() {
         for await (const a of cloned) {
           const result = predicate(a);
           if (isRight(result)) {
@@ -217,7 +210,7 @@ export function partitionMap<A, I, J>(
           }
         }
       }),
-      make(async function* partitionSecond() {
+      asyncIterable(async function* partitionSecond() {
         for await (const a of cloned) {
           const result = predicate(a);
           if (isLeft(result)) {
@@ -230,24 +223,34 @@ export function partitionMap<A, I, J>(
 }
 
 export function reduce<A, O>(
-  foao: (o: O, a: A, i: number) => O,
-  o: O,
+  reducer: (value: O, accumulator: A, index: number) => O,
+  initial: O,
 ): (ta: AsyncIterable<A>) => Promise<O> {
   return async (ta) => {
     let index = 0;
-    let result = o;
-    for await (const a of ta) {
-      result = foao(result, a, index++);
+    let result = initial;
+    for await (const value of ta) {
+      result = reducer(result, value, index++);
     }
     return result;
   };
+}
+
+export async function collect<A>(
+  ta: AsyncIterable<A>,
+): Promise<ReadonlyArray<A>> {
+  const result = new Array<A>();
+  for await (const a of ta) {
+    result.push(a);
+  }
+  return result;
 }
 
 export function takeUntil<A>(
   predicate: Predicate<A>,
 ): (ta: AsyncIterable<A>) => AsyncIterable<A> {
   return (ta) =>
-    make(async function* () {
+    asyncIterable(async function* () {
       for await (const a of ta) {
         if (predicate(a)) {
           return;
@@ -264,14 +267,15 @@ export function takeWhile<A>(
 }
 
 export function scan<A, O>(
-  foao: (o: O, a: A) => O,
-  o: O,
+  reducer: (accumulator: O, value: A, index: number) => O,
+  initial: O,
 ): (ta: AsyncIterable<A>) => AsyncIterable<O> {
   return (ta) =>
-    make(async function* () {
-      let result = o;
+    asyncIterable(async function* () {
+      let result = initial;
+      let index = 0;
       for await (const a of ta) {
-        result = foao(result, a);
+        result = reducer(result, a, index++);
         yield result;
       }
     });
@@ -281,7 +285,7 @@ export function tap<A>(
   fa: (a: A) => void,
 ): (ta: AsyncIterable<A>) => AsyncIterable<A> {
   return (ta) =>
-    make(async function* () {
+    asyncIterable(async function* () {
       for await (const a of ta) {
         fa(a);
         yield a;
@@ -293,7 +297,7 @@ export function repeat(
   n: number,
 ): <A>(ta: AsyncIterable<A>) => AsyncIterable<A> {
   return <A>(ta: AsyncIterable<A>) =>
-    make(async function* () {
+    asyncIterable(async function* () {
       let index = n;
       while (index-- > 0) {
         for await (const a of ta) {
@@ -305,7 +309,7 @@ export function repeat(
 
 export function take(n: number): <A>(ta: AsyncIterable<A>) => AsyncIterable<A> {
   return <A>(ta: AsyncIterable<A>) =>
-    make(async function* () {
+    asyncIterable(async function* () {
       let count = Math.floor(n);
       for await (const a of ta) {
         if (count-- <= 0) {
@@ -316,12 +320,11 @@ export function take(n: number): <A>(ta: AsyncIterable<A>) => AsyncIterable<A> {
     });
 }
 
-export const MonadAsyncIterable: Monad<KindAsyncIterable> = {
-  of,
-  ap,
+export const FlatmappableAsyncIterable: Flatmappable<KindAsyncIterable> = {
+  apply,
+  flatmap,
   map,
-  join,
-  chain,
+  wrap,
 };
 
 export const FilterableAsyncIterable: Filterable<KindAsyncIterable> = {

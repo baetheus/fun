@@ -1,16 +1,28 @@
-import type { $, Kind, TypeClass } from "./kind.ts";
-import type { Applicative } from "./applicative.ts";
-import type { Foldable } from "./foldable.ts";
-import type { Functor } from "./functor.ts";
+/**
+ * Traversable is a structure that encapsulates the idea of iterating through
+ * data and collecting it into another structure. This can be as simple as
+ * turning an Array<Option<number>> into Option<Array<number>> or as complicated
+ * as creating all combinations of numbers in three Array<numbers>.
+ *
+ * @module Mappable
+ * @since 2.0.0
+ */
+
+import type { $, Hold, Kind } from "./kind.ts";
+import type { Applicable } from "./applicable.ts";
+import type { Mappable } from "./mappable.ts";
+import type { Reducible } from "./reducible.ts";
 
 /**
- * Traversable
- * https://github.com/fantasyland/static-land/blob/master/docs/spec.md#traversable
+ * A Traversable structure extends Mappable and Reducible. It contains the
+ * methods map, reduce, and traverse.
+ *
+ * @since 2.0.0
  */
 export interface Traversable<U extends Kind>
-  extends Functor<U>, Foldable<U>, TypeClass<U> {
+  extends Mappable<U>, Reducible<U>, Hold<U> {
   readonly traverse: <VRI extends Kind>(
-    A: Applicative<VRI>,
+    A: Applicable<VRI>,
   ) => <A, I, J, K, L, M>(
     faui: (a: A) => $<VRI, [I, J, K], [L], [M]>,
   ) => <B, C, D, E>(

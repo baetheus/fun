@@ -7,7 +7,7 @@ import * as A from "../array.ts";
 import { flow, pipe } from "../fn.ts";
 
 const out = flow(
-  D.extract,
+  D.unwrap,
   E.match((s: string) => s, (a) => JSON.stringify(a)),
 );
 
@@ -217,27 +217,27 @@ decoding password
   );
 });
 
-Deno.test("DecodeError empty", () => {
-  assertEquals(D.empty(), D.manyErr());
+Deno.test("DecodeError init", () => {
+  assertEquals(D.init(), D.manyErr());
 });
 
-Deno.test("DecodeError concat", () => {
-  assertEquals(pipe(leaf, D.concat(leaf)), D.manyErr(leaf, leaf));
-  assertEquals(pipe(leaf, D.concat(wrap)), D.manyErr(leaf, wrap));
-  assertEquals(pipe(leaf, D.concat(key)), D.manyErr(leaf, key));
-  assertEquals(pipe(leaf, D.concat(index)), D.manyErr(leaf, index));
-  assertEquals(pipe(leaf, D.concat(union)), D.manyErr(leaf, union));
+Deno.test("DecodeError combine", () => {
+  assertEquals(pipe(leaf, D.combine(leaf)), D.manyErr(leaf, leaf));
+  assertEquals(pipe(leaf, D.combine(wrap)), D.manyErr(leaf, wrap));
+  assertEquals(pipe(leaf, D.combine(key)), D.manyErr(leaf, key));
+  assertEquals(pipe(leaf, D.combine(index)), D.manyErr(leaf, index));
+  assertEquals(pipe(leaf, D.combine(union)), D.manyErr(leaf, union));
   assertEquals(
-    pipe(leaf, D.concat(intersection)),
+    pipe(leaf, D.combine(intersection)),
     D.manyErr(leaf, intersection),
   );
-  assertEquals(pipe(leaf, D.concat(many)), D.manyErr(leaf, leaf, wrap));
+  assertEquals(pipe(leaf, D.combine(many)), D.manyErr(leaf, leaf, wrap));
   assertEquals(
-    pipe(union, D.concat(union)),
+    pipe(union, D.combine(union)),
     D.unionErr(leaf, leaf, leaf, leaf),
   );
   assertEquals(
-    pipe(intersection, D.concat(intersection)),
+    pipe(intersection, D.combine(intersection)),
     D.intersectionErr(leaf, leaf, leaf, leaf),
   );
 });
@@ -257,14 +257,14 @@ Deno.test("Decoder fromPredicate", () => {
 });
 
 Deno.test("Decoder of", () => {
-  const decoder = D.of(1);
+  const decoder = D.wrap(1);
   assertEquals(decoder(null), D.success(1));
 });
 
 Deno.test("Decoder ap", () => {
-  const fn = D.of((s: string) => s.length);
+  const fn = D.wrap((s: string) => s.length);
   const val = D.string;
-  const decoder = pipe(fn, D.ap(val));
+  const decoder = pipe(fn, D.apply(val));
   assertEquals(decoder("Hello World"), D.success(11));
 });
 
@@ -273,16 +273,11 @@ Deno.test("Decoder map", () => {
   assertEquals(map("Hello"), D.success("HelloHello"));
 });
 
-Deno.test("Decoder join", () => {
-  const join = D.join(D.of(D.string));
-  assertEquals(join("Hello World"), D.success("Hello World"));
-});
-
-Deno.test("Decoder chain", () => {
+Deno.test("Decoder flatmap", () => {
   const fatArray = D.struct({ length: D.number, values: D.array(D.number) });
-  const chain = pipe(
+  const flatmap = pipe(
     fatArray,
-    D.chain(({ length }) =>
+    D.flatmap(({ length }) =>
       D.struct({
         length: D.literal(length),
         values: D.tuple(...A.range(length).map((i) => D.literal(i))),
@@ -291,10 +286,10 @@ Deno.test("Decoder chain", () => {
   );
 
   assertEquals(
-    chain({ length: 2, values: [0, 1] }),
+    flatmap({ length: 2, values: [0, 1] }),
     D.success({ length: 2, values: [0, 1] }),
   );
-  assertEquals(chain({ length: 2, values: [] }), {
+  assertEquals(flatmap({ length: 2, values: [] }), {
     left: {
       context: "cannot decode struct",
       error: {
@@ -327,6 +322,11 @@ Deno.test("Decoder annotate", () => {
   );
 });
 
+Deno.test("Decoder id", () => {
+  const id = D.id<number>();
+  assertEquals(id(1), E.right(1));
+});
+
 Deno.test("Decoder compose", () => {
   const composed = pipe(
     D.string,
@@ -339,11 +339,11 @@ Deno.test("Decoder compose", () => {
   assertEquals(composed("Hello"), D.failure("Hello", "string of length > 5"));
 });
 
-Deno.test("Decoder contramap", () => {
+Deno.test("Decoder premap", () => {
   type Person = { name: string; age: number; other: unknown };
   const contra = pipe(
     D.string,
-    D.contramap((p: Person) => p.other),
+    D.premap((p: Person) => p.other),
   );
 
   assertEquals(
@@ -386,11 +386,11 @@ Deno.test("Decoder refine", () => {
   assertEquals(refine("Hello World"), D.success("Hello World"));
 });
 
-Deno.test("Decoder extract", () => {
+Deno.test("Decoder unwrap", () => {
   const decoder = D.literal(null);
-  assertEquals(D.extract(decoder(null)), E.right(null));
+  assertEquals(D.unwrap(decoder(null)), E.right(null));
   assertEquals(
-    D.extract(decoder(1)),
+    D.unwrap(decoder(1)),
     E.left("cannot decode 1, should be null"),
   );
 });

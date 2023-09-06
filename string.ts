@@ -1,12 +1,12 @@
-import type { Monoid } from "./monoid.ts";
+import type { Initializable } from "./initializable.ts";
 import type { NonEmptyArray } from "./array.ts";
 import type { Option } from "./option.ts";
-import type { Ord, Ordering } from "./ord.ts";
-import type { Semigroup } from "./semigroup.ts";
-import type { Eq } from "./eq.ts";
-import type { Show } from "./show.ts";
+import type { Ordering, Sortable } from "./sortable.ts";
+import type { Comparable } from "./comparable.ts";
+import type { Showable } from "./showable.ts";
 
-import { fromCompare } from "./ord.ts";
+import { fromCompare } from "./comparable.ts";
+import { fromSort } from "./sortable.ts";
 import { fromNullable } from "./option.ts";
 import { isNonEmpty } from "./array.ts";
 
@@ -15,19 +15,19 @@ import { isNonEmpty } from "./array.ts";
  *
  * @example
  * ```ts
- * import { equals } from "./string.ts";
- * import { pipe } from "./fn.ts";
+ * import { compare } from "./string.ts";
  *
  * const hello = "Hello";
  * const hi = "hi";
+ * const hi2 = "hi";
  *
- * const result1 = pipe(hello, equals(hi)); // false
- * const result2 = pipe(hi, equals(hi)); // true
+ * const result1 = compare(hi)(hello); // false
+ * const result2 = compare(hi)(hi2); // true
  * ```
  *
  * @since 2.0.0
  */
-export function equals(second: string): (first: string) => boolean {
+export function compare(second: string): (first: string) => boolean {
   return (first) => first === second;
 }
 
@@ -36,31 +36,30 @@ export function equals(second: string): (first: string) => boolean {
  *
  * @example
  * ```ts
- * import { concat } from "./string.ts";
- * import { pipe } from "./fn.ts";
+ * import { combine } from "./string.ts";
  *
- * const result1 = pipe("Hello", concat("World")); // "HelloWorld"
+ * const result1 = combine("Hello")("World"); // "WorldHello"
  * ```
  *
  * @since 2.0.0
  */
-export function concat(second: string): (first: string) => string {
+export function combine(second: string): (first: string) => string {
   return (first) => `${first}${second}`;
 }
 
 /**
- * Returns an empty string.
+ * Returns an init string.
  *
  * @example
  * ```ts
- * import { empty } from "./string.ts";
+ * import { init } from "./string.ts";
  *
- * const result = empty(); // ""
+ * const result = init(); // ""
  * ```
  *
  * @since 2.0.0
  */
-export function empty(): string {
+export function init(): string {
   return "";
 }
 
@@ -69,18 +68,18 @@ export function empty(): string {
  *
  * @example
  * ```ts
- * import { compare } from "./string.ts";
+ * import { sort } from "./string.ts";
  *
- * const result1 = compare("aa", "aa"); // 0
- * const result2 = compare("aa", "ab"); // -1
- * const result3 = compare("ba", "aa"); // 1
- * const result4 = compare("ab", "aa"); // 1
- * const result5 = compare("a", "aa"); // -1
+ * const result1 = sort("aa", "aa"); // 0
+ * const result2 = sort("aa", "ab"); // -1
+ * const result3 = sort("ba", "aa"); // 1
+ * const result4 = sort("ab", "aa"); // 1
+ * const result5 = sort("a", "aa"); // -1
  * ```
  *
  * @since 2.0.0
  */
-export function compare(first: string, second: string): Ordering {
+export function sort(first: string, second: string): Ordering {
   return first < second ? -1 : second < first ? 1 : 0;
 }
 
@@ -107,7 +106,7 @@ export function isString(a: unknown): a is string {
 
 /**
  * A Predicate for string returning true if the
- * string is empty.
+ * string is init.
  *
  * @example
  * ```ts
@@ -349,7 +348,6 @@ export function trimEnd(a: string): string {
  * @example
  * ```ts
  * import { plural } from "./string.ts";
- * import { pipe, ap, of } from "./fn.ts";
  *
  * const are = plural("is", "are");
  * const rabbits = plural("rabbit", "rabbits");
@@ -413,7 +411,9 @@ export function match(regex: RegExp) {
 
 /**
  * Create a Predicate that returns true when it matches the supplied
- * RegExp.
+ * RegExp. Warning, this function technically mutates RegExp, but paradoxically
+ * it does so to keep state the same. If the passed RegExp.test method is called
+ * outside of this function then mayhem will surely ensue.
  *
  * @example
  * ```ts
@@ -434,7 +434,7 @@ export function test(r: RegExp) {
     // See https://tinyurl.com/2fdh6458
     // RegExp.test keeps state from any runs,
     // this function resets that state to
-    // avoid strange behaviors
+    // avoid unexpected behavior
     const initialIndex = r.lastIndex;
     const result = r.test(s);
     r.lastIndex = initialIndex;
@@ -443,42 +443,37 @@ export function test(r: RegExp) {
 }
 
 /**
- * The canonical implementation of Ord for string. It contains
+ * The canonical implementation of Sortable for string. It contains
  * the methods lt, lte, equals, gte, gt, min, max, clamp, between,
  * and compare.
  *
  * @since 2.0.0
  */
-export const OrdString: Ord<string> = fromCompare(compare);
+export const SortableString: Sortable<string> = fromSort(sort);
 
 /**
- * The canonical implementation of Eq for string. It contains
+ * The canonical implementation of Comparable for string. It contains
  * the method equals.
  *
  * @since 2.0.0
  */
-export const EqString: Eq<string> = { equals };
+export const ComparableString: Comparable<string> = fromCompare(compare);
 
 /**
- * The canonical implementation of Semigroup for string. It contains
- * the method concat.
+ * The canonical implementation of Initializable for string. It contains
+ * the method init and combine.
  *
  * @since 2.0.0
  */
-export const SemigroupString: Semigroup<string> = { concat };
+export const InitializableString: Initializable<string> = {
+  combine,
+  init,
+};
 
 /**
- * The canonical implementation of Monoid for string. It contains
- * the method empty and concat.
- *
- * @since 2.0.0
- */
-export const MonoidString: Monoid<string> = { concat, empty };
-
-/**
- * The canonical implementation of Show for string. It contains
+ * The canonical implementation of Showable for string. It contains
  * the method show.
  *
  * @since 2.0.0
  */
-export const ShowString: Show<string> = { show: JSON.stringify };
+export const ShowableString: Showable<string> = { show: JSON.stringify };

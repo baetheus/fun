@@ -27,18 +27,18 @@ Deno.test("Boolean not", () => {
   assertEquals(B.not(false), true);
 });
 
-Deno.test("Boolean equals", () => {
-  assertEquals(B.equals(true)(true), true);
-  assertEquals(B.equals(true)(false), false);
-  assertEquals(B.equals(false)(true), false);
-  assertEquals(B.equals(false)(false), true);
+Deno.test("Boolean compare", () => {
+  assertEquals(B.compare(true)(true), true);
+  assertEquals(B.compare(true)(false), false);
+  assertEquals(B.compare(false)(true), false);
+  assertEquals(B.compare(false)(false), true);
 });
 
-Deno.test("Boolean compare", () => {
-  assertEquals(B.compare(true, true), 0);
-  assertEquals(B.compare(true, false), 1);
-  assertEquals(B.compare(false, true), -1);
-  assertEquals(B.compare(false, false), 0);
+Deno.test("Boolean sort", () => {
+  assertEquals(B.sort(true, true), 0);
+  assertEquals(B.sort(true, false), 1);
+  assertEquals(B.sort(false, true), -1);
+  assertEquals(B.sort(false, false), 0);
 });
 
 Deno.test("Boolean or", () => {

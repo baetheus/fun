@@ -4,26 +4,29 @@ functional is a set of utility modules in the vein of
 [Ramda](https://ramdajs.com/) and [fp-ts](https://gcanti.github.io/fp-ts/). It
 uses a
 [lightweight higher kinded type encoding](https://github.com/baetheus/fun/blob/main/kind.ts)
-to implement type classes/algebraic structurs such as
-[Functor](https://github.com/baetheus/fun/blob/main/functor.ts),
-[Monad](https://github.com/baetheus/fun/blob/main/monad.ts), and
-[Traversable](https://github.com/baetheus/fun/blob/main/traversable.ts).
-Originally, it followed the
-[static-land](https://github.com/fantasyland/static-land/blob/master/docs/spec.md)
-specification for these modules, but has since diverged and settled on a curried
-form of those same module definitions. It contains many common algebraic types
-such as [Option](https://github.com/baetheus/fun/blob/main/option.ts),
-[Either](https://github.com/baetheus/fun/blob/main/either.ts), and other tools
-such as [Lenses](https://github.com/baetheus/fun/blob/main/lens.ts) and
-[Schemables](https://github.com/baetheus/fun/blob/main/schemable.ts).
+to implement reusable high level interfaces. These interfaces are called Type
+Classes or Algebraic Structures in other languages. The usefulness of these
+interfaces comes from their ability to describe common operations across
+different data structures and concrete data types without referencing any
+specific data type. Intuitively one can think of these higher kinded types as a
+generic type that itself has a Generic parameter. ie `type Apply<A, B> = A<B>`.
+This is not valid typescript code but it illuminates the cored idea of higher
+kinder types.
+
+The functional library is written as a first class Deno library. Some effort
+might be made to release Deno into npm but NodeJS is not a first class target
+for support. If you want a functional library for NodeJS fp-ts is definitely the
+way to go!
 
 The primary goals of functional are to be:
 
 - **Pragmatic**: The API surface of functional should favor ease-of-use and
   consistency over cleverness or purity. This project is ultimately for getting
   work done.
-- **Understandable**: The HKT and Type Class implementations are meant to be as
-  simple as possible so their logic can be easily audited.
+- **Understandable**: The higher kinded type and TypeClass implementations are
+  meant to be as simple as possible so their logic can be easily audited. We
+  have also chosen descriptive names for TypeClass implementations instead of
+  ones pulled from Category Theory.
 - **Performant**: Once the first two goals are satisfied, the long term changes
   within functional are likely going to be beneath the API surface and aimed at
   speeding things up where possible.
@@ -35,79 +38,8 @@ Some non-goals of functional are:
 
 ## Documentation
 
-Deno comes with a documentation generator. The
-[documentation generation](https://github.com/denoland/deno_doc) doesn't handle
-re-exports or types on consts that are functions, as that work progresses the
-documentation for functional will improve. The current documentation for any
-module at the `HEAD` of the `main` branch can be found here:
-
-- [alt.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/alt.ts)
-- [applicative.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/applicative.ts)
-- [apply.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/apply.ts)
-- [array.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/array.ts)
-- [async.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/async.ts)
-- [async_either.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/async_either.ts)
-- [async_iterable.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/async_iterable.ts)
-- [bifunctor.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/bifunctor.ts)
-- [boolean.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/boolean.ts)
-- [category.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/category.ts)
-- [chain.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/chain.ts)
-- [comonad.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/comonad.ts)
-- [const.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/const.ts)
-- [contravariant.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/contravariant.ts)
-- [datum.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/datum.ts)
-- [decode_error.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/decode_error.ts)
-- [decoder.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/decoder.ts)
-- [either.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/either.ts)
-- [eq.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/eq.ts)
-- [extend.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/extend.ts)
-- [filterable.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/filterable.ts)
-- [fn.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/fn.ts)
-- [fn_either.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/fn_either.ts)
-- [foldable.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/foldable.ts)
-- [free.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/free.ts)
-- [functor.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/functor.ts)
-- [group.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/group.ts)
-- [identity.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/identity.ts)
-- [iso.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/iso.ts)
-- [iterable.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/iterable.ts)
-- [json_schema.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/json_schema.ts)
-- [kind.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/kind.ts)
-- [map.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/map.ts)
-- [mod.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/mod.ts)
-- [monad.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/monad.ts)
-- [monoid.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/monoid.ts)
-- [newtype.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/newtype.ts)
-- [nilable.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/nilable.ts)
-- [number.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/number.ts)
-- [optics.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/optics.ts)
-- [option.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/option.ts)
-- [ord.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/ord.ts)
-- [pair.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/pair.ts)
-- [predicate.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/predicate.ts)
-- [profunctor.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/profunctor.ts)
-- [promise.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/promise.ts)
-- [record.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/record.ts)
-- [refinement.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/refinement.ts)
-- [schemable.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/schemable.ts)
-- [semigroup.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/semigroup.ts)
-- [semigroupoid.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/semigroupoid.ts)
-- [set.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/set.ts)
-- [show.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/show.ts)
-- [state.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/state.ts)
-- [string.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/string.ts)
-- [sync.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/sync.ts)
-- [sync_either.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/sync_either.ts)
-- [these.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/these.ts)
-- [traversable.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/traversable.ts)
-- [tree.ts](https://doc.deno.land/https://raw.githubusercontent.com/baetheus/fun/main/tree.ts)
-
-In general, you can take any specific module url and put it into
-[https://doc.deno.land/](https://doc.deno.land/) to get a decent rendering of
-the documentation. (Note: Currently the deno_doc crate, which is what
-doc.deno.land uses, does not handle re-exports or const arrow function exports
-well. Eventually, the documentation will get better even if this libraries
-maintainers have to write those patches themselves).
+Documentation is generated for each github tagged release. The latest
+documentation can be found [here](https://deno.land/x/fun).
 
 ## Versions
 
@@ -149,8 +81,24 @@ Contributions are welcome! Currently, the only maintainer for functional is
 change something, open an issue and ask away. The guidelines for contribution
 are:
 
-1. We use
+1. We are kind to others
+2. We use
    [conventional commit messages](https://www.conventionalcommits.org/en/v1.0.0/)
-2. We use [semantic versioning](https://semver.org/)
-3. We don't break APIs
-4. We keep test coverage at 100%
+3. We use [semantic versioning](https://semver.org/)
+4. We try to keep test coverage at 100%
+5. We try not to break APIs between major releases
+
+Since there is little churn in this library releases are infrequent. If you wish
+to contribute I would prefer that you start with documentation. It is one of my
+long term goals to have a few sentences of description and an example for every
+export. After that, if I'm behind on test coverage that is a great place to
+start. Last, if you wish to add a feature it's good to start a discussion about
+the feature with a few concrete use cases before submitting a PR. This will
+allow for others to chime in without crowding the issues section.
+
+Also, primary development takes places on one of my servers where I use fossil
+instead of git as a VCS. I still use github for interfacing with users and for
+releases, but if you wish to become a long term contributor learning to get
+around with fossil is a must.
+
+Thanks for you interest!

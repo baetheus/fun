@@ -1,21 +1,24 @@
 import type { $, Kind, Out } from "./kind.ts";
-import type { Alt } from "./alt.ts";
-import type { Applicative } from "./applicative.ts";
-import type { Bifunctor } from "./bifunctor.ts";
-import type { Extend } from "./extend.ts";
-import type { Monad } from "./monad.ts";
-import type { Monoid } from "./monoid.ts";
-import type { Ord } from "./ord.ts";
+import type { Applicable } from "./applicable.ts";
+import type { Initializable } from "./initializable.ts";
+import type { Bimappable } from "./bimappable.ts";
+import type { Combinable } from "./combinable.ts";
+import type { Comparable } from "./comparable.ts";
+import type { Failable } from "./failable.ts";
+import type { Flatmappable } from "./flatmappable.ts";
+import type { Mappable } from "./mappable.ts";
 import type { Predicate } from "./predicate.ts";
+import type { Reducible } from "./reducible.ts";
 import type { Refinement } from "./refinement.ts";
-import type { Semigroup } from "./semigroup.ts";
-import type { Eq } from "./eq.ts";
-import type { Show } from "./show.ts";
+import type { Showable } from "./showable.ts";
+import type { Sortable } from "./sortable.ts";
 import type { Traversable } from "./traversable.ts";
+import type { Wrappable } from "./wrappable.ts";
 
 import * as O from "./option.ts";
 import { isNotNil } from "./nilable.ts";
-import { fromCompare } from "./ord.ts";
+import { fromCompare } from "./comparable.ts";
+import { fromSort } from "./sortable.ts";
 import { flow, pipe } from "./fn.ts";
 
 export type Left<L> = { tag: "Left"; left: L };
@@ -40,11 +43,11 @@ export function right<A, E = never>(right: A): Either<E, A> {
   return ({ tag: "Right", right });
 }
 
-export function of<A, B = never>(a: A): Either<B, A> {
+export function wrap<A, B = never>(a: A): Either<B, A> {
   return right(a);
 }
 
-export function throwError<A = never, B = never>(b: B): Either<B, A> {
+export function fail<A = never, B = never>(b: B): Either<B, A> {
   return left(b);
 }
 
@@ -78,15 +81,16 @@ export function tryCatchWrap<E, A, AS extends unknown[]>(
   };
 }
 
-export function fromPredicate<E, A, B extends A>(
+export function fromPredicate<A, B extends A>(
   refinement: Refinement<A, B>,
-  onFalse: (a: A) => E,
-): (a: A) => Either<E, B>;
-export function fromPredicate<E, A>(
+): (a: A) => Either<A, B>;
+export function fromPredicate<A>(
   predicate: Predicate<A>,
-  onFalse: (a: A) => E,
-): (a: A) => Either<E, A> {
-  return (a: A) => predicate(a) ? right(a) : left(onFalse(a));
+): (a: A) => Either<A, A>;
+export function fromPredicate<A>(
+  predicate: Predicate<A>,
+): (a: A) => Either<A, A> {
+  return (a: A) => predicate(a) ? right(a) : left(a);
 }
 
 export function match<L, R, B>(
@@ -116,10 +120,10 @@ export function isRight<L, R>(m: Either<L, R>): m is Right<R> {
   return m.tag === "Right";
 }
 
-export function getShow<A, B>(
-  SB: Show<B>,
-  SA: Show<A>,
-): Show<Either<B, A>> {
+export function getShowable<A, B>(
+  SB: Showable<B>,
+  SA: Showable<A>,
+): Showable<Either<B, A>> {
   return ({
     show: match(
       (left) => `Left(${SB.show(left)})`,
@@ -128,79 +132,77 @@ export function getShow<A, B>(
   });
 }
 
-export function getEq<A, B>(
-  SB: Eq<B>,
-  SA: Eq<A>,
-): Eq<Either<B, A>> {
-  return ({
-    equals: (b) => (a) => {
-      if (isLeft(a)) {
-        if (isLeft(b)) {
-          return SB.equals(b.left)(a.left);
-        }
-        return false;
+export function getComparable<A, B>(
+  SB: Comparable<B>,
+  SA: Comparable<A>,
+): Comparable<Either<B, A>> {
+  return fromCompare((second) => (first) => {
+    if (isLeft(first)) {
+      if (isLeft(second)) {
+        return SB.compare(second.left)(first.left);
       }
+      return false;
+    }
 
-      if (isLeft(b)) {
-        return false;
-      }
-      return SA.equals(b.right)(a.right);
-    },
+    if (isLeft(second)) {
+      return false;
+    }
+    return SA.compare(second.right)(first.right);
   });
 }
 
-export function getOrd<A, B>(
-  OB: Ord<B>,
-  OA: Ord<A>,
-): Ord<Either<B, A>> {
-  return fromCompare((fst, snd) =>
+export function getSortable<A, B>(
+  OB: Sortable<B>,
+  OA: Sortable<A>,
+): Sortable<Either<B, A>> {
+  return fromSort((fst, snd) =>
     isLeft(fst)
-      ? isLeft(snd) ? OB.compare(fst.left, snd.left) : -1
+      ? isLeft(snd) ? OB.sort(fst.left, snd.left) : -1
       : isLeft(snd)
       ? 1
-      : OA.compare(fst.right, snd.right)
+      : OA.sort(fst.right, snd.right)
   );
 }
 
-export function getLeftSemigroup<E = never, A = never>(
-  SE: Semigroup<E>,
-): Semigroup<Either<E, A>> {
-  return ({
-    concat: (x) => (y) =>
-      isRight(x) ? x : isRight(y) ? y : left(SE.concat(x.left)(y.left)),
-  });
+export function getLeftInitializable<E = never, A = never>(
+  { combine, init }: Initializable<E>,
+): Initializable<Either<E, A>> {
+  return {
+    init: () => left(init()),
+    combine: (second) => (first) =>
+      isRight(first)
+        ? first
+        : isRight(second)
+        ? second
+        : left(combine(second.left)(first.left)),
+  };
 }
 
-export function getRightSemigroup<E = never, A = never>(
-  SA: Semigroup<A>,
-): Semigroup<Either<E, A>> {
-  return ({
-    concat: (x) => (y) =>
-      isLeft(x) ? x : isLeft(y) ? y : right(SA.concat(x.right)(y.right)),
-  });
+export function getRightInitializable<E = never, A = never>(
+  { combine, init }: Initializable<A>,
+): Initializable<Either<E, A>> {
+  return {
+    init: () => right(init()),
+    combine: (second) => (first) =>
+      isLeft(first)
+        ? first
+        : isLeft(second)
+        ? second
+        : right(combine(second.right)(first.right)),
+  };
 }
 
-export function getRightMonoid<E = never, A = never>(
-  MA: Monoid<A>,
-): Monoid<Either<E, A>> {
+export function getRightFlatmappable<E>(
+  { combine }: Combinable<E>,
+): Flatmappable<KindRightEither<E>> {
   return ({
-    ...getRightSemigroup(MA),
-    empty: () => right(MA.empty()),
-  });
-}
-
-export function getRightMonad<E>(
-  { concat }: Semigroup<E>,
-): Monad<KindRightEither<E>> {
-  return ({
-    of,
-    ap: (ua) => (ufai) =>
+    wrap,
+    apply: (ua) => (ufai) =>
       isLeft(ufai)
-        ? (isLeft(ua) ? left(concat(ua.left)(ufai.left)) : ufai)
+        ? (isLeft(ua) ? left(combine(ua.left)(ufai.left)) : ufai)
         : (isLeft(ua) ? ua : right(ufai.right(ua.right))),
     map,
-    join,
-    chain,
+    flatmap,
   });
 }
 
@@ -228,47 +230,48 @@ export function map<A, I>(
   return (ta) => isLeft(ta) ? ta : right(fai(ta.right));
 }
 
-export function chainLeft<B, I, J>(
-  fbj: (b: B) => Either<J, I>,
-): <A>(ta: Either<B, A>) => Either<J, A | I> {
-  return (tab) => (isLeft(tab) ? fbj(tab.left) : tab);
+export function mapSecond<B, J>(
+  fbj: (b: B) => J,
+): <A>(ta: Either<B, A>) => Either<J, A> {
+  return (ta) => isLeft(ta) ? left(fbj(ta.left)) : ta;
 }
 
-export function ap<A, B>(
+export function apply<A, B>(
   ua: Either<B, A>,
 ): <I, J>(ufai: Either<J, (a: A) => I>) => Either<B | J, I> {
   return (ufai) =>
     isLeft(ua) ? ua : isLeft(ufai) ? ufai : right(ufai.right(ua.right));
 }
 
-export function chain<A, I, J>(
+export function flatmap<A, I, J>(
   fati: (a: A) => Either<J, I>,
 ): <B>(ta: Either<B, A>) => Either<B | J, I> {
   return (ta) => isLeft(ta) ? ta : fati(ta.right);
 }
 
-export function join<A, B, J = never>(
-  ta: Either<J, Either<B, A>>,
-): Either<B | J, A> {
-  return isLeft(ta) ? ta : ta.right;
+export function flatmapFirst<A, I = never, J = never>(
+  faui: (a: A) => Either<J, I>,
+): <B = never>(ta: Either<B, A>) => Either<B | J, A> {
+  return (ua) => {
+    if (isLeft(ua)) {
+      return ua;
+    } else {
+      const ui = faui(ua.right);
+      return isLeft(ui) ? ui : ua;
+    }
+  };
 }
 
-export function mapLeft<B, J>(
-  fbj: (b: B) => J,
-): <A>(ta: Either<B, A>) => Either<J, A> {
-  return (ta) => isLeft(ta) ? left(fbj(ta.left)) : ta;
+export function recover<B, I, J>(
+  fbui: (b: B) => Either<J, I>,
+): <A>(ua: Either<B, A>) => Either<J, A | I> {
+  return (ua) => isRight(ua) ? ua : fbui(ua.left);
 }
 
 export function alt<A, J>(
   tb: Either<J, A>,
 ): <B>(ta: Either<B, A>) => Either<B | J, A> {
   return (ta) => isLeft(ta) ? tb : ta;
-}
-
-export function extend<A, I, B>(
-  ftai: (ta: Either<B, A>) => I,
-): (ta: Either<B, A>) => Either<B, I> {
-  return (ta) => right(ftai(ta));
 }
 
 export function reduce<A, O>(
@@ -279,33 +282,46 @@ export function reduce<A, O>(
 }
 
 export function traverse<V extends Kind>(
-  A: Applicative<V>,
+  A: Applicable<V> & Mappable<V> & Wrappable<V>,
 ): <A, I, J, K, L, M>(
   faui: (a: A) => $<V, [I, J, K], [L], [M]>,
 ) => <B>(ta: Either<B, A>) => $<V, [Either<B, I>, J, K], [L], [M]> {
   //deno-lint-ignore no-explicit-any
-  const onLeft: any = flow(left, A.of);
+  const onLeft: any = flow(left, A.wrap);
   //deno-lint-ignore no-explicit-any
   const mapRight: any = A.map(right);
   return (faui) => match(onLeft, flow(faui, mapRight));
 }
 
-export const MonadEither: Monad<KindEither> = {
-  of,
-  ap,
+export const ApplicableEither: Applicable<KindEither> = { apply, map, wrap };
+
+export const BimappableEither: Bimappable<KindEither> = { map, mapSecond };
+
+export const FailableEither: Failable<KindEither> = {
+  alt,
+  apply,
+  fail,
+  flatmap,
   map,
-  join,
-  chain,
+  recover,
+  wrap,
 };
 
-export const BifunctorEither: Bifunctor<KindEither> = { bimap, mapLeft };
+export const FlatmappableEither: Flatmappable<KindEither> = {
+  apply,
+  flatmap,
+  map,
+  wrap,
+};
 
-export const AltEither: Alt<KindEither> = { alt, map };
+export const MappableEither: Mappable<KindEither> = { map };
 
-export const ExtendEither: Extend<KindEither> = { map, extend };
+export const ReducibleEither: Reducible<KindEither> = { reduce };
 
 export const TraversableEither: Traversable<KindEither> = {
   map,
   reduce,
   traverse,
 };
+
+export const WrappableEither: Wrappable<KindEither> = { wrap };

@@ -6,24 +6,24 @@
  */
 
 import type { $, Kind, Out } from "./kind.ts";
-import type { Applicative } from "./applicative.ts";
-import type { Apply } from "./apply.ts";
-import type { Chain } from "./chain.ts";
+import type { Applicable } from "./applicable.ts";
 import type { Either } from "./either.ts";
-import type { Eq } from "./eq.ts";
+import type { Comparable } from "./comparable.ts";
 import type { Filterable } from "./filterable.ts";
-import type { Foldable } from "./foldable.ts";
-import type { Functor } from "./functor.ts";
-import type { Monad } from "./monad.ts";
-import type { Monoid } from "./monoid.ts";
+import type { Reducible } from "./reducible.ts";
+import type { Mappable } from "./mappable.ts";
+import type { Flatmappable } from "./flatmappable.ts";
+import type { Combinable } from "./combinable.ts";
 import type { Option } from "./option.ts";
 import type { Pair } from "./pair.ts";
 import type { Predicate } from "./predicate.ts";
 import type { Refinement } from "./refinement.ts";
-import type { Show } from "./show.ts";
+import type { Showable } from "./showable.ts";
 import type { Traversable } from "./traversable.ts";
 
 import { flow, identity, pipe } from "./fn.ts";
+import { fromCompare } from "./comparable.ts";
+import { fromCombine } from "./combinable.ts";
 import * as O from "./option.ts";
 import * as E from "./either.ts";
 
@@ -51,12 +51,12 @@ export interface KindReadonlySet extends Kind {
  * ```ts
  * import * as S from "./set.ts";
  *
- * const result = S.empty<number>(); // ReadonlySet<number> with no members.
+ * const result = S.init<number>(); // ReadonlySet<number> with no members.
  * ```
  *
  * @since 2.0.0
  */
-export function empty<A = never>(): ReadonlySet<A> {
+export function init<A = never>(): ReadonlySet<A> {
   return new Set();
 }
 
@@ -116,7 +116,7 @@ export function copy<A>(ua: ReadonlySet<A>): ReadonlySet<A> {
  *
  * const result1 = some(S.set(1, 2, 3)); // true
  * const result2 = some(S.set(0)); // false
- * const result3 = some(S.empty()); // false
+ * const result3 = some(S.init()); // false
  * const result4 = some(S.set(-1, -2, -3, 1)); // true
  * ```
  *
@@ -149,7 +149,7 @@ export function some<A>(
  *
  * const result1 = some(S.set(1, 2, 3)); // true
  * const result2 = some(S.set(0)); // false
- * const result3 = some(S.empty()); // false
+ * const result3 = some(S.init()); // false
  * const result4 = some(S.set(-1, -2, -3, 1)); // true
  * ```
  *
@@ -169,7 +169,7 @@ export function every<A>(
 }
 
 /**
- * Given an insuance of Eq<A> create a function
+ * Given an insuance of Comparable<A> create a function
  * that takes a value A and returns a predicate over
  * ReadonlySet<A> the returns true if there are any
  * members of the set that are equal to the value.
@@ -180,7 +180,7 @@ export function every<A>(
  * import * as N from "./number.ts";
  * import { pipe } from "./fn.ts";
  *
- * const elem = S.elem(N.EqNumber);
+ * const elem = S.elem(N.ComparableNumber);
  *
  * const set = S.set(1, 2, 3);
  *
@@ -191,13 +191,13 @@ export function every<A>(
  * @since 2.0.0
  */
 export function elem<A>(
-  S: Eq<A>,
+  { compare }: Comparable<A>,
 ): (value: A) => (ua: ReadonlySet<A>) => boolean {
-  return (a) => some(S.equals(a));
+  return (a) => some(compare(a));
 }
 
 /**
- * Given an instance of Eq<A> create a function
+ * Given an instance of Comparable<A> create a function
  * that uakes a ReadonlySet<A> and returns a predicate over
  * a value A the returns true if the value is a member
  * of the set. This is like elem but with the set and value
@@ -208,7 +208,7 @@ export function elem<A>(
  * import * as S from "./set.ts";
  * import * as N from "./number.ts";
  *
- * const elemOf = S.elemOf(N.EqNumber);
+ * const elemOf = S.elemOf(N.ComparableNumber);
  *
  * const set = S.set(1, 2, 3);
  * const inSet = elemOf(set);
@@ -220,14 +220,14 @@ export function elem<A>(
  * @since 2.0.0
  */
 export function elemOf<A>(
-  S: Eq<A>,
+  S: Comparable<A>,
 ): (ua: ReadonlySet<A>) => (a: A) => boolean {
   const _elem = elem(S);
   return (ua) => (a) => _elem(a)(ua);
 }
 
 /**
- * Given an instance of Eq<A> return a function
+ * Given an instance of Comparable<A> return a function
  * `second => first => boolean` that returns true when
  * every member of first is in second.
  *
@@ -237,7 +237,7 @@ export function elemOf<A>(
  * import * as N from "./number.ts";
  * import { pipe } from "./fn.ts";
  *
- * const subset = S.isSubset(N.EqNumber);
+ * const subset = S.isSubset(N.ComparableNumber);
  *
  * const big = S.set(1, 2, 3, 4, 5);
  * const small = S.set(2, 4);
@@ -249,13 +249,13 @@ export function elemOf<A>(
  * @since 2.0.0
  */
 export function isSubset<A>(
-  S: Eq<A>,
+  S: Comparable<A>,
 ): (second: ReadonlySet<A>) => (first: ReadonlySet<A>) => boolean {
   return flow(elemOf(S), every);
 }
 
 /**
- * Given an instance of Eq<A> return a function that takes
+ * Given an instance of Comparable<A> return a function that takes
  * two ReadonlySet<A>s and merges them into a new ReadonlySet<A>
  * that contains all the elements from both sets.
  *
@@ -265,7 +265,7 @@ export function isSubset<A>(
  * import * as N from "./number.ts";
  * import { pipe } from "./fn.ts";
  *
- * const union = S.union(N.EqNumber);
+ * const union = S.union(N.ComparableNumber);
  * const s1 = S.set(1, 2, 3, 4);
  * const s2 = S.set(3, 4, 5, 6);
  *
@@ -276,7 +276,7 @@ export function isSubset<A>(
  * @since 2.0.0
  */
 export function union<A>(
-  S: Eq<A>,
+  S: Comparable<A>,
 ): (second: ReadonlySet<A>) => (first: ReadonlySet<A>) => ReadonlySet<A> {
   return (second) => (first) => {
     const out = copy(first) as Set<A>;
@@ -291,7 +291,7 @@ export function union<A>(
 }
 
 /**
- * Given an instance of Eq<A> return a function that takes
+ * Given an instance of Comparable<A> return a function that takes
  * two ReadonlySet<A>s and returns a new set with only
  * the elements that exist in both sets.
  *
@@ -301,7 +301,7 @@ export function union<A>(
  * import * as N from "./number.ts";
  * import { pipe } from "./fn.ts";
  *
- * const intersect = S.intersection(N.EqNumber);
+ * const intersect = S.intersection(N.ComparableNumber);
  * const s1 = S.set(1, 2, 3, 4);
  * const s2 = S.set(3, 4, 5, 6);
  *
@@ -312,7 +312,7 @@ export function union<A>(
  * @since 2.0.0
  */
 export function intersection<A>(
-  S: Eq<A>,
+  S: Comparable<A>,
 ): (ua: ReadonlySet<A>) => (tb: ReadonlySet<A>) => ReadonlySet<A> {
   return (ua) => {
     const isIn = elemOf(S)(ua);
@@ -329,7 +329,7 @@ export function intersection<A>(
 }
 
 /**
- * Given an instance of Eq<A> create a function that will
+ * Given an instance of Comparable<A> create a function that will
  * take a ReadonlySet<A> and return a new ReadonlySet<A> where
  * any members that are equal are deduplicated.
  *
@@ -337,9 +337,9 @@ export function intersection<A>(
  * ```ts
  * import * as S from "./set.ts";
  * import * as N from "./number.ts";
- * import * as E from "./eq.ts";
+ * import * as E from "./comparable.ts";
  *
- * const eq = E.struct({ num: N.EqNumber });
+ * const eq = E.struct({ num: N.ComparableNumber });
  * const compact = S.compact(eq);
  *
  * const set = S.set({ num: 1 }, { num: 1 }, { num: 2 });
@@ -351,7 +351,7 @@ export function intersection<A>(
  * @since 2.0.0
  */
 export function compact<A>(
-  S: Eq<A>,
+  S: Comparable<A>,
 ): (ua: ReadonlySet<A>) => ReadonlySet<A> {
   return (ua) => {
     const out = new Set<A>();
@@ -373,12 +373,12 @@ export function compact<A>(
  * ```ts
  * import * as S from "./set.ts";
  *
- * const result = S.of(1); // Set(1);
+ * const result = S.wrap(1); // Set(1);
  * ```
  *
  * @since 2.0.0
  */
-export function of<A>(a: A): ReadonlySet<A> {
+export function wrap<A>(a: A): ReadonlySet<A> {
   return set(a);
 }
 
@@ -429,15 +429,15 @@ export function map<A, I>(
  * const person = (name: string) => (age: number): Person => ({ name, age });
  *
  * const result = pipe(
- *   S.of(person),
- *   S.ap(S.of("Brandon")),
- *   S.ap(S.of(37)),
+ *   S.wrap(person),
+ *   S.apply(S.wrap("Brandon")),
+ *   S.apply(S.wrap(37)),
  * ); // ReadonlySet<Person>
  * ```
  *
  * @since 2.0.0
  */
-export function ap<A>(
+export function apply<A>(
   ua: ReadonlySet<A>,
 ): <I>(ufai: ReadonlySet<(a: A) => I>) => ReadonlySet<I> {
   return <I>(ufai: ReadonlySet<(a: A) => I>): ReadonlySet<I> => {
@@ -465,13 +465,13 @@ export function ap<A>(
  *
  * const result = pipe(
  *   set,
- *   S.chain(n => S.set(n, n + 1, n + 2)),
+ *   S.flatmap(n => S.set(n, n + 1, n + 2)),
  * ); // Set(1, 2, 3, 4, 5, 6, 7);
  * ```
  *
  * @since 2.0.0
  */
-export function chain<A, I>(
+export function flatmap<A, I>(
   fati: (a: A) => ReadonlySet<I>,
 ): (ua: ReadonlySet<A>) => ReadonlySet<I> {
   return (ua) => {
@@ -502,7 +502,7 @@ export function chain<A, I>(
  * @since 2.0.0
  */
 export function join<A>(uua: ReadonlySet<ReadonlySet<A>>): ReadonlySet<A> {
-  return pipe(uua, chain(identity));
+  return pipe(uua, flatmap(identity));
 }
 
 /**
@@ -715,7 +715,7 @@ const unsafeAdd = <A>(ua: ReadonlySet<A>) => (a: A): Set<A> => {
  * import * as O from "./option.ts";
  * import { pipe } from "./fn.ts";
  *
- * const traverseOption = S.traverse(O.ApplicativeOption);
+ * const traverseOption = S.traverse(O.ApplicableOption);
  * const invert = traverseOption((o: O.Option<number>) => o);
  *
  * const result1 = pipe(
@@ -731,56 +731,45 @@ const unsafeAdd = <A>(ua: ReadonlySet<A>) => (a: A): Set<A> => {
  * @since 2.0.0
  */
 export function traverse<V extends Kind>(
-  A: Applicative<V>,
+  A: Applicable<V>,
 ) {
   return <A, I, J, K, L, M>(
     favi: (a: A) => $<V, [I, J, K], [L], [M]>,
   ): (ua: ReadonlySet<A>) => $<V, [ReadonlySet<I>, J, K], [L], [M]> =>
     reduce(
-      (vis, a) => pipe(vis, A.map(unsafeAdd), A.ap(favi(a))),
-      A.of(empty() as Set<I>),
+      (vis, a) => pipe(vis, A.map(unsafeAdd), A.apply(favi(a))),
+      A.wrap(init() as Set<I>),
     );
 }
 
 /**
- * The canonical implementation of Functor for ReadonlySet. It contains
+ * The canonical implementation of Mappable for ReadonlySet. It contains
  * the method map.
  *
  * @since 2.0.0
  */
-export const FunctorSet: Functor<KindReadonlySet> = { map };
+export const MappableSet: Mappable<KindReadonlySet> = { map };
 
 /**
- * The canonical implementation of Apply for ReadonlySet. It contains
- * the methods ap and map.
+ * The canonical implementation of Applicable for ReadonlySet. It contains
+ * the methods wrap, ap, and map.
  *
  * @since 2.0.0
  */
-export const ApplySet: Apply<KindReadonlySet> = { ap, map };
+export const ApplicableSet: Applicable<KindReadonlySet> = { apply, map, wrap };
 
 /**
- * The canonical implementation of Applicative for ReadonlySet. It contains
- * the methods of, ap, and map.
+ * The canonical implementation of Flatmappable for ReadonlySet. It contains
+ * the methods wrap, ap, map, join, and flatmap.
  *
  * @since 2.0.0
  */
-export const ApplicativeSet: Applicative<KindReadonlySet> = { of, ap, map };
-
-/**
- * The canonical implementation of Applicative for ReadonlySet. It contains
- * the methods ap, map, and chain
- *
- * @since 2.0.0
- */
-export const ChainSet: Chain<KindReadonlySet> = { ap, map, chain };
-
-/**
- * The canonical implementation of Monad for ReadonlySet. It contains
- * the methods of, ap, map, join, and chain.
- *
- * @since 2.0.0
- */
-export const MonadSet: Monad<KindReadonlySet> = { of, ap, map, join, chain };
+export const FlatmappableSet: Flatmappable<KindReadonlySet> = {
+  apply,
+  flatmap,
+  map,
+  wrap,
+};
 
 /**
  * The canonical implementation of Filterable for ReadonlySet. It contains
@@ -796,12 +785,12 @@ export const FilterableSet: Filterable<KindReadonlySet> = {
 };
 
 /**
- * The canonical implementation of Foldable for ReadonlySet. It contains
+ * The canonical implementation of Reducible for ReadonlySet. It contains
  * the method reduce.
  *
  * @since 2.0.0
  */
-export const FoldableSet: Foldable<KindReadonlySet> = { reduce };
+export const ReducibleSet: Reducible<KindReadonlySet> = { reduce };
 
 /**
  * The canonical implementation of Traversable for ReadonlySet. It contains
@@ -816,29 +805,29 @@ export const TraversableSet: Traversable<KindReadonlySet> = {
 };
 
 /**
- * Given an instance of Show<A> return an instance of Show<ReadonlySet<A>>.
+ * Given an instance of Showable<A> return an instance of Showable<ReadonlySet<A>>.
  *
  * @example
  * ```ts
  * import * as S from "./set.ts";
  * import * as N from "./number.ts";
  *
- * const { show } = S.getShow(N.ShowNumber);
+ * const { show } = S.getShowable(N.ShowableNumber);
  *
- * const result1 = show(S.empty()); // "Set([])"
+ * const result1 = show(S.init()); // "Set([])"
  * const result2 = show(S.set(1, 2, 3)); // "Set([1, 2, 3])"
  * ```
  *
  * @since 2.0.0
  */
-export function getShow<A>(S: Show<A>): Show<ReadonlySet<A>> {
+export function getShowable<A>(S: Showable<A>): Showable<ReadonlySet<A>> {
   return ({
     show: (s) => `Set([${Array.from(s.values()).map(S.show).join(", ")}])`,
   });
 }
 
 /**
- * Given an instance of Eq<A> return Eq<ReadonlySet<A>>.
+ * Given an instance of Comparable<A> return Comparable<ReadonlySet<A>>.
  *
  * @example
  * ```ts
@@ -846,53 +835,53 @@ export function getShow<A>(S: Show<A>): Show<ReadonlySet<A>> {
  * import * as N from "./number.ts";
  * import { pipe } from "./fn.ts";
  *
- * const { equals } = S.getEq(N.EqNumber);
+ * const { compare } = S.getComparable(N.ComparableNumber);
  *
- * const result1 = pipe(
- *   S.set(1, 2, 3),
- *   equals(S.set(3, 2, 1)),
+ * const result1 = compare(
+ *   S.set(1, 2, 3))(
+ *   S.set(3, 2, 1)
  * ); // true
- * const result2 = pipe(
- *   S.set(1, 2, 3),
- *   equals(S.set(1, 2, 3, 4)),
+ * const result2 = compare(
+ *   S.set(1, 2, 3))(
+ *   S.set(1, 2, 3, 4)
  * ); // false
  * ```
  *
  * @since 2.0.0
  */
-export function getEq<A>(S: Eq<A>): Eq<ReadonlySet<A>> {
+export function getComparable<A>(S: Comparable<A>): Comparable<ReadonlySet<A>> {
   const subset = isSubset(S);
-  return {
-    equals: (second) => (first) =>
-      subset(first)(second) && subset(second)(first),
-  };
+  return fromCompare((second) => (first) =>
+    subset(first)(second) && subset(second)(first)
+  );
 }
 
 /**
- * Given an instance of Eq<A> create a Monoid<ReadonlySet<A>> where
- * concat creates a union of two ReadonlySets.
+ * Given an instance of Comparable<A> create a Combinable<ReadonlySet<A>> where
+ * combine creates a union of two ReadonlySets.
  *
  * @example
  * ```ts
  * import * as S from "./set.ts";
  * import * as N from "./number.ts";
- * import * as M from "./monoid.ts";
+ * import * as M from "./combinable.ts";
  * import { pipe } from "./fn.ts";
  *
- * const monoid = S.getUnionMonoid(N.EqNumber);
- * const concatAll = M.concatAll(monoid);
+ * const monoid = S.getUnionCombinable(N.ComparableNumber);
+ * const combineAll = M.getCombineAll(monoid);
  *
- * const result1 = concatAll([
+ * const result1 = combineAll(
  *   S.set(1, 2, 3),
  *   S.set(4, 5, 6),
  *   S.set(1, 3, 5, 7)
- * ]); // Set(1, 2, 3, 4, 5, 6, 7)
- * const result2 = concatAll([]); // Set()
- * const result3 = concatAll([S.empty()]); // Set()
+ * ); // Set(1, 2, 3, 4, 5, 6, 7)
+ * const result3 = combineAll(S.init()); // Set()
  * ```
  *
  * @since 2.0.0
  */
-export function getUnionMonoid<A>(S: Eq<A>): Monoid<ReadonlySet<A>> {
-  return ({ concat: union(S), empty });
+export function getUnionCombinable<A>(
+  S: Comparable<A>,
+): Combinable<ReadonlySet<A>> {
+  return fromCombine(union(S));
 }

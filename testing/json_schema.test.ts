@@ -80,6 +80,12 @@ Deno.test({
   },
 });
 
+Deno.test("JsonSchema Date", () => {
+  const actual = J.print(J.date());
+  const expected = { type: "string", format: "date" };
+  assertEquals(actual, expected);
+});
+
 Deno.test({
   name: "JsonSchema struct",
   fn() {
