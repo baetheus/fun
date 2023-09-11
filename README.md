@@ -40,38 +40,55 @@ and
 that are implemented in fun. Note that some of these types are bote data
 structures and more general algebraic structures.
 
-| Type | Algebraic Data Type | Algebraic Structure | Native | Other Names | |
-[Applicable](./applicable.ts) | | ✓ | | Applicative | |
-[ReadonlyArray](./array.ts) | ✓ | | ✓ | Array | | [Async](./async.ts) | ✓ | | |
-Task | | [AsyncEither](./async_either.ts) | ✓ | | | TaskEither | |
-[AsyncIterable](./async_iterable.ts) | ✓ | | ✓ | | |
-[Bimappable](./bimappable.ts) | | ✓ | | Bifunctor, Covariant Bifunctor | |
-[Boolean](./boolean.ts) | ✓ | | ✓ | | | [Combinable](./combinable.ts) | | ✓ | |
-Semigroup | | [Comparable](./comparable.ts) | | ✓ | | Setoid, Eq | |
-[Composable](./composable.ts) | | ✓ | | Category | | [Decoder](./decoder.ts) | ✓
-| | | | | [Either](./either.ts) | ✓ | | | | | [Failable](./failable.ts) | | ✓ |
-| Validation | | [Filterable](./filterable.ts) | | ✓ | | | |
-[Flatmappable](./flatmappable.ts) | | ✓ | | Monad | | [Fn](./fn.ts) | ✓ | | ✓ |
-Reader | | [FnEither](./fn_either.ts) | ✓ | | | ReaderEither | |
-[Free](./free.ts) | ✓ | | | FreeSemigroup | | [Identity](./identity.ts) | ✓ | |
-| Trivial | | [Initializable](./initializable.ts) | | ✓ | | Monoid | |
-[Iterable](./iterable.ts) | ✓ | | ✓ | | | [JsonSchema](./json_schema.ts) | ✓ | |
-| | | [ReadonlyMap](./map.ts) | ✓ | | ✓ | Map | | [Mappable](./mappable.ts) | |
-✓ | | Functor, Covariant Functor | | [Newtype](./newtype.ts) | | | | Brand,
-Branded Type | | [Nilable](./nilable.ts) | ✓ | | | | | [Number](./number.ts) | ✓
-| | ✓ | | | [Optic](./optic.ts) | ✓ | | | Iso, Lens, Optional, Prism, Traversal
-| | [Option](./option.ts) | ✓ | | | Maybe | | [Pair](./pair.ts) | ✓ | | |
-Separated | | [Predicate](./predicate.ts) | ✓ | | | | |
-[Premappable](./premappable.ts) | | ✓ | | Contravariant, Contravariant Functor |
-| [Promise](./promise.ts) | ✓ | | ✓ | | | [Reducible](./reducible.ts) | | ✓ | |
-Foldable | | [Refinement](./refinement.ts) | ✓ | | | | |
-[Schemable](./schemable.ts) | | ✓ | | | | [ReadonlySet](./set.ts) | ✓ | | ✓ |
-Set | | [Showable](./showable.ts) | | ✓ | | Show | | [Sortable](./sortable.ts) |
-| ✓ | | Ord | | [State](./state.ts) | ✓ | | | | | [String](./string.ts) | ✓ | |
-✓ | | | [Sync](./sync.ts) | ✓ | | | IO | | [SyncEither](./sync_either.ts) | ✓ |
-| | IOEither | | [These](./these.ts) | ✓ | | | | |
-[Traversable](./traversable.ts) | | ✓ | | | | [Tree](./tree.ts) | ✓ | | | | |
-[Wrappable](./wrappable.ts) | | ✓ | | Pointed |
+| Type                                 | Algebraic Data Type | Algebraic Structure | Native | Other Names                           |
+| ------------------------------------ | ------------------- | ------------------- | ------ | ------------------------------------- |
+| [Applicable](./applicable.ts)        |                     | ✓                   |        | Applicative                           |
+| [ReadonlyArray](./array.ts)          | ✓                   |                     | ✓      | Array                                 |
+| [Async](./async.ts)                  | ✓                   |                     |        | Task                                  |
+| [AsyncEither](./async_either.ts)     | ✓                   |                     |        | TaskEither                            |
+| [AsyncIterable](./async_iterable.ts) | ✓                   |                     | ✓      |                                       |
+| [Bimappable](./bimappable.ts)        |                     | ✓                   |        | Bifunctor, Covariant Bifunctor        |
+| [Boolean](./boolean.ts)              | ✓                   |                     | ✓      |                                       |
+| [Combinable](./combinable.ts)        |                     | ✓                   |        | Semigroup                             |
+| [Comparable](./comparable.ts)        |                     | ✓                   |        | Setoid, Eq                            |
+| [Composable](./composable.ts)        |                     | ✓                   |        | Category                              |
+| [Decoder](./decoder.ts)              | ✓                   |                     |        |                                       |
+| [Either](./either.ts)                | ✓                   |                     |        |                                       |
+| [Failable](./failable.ts)            |                     | ✓                   |        | Validation                            |
+| [Filterable](./filterable.ts)        |                     | ✓                   |        |                                       |
+| [Flatmappable](./flatmappable.ts)    |                     | ✓                   |        | Monad                                 |
+| [Fn](./fn.ts)                        | ✓                   |                     | ✓      | Reader                                |
+| [FnEither](./fn_either.ts)           | ✓                   |                     |        | ReaderEither                          |
+| [Free](./free.ts)                    | ✓                   |                     |        | FreeSemigroup                         |
+| [Identity](./identity.ts)            | ✓                   |                     |        | Trivial                               |
+| [Initializable](./initializable.ts)  |                     | ✓                   |        | Monoid                                |
+| [Iterable](./iterable.ts)            | ✓                   |                     | ✓      |                                       |
+| [JsonSchema](./json_schema.ts)       | ✓                   |                     |        |                                       |
+| [ReadonlyMap](./map.ts)              | ✓                   |                     | ✓      | Map                                   |
+| [Mappable](./mappable.ts)            |                     | ✓                   |        | Functor, Covariant Functor            |
+| [Newtype](./newtype.ts)              |                     |                     |        | Brand, Branded Type                   |
+| [Nilable](./nilable.ts)              | ✓                   |                     |        |                                       |
+| [Number](./number.ts)                | ✓                   |                     | ✓      |                                       |
+| [Optic](./optic.ts)                  | ✓                   |                     |        | Iso, Lens, Optional, Prism, Traversal |
+| [Option](./option.ts)                | ✓                   |                     |        | Maybe                                 |
+| [Pair](./pair.ts)                    | ✓                   |                     |        | Separated                             |
+| [Predicate](./predicate.ts)          | ✓                   |                     |        |                                       |
+| [Premappable](./premappable.ts)      |                     | ✓                   |        | Contravariant, Contravariant Functor  |
+| [Promise](./promise.ts)              | ✓                   |                     | ✓      |                                       |
+| [Reducible](./reducible.ts)          |                     | ✓                   |        | Foldable                              |
+| [Refinement](./refinement.ts)        | ✓                   |                     |        |                                       |
+| [Schemable](./schemable.ts)          |                     | ✓                   |        |                                       |
+| [ReadonlySet](./set.ts)              | ✓                   |                     | ✓      | Set                                   |
+| [Showable](./showable.ts)            |                     | ✓                   |        | Show                                  |
+| [Sortable](./sortable.ts)            |                     | ✓                   |        | Ord                                   |
+| [State](./state.ts)                  | ✓                   |                     |        |                                       |
+| [String](./string.ts)                | ✓                   |                     | ✓      |                                       |
+| [Sync](./sync.ts)                    | ✓                   |                     |        | IO                                    |
+| [SyncEither](./sync_either.ts)       | ✓                   |                     |        | IOEither                              |
+| [These](./these.ts)                  | ✓                   |                     |        |                                       |
+| [Traversable](./traversable.ts)      |                     | ✓                   |        |                                       |
+| [Tree](./tree.ts)                    | ✓                   |                     |        |                                       |
+| [Wrappable](./wrappable.ts)          |                     | ✓                   |        | Pointed                               |
 
 ## Major Versions
 
