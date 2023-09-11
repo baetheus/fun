@@ -13,13 +13,13 @@
 import type { Combinable } from "./combinable.ts";
 import type { Comparable } from "./comparable.ts";
 import type { Initializable } from "./initializable.ts";
-import type { Iso, Prism } from "./optics.ts";
+import type { Iso, Prism } from "./optic.ts";
 import type { Option } from "./option.ts";
 import type { Predicate } from "./predicate.ts";
 import type { Sortable } from "./sortable.ts";
 
 import { fromPredicate } from "./option.ts";
-import { iso as _iso, prism as _prism } from "./optics.ts";
+import { iso as _iso, prism as _prism } from "./optic.ts";
 import { identity, unsafeCoerce } from "./fn.ts";
 
 /**

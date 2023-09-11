@@ -298,7 +298,7 @@ export type Refold<S, A> = Fold<S, A> & Reviewer<S, A>;
  * ```ts
  * import type { Pair } from "./pair.ts";
  *
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import * as P from "./pair.ts";
  *
  * const fst = <A, B = unknown>() => O.viewer<O.LensTag, Pair<A, B>, A>(
@@ -316,7 +316,7 @@ export type Refold<S, A> = Fold<S, A> & Reviewer<S, A>;
  * ```ts
  * import type { Either } from "./either.ts";
  *
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import * as E from "./either.ts";
  *
  * const right = <R, L = unknown>() => O.viewer<O.AffineTag, Either<L, R>, R>(
@@ -332,7 +332,7 @@ export type Refold<S, A> = Fold<S, A> & Reviewer<S, A>;
  *
  * @example The "Fold" viewer retrieves zero or more values as an Array.
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  *
  * const record = <A>() => O.viewer<O.FoldTag, Record<string, A>, A>(
  *   O.FoldTag,
@@ -416,7 +416,7 @@ export function optic<U extends Tag, S, A>(
  * ```ts
  * import type { NonEmptyArray } from "./array.ts";
  *
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import * as A from "./array.ts";
  * import { pipe } from "./fn.ts";
  *
@@ -447,7 +447,7 @@ export function lens<S, A>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import { Option, match, some, none, map, fromPredicate } from "./option.ts";
  * import { pipe, identity } from "./fn.ts";
  *
@@ -482,7 +482,7 @@ export function iso<S, A>(
  * ```ts
  * import type { Either } from "./either.ts";
  *
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import * as E from "./either.ts";
  *
  * const right = <R, L = unknown>() => O.affineFold<Either<L, R>, R>(
@@ -514,7 +514,7 @@ export function affineFold<S, A>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import * as Op from "./option.ts";
  *
  * const key = (key: string) => <A>() =>
@@ -551,7 +551,7 @@ export function prism<S, A>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import * as R from "./record.ts";
  *
  * const values = <A>() => O.fold<Record<string, A>, A>(
@@ -581,7 +581,7 @@ export function fold<S, A>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import * as S from "./set.ts";
  *
  * const set = <A>() => O.refold<ReadonlySet<A>, A>(
@@ -615,7 +615,7 @@ export function refold<S, A>(
  * ```ts
  * import type { NonEmptyArray } from "./array.ts";
  *
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  *
  * const isNonEmpty = <A>(arr: ReadonlyArray<A>): arr is NonEmptyArray<A> =>
  *   arr.length > 0;
@@ -636,7 +636,7 @@ export function fromPredicate<S, A extends S>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  *
  * const positive = O.fromPredicate((n: number) => n > 0);
  *
@@ -661,7 +661,7 @@ export function fromPredicate<A>(predicate: Predicate<A>): Prism<A, A> {
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import { pipe } from "./fn.ts";
  *
  * type Foo = { readonly bar: number };
@@ -689,7 +689,7 @@ export function view<S>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import { pipe } from "./fn.ts";
  *
  * type Person = { readonly name: string };
@@ -715,7 +715,7 @@ export function modify<A>(faa: (a: A) => A): <S>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import { pipe } from "./fn.ts";
  *
  * type Person = { name: string };
@@ -743,7 +743,7 @@ export function replace<A>(a: A): <S>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import * as S from "./set.ts";
  * import { pipe } from "./fn.ts";
  *
@@ -777,7 +777,7 @@ const _identity: Iso<any, any> = iso(identity, identity);
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  *
  * const number = O.id<number>();
  *
@@ -808,7 +808,7 @@ export function id<A>(): Iso<A, A> {
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import { pipe } from "./fn.ts";
  *
  * const even = O.fromPredicate((n: number) => n % 2 === 0);
@@ -856,7 +856,7 @@ export function compose<V extends Tag, A, I>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import * as S from "./set.ts";
  * import { pipe } from "./fn.ts";
  *
@@ -888,7 +888,7 @@ export function composeReviewer<A, I>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  *
  * const viewer = O.wrap(1);
  *
@@ -908,7 +908,7 @@ export function wrap<A, S = unknown>(a: A): Viewer<LensTag, S, A> {
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import { pipe } from "./fn.ts";
  *
  * const plussed = pipe(
@@ -937,7 +937,7 @@ export function imap<A, I>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import { pipe } from "./fn.ts";
  *
  * const mapped = pipe(
@@ -966,7 +966,7 @@ export function map<A, I>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import { pipe } from "./fn.ts";
  *
  * type Person = { name: string, age: number };
@@ -1012,7 +1012,7 @@ export function apply<V extends Tag, S, A>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import { toUpperCase } from "./string.ts";
  * import { pipe } from "./fn.ts";
  *
@@ -1048,7 +1048,7 @@ export function prop<A, P extends keyof A>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import { pipe } from "./fn.ts";
  *
  * type Book = {
@@ -1096,7 +1096,7 @@ export function props<A extends ReadonlyRecord<unknown>, P extends keyof A>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import { pipe } from "./fn.ts";
  *
  * const second = pipe(
@@ -1123,7 +1123,7 @@ export function index(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import { pipe } from "./fn.ts";
  *
  * const one = pipe(
@@ -1152,7 +1152,7 @@ export function key(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import { constNone } from "./option.ts";
  * import { pipe } from "./fn.ts";
  *
@@ -1195,7 +1195,7 @@ export function atKey(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import { pipe } from "./fn.ts";
  *
  * const positive = pipe(O.id<number>(), O.filter(n => n > 0));
@@ -1233,7 +1233,7 @@ export function filter<A>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import * as M from "./map.ts";
  * import { ComparableString, toLowerCase } from "./string.ts";
  * import { premap } from "./comparable.ts";
@@ -1276,7 +1276,7 @@ export function atMap<B>(eq: Comparable<B>): (key: B) => <U extends Tag, S, A>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import * as T from "./tree.ts";
  * import { pipe } from "./fn.ts";
  *
@@ -1316,7 +1316,7 @@ export function traverse<T extends Kind>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import { InitializableNumberSum } from "./number.ts";
  * import { pipe, identity } from "./fn.ts";
  *
@@ -1359,7 +1359,7 @@ export function combineAll<A, I>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import { pipe } from "./fn.ts";
  *
  * const result = pipe(
@@ -1380,7 +1380,7 @@ export const record: <U extends Tag, S, A>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import { pipe } from "./fn.ts";
  *
  * const result = pipe(
@@ -1402,7 +1402,7 @@ export const array: <U extends Tag, S, A>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import { pipe } from "./fn.ts";
  *
  * const result = pipe(
@@ -1424,7 +1424,7 @@ export const set: <U extends Tag, S, A>(
  * @example
  * ```ts
  * import type { Tree } from "./tree.ts";
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import * as T from "./tree.ts";
  * import { pipe } from "./fn.ts";
  *
@@ -1447,7 +1447,7 @@ export const tree: <U extends Tag, S, A>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import { constNone } from "./option.ts";
  * import { pipe } from "./fn.ts";
  *
@@ -1470,7 +1470,7 @@ export const nilable: <U extends Tag, S, A>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import { Option, some, none } from "./option.ts";
  * import { pipe } from "./fn.ts";
  *
@@ -1496,7 +1496,7 @@ export const some: <U extends Tag, S, A>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import * as E from "./either.ts";
  * import { pipe } from "./fn.ts";
  *
@@ -1523,7 +1523,7 @@ export const right: <U extends Tag, S, B, A>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import * as E from "./either.ts";
  * import { pipe } from "./fn.ts";
  *
@@ -1550,7 +1550,7 @@ export const left: <U extends Tag, S, B, A>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import * as P from "./pair.ts";
  * import { pipe } from "./fn.ts";
  *
@@ -1573,7 +1573,7 @@ export const first: <U extends Tag, S, B, A>(
  *
  * @example
  * ```ts
- * import * as O from "./optics.ts";
+ * import * as O from "./optic.ts";
  * import * as P from "./pair.ts";
  * import { pipe } from "./fn.ts";
  *

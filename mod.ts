@@ -26,7 +26,7 @@ export * as mappable from "./mappable.ts";
 export * as newtype from "./newtype.ts";
 export * as nilable from "./nilable.ts";
 export * as number from "./number.ts";
-export * as optics from "./optics.ts";
+export * as optics from "./optic.ts";
 export * as option from "./option.ts";
 export * as pair from "./pair.ts";
 export * as predicate from "./predicate.ts";

@@ -1,32 +1,26 @@
 # functional [![Coverage Status](https://coveralls.io/repos/github/baetheus/fun/badge.svg?branch=main)](https://coveralls.io/github/baetheus/fun?branch=main) [![deno module](https://shield.deno.dev/x/fun)](https://deno.land/x/fun)
 
-functional is a set of utility modules in the vein of
-[Ramda](https://ramdajs.com/) and [fp-ts](https://gcanti.github.io/fp-ts/). It
-uses a
-[lightweight higher kinded type encoding](https://github.com/baetheus/fun/blob/main/kind.ts)
-to implement reusable high level interfaces. These interfaces are called Type
-Classes or Algebraic Structures in other languages. The usefulness of these
-interfaces comes from their ability to describe common operations across
-different data structures and concrete data types without referencing any
-specific data type. Intuitively one can think of these higher kinded types as a
-generic type that itself has a Generic parameter. ie `type Apply<A, B> = A<B>`.
-This is not valid typescript code but it illuminates the cored idea of higher
-kinder types.
-
-The functional library is written as a first class Deno library. Some effort
-might be made to release Deno into npm but NodeJS is not a first class target
-for support. If you want a functional library for NodeJS fp-ts is definitely the
-way to go!
+Functional is a no dependency utility library for TypeScript and JavaScript that
+includes a full suite of functional programming tools. Recent versions have
+moved away from the jargon of
+[Category Theory](https://en.wikipedia.org/wiki/Category_theory) to a more
+intuitive naming scheme unique to functional. However, for those that do have
+existing experience with functional programming or category theory, functional
+includes many algebraic data types (including implementations of algebraic
+structures for native javascript structures), type classes, TypeScript-based
+higher kinded type substitutions, data-last utility combinators, and concrete
+type utilities.
 
 The primary goals of functional are to be:
 
 - **Pragmatic**: The API surface of functional should favor ease-of-use and
   consistency over cleverness or purity. This project is ultimately for getting
-  work done.
-- **Understandable**: The higher kinded type and TypeClass implementations are
-  meant to be as simple as possible so their logic can be easily audited. We
-  have also chosen descriptive names for TypeClass implementations instead of
-  ones pulled from Category Theory.
+  work done, even it if means a data structure or tools is not mathematically
+  sound in all use cases.
+- **Understandable**: The higher kinded type and algebraic structure
+  implementations are meant to be as simple as possible so their logic can be
+  easily audited. We have also chosen descriptive names for TypeClass
+  implementations instead of ones pulled from Category Theory.
 - **Performant**: Once the first two goals are satisfied, the long term changes
   within functional are likely going to be beneath the API surface and aimed at
   speeding things up where possible.
@@ -39,13 +33,58 @@ Some non-goals of functional are:
 ## Documentation
 
 Documentation is generated for each github tagged release. The latest
-documentation can be found [here](https://deno.land/x/fun).
+documentation can be found [here](https://deno.land/x/fun). Following is a list
+of the [algebraic data types](https://en.wikipedia.org/wiki/Algebraic_data_type)
+and
+[algebraic structures](https://en.wikipedia.org/wiki/Algebraic_structure)/[type classes](https://en.wikipedia.org/wiki/Type_class)
+that are implemented in fun. Note that some of these types are bote data
+structures and more general algebraic structures.
 
-## Versions
+| Type | Algebraic Data Type | Algebraic Structure | Native | Other Names | |
+[Applicable](./applicable.ts) | | ✓ | | Applicative | |
+[ReadonlyArray](./array.ts) | ✓ | | ✓ | Array | | [Async](./async.ts) | ✓ | | |
+Task | | [AsyncEither](./async_either.ts) | ✓ | | | TaskEither | |
+[AsyncIterable](./async_iterable.ts) | ✓ | | ✓ | | |
+[Bimappable](./bimappable.ts) | | ✓ | | Bifunctor, Covariant Bifunctor | |
+[Boolean](./boolean.ts) | ✓ | | ✓ | | | [Combinable](./combinable.ts) | | ✓ | |
+Semigroup | | [Comparable](./comparable.ts) | | ✓ | | Setoid, Eq | |
+[Composable](./composable.ts) | | ✓ | | Category | | [Decoder](./decoder.ts) | ✓
+| | | | | [Either](./either.ts) | ✓ | | | | | [Failable](./failable.ts) | | ✓ |
+| Validation | | [Filterable](./filterable.ts) | | ✓ | | | |
+[Flatmappable](./flatmappable.ts) | | ✓ | | Monad | | [Fn](./fn.ts) | ✓ | | ✓ |
+Reader | | [FnEither](./fn_either.ts) | ✓ | | | ReaderEither | |
+[Free](./free.ts) | ✓ | | | FreeSemigroup | | [Identity](./identity.ts) | ✓ | |
+| Trivial | | [Initializable](./initializable.ts) | | ✓ | | Monoid | |
+[Iterable](./iterable.ts) | ✓ | | ✓ | | | [JsonSchema](./json_schema.ts) | ✓ | |
+| | | [ReadonlyMap](./map.ts) | ✓ | | ✓ | Map | | [Mappable](./mappable.ts) | |
+✓ | | Functor, Covariant Functor | | [Newtype](./newtype.ts) | | | | Brand,
+Branded Type | | [Nilable](./nilable.ts) | ✓ | | | | | [Number](./number.ts) | ✓
+| | ✓ | | | [Optic](./optic.ts) | ✓ | | | Iso, Lens, Optional, Prism, Traversal
+| | [Option](./option.ts) | ✓ | | | Maybe | | [Pair](./pair.ts) | ✓ | | |
+Separated | | [Predicate](./predicate.ts) | ✓ | | | | |
+[Premappable](./premappable.ts) | | ✓ | | Contravariant, Contravariant Functor |
+| [Promise](./promise.ts) | ✓ | | ✓ | | | [Reducible](./reducible.ts) | | ✓ | |
+Foldable | | [Refinement](./refinement.ts) | ✓ | | | | |
+[Schemable](./schemable.ts) | | ✓ | | | | [ReadonlySet](./set.ts) | ✓ | | ✓ |
+Set | | [Showable](./showable.ts) | | ✓ | | Show | | [Sortable](./sortable.ts) |
+| ✓ | | Ord | | [State](./state.ts) | ✓ | | | | | [String](./string.ts) | ✓ | |
+✓ | | | [Sync](./sync.ts) | ✓ | | | IO | | [SyncEither](./sync_either.ts) | ✓ |
+| | IOEither | | [These](./these.ts) | ✓ | | | | |
+[Traversable](./traversable.ts) | | ✓ | | | | [Tree](./tree.ts) | ✓ | | | | |
+[Wrappable](./wrappable.ts) | | ✓ | | Pointed |
 
-| Version | Deno Release                                                  | TypeScript Version                                                   |
-| ------- | ------------------------------------------------------------- | -------------------------------------------------------------------- |
-| 1.0.0   | [1.9.2](https://github.com/denoland/deno/releases/tag/v1.9.2) | [4.2.2](https://github.com/microsoft/TypeScript/releases/tag/v4.2.2) |
+## Major Versions
+
+In the fashion of semantic versioning function makes an effort to not break APIs
+on minor or patch releases. Occasionally, candidate tags (2.0.0-alpha.1) will be
+used to indicate a commit is ready for inspection by other developers of fun.
+The main branch of fun is for bleeding edge developement and is not considered
+to be a production ready import.
+
+| Version | Deno Release                                                    | TypeScript Version                                                   |
+| ------- | --------------------------------------------------------------- | -------------------------------------------------------------------- |
+| 2.0.0   | [1.36.0](https://github.com/denoland/deno/releases/tag/v1.36.0) | [5.1.6](https://github.com/microsoft/TypeScript/releases/tag/v5.1.6) |
+| 1.0.0   | [1.9.2](https://github.com/denoland/deno/releases/tag/v1.9.2)   | [4.2.2](https://github.com/microsoft/TypeScript/releases/tag/v4.2.2) |
 
 ## History
 

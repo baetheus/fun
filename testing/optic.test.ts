@@ -10,7 +10,7 @@ import type { Option } from "../option.ts";
 import type { Either } from "../either.ts";
 import type { Pair } from "../pair.ts";
 
-import * as O from "../optics.ts";
+import * as O from "../optic.ts";
 import * as A from "../array.ts";
 import * as Op from "../option.ts";
 import * as E from "../either.ts";
