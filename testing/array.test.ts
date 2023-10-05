@@ -113,8 +113,8 @@ Deno.test("Array flatmap", () => {
   ]);
 });
 
-Deno.test("Array reduce", () => {
-  assertEquals(pipe([1, 2, 3], A.reduce((a, b) => a + b, 0)), 6);
+Deno.test("Array fold", () => {
+  assertEquals(pipe([1, 2, 3], A.fold((a, b) => a + b, 0)), 6);
 });
 
 Deno.test("Array traverse", () => {
@@ -128,7 +128,7 @@ Deno.test("Array indexedMap", () => {
 });
 
 Deno.test("Array indexedReduce", () => {
-  assertEquals(pipe([1, 2, 3], A.reduce((a, b, i) => a + b + i, 0)), 9);
+  assertEquals(pipe([1, 2, 3], A.fold((a, b, i) => a + b + i, 0)), 9);
 });
 
 Deno.test("Array indexedTraverse", () => {
@@ -308,6 +308,11 @@ Deno.test("Array range", () => {
   assertEquals(A.range(-1, 1, 1), []);
 });
 
+Deno.test("Array getCombinableArray", () => {
+  const { combine } = A.getCombinableArray<number>();
+  assertStrictEquals(combine, A.combine);
+});
+
 Deno.test("Array getComparableArray", () => {
   const eq = A.getComparableArray(ComparableBoolean);
   const values = [true, false];
@@ -353,4 +358,30 @@ Deno.test("Array getShowableArray", () => {
 
   assertEquals(show.show([]), "ReadonlyArray[]");
   assertEquals(show.show([1, 2, 3]), "ReadonlyArray[1, 2, 3]");
+});
+
+Deno.test("Array tap", () => {
+  const out: number[] = [];
+  pipe(
+    A.range(3),
+    A.tap((n) => out.push(n)),
+  );
+  assertEquals(out, A.range(3));
+});
+
+Deno.test("Array bind", () => {
+  assertEquals(
+    pipe(
+      A.range(2),
+      A.bindTo("a"),
+      A.bind("b", ({ a }) => [a, a + 1]),
+    ),
+    [{ a: 0, b: 0 }, { a: 0, b: 1 }, { a: 1, b: 1 }, { a: 1, b: 2 }],
+  );
+});
+
+Deno.test("Array bindTo", () => {
+  assertEquals(pipe(A.range(2), A.bindTo("range")), [{ range: 0 }, {
+    range: 1,
+  }]);
 });

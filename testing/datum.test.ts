@@ -290,13 +290,13 @@ Deno.test("Datum alt", () => {
   assertEquals(pipe(D.refresh(1), D.alt(D.refresh(2))), D.refresh(1));
 });
 
-Deno.test("Datum reduce", () => {
-  const reduce = D.reduce((o: number, a: number) => o + a, 0);
+Deno.test("Datum fold", () => {
+  const fold = D.fold((o: number, a: number) => o + a, 0);
 
-  assertEquals(reduce(D.initial), 0);
-  assertEquals(reduce(D.pending), 0);
-  assertEquals(reduce(D.replete(1)), 1);
-  assertEquals(reduce(D.refresh(1)), 1);
+  assertEquals(fold(D.initial), 0);
+  assertEquals(fold(D.pending), 0);
+  assertEquals(fold(D.replete(1)), 1);
+  assertEquals(fold(D.refresh(1)), 1);
 });
 
 Deno.test("Datum traverse", () => {

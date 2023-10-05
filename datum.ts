@@ -191,7 +191,7 @@ export function alt<A>(tb: Datum<A>): (ta: Datum<A>) => Datum<A> {
   return (ta) => isSome(ta) ? ta : tb;
 }
 
-export function reduce<A, O>(
+export function fold<A, O>(
   foao: (o: O, a: A) => O,
   o: O,
 ): (ta: Datum<A>) => O {
@@ -279,6 +279,6 @@ export const FlatmappableDatum: Flatmappable<KindDatum> = {
 
 export const TraversableDatum: Traversable<KindDatum> = {
   map,
-  reduce,
+  fold,
   traverse,
 };

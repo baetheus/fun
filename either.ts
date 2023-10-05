@@ -8,7 +8,7 @@ import type { Failable } from "./failable.ts";
 import type { Flatmappable } from "./flatmappable.ts";
 import type { Mappable } from "./mappable.ts";
 import type { Predicate } from "./predicate.ts";
-import type { Reducible } from "./reducible.ts";
+import type { Foldable } from "./foldable.ts";
 import type { Refinement } from "./refinement.ts";
 import type { Showable } from "./showable.ts";
 import type { Sortable } from "./sortable.ts";
@@ -274,7 +274,7 @@ export function alt<A, J>(
   return (ta) => isLeft(ta) ? tb : ta;
 }
 
-export function reduce<A, O>(
+export function fold<A, O>(
   foao: (o: O, a: A) => O,
   o: O,
 ): <B>(ta: Either<B, A>) => O {
@@ -316,11 +316,11 @@ export const FlatmappableEither: Flatmappable<KindEither> = {
 
 export const MappableEither: Mappable<KindEither> = { map };
 
-export const ReducibleEither: Reducible<KindEither> = { reduce };
+export const FoldableEither: Foldable<KindEither> = { fold };
 
 export const TraversableEither: Traversable<KindEither> = {
   map,
-  reduce,
+  fold,
   traverse,
 };
 

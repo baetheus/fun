@@ -1,5 +1,5 @@
 // deno-lint-ignore-file no-explicit-any ban-types
-import { pipe } from "../fns.ts";
+import { pipe } from "../fn.ts";
 
 /**
  * This is here just to show a different path for
@@ -51,23 +51,22 @@ export type Primitives =
 
 export type $<T, S extends any[]> = T extends Fix<infer F> ? F
   : T extends _<infer N> ? S[N]
-  : T extends Primitives ? T
   : T extends any[] ? { [K in keyof T]: $<T[K], S> }
   : T extends (...as: infer AS) => infer R ? (...as: $<AS, S>) => $<R, S>
   : T extends Promise<infer I> ? Promise<$<I, S>>
   : T extends object ? { [K in keyof T]: $<T[K], S> }
-  : T extends unknown ? never
-  : T;
+  : T extends Primitives ? T
+  : never;
 
 // ---
 // Type Classes
 // ---
 
-export type FunctorFn<T> = <A, I>(
+export type FunctorFn<T> = <A, I, B = never, C = never, D = never, E = never>(
   fai: (a: A) => I,
-) => (ta: $<T, [A]>) => $<T, [I]>;
+) => (ta: $<T, [A, B, C, D, E]>) => $<T, [I, B, C, D, E]>;
 
-export type ApplyFn<T> = <A, I>(
+export type ApplyFn<T> = <A, I, B = never, C = never, D = never, E = never>(
   tfai: $<T, [(a: A) => I]>,
 ) => (ta: $<T, [A]>) => $<T, [I]>;
 
@@ -131,14 +130,25 @@ export const traversePromise = traverse(ApplicativePromise);
 
 export type Left<B> = { tag: "Left"; left: B };
 export type Right<A> = { tag: "Right"; right: A };
-export type Either<B, A> = Left<B> | Right<A>;
+export type Either<B = never, A = never> = Left<B> | Right<A>;
 export const left = <B>(left: B): Either<B, never> => ({ tag: "Left", left });
 export const right = <A>(right: A): Either<never, A> => ({
   tag: "Right",
   right,
 });
 
-export const ApplicativeEither: Applicative<Either<_1, _>> = {
+export const mapEither: FunctorFn<Either<_1, _0>> = (fai) => (ua) =>
+  ua.tag === "Right" ? right(fai(ua.right)) : ua;
+export const mapEitherT1 = pipe(
+  right(1),
+  mapEither((n) => n + 1),
+);
+export const mapEitherT2 = pipe(
+  left(1),
+  mapEither((n: number) => n + 1),
+);
+
+export const ApplicativeEither: Applicative<Either<_1, _0>> = {
   of: right,
   ap: <A, I, B>(tfai: Either<B, (a: A) => I>) => (ta: Either<B, A>) =>
     ta.tag === "Left"

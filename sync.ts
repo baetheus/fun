@@ -2,7 +2,7 @@ import type { $, Kind, Out } from "./kind.ts";
 import type { Applicable } from "./applicable.ts";
 import type { Flatmappable } from "./flatmappable.ts";
 import type { Mappable } from "./mappable.ts";
-import type { Reducible } from "./reducible.ts";
+import type { Foldable } from "./foldable.ts";
 import type { Traversable } from "./traversable.ts";
 import type { Wrappable } from "./wrappable.ts";
 
@@ -32,7 +32,7 @@ export function flatmap<A, I>(
   return (ta) => flow(ta, fati, (x) => x());
 }
 
-export function reduce<A, O>(
+export function fold<A, O>(
   foao: (o: O, a: A) => O,
   o: O,
 ): (ta: Sync<A>) => O {
@@ -60,6 +60,6 @@ export const FlatmappableSync: Flatmappable<KindSync> = {
   wrap,
 };
 
-export const ReducibleSync: Reducible<KindSync> = { reduce };
+export const FoldableSync: Foldable<KindSync> = { fold };
 
-export const TraversableSync: Traversable<KindSync> = { map, reduce, traverse };
+export const TraversableSync: Traversable<KindSync> = { map, fold, traverse };

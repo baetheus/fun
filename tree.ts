@@ -135,16 +135,16 @@ export function apply<A>(ua: Tree<A>): <I>(tfai: Tree<(a: A) => I>) => Tree<I> {
 }
 
 /**
- * The reduce function for Reducible<KindTree>.
+ * The fold function for Foldable<KindTree>.
  *
  * @since 2.0.0
  */
-export function reduce<A, O>(
+export function fold<A, O>(
   foao: (o: O, a: A) => O,
   o: O,
 ): (ta: Tree<A>) => O {
-  const reducer = (result: O, tree: Tree<A>) => reduce(foao, result)(tree);
-  return (ta) => TraversableArray.reduce(reducer, foao(o, ta.value))(ta.forest);
+  const foldr = (result: O, tree: Tree<A>) => fold(foao, result)(tree);
+  return (ta) => TraversableArray.fold(foldr, foao(o, ta.value))(ta.forest);
 }
 
 /**
@@ -270,7 +270,7 @@ export const MappableTree: Mappable<KindTree> = { map };
 /**
  * @since 2.0.0
  */
-export const TraversableTree: Traversable<KindTree> = { map, reduce, traverse };
+export const TraversableTree: Traversable<KindTree> = { map, fold, traverse };
 
 /**
  * @since 2.0.0

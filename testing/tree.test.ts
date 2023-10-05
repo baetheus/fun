@@ -56,10 +56,10 @@ Deno.test("Tree flatmap", () => {
   assertEquals(flatmap(T.wrap(0)), T.wrap(0));
 });
 
-Deno.test("Tree reduce", () => {
-  const reduce = T.reduce((n: number, i: number) => n + i, 0);
-  assertEquals(reduce(T.wrap(1)), 1);
-  assertEquals(reduce(T.wrap(1, [T.wrap(2)])), 3);
+Deno.test("Tree fold", () => {
+  const fold = T.fold((n: number, i: number) => n + i, 0);
+  assertEquals(fold(T.wrap(1)), 1);
+  assertEquals(fold(T.wrap(1, [T.wrap(2)])), 3);
 });
 
 Deno.test("Tree traverse", () => {

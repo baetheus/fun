@@ -3,7 +3,7 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 import * as M from "../map.ts";
 import * as O from "../option.ts";
 import * as N from "../number.ts";
-import * as R from "../reducible.ts";
+import * as R from "../foldable.ts";
 import { pipe } from "../fn.ts";
 
 Deno.test("Map init", () => {
@@ -97,8 +97,8 @@ Deno.test("Map values", () => {
   assertEquals(pipe(tb, values), []);
 });
 
-Deno.test("Map reduce", () => {
-  const collect = R.collect(M.ReducibleMap, N.InitializableNumberSum);
+Deno.test("Map fold", () => {
+  const collect = R.collect(M.FoldableMap, N.InitializableNumberSum);
   assertEquals(collect(M.readonlyMap()), 0);
   assertEquals(collect(M.readonlyMap([1, 1], [2, 2], [3, 3])), 6);
 });

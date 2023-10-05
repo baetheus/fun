@@ -4,23 +4,23 @@
  * turning an Array<Option<number>> into Option<Array<number>> or as complicated
  * as creating all combinations of numbers in three Array<numbers>.
  *
- * @module Mappable
+ * @module Traversable
  * @since 2.0.0
  */
 
 import type { $, Hold, Kind } from "./kind.ts";
 import type { Applicable } from "./applicable.ts";
 import type { Mappable } from "./mappable.ts";
-import type { Reducible } from "./reducible.ts";
+import type { Foldable } from "./foldable.ts";
 
 /**
- * A Traversable structure extends Mappable and Reducible. It contains the
- * methods map, reduce, and traverse.
+ * A Traversable structure extends Mappable and Foldable. It contains the
+ * methods map, fold, and traverse.
  *
  * @since 2.0.0
  */
 export interface Traversable<U extends Kind>
-  extends Mappable<U>, Reducible<U>, Hold<U> {
+  extends Mappable<U>, Foldable<U>, Hold<U> {
   readonly traverse: <VRI extends Kind>(
     A: Applicable<VRI>,
   ) => <A, I, J, K, L, M>(

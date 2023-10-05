@@ -1272,7 +1272,7 @@ export function atMap<B>(eq: Comparable<B>): (key: B) => <U extends Tag, S, A>(
 
 /**
  * Construct a composable optic from a Traversable instance for a Kind T. This
- * will reduce the values wrapped in the Kind T into a single Array when viewed.
+ * will fold the values wrapped in the Kind T into a single Array when viewed.
  *
  * @example
  * ```ts
@@ -1305,7 +1305,7 @@ export function traverse<T extends Kind>(
   first: Optic<U, S, $<T, [A, B, C], [D], [E]>>,
 ) => Optic<Align<U, FoldTag>, S, A> {
   return compose(fold(
-    T.reduce((as, a) => [...as, a], A.init()),
+    T.fold((as, a) => [...as, a], A.init()),
     T.map,
   ));
 }

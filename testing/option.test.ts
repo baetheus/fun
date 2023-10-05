@@ -108,10 +108,10 @@ Deno.test("Option flatmap", () => {
   assertEquals(pipe(O.none, O.flatmap(fati)), O.none);
 });
 
-Deno.test("Option reduce", () => {
-  const reduce = O.reduce((n: number, o: number) => n + o, 0);
-  assertEquals(reduce(O.some(1)), 1);
-  assertEquals(reduce(O.none), 0);
+Deno.test("Option fold", () => {
+  const fold = O.fold((n: number, o: number) => n + o, 0);
+  assertEquals(fold(O.some(1)), 1);
+  assertEquals(fold(O.none), 0);
 });
 
 Deno.test("Option traverse", () => {

@@ -68,18 +68,18 @@ Deno.test("Record map", () => {
   assertEquals(indexedMap({ a: 0, b: 2 }), { a: 1, b: 3 });
 });
 
-Deno.test("Record reduce", () => {
+Deno.test("Record fold", () => {
   assertEquals(
-    pipe({ a: 1, b: 2 }, R.reduce((a: number, b: number) => a + b, 0)),
+    pipe({ a: 1, b: 2 }, R.fold((a: number, b: number) => a + b, 0)),
     3,
   );
-  assertEquals(pipe({}, R.reduce(add, 0)), 0);
+  assertEquals(pipe({}, R.fold(add, 0)), 0);
 
-  const reduce = R.reduce((a: number, c: number) => a + c, 0);
-  assertEquals(reduce({}), 0);
-  assertEquals(reduce({ a: 1, b: 2 }), 3);
+  const fold = R.fold((a: number, c: number) => a + c, 0);
+  assertEquals(fold({}), 0);
+  assertEquals(fold({ a: 1, b: 2 }), 3);
 
-  const indexedReduce = R.reduce(
+  const indexedReduce = R.fold(
     (o: string[], a: number, i: string) =>
       a === 0 ? [...o, i] : [...o, a.toString()],
     [],
@@ -263,7 +263,7 @@ Deno.test("Record FunctoRecord", () => {
 
 Deno.test("Record TraversableRecord", () => {
   assertStrictEquals(R.TraversableRecord.map, R.map);
-  assertStrictEquals(R.TraversableRecord.reduce, R.reduce);
+  assertStrictEquals(R.TraversableRecord.fold, R.fold);
   assertStrictEquals(R.TraversableRecord.traverse, R.traverse);
 });
 

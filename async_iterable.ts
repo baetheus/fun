@@ -222,15 +222,15 @@ export function partitionMap<A, I, J>(
   };
 }
 
-export function reduce<A, O>(
-  reducer: (value: O, accumulator: A, index: number) => O,
+export function fold<A, O>(
+  foldr: (value: O, accumulator: A, index: number) => O,
   initial: O,
 ): (ta: AsyncIterable<A>) => Promise<O> {
   return async (ta) => {
     let index = 0;
     let result = initial;
     for await (const value of ta) {
-      result = reducer(result, value, index++);
+      result = foldr(result, value, index++);
     }
     return result;
   };
@@ -267,7 +267,7 @@ export function takeWhile<A>(
 }
 
 export function scan<A, O>(
-  reducer: (accumulator: O, value: A, index: number) => O,
+  foldr: (accumulator: O, value: A, index: number) => O,
   initial: O,
 ): (ta: AsyncIterable<A>) => AsyncIterable<O> {
   return (ta) =>
@@ -275,7 +275,7 @@ export function scan<A, O>(
       let result = initial;
       let index = 0;
       for await (const a of ta) {
-        result = reducer(result, a, index++);
+        result = foldr(result, a, index++);
         yield result;
       }
     });

@@ -12,7 +12,7 @@ import type { Bimappable } from "./bimappable.ts";
 import type { Flatmappable } from "./flatmappable.ts";
 import type { Initializable } from "./initializable.ts";
 import type { Mappable } from "./mappable.ts";
-import type { Reducible } from "./reducible.ts";
+import type { Foldable } from "./foldable.ts";
 import type { Showable } from "./showable.ts";
 import type { Traversable } from "./traversable.ts";
 
@@ -328,22 +328,22 @@ export function unwrap<A, B>([first]: Pair<A, B>): A {
 
 /**
  * Reduces a pair with an initial value, also passing
- * the second value into the reducer as well.
+ * the second value into the foldr as well.
  *
  * @example
  * ```ts
- * import { pair, reduce } from "./pair.ts";
+ * import { pair, fold } from "./pair.ts";
  * import { pipe } from "./fn.ts";
  *
  * const result = pipe(
  *   pair(10, 20),
- *   reduce(Math.max, Number.NEGATIVE_INFINITY),
+ *   fold(Math.max, Number.NEGATIVE_INFINITY),
  * ); // 20
  * ```
  *
  * @since 2.0.0
  */
-export function reduce<A, B, O>(
+export function fold<A, B, O>(
   foao: (acc: O, first: A, second: B) => O,
   initial: O,
 ): (ua: Pair<A, B>) => O {
@@ -405,17 +405,17 @@ export const MappablePair: Mappable<KindPair> = { map };
 export const BimappablePair: Bimappable<KindPair> = { mapSecond, map };
 
 /**
- * The canonical Reducible instance for Pair. Contains the
- * reduce method.
+ * The canonical Foldable instance for Pair. Contains the
+ * fold method.
  *
  * @since 2.0.0
  */
-export const ReduciblePair: Reducible<KindPair> = { reduce };
+export const FoldablePair: Foldable<KindPair> = { fold };
 
 /**
  * @since 2.0.0
  */
-export const TraversablePair: Traversable<KindPair> = { map, reduce, traverse };
+export const TraversablePair: Traversable<KindPair> = { map, fold, traverse };
 
 /**
  * Creates a Showable instance for a pair, wrapping the Showable instances provided

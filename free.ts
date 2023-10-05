@@ -89,15 +89,15 @@ export function apply<A>(ua: Free<A>): <I>(ufai: Free<(a: A) => I>) => Free<I> {
   return (ufai) => pipe(ufai, flatmap(flow(map, (fn) => fn(ua))));
 }
 
-export function reduce<A, O>(
-  reducer: (value: A, accumulator: O) => O,
+export function fold<A, O>(
+  foldr: (value: A, accumulator: O) => O,
   initial: O,
 ): (ua: Free<A>) => O {
   // :(
   let result = initial;
   const go: (ua: Free<A>) => O = match(
     (value) => {
-      result = reducer(value, result);
+      result = foldr(value, result);
       return result;
     },
     (first, second) => {

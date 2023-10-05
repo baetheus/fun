@@ -67,11 +67,11 @@ Deno.test("These map", () => {
   assertEquals(map(T.both(1, 1)), T.both(1, 2));
 });
 
-Deno.test("These reduce", () => {
-  const reduce = T.reduce((n: number, m: number) => n + m, 0);
-  assertEquals(reduce(T.left(1)), 0);
-  assertEquals(reduce(T.right(1)), 1);
-  assertEquals(reduce(T.both(1, 1)), 1);
+Deno.test("These fold", () => {
+  const fold = T.fold((n: number, m: number) => n + m, 0);
+  assertEquals(fold(T.left(1)), 0);
+  assertEquals(fold(T.right(1)), 1);
+  assertEquals(fold(T.both(1, 1)), 1);
 });
 
 Deno.test("These traverse", () => {

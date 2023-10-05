@@ -149,11 +149,11 @@ Deno.test("AsyncIterable partitionMap", async () => {
   assertEquals(await AI.collect(second), [0, 1]);
 });
 
-Deno.test("AsyncIterable reduce", async () => {
+Deno.test("AsyncIterable fold", async () => {
   assertEquals(
     await pipe(
       AI.range(3),
-      AI.reduce((value, sum) => value + sum, 0),
+      AI.fold((value, sum) => value + sum, 0),
     ),
     3,
   );

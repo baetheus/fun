@@ -13,7 +13,7 @@ import type { Applicable } from "./applicable.ts";
 import type { Either } from "./either.ts";
 import type { Comparable } from "./comparable.ts";
 import type { Filterable } from "./filterable.ts";
-import type { Reducible } from "./reducible.ts";
+import type { Foldable } from "./foldable.ts";
 import type { Mappable } from "./mappable.ts";
 import type { Initializable } from "./initializable.ts";
 import type { Option } from "./option.ts";
@@ -217,13 +217,13 @@ export function map<A, I>(
  *
  * const result = pipe(
  *   { one: 1, two: 2 },
- *   R.reduce((sum, value) => sum + value, 0),
+ *   R.fold((sum, value) => sum + value, 0),
  * ); // 3
  * ```
  *
  * @since 2.0.0
  */
-export function reduce<A, O>(
+export function fold<A, O>(
   foao: (o: O, a: A, i: string) => O,
   o: O,
 ) {
@@ -239,7 +239,7 @@ export function reduce<A, O>(
 /**
  * Collect all values in a ReadonlyRecord<A> into a single
  * value I by using a Combinable<I> and a mapping function
- * from A to I. This is effectively reduce using a Combinable
+ * from A to I. This is effectively fold using a Combinable
  * for the initial value.
  *
  * @example
@@ -260,17 +260,17 @@ export function collect<I>(
   M: Initializable<I>,
 ): <A>(fai: (a: A, index: string) => I) => (ua: ReadonlyRecord<A>) => I {
   return <A>(fai: (a: A, index: string) => I) => {
-    const reducer = reduce(
+    const foldr = fold(
       (i, a: A, index) => M.combine(fai(a, index))(i),
       M.init(),
     );
-    return (ua: ReadonlyRecord<A>) => reducer(ua);
+    return (ua: ReadonlyRecord<A>) => foldr(ua);
   };
 }
 
 /**
  * Collect all values in a ReadonlyRecord<A> into a single
- * value I by using a Combinable<I>. This is effectively reduce
+ * value I by using a Combinable<I>. This is effectively fold
  * using a Combinable for the initial value and combination.
  *
  * @example
@@ -290,7 +290,7 @@ export function collect<I>(
 export function collapse<A>(
   M: Initializable<A>,
 ): (ua: ReadonlyRecord<A>) => A {
-  return reduce(uncurry2(M.combine), M.init());
+  return fold(uncurry2(M.combine), M.init());
 }
 
 /**
@@ -338,7 +338,7 @@ export function traverse<V extends Kind>(
       i: I,
     ): Record<string, I> => ({ ...is, [key]: i });
     // Interior mutability is used to increase perf
-    const reducer = (
+    const foldr = (
       vis: $<V, [Record<string, I>, J, K], [L], [M]>,
       a: A,
       key: string,
@@ -349,7 +349,7 @@ export function traverse<V extends Kind>(
         A.apply(favi(a, key)),
       );
 
-    return (ua) => pipe(ua, reduce(reducer, A.wrap({})));
+    return (ua) => pipe(ua, fold(foldr, A.wrap({})));
   };
 }
 
@@ -952,22 +952,22 @@ export const FilterableRecord: Filterable<KindReadonlyRecord> = {
 export const MappableRecord: Mappable<KindReadonlyRecord> = { map };
 
 /**
- * The canonical implementation of Reducible for ReadonlyRecord. It contains
- * the method reduce.
+ * The canonical implementation of Foldable for ReadonlyRecord. It contains
+ * the method fold.
  *
  * @since 2.0.0
  */
-export const ReducibleRecord: Reducible<KindReadonlyRecord> = { reduce };
+export const FoldableRecord: Foldable<KindReadonlyRecord> = { fold };
 
 /**
  * The canonical implementation of Traversable for ReadonlyRecord. It contains
- * the methods map, reduce, and traverse.
+ * the methods map, fold, and traverse.
  *
  * @since 2.0.0
  */
 export const TraversableRecord: Traversable<KindReadonlyRecord> = {
   map,
-  reduce,
+  fold,
   traverse,
 };
 

@@ -4,7 +4,7 @@ import type { Combinable } from "./combinable.ts";
 import type { Comparable } from "./comparable.ts";
 import type { Mappable } from "./mappable.ts";
 import type { Option } from "./option.ts";
-import type { Reducible } from "./reducible.ts";
+import type { Foldable } from "./foldable.ts";
 import type { Showable } from "./showable.ts";
 import type { Sortable } from "./sortable.ts";
 
@@ -144,14 +144,14 @@ export function values<A>(O: Sortable<A>): <K>(ta: ReadonlyMap<K, A>) => A[] {
   return (ta) => Array.from(ta.values()).sort(O.sort);
 }
 
-export function reduce<B, A, O>(
-  reducer: (accumulator: O, value: A, key: B) => O,
+export function fold<B, A, O>(
+  foldr: (accumulator: O, value: A, key: B) => O,
   initial: O,
 ) {
   return (ua: ReadonlyMap<B, A>): O => {
     let result = initial;
     for (const [key, value] of ua.entries()) {
-      result = reducer(result, value, key);
+      result = foldr(result, value, key);
     }
     return result;
   };
@@ -306,7 +306,7 @@ export const MappableMap: Mappable<KindReadonlyMap> = { map };
 
 export const BimappableMap: Bimappable<KindReadonlyMap> = { map, mapSecond };
 
-export const ReducibleMap: Reducible<KindReadonlyMap> = { reduce };
+export const FoldableMap: Foldable<KindReadonlyMap> = { fold };
 
 export function getShowable<K, A>(
   SK: Showable<K>,

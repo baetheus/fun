@@ -162,9 +162,9 @@ Deno.test("DecodeError match", () => {
     (_, err) => countErrors(err),
     (_, __, err) => countErrors(err),
     (_, __, err) => countErrors(err),
-    A.reduce((acc, err) => acc + countErrors(err), 0),
-    A.reduce((acc, err) => acc + countErrors(err), 0),
-    A.reduce((acc, err) => acc + countErrors(err), 0),
+    A.fold((acc, err) => acc + countErrors(err), 0),
+    A.fold((acc, err) => acc + countErrors(err), 0),
+    A.fold((acc, err) => acc + countErrors(err), 0),
   );
 
   assertEquals(countErrors(leaf), 1);

@@ -185,11 +185,11 @@ Deno.test("Either getRightInitializable", () => {
   assertEquals(Initializable.init(), E.right(N.InitializableNumberSum.init()));
 });
 
-Deno.test("Either reduce", () => {
-  const reduce = E.reduce((o: number, i: number) => o + i, 0);
+Deno.test("Either fold", () => {
+  const fold = E.fold((o: number, i: number) => o + i, 0);
 
-  assertEquals(reduce(E.left("adsf")), 0);
-  assertEquals(reduce(E.right(1)), 1);
+  assertEquals(fold(E.left("adsf")), 0);
+  assertEquals(fold(E.right(1)), 1);
 });
 
 Deno.test("Either map", () => {

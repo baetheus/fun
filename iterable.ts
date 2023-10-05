@@ -143,14 +143,14 @@ export function forEach<A>(fa: (a: A) => void): (ta: Iterable<A>) => void {
 /**
  * @since 2.0.0
  */
-export function reduce<A, O>(
-  reducer: (accumulator: O, value: A) => O,
+export function fold<A, O>(
+  foldr: (accumulator: O, value: A) => O,
   initial: O,
 ) {
   return (ua: Iterable<A>): O => {
     let out = initial;
     for (const a of ua) {
-      out = reducer(out, a);
+      out = foldr(out, a);
     }
     return out;
   };
@@ -160,7 +160,7 @@ export function reduce<A, O>(
  * @since 2.0.0
  */
 export function scan<A, O>(
-  reducer: (accumulator: O, value: A, index: number) => O,
+  foldr: (accumulator: O, value: A, index: number) => O,
   initial: O,
 ): (ta: Iterable<A>) => Iterable<O> {
   return (ta) =>
@@ -168,7 +168,7 @@ export function scan<A, O>(
       let result = initial;
       let index = 0;
       for (const a of ta) {
-        result = reducer(result, a, index++);
+        result = foldr(result, a, index++);
         yield result;
       }
     });

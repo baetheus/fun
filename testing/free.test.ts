@@ -112,9 +112,9 @@ Deno.test("Free apply", () => {
   );
 });
 
-Deno.test("Free reduce", () => {
+Deno.test("Free fold", () => {
   assertEquals(
-    pipe(F.link(F.node(1), F.node(1)), F.reduce((n, m) => n + m, 0)),
+    pipe(F.link(F.node(1), F.node(1)), F.fold((n, m) => n + m, 0)),
     2,
   );
 });

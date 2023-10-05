@@ -17,7 +17,7 @@ import type { Initializable } from "./initializable.ts";
 import type { Mappable } from "./mappable.ts";
 import type { Pair } from "./pair.ts";
 import type { Predicate } from "./predicate.ts";
-import type { Reducible } from "./reducible.ts";
+import type { Foldable } from "./foldable.ts";
 import type { Refinement } from "./refinement.ts";
 import type { Showable } from "./showable.ts";
 import type { Sortable } from "./sortable.ts";
@@ -615,26 +615,26 @@ export function partitionMap<A, I, J>(
 /**
  * Reduce over an Option<A>. Since an Option contains at most one value this
  * function operates a lot like getOrElse. If the passed option is None then it
- * returns the initial value, otherwise the reducer function is called with both
+ * returns the initial value, otherwise the foldr function is called with both
  * the initial value and the inner A.
  *
  * @example
  * ```ts
  * import * as O from "./option.ts";
  *
- * const reduce = O.reduce((n: number, m: number) => n + m, 0);
+ * const fold = O.fold((n: number, m: number) => n + m, 0);
  *
- * const result1 = reduce(O.some(1)); // 1
- * const result2 = reduce(O.none); // 0
+ * const result1 = fold(O.some(1)); // 1
+ * const result2 = fold(O.none); // 0
  * ```
  *
  * @since 2.0.0
  */
-export function reduce<A, O>(
-  reducer: (accumulator: O, current: A) => O,
+export function fold<A, O>(
+  foldr: (accumulator: O, current: A) => O,
   initial: O,
 ): (ua: Option<A>) => O {
-  return (ua) => isSome(ua) ? reducer(initial, ua.value) : initial;
+  return (ua) => isSome(ua) ? foldr(initial, ua.value) : initial;
 }
 
 /**
@@ -697,11 +697,11 @@ export const FilterableOption: Filterable<KindOption> = {
 };
 
 /**
- * The canonical implementation of Reducible for Option.
+ * The canonical implementation of Foldable for Option.
  *
  * @since 2.0.0
  */
-export const ReducibleOption: Reducible<KindOption> = { reduce };
+export const FoldableOption: Foldable<KindOption> = { fold };
 
 /**
  * The canonical implementation of Traversable for Option.
@@ -710,7 +710,7 @@ export const ReducibleOption: Reducible<KindOption> = { reduce };
  */
 export const TraversableOption: Traversable<KindOption> = {
   map,
-  reduce,
+  fold,
   traverse,
 };
 

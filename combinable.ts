@@ -364,7 +364,7 @@ export function constant<A>(a: A): Combinable<A> {
 /**
  * Given a Combinable, create a function that will
  * iterate through an array of values and combine
- * them. This is not much more than Array.reduce(combine).
+ * them. This is not much more than Array.fold(combine).
  *
  * @example
  * ```ts

@@ -28,9 +28,9 @@ Deno.test("Sync flatmap", () => {
   assertEqualsSync(flatmap(S.wrap(1)), S.wrap(2));
 });
 
-Deno.test("Sync reduce", () => {
-  const reduce = S.reduce((acc: number, cur: number) => acc + cur, 0);
-  assertEquals(reduce(S.wrap(1)), 1);
+Deno.test("Sync fold", () => {
+  const fold = S.fold((acc: number, cur: number) => acc + cur, 0);
+  assertEquals(fold(S.wrap(1)), 1);
 });
 
 Deno.test("Sync traverse", () => {

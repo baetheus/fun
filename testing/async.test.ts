@@ -1,6 +1,7 @@
 import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
 import * as A from "../async.ts";
+import * as N from "../number.ts";
 import { pipe } from "../fn.ts";
 
 const add = (n: number) => n + 1;
@@ -64,21 +65,54 @@ Deno.test("Async apSeq", async () => {
   );
 });
 
-// Deno.test("Async Do, bind, bindTo", () => {
-//   assertEquals(
-//     pipe(
-//       A.Do<number, number, number>(),
-//       A.bind("one", () => A.wrap(1)),
-//       A.bind("two", ({ one }) => A.wrap(one + one)),
-//       A.map(({ one, two }) => one + two),
-//     ),
-//     A.wrap(3),
-//   );
-//   assertEquals(
-//     pipe(
-//       A.wrap(1),
-//       A.bindTo("one"),
-//     ),
-//     A.wrap({ one: 1 }),
-//   );
-// });
+Deno.test("Async getCombinableAsync", async () => {
+  const { combine } = A.getCombinableAsync(N.InitializableNumberSum);
+  assertEquals(
+    await pipe(
+      A.wrap(1),
+      combine(A.wrap(2)),
+    )(),
+    3,
+  );
+});
+
+Deno.test("Async getInitializableAsync", async () => {
+  const { init, combine } = A.getInitializableAsync(N.InitializableNumberSum);
+  assertEquals(await init()(), 0);
+  assertEquals(
+    await pipe(
+      A.wrap(1),
+      combine(A.wrap(2)),
+    )(),
+    3,
+  );
+});
+
+Deno.test("Async tap", async () => {
+  let out: null | number = null;
+  await pipe(
+    A.wrap(1),
+    A.tap((n) => out = n),
+  )();
+  assertEquals(out, 1);
+});
+
+Deno.test("Async bind", async () => {
+  assertEquals(
+    await pipe(
+      A.wrap({ a: 1 }),
+      A.bind("b", ({ a }) => A.wrap(a + 1)),
+    )(),
+    { a: 1, b: 2 },
+  );
+});
+
+Deno.test("Async bindTo", async () => {
+  assertEquals(
+    await pipe(
+      A.wrap(1),
+      A.bindTo("a"),
+    )(),
+    { a: 1 },
+  );
+});

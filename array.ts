@@ -9,6 +9,7 @@
 
 import type { $, AnySub, Intersect, Kind, Out } from "./kind.ts";
 import type { Applicable } from "./applicable.ts";
+import type { Combinable } from "./combinable.ts";
 import type { Comparable } from "./comparable.ts";
 import type { Either } from "./either.ts";
 import type { Filterable } from "./filterable.ts";
@@ -17,21 +18,20 @@ import type { Initializable } from "./initializable.ts";
 import type { Mappable } from "./mappable.ts";
 import type { Option } from "./option.ts";
 import type { Pair } from "./pair.ts";
-import type { Reducible } from "./reducible.ts";
+import type { Foldable } from "./foldable.ts";
 import type { Showable } from "./showable.ts";
 import type { Sortable } from "./sortable.ts";
 import type { Traversable } from "./traversable.ts";
 import type { Wrappable } from "./wrappable.ts";
 
+import { createBind, createTap } from "./flatmappable.ts";
+import { createBindTo } from "./mappable.ts";
 import { pair } from "./pair.ts";
 import { isRight } from "./either.ts";
 import { fromCompare } from "./comparable.ts";
 import { fromSort, sign } from "./sortable.ts";
 import { isSome, none, some } from "./option.ts";
 import { identity, pipe } from "./fn.ts";
-
-const NameReadonlyArray = "ReadonlyArray";
-type NameReadonlyArray = typeof NameReadonlyArray;
 
 /**
  * This type can be used as a placeholder for an array of any type.
@@ -71,7 +71,6 @@ export type AnyNonEmptyArray = NonEmptyArray<any>;
  * @since 2.0.0
  */
 export interface KindArray extends Kind {
-  readonly name: NameReadonlyArray;
   readonly kind: ReadonlyArray<Out<this, 0>>;
 }
 
@@ -412,7 +411,7 @@ export function map<A, I>(
  *
  * const result = pipe(
  *   A.range(5, 1),
- *   A.reduce((sum, value, index) => sum + value + index, 0),
+ *   A.fold((sum, value, index) => sum + value + index, 0),
  * );
  * // 0 + 0 + 0 = 0
  * // 0 + 1 + 1 = 2
@@ -424,7 +423,7 @@ export function map<A, I>(
  *
  * @since 2.0.0
  */
-export function reduce<A, O>(
+export function fold<A, O>(
   foao: (o: O, a: A, i: number) => O,
   o: O,
 ): (ua: ReadonlyArray<A>) => O {
@@ -803,7 +802,7 @@ export function traverse<V extends Kind>(
     favi: (a: A, i: number) => $<V, [I, J, K], [L], [M]>,
   ): (ua: ReadonlyArray<A>) => $<V, [ReadonlyArray<I>, J, K], [L], [M]> => {
     const pusher = (is: I[]) => (i: I) => [...is, i];
-    return reduce(
+    return fold(
       (vis, a: A, index) =>
         pipe(
           vis,
@@ -1129,7 +1128,7 @@ export function deleteAt(index: number) {
  * sort(ordNumber)([3, 1, 2])
  * // [1, 2, 3]
  *
- * @category combinators
+ * @since 2.0.0
  */
 export function sort<B>(
   O: Sortable<B>,
@@ -1284,6 +1283,15 @@ export function zip<A extends ReadonlyArray<AnyArray>>(
 }
 
 /**
+ * @since 2.0.0
+ */
+export function getCombinableArray<A>(): Combinable<ReadonlyArray<A>> {
+  return {
+    combine,
+  };
+}
+
+/**
  * Given an instance Comparable<A> create a Comparable<ReadonlyArray<A>>.
  *
  * @example
@@ -1434,14 +1442,14 @@ export const MappableArray: Mappable<KindArray> = { map };
 /**
  * @since 2.0.0
  */
-export const ReducibleArray: Reducible<KindArray> = { reduce };
+export const FoldableArray: Foldable<KindArray> = { fold };
 
 /**
  * @since 2.0.0
  */
 export const TraversableArray: Traversable<KindArray> = {
   map,
-  reduce,
+  fold,
   traverse,
 };
 
@@ -1449,3 +1457,18 @@ export const TraversableArray: Traversable<KindArray> = {
  * @since 2.0.0
  */
 export const WrappableArray: Wrappable<KindArray> = { wrap };
+
+/**
+ * @since 2.0.0
+ */
+export const tap = createTap(FlatmappableArray);
+
+/**
+ * @since 2.0.0
+ */
+export const bind = createBind(FlatmappableArray);
+
+/**
+ * @since 2.0.0
+ */
+export const bindTo = createBindTo(MappableArray);

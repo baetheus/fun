@@ -73,11 +73,11 @@ Deno.test("Iterable forEach", () => {
   assertEquals(results, [0, 1, 2]);
 });
 
-Deno.test("Iterable reduce", () => {
+Deno.test("Iterable fold", () => {
   assertEquals(
     pipe(
       I.range(3),
-      I.reduce((n, m) => n + m, 0),
+      I.fold((n, m) => n + m, 0),
     ),
     3,
   );

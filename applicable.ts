@@ -39,7 +39,86 @@ export function getApplicableCombinable<U extends Kind>(
 ) => Combinable<$<U, [A, B, C], [D], [E]>> {
   return <A, B = never, C = never, D = unknown, E = unknown>(
     { combine }: Combinable<A>,
-  ): Combinable<$<U, [A, B, C], [D], [E]>> => ({
-    combine: (second) => (first) => apply(first)(map(combine)(second)),
-  });
+  ): Combinable<$<U, [A, B, C], [D], [E]>> => {
+    const _map = map(combine);
+    return {
+      combine: (second) => (first) => apply(first)(_map(second)),
+    };
+  };
+}
+
+/**
+ * Compose two Applicables into a new apply function.
+ *
+ * @since 2.0.0
+ */
+export function apply<U extends Kind, V extends Kind>(
+  U: Applicable<U>,
+  V: Applicable<V>,
+): <
+  A,
+  B = never,
+  C = never,
+  D = unknown,
+  E = unknown,
+  J = never,
+  K = never,
+  L = unknown,
+  M = unknown,
+>(
+  uva: $<U, [$<V, [A, B, C], [D], [E]>, J, K], [L], [M]>,
+) => <I>(
+  uvfai: $<U, [$<V, [(a: A) => I, B, C], [D], [E]>, J, K], [L], [M]>,
+) => $<U, [$<V, [I, B, C], [D], [E]>, J, K], [L], [M]> {
+  return <
+    A,
+    B = never,
+    C = never,
+    D = unknown,
+    E = unknown,
+    J = never,
+    K = never,
+    L = unknown,
+    M = unknown,
+  >(uva: $<U, [$<V, [A, B, C], [D], [E]>, J, K], [L], [M]>) =>
+  <I>(
+    uvfai: $<U, [$<V, [(a: A) => I, B, C], [D], [E]>, J, K], [L], [M]>,
+  ): $<U, [$<V, [I, B, C], [D], [E]>, J, K], [L], [M]> => {
+    return U.apply(uva)(
+      U.map(
+        (vfai: $<V, [(a: A) => I, B, C], [D], [E]>) =>
+        (va: $<V, [A, B, C], [D], [E]>) => V.apply(va)(vfai),
+      )(uvfai),
+    );
+  };
+}
+
+/**
+ * @since 2.0.0
+ */
+export function applyFirst<U extends Kind>(
+  U: Applicable<U>,
+): <I, B = never, C = never, D = unknown, E = unknown>(
+  second: $<U, [I, B, C], [D], [E]>,
+) => <A>(first: $<U, [A, B, C], [D], [E]>) => $<U, [A, B, C], [D], [E]> {
+  return <I, B = never, C = never, D = unknown, E = unknown>(
+    second: $<U, [I, B, C], [D], [E]>,
+  ) =>
+  <A>(first: $<U, [A, B, C], [D], [E]>): $<U, [A, B, C], [D], [E]> =>
+    U.apply(second)(U.map((a: A) => (_: I) => a)(first));
+}
+
+/**
+ * @since 2.0.0
+ */
+export function applySecond<U extends Kind>(
+  U: Applicable<U>,
+): <I, B = never, C = never, D = unknown, E = unknown>(
+  second: $<U, [I, B, C], [D], [E]>,
+) => <A>(first: $<U, [A, B, C], [D], [E]>) => $<U, [I, B, C], [D], [E]> {
+  return <I, B = never, C = never, D = unknown, E = unknown>(
+    second: $<U, [I, B, C], [D], [E]>,
+  ) =>
+  <A>(first: $<U, [A, B, C], [D], [E]>): $<U, [I, B, C], [D], [E]> =>
+    U.apply(second)(U.map(() => (i: I) => i)(first));
 }

@@ -32,7 +32,7 @@ export * as pair from "./pair.ts";
 export * as predicate from "./predicate.ts";
 export * as premappable from "./premappable.ts";
 export * as promise from "./promise.ts";
-export * as reducible from "./reducible.ts";
+export * as foldable from "./foldable.ts";
 export * as refinement from "./refinement.ts";
 export * as schemable from "./schemable.ts";
 export * as set from "./set.ts";

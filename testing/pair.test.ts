@@ -71,9 +71,9 @@ Deno.test("Pair unwrap", () => {
   assertEquals(P.unwrap(P.pair(1, 2)), 1);
 });
 
-Deno.test("Pair reduce", () => {
+Deno.test("Pair fold", () => {
   assertEquals(
-    pipe(P.pair(10, 20), P.reduce(Math.max, Number.NEGATIVE_INFINITY)),
+    pipe(P.pair(10, 20), P.fold(Math.max, Number.NEGATIVE_INFINITY)),
     20,
   );
 });
@@ -99,12 +99,12 @@ Deno.test("Pair BimappablePair", () => {
   assertStrictEquals(P.BimappablePair.mapSecond, P.mapSecond);
 });
 
-Deno.test("Pair ReduciblePair", () => {
-  assertStrictEquals(P.ReduciblePair.reduce, P.reduce);
+Deno.test("Pair FoldablePair", () => {
+  assertStrictEquals(P.FoldablePair.fold, P.fold);
 });
 
 Deno.test("Pair TraversablePair", () => {
-  assertStrictEquals(P.TraversablePair.reduce, P.reduce);
+  assertStrictEquals(P.TraversablePair.fold, P.fold);
   assertStrictEquals(P.TraversablePair.traverse, P.traverse);
   assertStrictEquals(P.TraversablePair.map, P.map);
 });

@@ -3,7 +3,7 @@ import type { Bimappable } from "./bimappable.ts";
 import type { Applicable } from "./applicable.ts";
 import type { Mappable } from "./mappable.ts";
 import type { Failable } from "./failable.ts";
-import type { Reducible } from "./reducible.ts";
+import type { Foldable } from "./foldable.ts";
 import type { Flatmappable } from "./flatmappable.ts";
 import type { Sync } from "./sync.ts";
 import type { Either } from "./either.ts";
@@ -97,7 +97,7 @@ export function alt<A = never, B = never>(
   return (ta) => flow(ta, E.match(tb, E.right));
 }
 
-export function reduce<A, O>(
+export function fold<A, O>(
   foao: (o: O, a: A) => O,
   o: O,
 ): <B>(ta: SyncEither<B, A>) => O {
@@ -134,4 +134,4 @@ export const FailableSyncEither: Failable<KindSyncEither> = {
   wrap,
 };
 
-export const ReducibleSyncEither: Reducible<KindSyncEither> = { reduce };
+export const FoldableSyncEither: Foldable<KindSyncEither> = { fold };

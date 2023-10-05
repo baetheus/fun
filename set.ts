@@ -10,7 +10,7 @@ import type { Applicable } from "./applicable.ts";
 import type { Either } from "./either.ts";
 import type { Comparable } from "./comparable.ts";
 import type { Filterable } from "./filterable.ts";
-import type { Reducible } from "./reducible.ts";
+import type { Foldable } from "./foldable.ts";
 import type { Mappable } from "./mappable.ts";
 import type { Flatmappable } from "./flatmappable.ts";
 import type { Combinable } from "./combinable.ts";
@@ -677,13 +677,13 @@ export function partitionMap<A, I, J>(
  *
  * const result = pipe(
  *   set,
- *   S.reduce((previous, current) => previous + current, 0),
+ *   S.fold((previous, current) => previous + current, 0),
  * ); // 10
  * ```
  *
  * @since 2.0.0
  */
-export function reduce<A, O>(
+export function fold<A, O>(
   foao: (o: O, a: A) => O,
   o: O,
 ): (ua: ReadonlySet<A>) => O {
@@ -736,7 +736,7 @@ export function traverse<V extends Kind>(
   return <A, I, J, K, L, M>(
     favi: (a: A) => $<V, [I, J, K], [L], [M]>,
   ): (ua: ReadonlySet<A>) => $<V, [ReadonlySet<I>, J, K], [L], [M]> =>
-    reduce(
+    fold(
       (vis, a) => pipe(vis, A.map(unsafeAdd), A.apply(favi(a))),
       A.wrap(init() as Set<I>),
     );
@@ -785,22 +785,22 @@ export const FilterableSet: Filterable<KindReadonlySet> = {
 };
 
 /**
- * The canonical implementation of Reducible for ReadonlySet. It contains
- * the method reduce.
+ * The canonical implementation of Foldable for ReadonlySet. It contains
+ * the method fold.
  *
  * @since 2.0.0
  */
-export const ReducibleSet: Reducible<KindReadonlySet> = { reduce };
+export const FoldableSet: Foldable<KindReadonlySet> = { fold };
 
 /**
  * The canonical implementation of Traversable for ReadonlySet. It contains
- * the methods map, reduce, and traverse.
+ * the methods map, fold, and traverse.
  *
  * @since 2.0.0
  */
 export const TraversableSet: Traversable<KindReadonlySet> = {
   map,
-  reduce,
+  fold,
   traverse,
 };
 

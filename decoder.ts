@@ -474,9 +474,9 @@ export function manyErr(
  *   (_, err) => countErrors(err),
  *   (_, __, err) => countErrors(err),
  *   (_, __, err) => countErrors(err),
- *   A.reduce((acc, err) => acc + countErrors(err), 0),
- *   A.reduce((acc, err) => acc + countErrors(err), 0),
- *   A.reduce((acc, err) => acc + countErrors(err), 0),
+ *   A.fold((acc, err) => acc + countErrors(err), 0),
+ *   A.fold((acc, err) => acc + countErrors(err), 0),
+ *   A.fold((acc, err) => acc + countErrors(err), 0),
  * );
  *
  * const result1 = countErrors(D.leafErr(1, "expected string")); // 1

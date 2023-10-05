@@ -130,10 +130,10 @@ Deno.test("Set partitionMap", () => {
   assertEquals(partitionMap(set), [S.set(2, 3), S.set(1)]);
 });
 
-Deno.test("Set reduce", () => {
-  const reduce = S.reduce((n: number, o: number) => n + o, 0);
-  assertEquals(reduce(S.init()), 0);
-  assertEquals(reduce(S.set(1, 2, 3)), 6);
+Deno.test("Set fold", () => {
+  const fold = S.fold((n: number, o: number) => n + o, 0);
+  assertEquals(fold(S.init()), 0);
+  assertEquals(fold(S.set(1, 2, 3)), 6);
 });
 
 Deno.test("Set traverse", () => {
@@ -170,7 +170,7 @@ Deno.test("Set FilterableSet", () => {
 
 Deno.test("Set TraversableSet", () => {
   assertStrictEquals(S.TraversableSet.map, S.map);
-  assertStrictEquals(S.TraversableSet.reduce, S.reduce);
+  assertStrictEquals(S.TraversableSet.fold, S.fold);
   assertStrictEquals(S.TraversableSet.traverse, S.traverse);
 });
 

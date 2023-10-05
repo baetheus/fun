@@ -148,7 +148,7 @@ export function intercalcate<A>(middle: A) {
 /**
  * Given an Initializable, create a function that will
  * iterate through an array of values and combine
- * them. This is not much more than Array.reduce(combine).
+ * them. This is not much more than Array.fold(combine).
  *
  * @example
  * ```ts

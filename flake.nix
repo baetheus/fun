@@ -22,7 +22,7 @@
         };
 
         shell = with pkgs; mkShell {
-          buildInputs = [ deno nodejs jq lcov ];
+          buildInputs = [ deno nodejs jq lcov jujutsu ];
         };
 
       in

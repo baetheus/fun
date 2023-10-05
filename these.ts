@@ -4,7 +4,7 @@ import type { Bimappable } from "./bimappable.ts";
 import type { Combinable } from "./combinable.ts";
 import type { Flatmappable } from "./flatmappable.ts";
 import type { Mappable } from "./mappable.ts";
-import type { Reducible } from "./reducible.ts";
+import type { Foldable } from "./foldable.ts";
 import type { Showable } from "./showable.ts";
 import type { Traversable } from "./traversable.ts";
 
@@ -88,7 +88,7 @@ export function mapSecond<B, J>(
   );
 }
 
-export function reduce<A, O>(
+export function fold<A, O>(
   foao: (o: O, a: A) => O,
   o: O,
 ): <B>(ta: These<B, A>) => O {
@@ -112,11 +112,11 @@ export const BimappableThese: Bimappable<KindThese> = { map, mapSecond };
 
 export const MappableThese: Mappable<KindThese> = { map };
 
-export const ReducibleThese: Reducible<KindThese> = { reduce };
+export const FoldableThese: Foldable<KindThese> = { fold };
 
 export const TraversableThese: Traversable<KindThese> = {
   map,
-  reduce,
+  fold,
   traverse,
 };
 

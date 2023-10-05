@@ -74,11 +74,11 @@ Deno.test("SyncEither mapSecond", () => {
   assertEqualsIO(mapSecond(SE.right(0)), SE.right(0));
 });
 
-Deno.test("SyncEither reduce", () => {
-  const reduce = SE.reduce((a: number, c: number) => a + c, 0);
+Deno.test("SyncEither fold", () => {
+  const fold = SE.fold((a: number, c: number) => a + c, 0);
 
-  assertEquals(reduce(SE.left(-1)), 0);
-  assertEquals(reduce(SE.right(1)), 1);
+  assertEquals(fold(SE.left(-1)), 0);
+  assertEquals(fold(SE.right(1)), 1);
 });
 
 Deno.test("SyncEither alt", () => {
