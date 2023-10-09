@@ -52,6 +52,17 @@ Deno.test("Fn handleThrow", () => {
   );
 });
 
+Deno.test("Fn tryCatch", () => {
+  const throws = (_: number): number => F.todo();
+  const add = (n: number): number => n + 1;
+
+  assertEquals(F.tryCatch(add, (n) => n)(1), 2);
+  assertEquals(
+    F.tryCatch(throws, (n) => n)(1),
+    new Error("TODO: this function has not been implemented"),
+  );
+});
+
 Deno.test("Fn memoize", () => {
   const obj = (n: number) => ({ n });
   const memo = F.memoize(obj);

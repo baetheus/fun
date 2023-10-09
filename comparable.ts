@@ -9,7 +9,6 @@
  */
 
 import type { Hold, In, Kind, Out, Spread } from "./kind.ts";
-import type { Premappable } from "./premappable.ts";
 import type { NonEmptyArray } from "./array.ts";
 import type { ReadonlyRecord } from "./record.ts";
 import type { Literal, Schemable } from "./schemable.ts";
@@ -466,7 +465,11 @@ export function union<I>(
   second: Comparable<I>,
 ): <A>(first: Comparable<A>) => Comparable<A | I> {
   return <A>(first: Comparable<A>) => {
-    const _first = handleThrow(uncurry2(first.compare), identity, () => false);
+    const _first = handleThrow(
+      uncurry2(first.compare),
+      identity,
+      () => false,
+    );
     const _second = handleThrow(
       uncurry2(second.compare),
       identity,
@@ -618,15 +621,6 @@ export function premap<L, D>(
   return ({ compare }) =>
     fromCompare((second) => (first) => compare(fld(second))(fld(first)));
 }
-
-/**
- * The canonical implementation of Premappable for Comparable.
- *
- * @since 2.0.0
- */
-export const PremappableComparable: Premappable<KindContraComparable> = {
-  premap,
-};
 
 /**
  * The canonical implementation of Schemable for a Comparable. It contains

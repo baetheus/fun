@@ -5,6 +5,7 @@
  * @module Showable
  * @since 2.0.0
  */
+
 import type { Hold } from "./kind.ts";
 
 /**

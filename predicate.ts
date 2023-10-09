@@ -9,7 +9,7 @@
  */
 
 import type { In, Kind } from "./kind.ts";
-import type { Premappable } from "./premappable.ts";
+import type { Combinable } from "./combinable.ts";
 import type { Initializable } from "./initializable.ts";
 
 import { flow } from "./fn.ts";
@@ -159,14 +159,18 @@ export function and<A>(second: Predicate<A>) {
 }
 
 /**
- * The canonical implementation of Premappable for Predicate. It contains
- * the method premap.
- *
  * @since 2.0.0
  */
-export const PremappablePredicate: Premappable<KindPredicate> = {
-  premap,
-};
+export function getCombinableAny<A = never>(): Combinable<Predicate<A>> {
+  return { combine: or };
+}
+
+/**
+ * @since 2.0.0
+ */
+export function getCombinableAll<A = never>(): Combinable<Predicate<A>> {
+  return { combine: and };
+}
 
 /**
  * Get a Initializable<Predicate<A>> for any type A that combines using the

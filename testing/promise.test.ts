@@ -5,6 +5,7 @@ import {
 
 import * as P from "../promise.ts";
 import * as E from "../either.ts";
+import * as N from "../number.ts";
 import { pipe, todo } from "../fn.ts";
 
 Deno.test("Promise deferred", async () => {
@@ -142,6 +143,10 @@ Deno.test("Promise flatmap", async () => {
   assertEquals(await pipe(P.wrap(1), P.flatmap((n) => P.wrap(n + 1))), 2);
 });
 
+Deno.test("Promise fail", async () => {
+  assertEquals(await pipe(P.fail(1), P.catchError(P.wrap)), await P.wrap(1));
+});
+
 Deno.test("Promise tryCatch", async () => {
   const add = (n: number) => n + 1;
   const throwSync = (_: number): number => todo();
@@ -154,6 +159,17 @@ Deno.test("Promise tryCatch", async () => {
   assertEquals(await catchAdd(1), 2);
   assertEquals(await catchSync(1), -1);
   assertEquals(await catchAsync(1), -1);
+});
+
+Deno.test("Promise getCombinablePromise", async () => {
+  const { combine } = P.getCombinablePromise(N.CombinableNumberSum);
+  assertEquals(await combine(P.wrap(1))(P.wrap(2)), await P.wrap(3));
+});
+
+Deno.test("Promise getInitializablePromise", async () => {
+  const { combine, init } = P.getInitializablePromise(N.InitializableNumberSum);
+  assertEquals(await init(), await P.wrap(0));
+  assertEquals(await combine(P.wrap(1))(P.wrap(2)), await P.wrap(3));
 });
 
 Deno.test("Promise MappablePromise", () => {

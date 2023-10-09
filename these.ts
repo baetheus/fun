@@ -1,8 +1,18 @@
+/**
+ * This file contains the These algebraic data type. These is a sort of
+ * combination of Either and Pair. It can represent a complete failure or a
+ * partial failure.
+ *
+ * @module These
+ * @since 2.0.0
+ */
+
 import type { $, Kind, Out } from "./kind.ts";
 import type { Applicable } from "./applicable.ts";
 import type { Bimappable } from "./bimappable.ts";
 import type { Combinable } from "./combinable.ts";
 import type { Flatmappable } from "./flatmappable.ts";
+import type { Initializable } from "./initializable.ts";
 import type { Mappable } from "./mappable.ts";
 import type { Foldable } from "./foldable.ts";
 import type { Showable } from "./showable.ts";
@@ -11,34 +21,64 @@ import type { Traversable } from "./traversable.ts";
 import * as E from "./either.ts";
 import { pipe } from "./fn.ts";
 
+/**
+ * @since 2.0.0
+ */
 export type Left<B> = E.Left<B>;
 
+/**
+ * @since 2.0.0
+ */
 export type Right<A> = E.Right<A>;
 
+/**
+ * @since 2.0.0
+ */
 export type Both<B, A> = { tag: "Both"; left: B; right: A };
 
+/**
+ * @since 2.0.0
+ */
 export type These<B, A> = Left<B> | Right<A> | Both<B, A>;
 
+/**
+ * @since 2.0.0
+ */
 export interface KindThese extends Kind {
   readonly kind: These<Out<this, 1>, Out<this, 0>>;
 }
 
+/**
+ * @since 2.0.0
+ */
 export interface KindRightThese<E> extends Kind {
   readonly kind: These<E, Out<this, 0>>;
 }
 
+/**
+ * @since 2.0.0
+ */
 export function left<A = never, B = never>(left: B): These<B, A> {
   return ({ tag: "Left", left });
 }
 
+/**
+ * @since 2.0.0
+ */
 export function right<A = never, B = never>(right: A): These<B, A> {
   return ({ tag: "Right", right });
 }
 
+/**
+ * @since 2.0.0
+ */
 export function both<A, B>(left: B, right: A): These<B, A> {
   return ({ tag: "Both", left, right });
 }
 
+/**
+ * @since 2.0.0
+ */
 export function match<A, B, O>(
   onLeft: (b: B) => O,
   onRight: (a: A) => O,
@@ -48,26 +88,44 @@ export function match<A, B, O>(
   return (ta) => ta.tag === "Both" ? onBoth(ta.left, ta.right) : _fold(ta);
 }
 
+/**
+ * @since 2.0.0
+ */
 export function isLeft<A, B>(ta: These<B, A>): ta is Left<B> {
   return ta.tag === "Left";
 }
 
+/**
+ * @since 2.0.0
+ */
 export function isRight<A, B>(ta: These<B, A>): ta is Right<A> {
   return ta.tag === "Right";
 }
 
+/**
+ * @since 2.0.0
+ */
 export function isBoth<A, B>(ta: These<B, A>): ta is Both<B, A> {
   return ta.tag === "Both";
 }
 
+/**
+ * @since 2.0.0
+ */
 export function wrap<A, B = never>(a: A): These<B, A> {
   return right(a);
 }
 
+/**
+ * @since 2.0.0
+ */
 export function fail<A = never, B = never>(b: B): These<B, A> {
   return left(b);
 }
 
+/**
+ * @since 2.0.0
+ */
 export function map<A, I>(
   fai: (a: A) => I,
 ): <B>(ta: These<B, A>) => These<B, I> {
@@ -78,6 +136,9 @@ export function map<A, I>(
   );
 }
 
+/**
+ * @since 2.0.0
+ */
 export function mapSecond<B, J>(
   fbj: (b: B) => J,
 ): <A>(ta: These<B, A>) => These<J, A> {
@@ -88,6 +149,9 @@ export function mapSecond<B, J>(
   );
 }
 
+/**
+ * @since 2.0.0
+ */
 export function fold<A, O>(
   foao: (o: O, a: A) => O,
   o: O,
@@ -95,6 +159,9 @@ export function fold<A, O>(
   return (ta) => isLeft(ta) ? o : foao(o, ta.right);
 }
 
+/**
+ * @since 2.0.0
+ */
 export function traverse<U extends Kind>(
   A: Applicable<U>,
 ): <A, I, J, K, L, M>(
@@ -108,19 +175,10 @@ export function traverse<U extends Kind>(
     );
 }
 
-export const BimappableThese: Bimappable<KindThese> = { map, mapSecond };
-
-export const MappableThese: Mappable<KindThese> = { map };
-
-export const FoldableThese: Foldable<KindThese> = { fold };
-
-export const TraversableThese: Traversable<KindThese> = {
-  map,
-  fold,
-  traverse,
-};
-
-export function getShowable<A, B>(
+/**
+ * @since 2.0.0
+ */
+export function getShowableThese<A, B>(
   SB: Showable<B>,
   SA: Showable<A>,
 ): Showable<These<B, A>> {
@@ -133,9 +191,12 @@ export function getShowable<A, B>(
   });
 }
 
-export function getCombinable<A, B>(
-  SB: Combinable<B>,
+/**
+ * @since 2.0.0
+ */
+export function getCombinableThese<A, B>(
   SA: Combinable<A>,
+  SB: Combinable<B>,
 ): Combinable<These<B, A>> {
   return ({
     combine: (x) => (y) => {
@@ -167,7 +228,23 @@ export function getCombinable<A, B>(
   });
 }
 
-export function getRightFlatmappable<B>(
+/**
+ * @since 2.0.0
+ */
+export function getInitializableThese<A, B>(
+  IA: Initializable<A>,
+  IB: Initializable<B>,
+): Initializable<These<B, A>> {
+  return {
+    init: () => both(IB.init(), IA.init()),
+    ...getCombinableThese(IA, IB),
+  };
+}
+
+/**
+ * @since 2.0.0
+ */
+export function getFlatmappableRight<B>(
   { combine }: Combinable<B>,
 ): Flatmappable<KindRightThese<B>> {
   const Flatmappable: Flatmappable<KindRightThese<B>> = {
@@ -217,3 +294,27 @@ export function getRightFlatmappable<B>(
   };
   return Flatmappable;
 }
+
+/**
+ * @since 2.0.0
+ */
+export const BimappableThese: Bimappable<KindThese> = { map, mapSecond };
+
+/**
+ * @since 2.0.0
+ */
+export const MappableThese: Mappable<KindThese> = { map };
+
+/**
+ * @since 2.0.0
+ */
+export const FoldableThese: Foldable<KindThese> = { fold };
+
+/**
+ * @since 2.0.0
+ */
+export const TraversableThese: Traversable<KindThese> = {
+  map,
+  fold,
+  traverse,
+};

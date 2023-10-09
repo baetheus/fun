@@ -9,6 +9,7 @@
 
 import type { $, Kind, Out } from "./kind.ts";
 import type { Applicable } from "./applicable.ts";
+import type { Combinable } from "./combinable.ts";
 import type { Comparable } from "./comparable.ts";
 import type { Either } from "./either.ts";
 import type { Filterable } from "./filterable.ts";
@@ -24,10 +25,12 @@ import type { Sortable } from "./sortable.ts";
 import type { Traversable } from "./traversable.ts";
 import type { Wrappable } from "./wrappable.ts";
 
-import { isNotNil } from "./nilable.ts";
+import { isNotNil } from "./nil.ts";
 import { fromCompare } from "./comparable.ts";
 import { fromSort } from "./sortable.ts";
 import { flow, handleThrow, pipe } from "./fn.ts";
+import { createBind, createTap } from "./flatmappable.ts";
+import { createBindTo } from "./mappable.ts";
 
 /**
  * The None type represents the non-existence of a value.
@@ -671,18 +674,136 @@ export function traverse<V extends Kind>(
 }
 
 /**
- * The canonical implementation of Wrappable for Option.
+ * Create an instance of Showable for Option<A> given an instance of Showable for A.
+ *
+ * @example
+ * ```ts
+ * import * as O from "./option.ts";
+ *
+ * const Showable = O.getShowableOption({ show: (n: number) => n.toString() }); // Showable<Option<number>>
+ *
+ * const result1 = Showable.show(O.some(1)); // "Some(1)"
+ * const result2 = Showable.show(O.none); // "None"
+ * ```
  *
  * @since 2.0.0
  */
-export const WrappableOption: Wrappable<KindOption> = { wrap };
+export function getShowableOption<A>(
+  { show }: Showable<A>,
+): Showable<Option<A>> {
+  return ({
+    show: (ma) => (isNone(ma) ? "None" : `${"Some"}(${show(ma.value)})`),
+  });
+}
 
 /**
- * The canonical implementation of Mappable for Option.
+ * Create an instance of Comparable<Option<A>> given an instance of Comparable<A>.
+ *
+ * @example
+ * ```ts
+ * import * as O from "./option.ts";
+ * import * as N from "./number.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const { compare } = O.getComparableOption(N.ComparableNumber);
+ *
+ * const result1 = pipe(O.some(1), compare(O.some(2))); // false
+ * const result2 = pipe(O.some(1), compare(O.some(1))); // true
+ * const result3 = pipe(O.none, compare(O.none)); // true
+ * const result4 = pipe(O.some(1), compare(O.none)); // false
+ * ```
  *
  * @since 2.0.0
  */
-export const MappableOption: Mappable<KindOption> = { map };
+export function getComparableOption<A>(
+  { compare }: Comparable<A>,
+): Comparable<Option<A>> {
+  return fromCompare((second) => (first) =>
+    isSome(first) && isSome(second)
+      ? compare(second.value)(first.value)
+      : isNone(first) && isNone(second)
+  );
+}
+
+/**
+ * Create an instance of Sortable<Option<A>> given an instance of Sortable<A>.
+ *
+ * @example
+ * ```ts
+ * import * as O from "./option.ts";
+ * import * as N from "./number.ts";
+ *
+ * const { sort } = O.getSortableOption(N.SortableNumber);
+ *
+ * const result1 = sort(O.some(1), O.some(2)); // 1
+ * const result2 = sort(O.some(1), O.some(1)); // 0
+ * const result3 = sort(O.none, O.none); // 0
+ * const result4 = sort(O.none, O.some(1)); // -1
+ * ```
+ *
+ * @since 2.0.0
+ */
+export function getSortableOption<A>(
+  { sort }: Sortable<A>,
+): Sortable<Option<A>> {
+  return fromSort((fst, snd) =>
+    isNone(fst)
+      ? isNone(snd) ? 0 : -1
+      : isNone(snd)
+      ? 1
+      : sort(fst.value, snd.value)
+  );
+}
+
+/**
+ * @since 2.0.0
+ */
+export function getCombinableOption<A>(
+  { combine }: Combinable<A>,
+): Combinable<Option<A>> {
+  return {
+    combine: (second) => (first) =>
+      isNone(first)
+        ? second
+        : isNone(second)
+        ? first
+        : wrap(combine(second.value)(first.value)),
+  };
+}
+
+/**
+ * Create an instance of Initializable<Option<A>> given an instance of Initializable<A>.
+ *
+ * @example
+ * ```ts
+ * import * as O from "./option.ts";
+ * import * as N from "./number.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const { combine } = O.getInitializableOption(N.InitializableNumberSum);
+ *
+ * const result1 = pipe(O.some(1), combine(O.some(1))); // Some(2)
+ * const result2 = pipe(O.none, combine(O.some(1))); // Some(1)
+ * const result3 = pipe(O.some(1), combine(O.none)); // Some(1)
+ * ```
+ *
+ * @since 2.0.0
+ */
+export function getInitializableOption<A>(
+  I: Initializable<A>,
+): Initializable<Option<A>> {
+  return ({
+    init: () => some(I.init()),
+    ...getCombinableOption(I),
+  });
+}
+
+/**
+ * The canonical implementation of Applicable for Option.
+ *
+ * @since 2.0.0
+ */
+export const ApplicableOption: Applicable<KindOption> = { wrap, map, apply };
 
 /**
  * The canonical implementation of Filterable for Option.
@@ -704,24 +825,6 @@ export const FilterableOption: Filterable<KindOption> = {
 export const FoldableOption: Foldable<KindOption> = { fold };
 
 /**
- * The canonical implementation of Traversable for Option.
- *
- * @since 2.0.0
- */
-export const TraversableOption: Traversable<KindOption> = {
-  map,
-  fold,
-  traverse,
-};
-
-/**
- * The canonical implementation of Applicable for Option.
- *
- * @since 2.0.0
- */
-export const ApplicableOption: Applicable<KindOption> = { wrap, map, apply };
-
-/**
  * The canonical implementation of Flatmappable for Option.
  *
  * @since 2.0.0
@@ -734,113 +837,41 @@ export const FlatmappableOption: Flatmappable<KindOption> = {
 };
 
 /**
- * Create an instance of Showable for Option<A> given an instance of Showable for A.
- *
- * @example
- * ```ts
- * import * as O from "./option.ts";
- *
- * const Showable = O.getShowable({ show: (n: number) => n.toString() }); // Showable<Option<number>>
- *
- * const result1 = Showable.show(O.some(1)); // "Some(1)"
- * const result2 = Showable.show(O.none); // "None"
- * ```
+ * The canonical implementation of Mappable for Option.
  *
  * @since 2.0.0
  */
-export function getShowable<A>(
-  { show }: Showable<A>,
-): Showable<Option<A>> {
-  return ({
-    show: (ma) => (isNone(ma) ? "None" : `${"Some"}(${show(ma.value)})`),
-  });
-}
+export const MappableOption: Mappable<KindOption> = { map };
 
 /**
- * Create an instance of Comparable<Option<A>> given an instance of Comparable<A>.
- *
- * @example
- * ```ts
- * import * as O from "./option.ts";
- * import * as N from "./number.ts";
- * import { pipe } from "./fn.ts";
- *
- * const { compare } = O.getComparable(N.ComparableNumber);
- *
- * const result1 = pipe(O.some(1), compare(O.some(2))); // false
- * const result2 = pipe(O.some(1), compare(O.some(1))); // true
- * const result3 = pipe(O.none, compare(O.none)); // true
- * const result4 = pipe(O.some(1), compare(O.none)); // false
- * ```
+ * The canonical implementation of Traversable for Option.
  *
  * @since 2.0.0
  */
-export function getComparable<A>(
-  { compare }: Comparable<A>,
-): Comparable<Option<A>> {
-  return fromCompare((second) => (first) =>
-    isSome(first) && isSome(second)
-      ? compare(second.value)(first.value)
-      : isNone(first) && isNone(second)
-  );
-}
+export const TraversableOption: Traversable<KindOption> = {
+  map,
+  fold,
+  traverse,
+};
 
 /**
- * Create an instance of Sortable<Option<A>> given an instance of Sortable<A>.
- *
- * @example
- * ```ts
- * import * as O from "./option.ts";
- * import * as N from "./number.ts";
- *
- * const { sort } = O.getSortable(N.SortableNumber);
- *
- * const result1 = sort(O.some(1), O.some(2)); // 1
- * const result2 = sort(O.some(1), O.some(1)); // 0
- * const result3 = sort(O.none, O.none); // 0
- * const result4 = sort(O.none, O.some(1)); // -1
- * ```
+ * The canonical implementation of Wrappable for Option.
  *
  * @since 2.0.0
  */
-export function getSortable<A>({ sort }: Sortable<A>): Sortable<Option<A>> {
-  return fromSort((fst, snd) =>
-    isNone(fst)
-      ? isNone(snd) ? 0 : -1
-      : isNone(snd)
-      ? 1
-      : sort(fst.value, snd.value)
-  );
-}
+export const WrappableOption: Wrappable<KindOption> = { wrap };
 
 /**
- * Create an instance of Initializable<Option<A>> given an instance of Initializable<A>.
- *
- * @example
- * ```ts
- * import * as O from "./option.ts";
- * import * as N from "./number.ts";
- * import { pipe } from "./fn.ts";
- *
- * const { combine } = O.getInitializable(N.InitializableNumberSum);
- *
- * const result1 = pipe(O.some(1), combine(O.some(1))); // Some(2)
- * const result2 = pipe(O.none, combine(O.some(1))); // Some(1)
- * const result3 = pipe(O.some(1), combine(O.none)); // Some(1)
- * ```
- *
  * @since 2.0.0
  */
-export function getInitializable<A>(
-  { combine }: Initializable<A>,
-): Initializable<Option<A>> {
-  return ({
-    init: () => none,
-    combine: (second) => (first) =>
-      isNone(first)
-        ? second
-        : isNone(second)
-        ? first
-        : wrap(combine(second.value)(first.value)),
-  });
-}
+export const tap = createTap(FlatmappableOption);
+
+/**
+ * @since 2.0.0
+ */
+export const bind = createBind(FlatmappableOption);
+
+/**
+ * @since 2.0.0
+ */
+export const bindTo = createBindTo(MappableOption);

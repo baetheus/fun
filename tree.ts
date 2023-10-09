@@ -1,6 +1,6 @@
 /**
- * This file contains a collection of utilities and
- * algebraic structure implementations for Tree.
+ * This file contains a collection of utilities and algebraic structure
+ * implementations for Tree.
  *
  * @module Tree
  * @since 2.0.0
@@ -10,9 +10,11 @@ import type { $, Kind, Out } from "./kind.ts";
 import type { Applicable } from "./applicable.ts";
 import type { Comparable, Compare } from "./comparable.ts";
 import type { Flatmappable } from "./flatmappable.ts";
+import type { Foldable } from "./foldable.ts";
 import type { Mappable } from "./mappable.ts";
 import type { Showable } from "./showable.ts";
 import type { Traversable } from "./traversable.ts";
+import type { Wrappable } from "./wrappable.ts";
 
 import { TraversableArray } from "./array.ts";
 import { fromCompare } from "./comparable.ts";
@@ -265,12 +267,25 @@ export const FlatmappableTree: Flatmappable<KindTree> = {
   wrap,
 };
 
+/**
+ * @since 2.0.0
+ */
+export const FoldableTree: Foldable<KindTree> = { fold };
+
+/**
+ * @since 2.0.0
+ */
 export const MappableTree: Mappable<KindTree> = { map };
 
 /**
  * @since 2.0.0
  */
 export const TraversableTree: Traversable<KindTree> = { map, fold, traverse };
+
+/**
+ * @since 2.0.0
+ */
+export const WrappableTree: Wrappable<KindTree> = { wrap };
 
 /**
  * @since 2.0.0

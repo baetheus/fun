@@ -2,6 +2,7 @@ import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
 import * as S from "../sync.ts";
 import * as O from "../option.ts";
+import * as N from "../number.ts";
 import { pipe } from "../fn.ts";
 
 const add = (n: number) => n + 1;
@@ -44,21 +45,32 @@ Deno.test("Sync traverse", () => {
   assertEquals(t3, 1);
 });
 
-// Deno.test("Sync Do, bind, bindTo", () => {
-//   assertEqualsSync(
-//     pipe(
-//       S.Do(),
-//       S.bind("one", () => S.wrap(1)),
-//       S.bind("two", ({ one }) => S.wrap(one + one)),
-//       S.map(({ one, two }) => one + two),
-//     ),
-//     S.wrap(3),
-//   );
-//   assertEqualsSync(
-//     pipe(
-//       S.wrap(1),
-//       S.bindTo("one"),
-//     ),
-//     S.wrap({ one: 1 }),
-//   );
-// });
+Deno.test("Sync getCombinableSync", () => {
+  const { combine } = S.getCombinableSync(N.CombinableNumberSum);
+  assertEquals(combine(S.wrap(1))(S.wrap(1))(), 2);
+});
+
+Deno.test("Sync getInitializableSync", () => {
+  const { combine, init } = S.getInitializableSync(N.InitializableNumberSum);
+  assertEquals(init()(), 0);
+  assertEquals(combine(S.wrap(1))(S.wrap(1))(), 2);
+});
+
+Deno.test("Sync Do, bind, bindTo", () => {
+  assertEqualsSync(
+    pipe(
+      S.wrap({}),
+      S.bind("one", () => S.wrap(1)),
+      S.bind("two", ({ one }) => S.wrap(one + one)),
+      S.map(({ one, two }) => one + two),
+    ),
+    S.wrap(3),
+  );
+  assertEqualsSync(
+    pipe(
+      S.wrap(1),
+      S.bindTo("one"),
+    ),
+    S.wrap({ one: 1 }),
+  );
+});

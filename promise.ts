@@ -1,11 +1,24 @@
+/**
+ * This file contains the Promise algebraic data type. Promise is the javascript
+ * built in data structure for asynchronous computation.
+ *
+ * @module Promise
+ * @since 2.0.0
+ */
+
 import type { Kind, Out } from "./kind.ts";
 import type { Applicable } from "./applicable.ts";
+import type { Combinable } from "./combinable.ts";
 import type { Either } from "./either.ts";
+import type { Initializable } from "./initializable.ts";
 import type { Mappable } from "./mappable.ts";
 import type { Flatmappable } from "./flatmappable.ts";
+import type { Wrappable } from "./wrappable.ts";
 
 import * as E from "./either.ts";
 import { flow, handleThrow, pipe } from "./fn.ts";
+import { createBind, createTap } from "./flatmappable.ts";
+import { createBindTo } from "./mappable.ts";
 
 /**
  * A type for Promise over any, useful as an extension target for
@@ -73,7 +86,8 @@ export function deferred<A = never>(): Deferred<A> {
  * the returned promise does resolve when the abort signal
  * occurs, the existing promise continues running in the
  * background. For this reason it is important to
- * catch any errors associated with the original promise.
+ * catch any errors associated with the original promise and
+ * to not implement side effects in the aborted promise.
  *
  * @example
  * ```ts
@@ -99,7 +113,7 @@ export function deferred<A = never>(): Deferred<A> {
 export function abortable<B>(
   signal: AbortSignal,
   onAbort: (reason: unknown) => B,
-) {
+): <A>(ua: Promise<A>) => Promise<Either<B, A>> {
   return <A>(ua: Promise<A>): Promise<Either<B, A>> => {
     if (signal.aborted) {
       return resolve(E.left(onAbort(signal.reason)));
@@ -389,6 +403,13 @@ export function flatmap<A, I>(
 }
 
 /**
+ * @since 2.0.0
+ */
+export function fail<A = never>(b: unknown): Promise<A> {
+  return reject(b);
+}
+
+/**
  * Wrap a function that potentially throws in a try/catch block,
  * handling any thrown errors and returning the result inside
  * of a Promise.
@@ -425,12 +446,27 @@ export function tryCatch<D extends unknown[], A>(
 }
 
 /**
- * The canonical implementation of Mappable for Promise. It contains
- * the method map.
- *
  * @since 2.0.0
  */
-export const MappablePromise: Mappable<KindPromise> = { map };
+export function getCombinablePromise<A>(
+  { combine }: Combinable<A>,
+): Combinable<Promise<A>> {
+  return {
+    combine: (second) => async (first) => combine(await second)(await first),
+  };
+}
+
+/**
+ * @since 2.0.0
+ */
+export function getInitializablePromise<A>(
+  I: Initializable<A>,
+): Initializable<Promise<A>> {
+  return {
+    init: () => resolve(I.init()),
+    ...getCombinablePromise(I),
+  };
+}
 
 /**
  * The canonical implementation of Applicable for Promise. It contains
@@ -439,6 +475,14 @@ export const MappablePromise: Mappable<KindPromise> = { map };
  * @since 2.0.0
  */
 export const ApplicablePromise: Applicable<KindPromise> = { wrap, map, apply };
+
+/**
+ * The canonical implementation of Mappable for Promise. It contains
+ * the method map.
+ *
+ * @since 2.0.0
+ */
+export const MappablePromise: Mappable<KindPromise> = { map };
 
 /**
  * The canonical implementation of Flatmappable for Promise. It contains
@@ -452,3 +496,23 @@ export const FlatmappablePromise: Flatmappable<KindPromise> = {
   map,
   wrap,
 };
+
+/**
+ * @since 2.0.0
+ */
+export const WrappablePromise: Wrappable<KindPromise> = { wrap };
+
+/**
+ * @since 2.0.0
+ */
+export const tap = createTap(FlatmappablePromise);
+
+/**
+ * @since 2.0.0
+ */
+export const bind = createBind(FlatmappablePromise);
+
+/**
+ * @since 2.0.0
+ */
+export const bindTo = createBindTo(MappablePromise);

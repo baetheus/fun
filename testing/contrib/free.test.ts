@@ -3,8 +3,8 @@ import {
   assertStrictEquals,
 } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
-import * as F from "../free.ts";
-import { pipe } from "../fn.ts";
+import * as F from "../../contrib/free.ts";
+import { pipe } from "../../fn.ts";
 
 Deno.test("Free node", () => {
   assertEquals(F.node(1), { tag: "Node", value: 1 });

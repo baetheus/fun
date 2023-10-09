@@ -6,12 +6,12 @@
  */
 
 import type { Ordering, Sortable } from "./sortable.ts";
-import type { Initializable } from "./initializable.ts";
+import type { Combinable } from "./combinable.ts";
 import type { Comparable } from "./comparable.ts";
+import type { Initializable } from "./initializable.ts";
 import type { Showable } from "./showable.ts";
 
 import * as O from "./sortable.ts";
-import { pipe } from "./fn.ts";
 
 /**
  * Compare two numbers and return true if they are equal.
@@ -115,7 +115,7 @@ export function mod(second: number): (first: number) => number {
  * @since 2.0.0
  */
 export function divides(second: number): (first: number) => boolean {
-  return (first) => first <= second && pipe(second, mod(first)) === 0;
+  return (first) => first <= second && mod(first)(second) === 0;
 }
 
 /**
@@ -225,6 +225,45 @@ export const ComparableNumber: Comparable<number> = { compare };
  */
 export const SortableNumber: Sortable<number> = O.fromSort(sort);
 
+/**
+ * A Combinable instance for number that uses multiplication for combineenation.
+ * It contains the method combine.
+ *
+ * @since 2.0.0
+ */
+export const CombinableNumberProduct: Combinable<number> = {
+  combine: multiply,
+};
+
+/**
+ * A Combinable instance for number that uses addition for combineenation.
+ * It contains the method combine.
+ *
+ * @since 2.0.0
+ */
+export const CombinableNumberSum: Combinable<number> = {
+  combine: add,
+};
+
+/**
+ * A Combinable instance for number that uses Math.max for combineenation.
+ * It contains the method combine.
+ *
+ * @since 2.0.0
+ */
+export const CombinableNumberMax: Combinable<number> = {
+  combine: O.max(SortableNumber),
+};
+
+/**
+ * A Combinable instance for number that uses Math.min for combineenation.
+ * It contains the method combine.
+ *
+ * @since 2.0.0
+ */
+export const CombinableNumberMin: Combinable<number> = {
+  combine: O.min(SortableNumber),
+};
 /**
  * A Initializable instance for number that uses multiplication for combineenation.
  * It contains the method combine.

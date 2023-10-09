@@ -4,14 +4,21 @@
  * purity, so that subsequent executions of a state workflow with the same
  * initial conditions produce the exact same results.
  *
- * @since 2.0.0
- *
  * @module State
+ * @since 2.0.0
  */
-import type { InOut, Kind, Out } from "./kind.ts";
-import type { Flatmappable } from "./flatmappable.ts";
 
-import { flow, identity, pipe } from "./fn.ts";
+import type { InOut, Kind, Out } from "./kind.ts";
+import type { Applicable } from "./applicable.ts";
+import type { Combinable } from "./combinable.ts";
+import type { Flatmappable } from "./flatmappable.ts";
+import type { Initializable } from "./initializable.ts";
+import type { Mappable } from "./mappable.ts";
+import type { Wrappable } from "./wrappable.ts";
+
+import { flow } from "./fn.ts";
+import { createBind, createTap } from "./flatmappable.ts";
+import { createBindTo } from "./mappable.ts";
 
 /**
  * The State<E, A> type represents the core State structure. The input/output
@@ -286,6 +293,44 @@ export function execute<S>(s: S): <A>(ta: State<S, A>) => S {
 }
 
 /**
+ * @since 2.0.0
+ */
+export function getCombinableState<E, A>(
+  CE: Combinable<E>,
+  CA: Combinable<A>,
+): Combinable<State<E, A>> {
+  return {
+    combine: (second) => (first) => (e) => {
+      const [fa, fe] = first(e);
+      const [sa, se] = second(e);
+      return [CA.combine(sa)(fa), CE.combine(se)(fe)];
+    },
+  };
+}
+
+/**
+ * @since 2.0.0
+ */
+export function getInitializableState<E, A>(
+  IE: Initializable<E>,
+  IA: Initializable<A>,
+): Initializable<State<E, A>> {
+  return {
+    init: () => (e) => [IA.init(), IE.combine(e)(IE.init())],
+    ...getCombinableState(IE, IA),
+  };
+}
+
+/**
+ * @since 2.0.0
+ */
+export const ApplicableState: Applicable<KindState> = {
+  apply,
+  map,
+  wrap,
+};
+
+/**
  * The canonical implementation of Flatmappable for State. It contains
  * the methods wrap, apply, map, join, and flatmap.
  *
@@ -297,3 +342,28 @@ export const FlatmappableState: Flatmappable<KindState> = {
   map,
   wrap,
 };
+
+/**
+ * @since 2.0.0
+ */
+export const MappableState: Mappable<KindState> = { map };
+
+/**
+ * @since 2.0.0
+ */
+export const WrappableState: Wrappable<KindState> = { wrap };
+
+/**
+ * @since 2.0.0
+ */
+export const tap = createTap(FlatmappableState);
+
+/**
+ * @since 2.0.0
+ */
+export const bind = createBind(FlatmappableState);
+
+/**
+ * @since 2.0.0
+ */
+export const bindTo = createBindTo(MappableState);

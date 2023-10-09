@@ -24,10 +24,10 @@
  * and profunctor optics, and is much more compact and performant in typescript
  * than those implementations.
  *
- * @module Optics
- *
+ * @module Optic
  * @since 2.0.0
  */
+
 import type { $, Kind } from "./kind.ts";
 import type { Comparable } from "./comparable.ts";
 import type { Initializable } from "./initializable.ts";
@@ -50,7 +50,7 @@ import * as M from "./map.ts";
 import * as P from "./pair.ts";
 import { TraversableSet } from "./set.ts";
 import { TraversableTree } from "./tree.ts";
-import { isNotNil } from "./nilable.ts";
+import { isNotNil } from "./nil.ts";
 import { getCombineAll } from "./initializable.ts";
 import { dimap, flow, identity, over, pipe } from "./fn.ts";
 
@@ -932,82 +932,6 @@ export function imap<A, I>(
 }
 
 /**
- * Map over the Viewer portion of an optic. This effectively uses the map from
- * the Flatmappable associated with the tag of the optic.
- *
- * @example
- * ```ts
- * import * as O from "./optic.ts";
- * import { pipe } from "./fn.ts";
- *
- * const mapped = pipe(
- *   O.id<ReadonlyArray<string>>(),
- *   O.index(1),
- *   O.map(str => str.length),
- * );
- *
- * const result1 = mapped.view(["Hello", "World"]); // Some(5)
- * const result2 = mapped.view([]); // None
- * ```
- *
- * @since 2.0.0
- */
-export function map<A, I>(
-  fai: (a: A) => I,
-): <T extends Tag, S>(first: Viewer<T, S, A>) => Viewer<T, S, I> {
-  return ({ tag, view }) => {
-    const _map = getFlatmappable(tag).map;
-    return viewer(tag, flow(view, _map(fai)));
-  };
-}
-
-/**
- * Apply the value returned by a Viewer to a function returned by a Viewer.
- *
- * @example
- * ```ts
- * import * as O from "./optic.ts";
- * import { pipe } from "./fn.ts";
- *
- * type Person = { name: string, age: number };
- * type State = { people: readonly Person[], format: (p: Person) => string };
- *
- * const fmt = pipe(O.id<State>(), O.prop("format"));
- * const adults = pipe(
- *   O.id<State>(),
- *   O.prop("people"),
- *   O.array,
- *   O.filter(p => p.age > 18)
- * );
- *
- * const formatted = pipe(fmt, O.apply(adults));
- *
- * const result = formatted.view({
- *   people: [
- *     { name: "Brandon", age: 37 },
- *     { name: "Rufus", age: 1 },
- *   ],
- *   format: p => `${p.name} is ${p.age}`,
- * }); // [ "Brandon is 37" ]
- * ```
- *
- * @since 2.0.0
- */
-export function apply<V extends Tag, S, A>(
-  second: Viewer<V, S, A> | Optic<V, S, A>,
-): <U extends Tag, I>(
-  first: Viewer<U, S, (a: A) => I> | Optic<U, S, (a: A) => I>,
-) => Viewer<Align<U, V>, S, I> {
-  return (first) => {
-    const tag = align(first.tag, second.tag);
-    const _ap = getFlatmappable(tag).apply;
-    const _first = _unsafeCast(first, tag);
-    const _second = _unsafeCast(second, tag);
-    return viewer(tag, (s) => pipe(_first(s), _ap(_second(s))));
-  };
-}
-
-/**
  * A composable combinator that focuses on a property P of a struct.
  *
  * @example
@@ -1346,7 +1270,7 @@ export function traverse<T extends Kind>(
 export function combineAll<A, I>(
   initializable: Initializable<I>,
   fai: (a: A) => I,
-) {
+): <U extends Tag, S>(first: Optic<U, S, A>) => (s: S) => I {
   const _combineAll = getCombineAll(initializable);
   return <U extends Tag, S>(first: Optic<U, S, A>): (s: S) => I => {
     const view = _unsafeCast(first, FoldTag);
@@ -1453,7 +1377,7 @@ export const tree: <U extends Tag, S, A>(
  *
  * type Input = { value?: string | null };
  *
- * const value = pipe(O.id<Input>(), O.prop("value"), O.nilable);
+ * const value = pipe(O.id<Input>(), O.prop("value"), O.nil);
  *
  * const result1 = pipe(value, O.view({})); // None
  * const result2 = pipe(value, O.view({ value: "Hello" })); // Some("Hello")
@@ -1461,7 +1385,7 @@ export const tree: <U extends Tag, S, A>(
  *
  * @since 2.0.0
  */
-export const nilable: <U extends Tag, S, A>(
+export const nil: <U extends Tag, S, A>(
   first: Optic<U, S, A>,
 ) => Optic<Align<U, AffineTag>, S, NonNullable<A>> = filter(isNotNil);
 

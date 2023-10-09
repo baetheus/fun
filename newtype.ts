@@ -8,6 +8,7 @@
  * specified.
  *
  * @module Newtype
+ * @since 2.0.0
  */
 
 import type { Combinable } from "./combinable.ts";

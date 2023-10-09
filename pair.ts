@@ -9,11 +9,14 @@
 import type { $, Kind, Out } from "./kind.ts";
 import type { Applicable } from "./applicable.ts";
 import type { Bimappable } from "./bimappable.ts";
+import type { Combinable } from "./combinable.ts";
+import type { Comparable } from "./comparable.ts";
 import type { Flatmappable } from "./flatmappable.ts";
+import type { Foldable } from "./foldable.ts";
 import type { Initializable } from "./initializable.ts";
 import type { Mappable } from "./mappable.ts";
-import type { Foldable } from "./foldable.ts";
 import type { Showable } from "./showable.ts";
+import type { Sortable } from "./sortable.ts";
 import type { Traversable } from "./traversable.ts";
 
 import { createFlatmappable } from "./flatmappable.ts";
@@ -34,6 +37,8 @@ import { pipe } from "./fn.ts";
  *
  * Other uses will likely come when Arrows
  * are implemented in fun.
+ *
+ * @since 2.0.0
  */
 export type Pair<A, B> = readonly [A, B];
 
@@ -389,45 +394,74 @@ export function traverse<V extends Kind>(A: Applicable<V>) {
 }
 
 /**
- * The canonical Mappable instance for Pair. Contains the
- * map method.
- *
- * @since 2.0.0
- */
-export const MappablePair: Mappable<KindPair> = { map };
-
-/**
- * The canonical Bimappable instance for Pair. Contains the
- * bimap and mapSecond methods.
- *
- * @since 2.0.0
- */
-export const BimappablePair: Bimappable<KindPair> = { mapSecond, map };
-
-/**
- * The canonical Foldable instance for Pair. Contains the
- * fold method.
- *
- * @since 2.0.0
- */
-export const FoldablePair: Foldable<KindPair> = { fold };
-
-/**
- * @since 2.0.0
- */
-export const TraversablePair: Traversable<KindPair> = { map, fold, traverse };
-
-/**
  * Creates a Showable instance for a pair, wrapping the Showable instances provided
  * for the first and second values.
+ *
+ * @since 2.0.0
  */
-export function getShowable<A, B>(
+export function getShowablePair<A, B>(
   SA: Showable<A>,
   SB: Showable<B>,
 ): Showable<Pair<A, B>> {
   return {
     show: ([first, second]) => `Pair(${SA.show(first)}, ${SB.show(second)})`,
   };
+}
+
+/**
+ * @since 2.0.0
+ */
+export function getCombinablePair<A, B>(
+  CA: Combinable<A>,
+  CB: Combinable<B>,
+): Combinable<Pair<A, B>> {
+  return {
+    combine: (second) => (first) => [
+      CA.combine(second[0])(first[0]),
+      CB.combine(second[1])(first[1]),
+    ],
+  };
+}
+
+/**
+ * @since 2.0.0
+ */
+export function getInitializablePair<A, B>(
+  IA: Initializable<A>,
+  IB: Initializable<B>,
+): Initializable<Pair<A, B>> {
+  return {
+    init: () => [IA.init(), IB.init()],
+    ...getCombinablePair(IA, IB),
+  };
+}
+
+/**
+ * @since 2.0.0
+ */
+export function getComparablePair<A, B>(
+  CA: Comparable<A>,
+  CB: Comparable<B>,
+): Comparable<Pair<A, B>> {
+  return {
+    compare: (second) => (first) =>
+      CA.compare(second[0])(first[0]) && CB.compare(second[1])(first[1]),
+  };
+}
+
+/**
+ * @since 2.0.0
+ */
+export function getSortablePair<A, B>(
+  SA: Sortable<A>,
+  SB: Sortable<B>,
+): Sortable<Pair<A, B>> {
+  return ({
+    sort: (first, second) => {
+      const oa = SA.sort(first[0], second[0]);
+      return oa === 0 ? SB.sort(first[1], second[1]) : oa;
+    },
+  });
 }
 
 /**
@@ -473,3 +507,32 @@ export function getRightFlatmappable<L>(
       pipe(fati(first), mapSecond(combine(second))),
   });
 }
+
+/**
+ * The canonical Mappable instance for Pair. Contains the
+ * map method.
+ *
+ * @since 2.0.0
+ */
+export const MappablePair: Mappable<KindPair> = { map };
+
+/**
+ * The canonical Bimappable instance for Pair. Contains the
+ * bimap and mapSecond methods.
+ *
+ * @since 2.0.0
+ */
+export const BimappablePair: Bimappable<KindPair> = { mapSecond, map };
+
+/**
+ * The canonical Foldable instance for Pair. Contains the
+ * fold method.
+ *
+ * @since 2.0.0
+ */
+export const FoldablePair: Foldable<KindPair> = { fold };
+
+/**
+ * @since 2.0.0
+ */
+export const TraversablePair: Traversable<KindPair> = { map, fold, traverse };

@@ -10,8 +10,6 @@
 import type { $, Hold, Kind } from "./kind.ts";
 import type { Applicable } from "./applicable.ts";
 
-import { pipe } from "./fn.ts";
-
 /**
  * A Flatmappable structure.
  */
@@ -116,12 +114,13 @@ export function createBind<U extends Kind>({ flatmap, map }: Flatmappable<U>): <
 export function createFlatmappable<U extends Kind>(
   { wrap, flatmap }: Pick<Flatmappable<U>, "wrap" | "flatmap">,
 ): Flatmappable<U> {
-  const Flatmappable: Flatmappable<U> = {
+  const result: Flatmappable<U> = {
     wrap,
-    apply: (ua) => (ufai) =>
-      pipe(ufai, flatmap((fab) => pipe(ua, Flatmappable.map(fab)))),
-    map: (fai) => (ta) => pipe(ta, flatmap((a) => wrap(fai(a)))),
+    apply: ((ua) => flatmap((fai) => result.map(fai)(ua))) as Flatmappable<
+      U
+    >["apply"],
+    map: ((fai) => flatmap((a) => wrap(fai(a)))) as Flatmappable<U>["map"],
     flatmap,
   };
-  return Flatmappable;
+  return result;
 }

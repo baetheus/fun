@@ -56,16 +56,12 @@ Deno.test("Predicate and", () => {
   assertEquals(isPositiveInteger(-2.2), false);
 });
 
-Deno.test("Predicate PremappablePredicate", () => {
-  assertStrictEquals(P.PremappablePredicate.premap, P.premap);
+Deno.test("Predicate getCombinableAny", () => {
+  assertStrictEquals(P.getCombinableAny().combine, P.or);
 });
 
-Deno.test("Predicate getInitializableAny", () => {
-  assertStrictEquals(P.getInitializableAny().combine, P.or);
-});
-
-Deno.test("Predicate getInitializableAll", () => {
-  assertStrictEquals(P.getInitializableAll().combine, P.and);
+Deno.test("Predicate getCombinableAll", () => {
+  assertStrictEquals(P.getCombinableAll().combine, P.and);
 });
 
 Deno.test("Predicate getInitializableAny", () => {

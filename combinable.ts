@@ -8,11 +8,11 @@
  */
 
 import type { Sortable } from "./sortable.ts";
-import type { ReadonlyRecord } from "./record.ts";
-import type { NonEmptyArray } from "./array.ts";
 
 import * as S from "./sortable.ts";
-import { pipe, uncurry2 } from "./fn.ts";
+
+type ReadonlyRecord<A> = Readonly<Record<string, A>>;
+type NonEmptyArray<A> = readonly [A, ...A[]];
 
 /**
  * The Combine function in a Combinable.
@@ -329,9 +329,7 @@ export function min<A>(sortable: Sortable<A>): Combinable<A> {
  */
 export function intercalcate<A>(middle: A) {
   return ({ combine }: Combinable<A>): Combinable<A> =>
-    fromCombine((second) => (first) =>
-      pipe(first, combine(middle), combine(second))
-    );
+    fromCombine((second) => (first) => combine(second)(combine(middle)(first)));
 }
 
 /**
@@ -382,6 +380,6 @@ export function constant<A>(a: A): Combinable<A> {
 export function getCombineAll<A>(
   { combine }: Combinable<A>,
 ): (...as: NonEmptyArray<A>) => A {
-  const _combine = uncurry2(combine);
+  const _combine = (first: A, second: A) => combine(second)(first);
   return (...as) => as.reduce(_combine);
 }

@@ -56,6 +56,10 @@ Deno.test("FnEither wrap", () => {
   assertEquals(FE.wrap(0)(0), E.right(0));
 });
 
+Deno.test("FnEither fail", () => {
+  assertEquals(FE.fail(1)(1), E.left(1));
+});
+
 Deno.test("FnEither apply", () => {
   const add = (n: number) => n + 1;
   assertEquals(pipe(FE.right(add), FE.apply(FE.right(1)))(0), FE.right(2)(0));

@@ -6,6 +6,7 @@
  */
 
 import type { Ordering, Sortable } from "./sortable.ts";
+import type { Combinable } from "./combinable.ts";
 import type { Initializable } from "./initializable.ts";
 import type { Comparable } from "./comparable.ts";
 import type { Showable } from "./showable.ts";
@@ -183,6 +184,28 @@ export const SortableBoolean: Sortable<boolean> = fromSort(sort);
 export const ComparableBoolean: Comparable<boolean> = { compare };
 
 /**
+ * The canonical implementation of Combinable for boolean that
+ * combines using the logical and operator. It contains the
+ * method combine.
+ *
+ * @since 2.0.0
+ */
+export const CombinableBooleanAll: Combinable<boolean> = {
+  combine: and,
+};
+
+/**
+ * The canonical implementation of Combinable for boolean that
+ * combines using the logical or operator. It contains the
+ * method combine.
+ *
+ * @since 2.0.0
+ */
+export const CombinableBooleanAny: Combinable<boolean> = {
+  combine: or,
+};
+
+/**
  * The canonical implementation of Initializable for boolean that
  * combines using the logical and operator. It contains the
  * method combine.
@@ -191,7 +214,7 @@ export const ComparableBoolean: Comparable<boolean> = { compare };
  */
 export const InitializableBooleanAll: Initializable<boolean> = {
   combine: and,
-  init: constFalse,
+  init: constTrue,
 };
 
 /**
@@ -203,7 +226,7 @@ export const InitializableBooleanAll: Initializable<boolean> = {
  */
 export const InitializableBooleanAny: Initializable<boolean> = {
   combine: or,
-  init: constTrue,
+  init: constFalse,
 };
 
 /**

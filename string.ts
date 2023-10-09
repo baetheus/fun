@@ -1,8 +1,19 @@
+/**
+ * This file contains the String algebraic data type. String is a the built in
+ * javascript string structure. This file contains data last implementations of
+ * most of the String built in methods as well as minor "fixes" to make them
+ * less error prone.
+ *
+ * @module String
+ * @since 2.0.0
+ */
+
+import type { Combinable } from "./combinable.ts";
+import type { Comparable } from "./comparable.ts";
 import type { Initializable } from "./initializable.ts";
 import type { NonEmptyArray } from "./array.ts";
 import type { Option } from "./option.ts";
 import type { Ordering, Sortable } from "./sortable.ts";
-import type { Comparable } from "./comparable.ts";
 import type { Showable } from "./showable.ts";
 
 import { fromCompare } from "./comparable.ts";
@@ -450,6 +461,13 @@ export function test(r: RegExp) {
  * @since 2.0.0
  */
 export const SortableString: Sortable<string> = fromSort(sort);
+
+/**
+ * @since 2.0.0
+ */
+export const CombinableString: Combinable<string> = {
+  combine,
+};
 
 /**
  * The canonical implementation of Comparable for string. It contains

@@ -7,7 +7,6 @@
  * @todo Revisit array, tuple, record, and struct to have a concept of ...rest
  *
  * @module Decoder
- *
  * @since 2.0.0
  */
 
@@ -15,6 +14,7 @@ import type { In, Kind, Out, Spread } from "./kind.ts";
 import type { AnyArray, NonEmptyArray } from "./array.ts";
 import type { Applicable } from "./applicable.ts";
 import type { Combinable } from "./combinable.ts";
+import type { Composable } from "./composable.ts";
 import type { Either } from "./either.ts";
 import type { Flatmappable } from "./flatmappable.ts";
 import type { FnEither } from "./fn_either.ts";
@@ -22,8 +22,10 @@ import type { Forest } from "./tree.ts";
 import type { Literal, Schemable } from "./schemable.ts";
 import type { Mappable } from "./mappable.ts";
 import type { Predicate } from "./predicate.ts";
+import type { Premappable } from "./premappable.ts";
 import type { ReadonlyRecord } from "./record.ts";
 import type { Refinement } from "./refinement.ts";
+import type { Wrappable } from "./wrappable.ts";
 
 import * as FE from "./fn_either.ts";
 import * as TR from "./tree.ts";
@@ -33,6 +35,8 @@ import * as R from "./record.ts";
 import * as O from "./option.ts";
 import * as S from "./schemable.ts";
 import * as G from "./refinement.ts";
+import { createBind, createTap } from "./flatmappable.ts";
+import { createBindTo } from "./mappable.ts";
 import { fromCombine } from "./combinable.ts";
 import { flow, memoize, pipe } from "./fn.ts";
 
@@ -806,9 +810,7 @@ export function unwrap<A>(ta: Decoded<A>): Either<string, A> {
  * @since 2.0.0
  */
 export const FlatmappableDecoded: Flatmappable<KindDecoded> = E
-  .getRightFlatmappable(
-    CombinableDecodeError,
-  );
+  .getFlatmappableRight(CombinableDecodeError);
 
 /**
  * A traversal over a Record of Decoded results.
@@ -1830,20 +1832,25 @@ export interface KindUnknownDecoder extends Kind {
 }
 
 /**
- * The canonical implementation of Mappable for Decoder. It contains
- * the method map.
- *
- * @since 2.0.0
- */
-export const MappableDecoder: Mappable<KindDecoder> = { map };
-
-/**
  * The canonical implementation of Applicable for Decoder. It contains
  * the methods of, ap, and map.
  *
  * @since 2.0.0
  */
 export const ApplicableDecoder: Applicable<KindDecoder> = { wrap, apply, map };
+
+/**
+ * @since 2.0.0
+ */
+export const ComposableDecoder: Composable<KindDecoder> = { compose, id };
+
+/**
+ * The canonical implementation of Mappable for Decoder. It contains
+ * the method map.
+ *
+ * @since 2.0.0
+ */
+export const MappableDecoder: Mappable<KindDecoder> = { map };
 
 /**
  * The canonical implementation of Flatmappable for Decoder. It contains
@@ -1855,6 +1862,15 @@ export const FlatmappableDecoder: Flatmappable<KindDecoder> = FE
   .getRightFlatmappable(
     CombinableDecodeError,
   );
+
+/**
+ * @since 2.0.0
+ */
+export const PremappableDecoder: Premappable<KindDecoder> = {
+  premap,
+  map,
+  dimap,
+};
 
 /**
  * The canonical implementation of Schemable for Decoder. It contains
@@ -1880,3 +1896,23 @@ export const SchemableDecoder: Schemable<KindUnknownDecoder> = {
   union,
   lazy,
 };
+
+/**
+ * @since 2.0.0
+ */
+export const WrappableDecoder: Wrappable<KindDecoder> = { wrap };
+
+/**
+ * @since 2.0.0
+ */
+export const tap = createTap(FlatmappableDecoder);
+
+/**
+ * @since 2.0.0
+ */
+export const bind = createBind(FlatmappableDecoder);
+
+/**
+ * @since 2.0.0
+ */
+export const bindTo = createBindTo(MappableDecoder);

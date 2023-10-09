@@ -23,5 +23,5 @@ export interface Composable<U extends Kind> extends Hold<U> {
     second: $<U, [I, J, K], [A], [E]>,
   ) => <B = never, C = never, D = unknown>(
     first: $<U, [A, B, C], [D], [E]>,
-  ) => $<U, [I, J, K], [D], [E]>;
+  ) => $<U, [I, J | B, K | C], [D], [E]>;
 }

@@ -175,7 +175,3 @@ Deno.test("Sortable premap", () => {
     -1,
   );
 });
-
-Deno.test("Sortable PremappableSortable", () => {
-  assertStrictEquals(O.PremappableSortable.premap, O.premap);
-});

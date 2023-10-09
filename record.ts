@@ -1,4 +1,3 @@
-// deno-lint-ignore-file no-explicit-any
 /**
  * ReadonlyRecord is a readonly product structure that operates
  * like a Map. Keys are always strings and Key/Value pairs
@@ -6,16 +5,20 @@
  * type in fun favors immutability.
  *
  * @module ReadonlyRecord
+ * @since 2.0.0
  */
+
+// deno-lint-ignore-file no-explicit-any
 
 import type { $, AnySub, Intersect, Kind, Out } from "./kind.ts";
 import type { Applicable } from "./applicable.ts";
-import type { Either } from "./either.ts";
+import type { Combinable } from "./combinable.ts";
 import type { Comparable } from "./comparable.ts";
+import type { Either } from "./either.ts";
 import type { Filterable } from "./filterable.ts";
 import type { Foldable } from "./foldable.ts";
-import type { Mappable } from "./mappable.ts";
 import type { Initializable } from "./initializable.ts";
+import type { Mappable } from "./mappable.ts";
 import type { Option } from "./option.ts";
 import type { Pair } from "./pair.ts";
 import type { Showable } from "./showable.ts";
@@ -931,6 +934,81 @@ export function partitionMap<A, I, J>(
 }
 
 /**
+ * @since 2.0.0
+ */
+export function getCombinableRecord<A>(
+  { combine }: Combinable<A>,
+): Combinable<ReadonlyRecord<A>> {
+  return {
+    combine: (second) => (first) => {
+      const result: Record<string, A> = { ...first };
+      for (const [key, value] of entries(second)) {
+        if (key in result) {
+          result[key] = combine(value)(result[key]);
+        } else {
+          result[key] = value;
+        }
+      }
+      return result;
+    },
+  };
+}
+
+/**
+ * @since 2.0.0
+ */
+export function getInitializableRecord<A>(
+  I: Initializable<A>,
+): Initializable<ReadonlyRecord<A>> {
+  return {
+    init: () => ({}),
+    ...getCombinableRecord(I),
+  };
+}
+
+/**
+ * @since 2.0.0
+ */
+export function getComparableRecord<A>(
+  C: Comparable<A>,
+): Comparable<ReadonlyRecord<A>> {
+  const _isSubrecord = isSubrecord(C);
+  return {
+    compare: (second) => (first) =>
+      _isSubrecord(second)(first) && _isSubrecord(first)(second),
+  };
+}
+
+/**
+ * Given a Showable for the inner values of a ReadonlyRecord<A>, return an instance
+ * of Showable for ReadonlyRecord<A>.
+ *
+ * @example
+ * ```ts
+ * import * as R from "./record.ts";
+ * import { ShowableNumber } from "./number.ts";
+ *
+ * const { show } = R.getShowableRecord(ShowableNumber);
+ *
+ * const result = show({ one: 1, two: 2, three: 3 });
+ * // "{one: 1, two: 2, three: 3}"
+ * ```
+ *
+ * @since 2.0.0
+ */
+export function getShowableRecord<A>(
+  SA: Showable<A>,
+): Showable<ReadonlyRecord<A>> {
+  return ({
+    show: (ua) =>
+      `{${
+        Object.entries(ua).map(([key, value]) => `${key}: ${SA.show(value)}`)
+          .join(", ")
+      }}`,
+  });
+}
+
+/**
  * The canonical implementation of Filterable for ReadonlyRecord. It contains
  * the methods filter, filterMap, partition, and partitionMap.
  *
@@ -970,30 +1048,3 @@ export const TraversableRecord: Traversable<KindReadonlyRecord> = {
   fold,
   traverse,
 };
-
-/**
- * Given a Showable for the inner values of a ReadonlyRecord<A>, return an instance
- * of Showable for ReadonlyRecord<A>.
- *
- * @example
- * ```ts
- * import * as R from "./record.ts";
- * import { ShowableNumber } from "./number.ts";
- *
- * const { show } = R.getShowable(ShowableNumber);
- *
- * const result = show({ one: 1, two: 2, three: 3 });
- * // "{one: 1, two: 2, three: 3}"
- * ```
- *
- * @since 2.0.0
- */
-export function getShowable<A>(SA: Showable<A>): Showable<ReadonlyRecord<A>> {
-  return ({
-    show: (ua) =>
-      `{${
-        Object.entries(ua).map(([key, value]) => `${key}: ${SA.show(value)}`)
-          .join(", ")
-      }}`,
-  });
-}

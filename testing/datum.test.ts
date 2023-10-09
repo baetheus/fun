@@ -3,6 +3,7 @@ import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 import * as D from "../datum.ts";
 import * as O from "../option.ts";
 import * as N from "../number.ts";
+import * as E from "../either.ts";
 import * as Sortable from "../sortable.ts";
 import { pipe } from "../fn.ts";
 
@@ -37,11 +38,11 @@ Deno.test("Datum fromNullable", () => {
 });
 
 Deno.test("Datum tryCatch", () => {
-  assertEquals(D.tryCatch(() => 1), D.replete(1));
+  assertEquals(D.tryCatch(() => 1)(), D.replete(1));
   assertEquals(
     D.tryCatch(() => {
       throw new Error();
-    }),
+    })(),
     D.initial,
   );
 });
@@ -299,6 +300,61 @@ Deno.test("Datum fold", () => {
   assertEquals(fold(D.refresh(1)), 1);
 });
 
+Deno.test("Datum exists", () => {
+  const exists = D.exists((n: number) => n > 0);
+
+  assertEquals(exists(D.initial), false);
+  assertEquals(exists(D.pending), false);
+  assertEquals(exists(D.replete(0)), false);
+  assertEquals(exists(D.refresh(0)), false);
+  assertEquals(exists(D.replete(1)), true);
+  assertEquals(exists(D.refresh(1)), true);
+});
+
+Deno.test("Datum filter", () => {
+  const filter = D.filter((n: number) => n > 0);
+
+  assertEquals(filter(D.initial), D.initial);
+  assertEquals(filter(D.pending), D.pending);
+  assertEquals(filter(D.replete(0)), D.initial);
+  assertEquals(filter(D.refresh(0)), D.pending);
+  assertEquals(filter(D.replete(1)), D.replete(1));
+  assertEquals(filter(D.refresh(1)), D.refresh(1));
+});
+
+Deno.test("Datum filterMap", () => {
+  const filterMap = D.filterMap(O.fromPredicate((n: number) => n > 0));
+
+  assertEquals(filterMap(D.initial), D.initial);
+  assertEquals(filterMap(D.pending), D.pending);
+  assertEquals(filterMap(D.replete(0)), D.initial);
+  assertEquals(filterMap(D.refresh(0)), D.pending);
+  assertEquals(filterMap(D.replete(1)), D.replete(1));
+  assertEquals(filterMap(D.refresh(1)), D.refresh(1));
+});
+
+Deno.test("Datum partition", () => {
+  const partition = D.partition((n: number) => n > 0);
+
+  assertEquals(partition(D.initial), [D.initial, D.initial]);
+  assertEquals(partition(D.pending), [D.pending, D.pending]);
+  assertEquals(partition(D.replete(0)), [D.initial, D.replete(0)]);
+  assertEquals(partition(D.refresh(0)), [D.pending, D.refresh(0)]);
+  assertEquals(partition(D.replete(1)), [D.replete(1), D.initial]);
+  assertEquals(partition(D.refresh(1)), [D.refresh(1), D.pending]);
+});
+
+Deno.test("Datum partitionMap", () => {
+  const partitionMap = D.partitionMap(E.fromPredicate((n: number) => n > 0));
+
+  assertEquals(partitionMap(D.initial), [D.initial, D.initial]);
+  assertEquals(partitionMap(D.pending), [D.pending, D.pending]);
+  assertEquals(partitionMap(D.replete(0)), [D.initial, D.replete(0)]);
+  assertEquals(partitionMap(D.refresh(0)), [D.pending, D.refresh(0)]);
+  assertEquals(partitionMap(D.replete(1)), [D.replete(1), D.initial]);
+  assertEquals(partitionMap(D.refresh(1)), [D.refresh(1), D.pending]);
+});
+
 Deno.test("Datum traverse", () => {
   const traverse = D.traverse(O.FlatmappableOption);
   const add = traverse(O.fromPredicate((n: number) => n > 0));
@@ -311,21 +367,21 @@ Deno.test("Datum traverse", () => {
   assertEquals(add(D.refresh(1)), O.some(D.refresh(1)));
 });
 
-// Deno.test("Datum Do, bind, bindTo", () => {
-//   assertEquals(
-//     pipe(
-//       D.Do(),
-//       D.bind("one", () => D.replete(1)),
-//       D.bind("two", ({ one }) => D.refresh(one + one)),
-//       D.map(({ one, two }) => one + two),
-//     ),
-//     D.refresh(3),
-//   );
-//   assertEquals(
-//     pipe(
-//       D.replete(1),
-//       D.bindTo("one"),
-//     ),
-//     D.replete({ one: 1 }),
-//   );
-// });
+Deno.test("Datum Do, bind, bindTo", () => {
+  assertEquals(
+    pipe(
+      D.wrap({}),
+      D.bind("one", () => D.replete(1)),
+      D.bind("two", ({ one }) => D.refresh(one + one)),
+      D.map(({ one, two }) => one + two),
+    ),
+    D.refresh(3),
+  );
+  assertEquals(
+    pipe(
+      D.replete(1),
+      D.bindTo("one"),
+    ),
+    D.replete({ one: 1 }),
+  );
+});

@@ -231,10 +231,6 @@ Deno.test("Comparable premap", () => {
   assertEquals(compare(now)(now), true);
 });
 
-Deno.test("Comparable PremappableComparable", () => {
-  assertEquals(C.PremappableComparable.premap, C.premap);
-});
-
 Deno.test("Comparable SchemableComparable", () => {
   assertEquals(C.SchemableComparable.unknown(), C.unknown);
   assertEquals(C.SchemableComparable.string(), C.string);

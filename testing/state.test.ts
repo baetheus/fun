@@ -1,6 +1,8 @@
 import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
 import * as S from "../state.ts";
+import * as N from "../number.ts";
+import * as C from "../combinable.ts";
 import { pipe } from "../fn.ts";
 
 const add = (n: number) => n + 1;
@@ -26,7 +28,7 @@ Deno.test("State gets", () => {
   assertEquals(S.gets((n: number) => n.toString())(0), ["0", 0]);
 });
 
-Deno.test("State make", () => {
+Deno.test("State state", () => {
   assertEqualsS(S.state(1, 1), S.id<number>());
 });
 
@@ -56,21 +58,44 @@ Deno.test("State execute", () => {
   assertEquals(pipe(S.id<number>(), S.execute(0)), 0);
 });
 
-// Deno.test("State Do, bind, bindTo", () => {
-//   assertEqualsS(
-//     pipe(
-//       S.Do<number, number, number>(),
-//       S.bind("one", () => S.make(1, 1)),
-//       S.bind("two", ({ one }) => S.make(one + one, 1)),
-//       S.map(({ one, two }) => one + two),
-//     ),
-//     S.make(3, 1),
-//   );
-//   assertEqualsS(
-//     pipe(
-//       S.make(1, 1),
-//       S.bindTo("one"),
-//     ),
-//     S.make({ one: 1 }, 1),
-//   );
-// });
+Deno.test("State getCombinableState", () => {
+  const { combine } = S.getCombinableState(
+    N.CombinableNumberMax,
+    N.CombinableNumberMin,
+  );
+  assertEquals(
+    combine((n: number) => [n, n + 1])((n: number) => [n + 100, n])(1),
+    [1, 2],
+  );
+});
+
+Deno.test("State getInitializableState", () => {
+  const { combine, init } = S.getInitializableState(
+    N.InitializableNumberSum,
+    N.InitializableNumberProduct,
+  );
+  assertEquals(init()(1), [1, 1]);
+  assertEquals(
+    combine((n: number) => [n, n])((n: number) => [n, n])(2),
+    [4, 4],
+  );
+});
+
+Deno.test("State Do, bind, bindTo", () => {
+  assertEquals(
+    pipe(
+      S.wrap<{}, number>({}),
+      S.bind("one", () => S.state(1, 1)),
+      S.bind("two", ({ one }) => S.state(one + one, 1)),
+      S.map(({ one, two }) => one + two),
+    )(1),
+    S.state(3, 1)(1),
+  );
+  assertEquals(
+    pipe(
+      S.state(1, 1),
+      S.bindTo("one"),
+    )(1),
+    S.state({ one: 1 }, 1)(1),
+  );
+});

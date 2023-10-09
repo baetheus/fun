@@ -173,13 +173,13 @@ Deno.test("Option exists", () => {
 });
 
 Deno.test("Option getShowable", () => {
-  const { show } = O.getShowable({ show: (n: number) => n.toString() });
+  const { show } = O.getShowableOption({ show: (n: number) => n.toString() });
   assertEquals(show(O.none), "None");
   assertEquals(show(O.some(1)), "Some(1)");
 });
 
 Deno.test("Option getComparable", () => {
-  const { compare } = O.getComparable(N.ComparableNumber);
+  const { compare } = O.getComparableOption(N.ComparableNumber);
   assertEquals(compare(O.some(1))(O.some(1)), true);
   assertEquals(compare(O.some(1))(O.some(2)), false);
   assertEquals(compare(O.some(1))(O.none), false);
@@ -188,7 +188,7 @@ Deno.test("Option getComparable", () => {
 });
 
 Deno.test("Option getSortable", () => {
-  const ord = O.getSortable(N.SortableNumber);
+  const ord = O.getSortableOption(N.SortableNumber);
   const lte = Sortable.lte(ord);
   assertEquals(lte(O.none)(O.none), true);
   assertEquals(lte(O.none)(O.some(1)), false);
@@ -199,29 +199,29 @@ Deno.test("Option getSortable", () => {
 });
 
 Deno.test("Option getInitializable", () => {
-  const { combine, init } = O.getInitializable(N.InitializableNumberSum);
+  const { combine, init } = O.getInitializableOption(N.InitializableNumberSum);
   assertEquals(combine(O.some(1))(O.some(1)), O.some(2));
   assertEquals(combine(O.some(1))(O.none), O.some(1));
   assertEquals(combine(O.none)(O.some(1)), O.some(1));
   assertEquals(combine(O.none)(O.none), O.none);
-  assertEquals(init(), O.none);
+  assertEquals(init(), O.some(0));
 });
 
-// Deno.test("Option Do, bind, bindTo", () => {
-//   assertEquals(
-//     pipe(
-//       O.Do(),
-//       O.bind("one", () => O.some(1)),
-//       O.bind("two", ({ one }) => O.some(one + one)),
-//       O.map(({ one, two }) => one + two),
-//     ),
-//     O.some(3),
-//   );
-//   assertEquals(
-//     pipe(
-//       O.some(1),
-//       O.bindTo("one"),
-//     ),
-//     O.some({ one: 1 }),
-//   );
-// });
+Deno.test("Option Do, bind, bindTo", () => {
+  assertEquals(
+    pipe(
+      O.some({}),
+      O.bind("one", () => O.some(1)),
+      O.bind("two", ({ one }) => O.some(one + one)),
+      O.map(({ one, two }) => one + two),
+    ),
+    O.some(3),
+  );
+  assertEquals(
+    pipe(
+      O.some(1),
+      O.bindTo("one"),
+    ),
+    O.some({ one: 1 }),
+  );
+});

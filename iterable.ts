@@ -1,13 +1,43 @@
-import type { Kind, Out } from "./kind.ts";
-import type { Refinement } from "./refinement.ts";
-import type { Predicate } from "./predicate.ts";
-import type { Pair } from "./pair.ts";
+/**
+ * This file contains the Iterable algebraic data type. Iterable is a lazy,
+ * synchronous, and native structure defined by ecmascript. Generally, one
+ * interacts with the Iterator structure directly, but the Iterable type, being
+ * more generic, is a better target for functional. Any data structure that
+ * implements Iterable (ie. Array, Map, Set, etc) can use the iterable methods
+ * contained here if neeeded.
+ *
+ * Something to keep in mind here is that Iterables can have nasty edge cases
+ * that don't exist for non-lazy data structures. Specifically, an iterable can
+ * generate a theoretically infinite number of values, making the draining of an
+ * iterable potentially impossible (trying it will cause the runtime to hang).
+ * Additionally, many iterables are constructed using generators, which cannot
+ * be easily cloned. This makes the process of chaining iterables a resource
+ * intensive operation. As always, use these combinators with care.
+ *
+ * @module Iterable
+ * @since 2.0.0
+ */
+
+import type { $, Kind, Out } from "./kind.ts";
+import type { Applicable } from "./applicable.ts";
+import type { Combinable } from "./combinable.ts";
 import type { Either } from "./either.ts";
-import type { Option } from "./option.ts";
+import type { Filterable } from "./filterable.ts";
 import type { Flatmappable } from "./flatmappable.ts";
+import type { Foldable } from "./foldable.ts";
+import type { Initializable } from "./initializable.ts";
+import type { Mappable } from "./mappable.ts";
+import type { Option } from "./option.ts";
+import type { Pair } from "./pair.ts";
+import type { Predicate } from "./predicate.ts";
+import type { Refinement } from "./refinement.ts";
+import type { Showable } from "./showable.ts";
+import type { Wrappable } from "./wrappable.ts";
 
 import { isSome } from "./option.ts";
 import { isLeft, isRight } from "./either.ts";
+import { createBind, createTap } from "./flatmappable.ts";
+import { createBindTo } from "./mappable.ts";
 
 /**
  * @since 2.0.0
@@ -338,21 +368,6 @@ export function takeWhile<A>(
 /**
  * @since 2.0.0
  */
-export function tap<A>(
-  fa: (a: A) => void,
-): (ta: Iterable<A>) => Iterable<A> {
-  return (ta) =>
-    iterable(function* () {
-      for (const a of ta) {
-        fa(a);
-        yield a;
-      }
-    });
-}
-
-/**
- * @since 2.0.0
- */
 export function repeat(
   n: number,
 ): <A>(ta: Iterable<A>) => Iterable<A> {
@@ -370,9 +385,109 @@ export function repeat(
 /**
  * @since 2.0.0
  */
+export function init<A>(): Iterable<A> {
+  return iterable(function* () {});
+}
+
+/**
+ * @since 2.0.0
+ */
+export function combine<A>(
+  second: Iterable<A>,
+): (first: Iterable<A>) => Iterable<A> {
+  return (first) =>
+    iterable(function* () {
+      for (const fst of first) {
+        yield fst;
+      }
+      for (const snd of second) {
+        yield snd;
+      }
+    });
+}
+
+/**
+ * @since 2.0.0
+ */
+export function getCombinable<A>(): Combinable<Iterable<A>> {
+  return { combine };
+}
+
+/**
+ * @since 2.0.0
+ */
+export function getInitializable<A>(): Initializable<Iterable<A>> {
+  return { init, combine };
+}
+
+/**
+ * @since 2.0.0
+ */
+export function getShowable<A>(S: Showable<A>): Showable<Iterable<A>> {
+  return {
+    show: (ua) => `Iterable[${Array.from(ua).map(S.show).join(", ")}]`,
+  };
+}
+
+/**
+ * @since 2.0.0
+ */
+export const ApplicableIterable: Applicable<KindIterable> = {
+  apply,
+  map,
+  wrap,
+};
+
+/**
+ * @since 2.0.0
+ */
 export const FlatmappableIterable: Flatmappable<KindIterable> = {
   apply,
   flatmap,
   map,
   wrap,
 };
+
+/**
+ * @since 2.0.0
+ */
+export const FilterableIterable: Filterable<KindIterable> = {
+  filter,
+  filterMap,
+  partition,
+  partitionMap,
+};
+
+/**
+ * @since 2.0.0
+ */
+export const FoldableIterable: Foldable<KindIterable> = { fold };
+
+/**
+ * @since 2.0.0
+ */
+export const MappableIterable: Mappable<KindIterable> = {
+  map,
+};
+
+/**
+ * @since 2.0.0
+ */
+export const WrappableIterable: Wrappable<KindIterable> = {
+  wrap,
+};
+
+/**
+ * @since 2.0.0
+ */
+export const tap = createTap(FlatmappableIterable);
+
+/**
+ * @since 2.0.0
+ */
+export const bind = createBind(FlatmappableIterable);
+
+/**
+ * @since 2.0.0
+ */
+export const bindTo = createBindTo(FlatmappableIterable);

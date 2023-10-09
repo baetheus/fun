@@ -1,10 +1,14 @@
-import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
+import {
+  assertEquals,
+  assertStrictEquals,
+} from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
 import * as I from "../iterable.ts";
 import * as O from "../option.ts";
 import * as E from "../either.ts";
 import * as P from "../pair.ts";
 import * as B from "../bimappable.ts";
+import * as N from "../number.ts";
 import { pipe } from "../fn.ts";
 
 const bimap = B.bimap(P.BimappablePair);
@@ -211,4 +215,39 @@ Deno.test("Iterable repeat", () => {
     ),
     [0, 1, 2, 0, 1, 2, 0, 1, 2],
   );
+});
+
+Deno.test("Iterable init", () => {
+  assertEquals(
+    pipe(
+      I.init(),
+      I.collect,
+    ),
+    [],
+  );
+});
+
+Deno.test("Iterable combine", () => {
+  assertEquals(pipe(I.range(2), I.combine(I.range(2, 2)), I.collect), [
+    0,
+    1,
+    2,
+    3,
+  ]);
+});
+
+Deno.test("Iterable getCombinable", () => {
+  const { combine } = I.getCombinable<number>();
+  assertStrictEquals(combine, I.combine);
+});
+
+Deno.test("Iterable getInitializable", () => {
+  const { init, combine } = I.getInitializable<number>();
+  assertStrictEquals(combine, I.combine);
+  assertStrictEquals(init, I.init);
+});
+
+Deno.test("Iterable getShowable", () => {
+  const { show } = I.getShowable(N.ShowableNumber);
+  assertEquals(pipe(I.range(2), show), "Iterable[0, 1]");
 });

@@ -8,17 +8,24 @@
  */
 
 import type { In, Kind, Out } from "./kind.ts";
+import type { Applicable } from "./applicable.ts";
 import type { Bimappable } from "./bimappable.ts";
-import type { Flatmappable } from "./flatmappable.ts";
 import type { Combinable } from "./combinable.ts";
-import type { Premappable } from "./premappable.ts";
-import type { Predicate } from "./predicate.ts";
-import type { Refinement } from "./refinement.ts";
-import type { Fn } from "./fn.ts";
+import type { Composable } from "./composable.ts";
 import type { Either } from "./either.ts";
+import type { Failable } from "./failable.ts";
+import type { Flatmappable } from "./flatmappable.ts";
+import type { Fn } from "./fn.ts";
+import type { Mappable } from "./mappable.ts";
+import type { Predicate } from "./predicate.ts";
+import type { Premappable } from "./premappable.ts";
+import type { Refinement } from "./refinement.ts";
+import type { Wrappable } from "./wrappable.ts";
 
 import * as E from "./either.ts";
 import * as F from "./fn.ts";
+import { createBind, createTap } from "./flatmappable.ts";
+import { createBindTo } from "./mappable.ts";
 
 /**
  * A FnEither, also known as ReaderEither, is a type over a variadic
@@ -262,6 +269,15 @@ export function wrap<A, D = unknown, B = never>(
 }
 
 /**
+ * @since 2.0.0
+ */
+export function fail<A = never, B = never, D = unknown>(
+  b: B,
+): FnEither<D, B, A> {
+  return left(b);
+}
+
+/**
  * Given a FnEither returning a function A => I and a FnEither returning
  * a value A, combine them into a FnEither returning an I.
  *
@@ -468,11 +484,11 @@ export function flatmap<A, L = unknown, J = never, I = never>(
  *
  * @since 2.0.0
  */
-export function recover<B, L = unknown, I = never, J = never>(
-  fbtj: (b: B) => FnEither<L, J, I>,
-): <D = unknown, A = never>(
+export function recover<B, D = unknown, I = never, J = never>(
+  fbtj: (b: B) => FnEither<D, J, I>,
+): <A = never>(
   ua: FnEither<D, B, A>,
-) => FnEither<D & L, J | B, A | I> {
+) => FnEither<D, J, A | I> {
   return (ua) => (d) => {
     const e = ua(d);
     return E.isRight(e) ? e : fbtj(e.left)(d);
@@ -611,38 +627,6 @@ export function compose<A, I, J>(
 }
 
 /**
- * The canonical implementation of Bimappable for FnEither. It contains
- * the methods bimap and mapSecond.
- *
- * @since 2.0.0
- */
-export const BimappableFnEither: Bimappable<KindFnEither> = {
-  map,
-  mapSecond,
-};
-
-/**
- * The canonical implementation of Flatmappable for FnEither. It contains
- * the methods wrap, apply, map, and flatmap.
- *
- * @since 2.0.0
- */
-export const FlatmappableFnEither: Flatmappable<KindFnEither> = {
-  wrap,
-  apply,
-  map,
-  flatmap,
-};
-
-/**
- * The canonical implementation of Premappable for FnEither. It contains
- * the method premap.
- *
- * @since 2.0.0
- */
-export const PremappableFnEither: Premappable<KindFnEither> = { premap };
-
-/**
  * Create a Flatmappable for FnEither where left values are combined using the
  * supplied Combinable.
  *
@@ -678,3 +662,91 @@ export function getRightFlatmappable<B>(
     flatmap,
   });
 }
+
+/**
+ * @since 2.0.0
+ */
+export const ApplicableFnEither: Applicable<KindFnEither> = {
+  apply,
+  map,
+  wrap,
+};
+
+/**
+ * The canonical implementation of Bimappable for FnEither. It contains
+ * the methods bimap and mapSecond.
+ *
+ * @since 2.0.0
+ */
+export const BimappableFnEither: Bimappable<KindFnEither> = {
+  map,
+  mapSecond,
+};
+
+/**
+ * @since 2.0.0
+ */
+export const ComposableFnEither: Composable<KindFnEither> = { compose, id };
+
+/**
+ * The canonical implementation of Flatmappable for FnEither. It contains
+ * the methods wrap, apply, map, and flatmap.
+ *
+ * @since 2.0.0
+ */
+export const FlatmappableFnEither: Flatmappable<KindFnEither> = {
+  wrap,
+  apply,
+  map,
+  flatmap,
+};
+
+/**
+ * @since 2.0.0
+ */
+export const FailableFnEither: Failable<KindFnEither> = {
+  apply,
+  flatmap,
+  map,
+  wrap,
+  fail,
+  alt,
+  recover,
+};
+
+/**
+ * @since 2.0.0
+ */
+export const MappableFnEither: Mappable<KindFnEither> = { map };
+
+/**
+ * The canonical implementation of Premappable for FnEither. It contains
+ * the method premap.
+ *
+ * @since 2.0.0
+ */
+export const PremappableFnEither: Premappable<KindFnEither> = {
+  premap,
+  map,
+  dimap,
+};
+
+/**
+ * @since 2.0.0
+ */
+export const WrappableFnEither: Wrappable<KindFnEither> = { wrap };
+
+/**
+ * @since 2.0.0
+ */
+export const tap = createTap(FlatmappableFnEither);
+
+/**
+ * @since 2.0.0
+ */
+export const bind = createBind(FlatmappableFnEither);
+
+/**
+ * @since 2.0.0
+ */
+export const bindTo = createBindTo(MappableFnEither);

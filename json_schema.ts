@@ -3,6 +3,9 @@
  * of [JSON Schema](https://json-schema.org/) in typescript.
  * It also includes an instance of Schemable that is useful
  * for describing a Schema to an external system.
+ *
+ * @module JSON Schema
+ * @since 2.0.0
  */
 
 import type { Kind, Out } from "./kind.ts";
@@ -185,11 +188,15 @@ export type JsonBuilder<_> = State<JsonSchemaDefinitions, JsonSchema>;
 /**
  * Given a JsonBuilder<T> this type will unwrap T for use in
  * type level programming.
+ *
+ * @since 2.0.0
  */
 export type TypeOf<T> = T extends JsonBuilder<infer A> ? A : never;
 
 /**
  * The Kind substitution scheme for JsonBuilder.
+ *
+ * @since 2.0.0
  */
 export interface KindJsonBuilder extends Kind {
   readonly kind: JsonBuilder<Out<this, 0>>;
@@ -200,20 +207,41 @@ const { combine }: Combinable<JsonSchemaDefinitions> = fromCombine(
   (second) => (first) => Object.assign({}, first, second),
 );
 
+/**
+ * @since 2.0.0
+ */
 export const FlatmappableJsonBuilder = FlatmappableState as Flatmappable<
   KindJsonBuilder
 >;
 
+/**
+ * @since 2.0.0
+ */
 export const sequenceArray = sequenceA(FlatmappableJsonBuilder);
 
+/**
+ * @since 2.0.0
+ */
 export const sequenceRecord = sequenceR(FlatmappableJsonBuilder);
 
+/**
+ * @since 2.0.0
+ */
 export const wrap = FlatmappableJsonBuilder.wrap;
 
+/**
+ * @since 2.0.0
+ */
 export const apply = FlatmappableJsonBuilder.apply;
 
+/**
+ * @since 2.0.0
+ */
 export const map = FlatmappableJsonBuilder.map;
 
+/**
+ * @since 2.0.0
+ */
 export const flatmap = FlatmappableJsonBuilder.flatmap;
 
 /**

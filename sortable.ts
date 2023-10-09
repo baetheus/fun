@@ -3,9 +3,10 @@
  * composing Sortables. Since an Sortable encapsulates partial
  * equality, the tools in this file should concern
  * itself with sorting according to an Ordering as well
+ *
+ * @since 2.0.0
  */
 
-import type { Premappable } from "./premappable.ts";
 import type { Hold, In, Kind } from "./kind.ts";
 
 /**
@@ -450,11 +451,3 @@ export function premap<L, D>(
 ): ({ sort }: Sortable<D>) => Sortable<L> {
   return ({ sort }) => fromSort((fst, snd) => sort(fld(fst), fld(snd)));
 }
-
-/**
- * The canonical implementation of Premappable for Sortable. It contains
- * the method premap.
- *
- * @since 2.0.0
- */
-export const PremappableSortable: Premappable<KindSortable> = { premap };

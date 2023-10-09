@@ -174,23 +174,39 @@ Deno.test("Set TraversableSet", () => {
   assertStrictEquals(S.TraversableSet.traverse, S.traverse);
 });
 
-Deno.test("Set getShowable", () => {
-  const { show } = S.getShowable({ show: (n: number) => n.toString() });
+Deno.test("Set getShowableSet", () => {
+  const { show } = S.getShowableSet({ show: (n: number) => n.toString() });
   assertEquals(show(S.init()), "Set([])");
   assertEquals(show(S.set(1, 2, 3)), "Set([1, 2, 3])");
 });
 
-Deno.test("Set getComparable", () => {
-  const eq = S.getComparable(ComparableNumber);
+Deno.test("Set getComparableSet", () => {
+  const eq = S.getComparableSet(ComparableNumber);
   assertEquals(pipe(S.init(), eq.compare(S.init())), true);
   assertEquals(pipe(set, eq.compare(S.init())), false);
   assertEquals(pipe(set, eq.compare(S.set(3, 2, 2, 1))), true);
 });
 
-Deno.test("Set getUnionCombinable", () => {
-  const monoid = S.getUnionCombinable(ComparableNumber);
+Deno.test("Set getCombinableSet", () => {
+  const monoid = S.getCombinableSet(ComparableNumber);
   const combineAll = M.getCombineAll(monoid);
 
+  assertEquals(combineAll(S.init()), S.init());
+  assertEquals(
+    combineAll(
+      S.set(1, 2, 3),
+      S.set(4, 5, 6),
+      S.set(1, 3, 5, 7),
+    ),
+    S.set(1, 2, 3, 4, 5, 6, 7),
+  );
+});
+
+Deno.test("Set getInitializableSet", () => {
+  const monoid = S.getInitializableSet(ComparableNumber);
+  const combineAll = M.getCombineAll(monoid);
+
+  assertEquals(monoid.init(), S.init());
   assertEquals(combineAll(S.init()), S.init());
   assertEquals(
     combineAll(

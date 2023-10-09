@@ -10,15 +10,21 @@
 
 import type { Kind, Out } from "./kind.ts";
 import type { Applicable } from "./applicable.ts";
+import type { Async } from "./async.ts";
 import type { Bimappable } from "./bimappable.ts";
 import type { Combinable } from "./combinable.ts";
 import type { Either } from "./either.ts";
+import type { Failable } from "./failable.ts";
 import type { Flatmappable } from "./flatmappable.ts";
-import type { Async } from "./async.ts";
+import type { Initializable } from "./initializable.ts";
+import type { Mappable } from "./mappable.ts";
+import type { Wrappable } from "./wrappable.ts";
 
 import * as E from "./either.ts";
 import * as A from "./async.ts";
 import * as P from "./promise.ts";
+import { createBind, createTap } from "./flatmappable.ts";
+import { createBindTo } from "./mappable.ts";
 import { handleThrow, pipe } from "./fn.ts";
 import { resolve } from "./promise.ts";
 
@@ -369,13 +375,30 @@ export function match<L = unknown, R = unknown, B = never>(
 /**
  * @since 2.0.0
  */
-export function getCombinableAsyncEither<A, B>(CA: Combinable<A>, CB: Combinable<B>): Combinable<AsyncEither<B, A>> {
-  const combinableEither = E.getRightInitializable
-
+export function getCombinableAsyncEither<A, B>(
+  CA: Combinable<A>,
+  CB: Combinable<B>,
+): Combinable<AsyncEither<B, A>> {
+  const { combine } = E.getCombinableEither(CA, CB);
   return {
-    combine: second => first => async () => 
+    combine: (second) => (first) => async () =>
+      combine(await second())(await first()),
+  };
+}
 
-  }
+/**
+ * @since 2.0.0
+ */
+export function getInitializableAsyncEither<A, B>(
+  CA: Initializable<A>,
+  CB: Initializable<B>,
+): Initializable<AsyncEither<B, A>> {
+  const { init, combine } = E.getInitializableEither(CA, CB);
+  return {
+    init: () => () => resolve(init()),
+    combine: (second) => (first) => async () =>
+      combine(await second())(await first()),
+  };
 }
 
 /**
@@ -415,3 +438,58 @@ export const FlatmappableAsyncEitherSequential: Flatmappable<KindAsyncEither> =
     map,
     flatmap,
   };
+
+/**
+ * @since 2.0.0
+ */
+export const FailableAsyncEitherParallel: Failable<KindAsyncEither> = {
+  wrap,
+  apply,
+  map,
+  flatmap,
+  alt,
+  fail,
+  recover,
+};
+
+/**
+ * @since 2.0.0
+ */
+export const FailableAsyncEitherSequential: Failable<KindAsyncEither> = {
+  wrap,
+  apply: applySequential,
+  map,
+  flatmap,
+  alt,
+  fail,
+  recover,
+};
+
+/**
+ * @since 2.0.0
+ */
+export const MappableAsyncEither: Mappable<KindAsyncEither> = {
+  map,
+};
+
+/**
+ * @since 2.0.0
+ */
+export const WrappableAsyncEither: Wrappable<KindAsyncEither> = {
+  wrap,
+};
+
+/**
+ * @since 2.0.0
+ */
+export const tap = createTap(FlatmappableAsyncEitherParallel);
+
+/**
+ * @since 2.0.0
+ */
+export const bind = createBind(FlatmappableAsyncEitherParallel);
+
+/**
+ * @since 2.0.0
+ */
+export const bindTo = createBindTo(FlatmappableAsyncEitherParallel);

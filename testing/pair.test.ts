@@ -4,7 +4,8 @@ import {
 } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
 import * as P from "../pair.ts";
-import { InitializableNumberSum, ShowableNumber } from "../number.ts";
+import * as N from "../number.ts";
+import * as C from "../comparable.ts";
 import { pipe } from "../fn.ts";
 
 Deno.test("Pair pair", () => {
@@ -79,7 +80,7 @@ Deno.test("Pair fold", () => {
 });
 
 Deno.test("Pair traverse", () => {
-  const M = P.getRightFlatmappable(InitializableNumberSum);
+  const M = P.getRightFlatmappable(N.InitializableNumberSum);
   const traversePair = P.traverse(M);
   assertEquals(
     pipe(
@@ -112,10 +113,10 @@ Deno.test("Pair TraversablePair", () => {
 Deno.test("Pair getRightFlatmappable", () => {
   // TODO Work on generic Flatmappable tests
   const { apply, flatmap, map, wrap } = P.getRightFlatmappable(
-    InitializableNumberSum,
+    N.InitializableNumberSum,
   );
 
-  assertEquals(wrap(1), [1, InitializableNumberSum.init()]);
+  assertEquals(wrap(1), [1, N.InitializableNumberSum.init()]);
   assertEquals(
     pipe(
       P.pair((s: string) => s.toUpperCase(), 5),
@@ -139,7 +140,52 @@ Deno.test("Pair getRightFlatmappable", () => {
   );
 });
 
-Deno.test("Pair getShowable", () => {
-  const { show } = P.getShowable(ShowableNumber, ShowableNumber);
+Deno.test("Pair getShowablePair", () => {
+  const { show } = P.getShowablePair(N.ShowableNumber, N.ShowableNumber);
   assertEquals(show(P.pair(1, 2)), "Pair(1, 2)");
+});
+
+Deno.test("Pair getCombinablePair", () => {
+  const { combine } = P.getCombinablePair(
+    N.CombinableNumberMax,
+    N.CombinableNumberMin,
+  );
+  assertEquals(combine(P.pair(1, 1))(P.pair(2, 2)), P.pair(2, 1));
+  assertEquals(combine(P.pair(2, 2))(P.pair(1, 1)), P.pair(2, 1));
+});
+
+Deno.test("Pair getInitializablePair", () => {
+  const { init, combine } = P.getInitializablePair(
+    N.InitializableNumberMax,
+    N.InitializableNumberMin,
+  );
+  assertEquals(
+    init(),
+    P.pair(Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY),
+  );
+  assertEquals(combine(P.pair(1, 1))(P.pair(2, 2)), P.pair(2, 1));
+  assertEquals(combine(P.pair(2, 2))(P.pair(1, 1)), P.pair(2, 1));
+});
+
+Deno.test("Pair getComparablePair", () => {
+  const { compare } = P.getComparablePair(
+    N.ComparableNumber,
+    N.ComparableNumber,
+  );
+  assertEquals(compare(P.pair(1, 1))(P.pair(1, 1)), true);
+  assertEquals(compare(P.pair(1, 1))(P.pair(2, 2)), false);
+  assertEquals(compare(P.pair(2, 2))(P.pair(1, 1)), false);
+  assertEquals(compare(P.pair(1, 1))(P.pair(1, 2)), false);
+  assertEquals(compare(P.pair(1, 2))(P.pair(1, 1)), false);
+  assertEquals(compare(P.pair(2, 1))(P.pair(1, 1)), false);
+  assertEquals(compare(P.pair(1, 1))(P.pair(2, 1)), false);
+});
+
+Deno.test("Pair getSortablePair", () => {
+  const { sort } = P.getSortablePair(N.SortableNumber, N.SortableNumber);
+  assertEquals(sort(P.pair(0, 0), P.pair(0, 0)), 0);
+  assertEquals(sort(P.pair(0, 0), P.pair(0, 1)), -1);
+  assertEquals(sort(P.pair(0, 1), P.pair(0, 0)), 1);
+  assertEquals(sort(P.pair(0, 0), P.pair(1, 0)), -1);
+  assertEquals(sort(P.pair(1, 0), P.pair(0, 0)), 1);
 });

@@ -19,11 +19,11 @@
  * that they operate over an Array or a Set. Here is a table to illustrate this
  * pattern a bit more clearly.
  *
- * | Structure | Outer Type | Inner Type | forEach Type |
- * | --- | --- | --- | --- |
- * | Array<A> | Array | A | (value: A, index: number, struct: A[]) => void |
- * | Set<A> | Set | A | (value: A, index: number, struct: Set<A>) => void |
- * | Map<K, V> | Map | K (key), V (value) | (value: V, key: K, struct: Map<K, V>) => void |
+ * | Structure | Outer Type | Inner Type         | forEach Type                                      |
+ * | --------- | ---------- | ------------------ | ------------------------------------------------- |
+ * | Array<A>  | Array      | A                  | (value: A, index: number, struct: A[]) => void    |
+ * | Set<A>    | Set        | A                  | (value: A, index: number, struct: Set<A>) => void |
+ * | Map<K, V> | Map        | K (key), V (value) | (value: V, key: K, struct: Map<K, V>) => void     |
  *
  * In general we can see that the forEach function could have a more generic
  * type signiture like this:

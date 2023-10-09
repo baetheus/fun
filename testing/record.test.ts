@@ -24,7 +24,6 @@ const value3: ReadonlyRecord<string> = {
 const value4: ReadonlyRecord<string> = { one: "one", two: "two" };
 
 const greaterThanZero: Predicate<number> = (n: number) => n > 0;
-const isPositive: Predicate<number> = (n: number) => n >= 0;
 
 Deno.test("Record entries", () => {
   assertEquals(pipe(value1, R.entries), Object.entries(value1));
@@ -250,6 +249,55 @@ Deno.test("Record partitionMap", () => {
   assertEquals(partitionMap(value1), P.pair({ two: 2, three: 3 }, { one: 1 }));
 });
 
+Deno.test("Record getShowableRecord", () => {
+  const { show } = R.getShowableRecord({
+    show: (n: number) => n.toString(),
+  });
+  assertEquals(show({}), "{}");
+  assertEquals(show({ a: 1, b: 2 }), "{a: 1, b: 2}");
+});
+
+Deno.test("Record getCombinableRecord", () => {
+  const { combine } = R.getCombinableRecord(N.CombinableNumberSum);
+  assertEquals(combine({})({}), {});
+  assertEquals(combine({ one: 1 })({}), { one: 1 });
+  assertEquals(combine({})({ one: 1 }), { one: 1 });
+  assertEquals(combine({ one: 1 })({ two: 1 }), { one: 1, two: 1 });
+  assertEquals(combine({ one: 1 })({ one: 1 }), { one: 2 });
+  assertEquals(combine({ one: 1, two: 1 })({ one: 1 }), { one: 2, two: 1 });
+  assertEquals(combine({ one: 1 })({ one: 1, two: 1 }), { one: 2, two: 1 });
+  assertEquals(combine({ one: 1, two: 1 })({ one: 1, two: 1 }), {
+    one: 2,
+    two: 2,
+  });
+});
+
+Deno.test("Record getInitializableRecord", () => {
+  const { combine, init } = R.getInitializableRecord(N.InitializableNumberSum);
+  assertEquals(init(), {});
+  assertEquals(combine({})({}), {});
+  assertEquals(combine({ one: 1 })({}), { one: 1 });
+  assertEquals(combine({})({ one: 1 }), { one: 1 });
+  assertEquals(combine({ one: 1 })({ two: 1 }), { one: 1, two: 1 });
+  assertEquals(combine({ one: 1 })({ one: 1 }), { one: 2 });
+  assertEquals(combine({ one: 1, two: 1 })({ one: 1 }), { one: 2, two: 1 });
+  assertEquals(combine({ one: 1 })({ one: 1, two: 1 }), { one: 2, two: 1 });
+  assertEquals(combine({ one: 1, two: 1 })({ one: 1, two: 1 }), {
+    one: 2,
+    two: 2,
+  });
+});
+
+Deno.test("Record getComparableRecord", () => {
+  const { compare } = R.getComparableRecord(N.ComparableNumber);
+  assertEquals(compare({})({}), true);
+  assertEquals(compare({ one: 1 })({}), false);
+  assertEquals(compare({})({ one: 1 }), false);
+  assertEquals(compare({ one: 1 })({ one: 1 }), true);
+  assertEquals(compare({ one: 1 })({ one: 2 }), false);
+  assertEquals(compare({ one: 2 })({ one: 1 }), false);
+});
+
 Deno.test("Record FilterableRecord", () => {
   assertStrictEquals(R.FilterableRecord.filter, R.filter);
   assertStrictEquals(R.FilterableRecord.filterMap, R.filterMap);
@@ -265,10 +313,4 @@ Deno.test("Record TraversableRecord", () => {
   assertStrictEquals(R.TraversableRecord.map, R.map);
   assertStrictEquals(R.TraversableRecord.fold, R.fold);
   assertStrictEquals(R.TraversableRecord.traverse, R.traverse);
-});
-
-Deno.test("Record getShowable", () => {
-  const { show } = R.getShowable({ show: (n: number) => n.toString() });
-  assertEquals(show({}), "{}");
-  assertEquals(show({ a: 1, b: 2 }), "{a: 1, b: 2}");
 });

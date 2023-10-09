@@ -249,3 +249,96 @@ Deno.test("Map getCombinable", () => {
     M.singleton(1, 2),
   );
 });
+
+Deno.test("Map getFlatmappable", () => {
+  const { apply, map, flatmap, wrap } = M.getFlatmappableReadonlyMap(
+    N.InitializableNumberSum,
+  );
+
+  assertEquals(
+    pipe(
+      M.init<number, (n: number) => number>(),
+      apply(M.init()),
+    ),
+    M.init(),
+  );
+  assertEquals(
+    pipe(
+      M.init<number, (n: number) => number>(),
+      apply(wrap(1)),
+    ),
+    M.init(),
+  );
+  assertEquals(
+    pipe(
+      wrap((n: number) => n + 1),
+      apply(M.init()),
+    ),
+    M.init(),
+  );
+  assertEquals(
+    pipe(
+      wrap((n: number) => n + 1),
+      apply(M.readonlyMap([100, 1])),
+    ),
+    M.readonlyMap([100, 2]),
+  );
+  assertEquals(
+    pipe(
+      M.readonlyMap([1, (n: number) => n + 1], [2, (n: number) => n - 1]),
+      apply(M.readonlyMap([100, 1], [200, 2])),
+    ),
+    M.readonlyMap([101, 2], [102, 0], [201, 3], [202, 1]),
+  );
+
+  assertEquals(
+    pipe(
+      M.init<number, number>(),
+      map((n: number) => n + 1),
+    ),
+    M.init(),
+  );
+  assertEquals(
+    pipe(
+      wrap(1),
+      map((n) => n + 1),
+    ),
+    wrap(2),
+  );
+  assertEquals(
+    pipe(
+      M.readonlyMap([1, 1], [2, 2]),
+      map((n) => n + 1),
+    ),
+    M.readonlyMap([1, 2], [2, 3]),
+  );
+
+  assertEquals(
+    pipe(
+      M.init<number, number>(),
+      flatmap((_) => M.init()),
+    ),
+    M.init(),
+  );
+  assertEquals(
+    pipe(
+      M.init<number, number>(),
+      flatmap((_) => wrap(1)),
+    ),
+    M.init(),
+  );
+  assertEquals(
+    pipe(
+      wrap(1),
+      flatmap((n) => wrap(n + 1)),
+    ),
+    wrap(2),
+  );
+  assertEquals(
+    pipe(
+      wrap(1),
+      flatmap((n) => M.readonlyMap([n, n], [n + 1, n + 1])),
+    ),
+    M.readonlyMap([1, 1], [2, 2]),
+  );
+});

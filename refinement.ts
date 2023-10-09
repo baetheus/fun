@@ -8,6 +8,7 @@
  * @module Refinement
  * @since 2.0.0
  */
+
 import type { In, Kind, Out } from "./kind.ts";
 
 import type { NonEmptyArray } from "./array.ts";

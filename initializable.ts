@@ -1,5 +1,9 @@
 /**
- * Initializable is a structure that has a init value. It is meant to fill the
+ * This file contains the type and utilities for the Initializable algebraic
+ * data structure. A type that implements Initializable has a concept of "empty"
+ * represented by the init method and a concept to combine represented by the
+ * combine method. In other functional libraries and languages Initializable is
+ * called Monoid.
  *
  * @module Initializable
  * @since 2.0.0
@@ -9,7 +13,6 @@ import type { Combinable } from "./combinable.ts";
 import type { AnyReadonlyRecord } from "./record.ts";
 
 import * as C from "./combinable.ts";
-import { pipe, uncurry2 } from "./fn.ts";
 
 /**
  * A Initializable structure has the method init.
@@ -140,9 +143,9 @@ export function dual<A>(M: Initializable<A>): Initializable<A> {
  * @since 2.0.0
  */
 export function intercalcate<A>(middle: A) {
-  return (M: Initializable<A>): Initializable<A> => ({
-    combine: (right) => M.combine(pipe(middle, M.combine(right))),
-    init: M.init,
+  return ({ combine, init }: Initializable<A>): Initializable<A> => ({
+    combine: (second) => combine(combine(second)(middle)),
+    init,
   });
 }
 /**
@@ -165,6 +168,6 @@ export function intercalcate<A>(middle: A) {
 export function getCombineAll<A>(
   { combine, init }: Initializable<A>,
 ): (...as: ReadonlyArray<A>) => A {
-  const _combine = uncurry2(combine);
+  const _combine = (first: A, second: A) => combine(second)(first);
   return (...as) => as.reduce(_combine, init());
 }

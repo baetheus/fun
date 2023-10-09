@@ -1,12 +1,26 @@
+/**
+ * This file contains the Fn algebraic data type. Fn is short for a unary
+ * function, which is to say a function that only takes one input variable.
+ * Most computation can be encoded in Fn, but the standard ADT in most
+ * functional languages is called Reader.
+ *
+ * @module Fn
+ * @since 2.0.0
+ */
 import type { In, Kind, Out } from "./kind.ts";
-import type { Premappable } from "./premappable.ts";
-import type { Mappable } from "./mappable.ts";
-import type { Flatmappable } from "./flatmappable.ts";
 import type { Applicable } from "./applicable.ts";
+import type { Composable } from "./composable.ts";
+import type { Flatmappable } from "./flatmappable.ts";
+import type { Mappable } from "./mappable.ts";
+import type { Premappable } from "./premappable.ts";
+import type { Wrappable } from "./wrappable.ts";
+
+import { createBind, createTap } from "./flatmappable.ts";
+import { createBindTo } from "./mappable.ts";
 
 /**
- * A Fn, also known as Reader or Environment, is a type over a
- * javascript function. ie. (a: number, b: string) => string can be
+ * A Fn, also known as Reader or Environment, is a type over a unary
+ * javascript function. ie. (a: number) => string can be
  * a Fn. As an algebraic data type, the associated type class instances
  * for Fn are limited to single variable inputs so they will look like
  * (a: number) => string, with only one argument. The purposes of a Fn
@@ -180,6 +194,16 @@ export function handleThrow<D extends unknown[], A, I>(
 }
 
 /**
+ * @since 2.0.0
+ */
+export function tryCatch<D extends unknown[], A>(
+  fda: (...d: D) => A,
+  onThrow: (e: unknown, d: D) => A,
+): (...d: D) => A {
+  return handleThrow(fda, identity, onThrow);
+}
+
+/**
  * Memoize a unary function using a Map. This
  * means that this algorithm puposefully leaks memory.
  *
@@ -246,6 +270,8 @@ export function todo<T>(): T {
  * when the type A can be substituted for I and I for A at runtime
  * without there being any change to the operation of the program.
  * The primary use case for unsafeCoerce is in Newtype implementations.
+ *
+ * @since 2.0.0
  */
 export function unsafeCoerce<A, I>(a: A): I {
   return a as unknown as I;
@@ -827,22 +853,6 @@ export function compose<A, I>(
   return (first) => flow(first, second);
 }
 
-// /**
-//  * The canonical implementation of Profunctor for Fn. It contains
-//  * the method dimap.
-//  *
-//  * @since 2.0.0
-//  */
-// export const ProfunctorFn: Profunctor<KindFn> = { dimap };
-
-/**
- * The canonical implementation of Mappable for Fn. It contains
- * the method map.
- *
- * @since 2.0.0
- */
-export const MappableFn: Mappable<KindFn> = { map };
-
 /**
  * The canonical implementation of Applicable for Fn. It contains
  * the methods of, ap, and map.
@@ -850,6 +860,11 @@ export const MappableFn: Mappable<KindFn> = { map };
  * @since 2.0.0
  */
 export const ApplicableFn: Applicable<KindFn> = { apply, map, wrap };
+
+/**
+ * @since 2.0.0
+ */
+export const ComposableFn: Composable<KindFn> = { compose, id };
 
 /**
  * The canonical implementation of Flatmappable for Fn. It contains
@@ -865,9 +880,37 @@ export const FlatmappableFn: Flatmappable<KindFn> = {
 };
 
 /**
+ * The canonical implementation of Mappable for Fn. It contains
+ * the method map.
+ *
+ * @since 2.0.0
+ */
+export const MappableFn: Mappable<KindFn> = { map };
+
+/**
  * The canonical implementation of Premappable for Fn. It contains
  * the method premap.
  *
  * @since 2.0.0
  */
-export const PremappableFn: Premappable<KindFn> = { premap };
+export const PremappableFn: Premappable<KindFn> = { premap, map, dimap };
+
+/**
+ * @since 2.0.0
+ */
+export const WrappableFn: Wrappable<KindFn> = { wrap };
+
+/**
+ * @since 2.0.0
+ */
+export const tap = createTap(FlatmappableFn);
+
+/**
+ * @since 2.0.0
+ */
+export const bind = createBind(FlatmappableFn);
+
+/**
+ * @since 2.0.0
+ */
+export const bindTo = createBindTo(MappableFn);

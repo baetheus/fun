@@ -27,9 +27,9 @@ export interface Failable<U extends Kind> extends Flatmappable<U>, Hold<U> {
   ) => $<U, [A, B, C], [D], [E]>;
   readonly recover: <B, I, J = never, K = never, L = unknown, M = unknown>(
     fbti: (b: B) => $<U, [I, J, K], [L], [M]>,
-  ) => <A = never, C = never, D = unknown, E = unknown>(
-    ua: $<U, [A, B, C], [D], [E]>,
-  ) => $<U, [A | I, J, C | K], [D & L], [E & M]>;
+  ) => <A = never, C = never>(
+    ua: $<U, [A, B, C], [L], [M]>,
+  ) => $<U, [A | I, J, C | K], [L], [M]>;
 }
 
 /**

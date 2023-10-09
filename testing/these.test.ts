@@ -84,16 +84,16 @@ Deno.test("These traverse", () => {
   assertEquals(t2(T.both(1, 1)), O.some(T.both(1, 1)));
 });
 
-Deno.test("These getShowable", () => {
+Deno.test("These getShowableThese", () => {
   const f = { show: (n: number) => n.toString() };
-  const { show } = T.getShowable(f, f);
+  const { show } = T.getShowableThese(f, f);
   assertEquals(show(T.left(1)), "Left(1)");
   assertEquals(show(T.right(1)), "Right(1)");
   assertEquals(show(T.both(1, 1)), "Both(1, 1)");
 });
 
-Deno.test("These getCombinable", () => {
-  const Combinable = T.getCombinable(
+Deno.test("These getCombinableThese", () => {
+  const Combinable = T.getCombinableThese(
     InitializableNumberSum,
     InitializableNumberSum,
   );
@@ -112,11 +112,33 @@ Deno.test("These getCombinable", () => {
   assertEquals(cb(T.both(1, 1)), T.both(2, 2));
 });
 
-Deno.test("These getRightFlatmappable", () => {
+Deno.test("These getInitializableThese", () => {
+  const Combinable = T.getInitializableThese(
+    InitializableNumberSum,
+    InitializableNumberSum,
+  );
+  const combine = Combinable.combine;
+  const cl = combine(T.left(1));
+  const cr = combine(T.right(1));
+  const cb = combine(T.both(1, 1));
+
+  assertEquals(Combinable.init(), T.both(0, 0));
+  assertEquals(cl(T.left(1)), T.left(2));
+  assertEquals(cl(T.right(1)), T.both(1, 1));
+  assertEquals(cl(T.both(1, 1)), T.both(2, 1));
+  assertEquals(cr(T.left(1)), T.both(1, 1));
+  assertEquals(cr(T.right(1)), T.right(2));
+  assertEquals(cr(T.both(1, 1)), T.both(1, 2));
+  assertEquals(cb(T.left(1)), T.both(2, 1));
+  assertEquals(cb(T.right(1)), T.both(1, 2));
+  assertEquals(cb(T.both(1, 1)), T.both(2, 2));
+});
+
+Deno.test("These getFlatmappableRight", () => {
   const INC = (n: number) => n + 1;
   type INC = typeof INC;
 
-  const { apply, flatmap, map, wrap } = T.getRightFlatmappable(
+  const { apply, flatmap, map, wrap } = T.getFlatmappableRight(
     InitializableNumberSum,
   );
 

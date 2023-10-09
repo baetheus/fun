@@ -3,27 +3,32 @@
  * and it operates on object equality for deduplication.
  *
  * @module ReadonlySet
+ * @since 2.0.0
  */
 
 import type { $, Kind, Out } from "./kind.ts";
 import type { Applicable } from "./applicable.ts";
-import type { Either } from "./either.ts";
-import type { Comparable } from "./comparable.ts";
-import type { Filterable } from "./filterable.ts";
-import type { Foldable } from "./foldable.ts";
-import type { Mappable } from "./mappable.ts";
-import type { Flatmappable } from "./flatmappable.ts";
 import type { Combinable } from "./combinable.ts";
+import type { Comparable } from "./comparable.ts";
+import type { Either } from "./either.ts";
+import type { Filterable } from "./filterable.ts";
+import type { Flatmappable } from "./flatmappable.ts";
+import type { Foldable } from "./foldable.ts";
+import type { Initializable } from "./initializable.ts";
+import type { Mappable } from "./mappable.ts";
 import type { Option } from "./option.ts";
 import type { Pair } from "./pair.ts";
 import type { Predicate } from "./predicate.ts";
 import type { Refinement } from "./refinement.ts";
 import type { Showable } from "./showable.ts";
 import type { Traversable } from "./traversable.ts";
+import type { Wrappable } from "./wrappable.ts";
 
 import { flow, identity, pipe } from "./fn.ts";
 import { fromCompare } from "./comparable.ts";
 import { fromCombine } from "./combinable.ts";
+import { createBind, createTap } from "./flatmappable.ts";
+import { createBindTo } from "./mappable.ts";
 import * as O from "./option.ts";
 import * as E from "./either.ts";
 
@@ -743,68 +748,6 @@ export function traverse<V extends Kind>(
 }
 
 /**
- * The canonical implementation of Mappable for ReadonlySet. It contains
- * the method map.
- *
- * @since 2.0.0
- */
-export const MappableSet: Mappable<KindReadonlySet> = { map };
-
-/**
- * The canonical implementation of Applicable for ReadonlySet. It contains
- * the methods wrap, ap, and map.
- *
- * @since 2.0.0
- */
-export const ApplicableSet: Applicable<KindReadonlySet> = { apply, map, wrap };
-
-/**
- * The canonical implementation of Flatmappable for ReadonlySet. It contains
- * the methods wrap, ap, map, join, and flatmap.
- *
- * @since 2.0.0
- */
-export const FlatmappableSet: Flatmappable<KindReadonlySet> = {
-  apply,
-  flatmap,
-  map,
-  wrap,
-};
-
-/**
- * The canonical implementation of Filterable for ReadonlySet. It contains
- * the methods filter, filterMap, partition, and partitionMap.
- *
- * @since 2.0.0
- */
-export const FilterableSet: Filterable<KindReadonlySet> = {
-  filter,
-  filterMap,
-  partition,
-  partitionMap,
-};
-
-/**
- * The canonical implementation of Foldable for ReadonlySet. It contains
- * the method fold.
- *
- * @since 2.0.0
- */
-export const FoldableSet: Foldable<KindReadonlySet> = { fold };
-
-/**
- * The canonical implementation of Traversable for ReadonlySet. It contains
- * the methods map, fold, and traverse.
- *
- * @since 2.0.0
- */
-export const TraversableSet: Traversable<KindReadonlySet> = {
-  map,
-  fold,
-  traverse,
-};
-
-/**
  * Given an instance of Showable<A> return an instance of Showable<ReadonlySet<A>>.
  *
  * @example
@@ -812,7 +755,7 @@ export const TraversableSet: Traversable<KindReadonlySet> = {
  * import * as S from "./set.ts";
  * import * as N from "./number.ts";
  *
- * const { show } = S.getShowable(N.ShowableNumber);
+ * const { show } = S.getShowableSet(N.ShowableNumber);
  *
  * const result1 = show(S.init()); // "Set([])"
  * const result2 = show(S.set(1, 2, 3)); // "Set([1, 2, 3])"
@@ -820,7 +763,7 @@ export const TraversableSet: Traversable<KindReadonlySet> = {
  *
  * @since 2.0.0
  */
-export function getShowable<A>(S: Showable<A>): Showable<ReadonlySet<A>> {
+export function getShowableSet<A>(S: Showable<A>): Showable<ReadonlySet<A>> {
   return ({
     show: (s) => `Set([${Array.from(s.values()).map(S.show).join(", ")}])`,
   });
@@ -835,7 +778,7 @@ export function getShowable<A>(S: Showable<A>): Showable<ReadonlySet<A>> {
  * import * as N from "./number.ts";
  * import { pipe } from "./fn.ts";
  *
- * const { compare } = S.getComparable(N.ComparableNumber);
+ * const { compare } = S.getComparableSet(N.ComparableNumber);
  *
  * const result1 = compare(
  *   S.set(1, 2, 3))(
@@ -849,7 +792,9 @@ export function getShowable<A>(S: Showable<A>): Showable<ReadonlySet<A>> {
  *
  * @since 2.0.0
  */
-export function getComparable<A>(S: Comparable<A>): Comparable<ReadonlySet<A>> {
+export function getComparableSet<A>(
+  S: Comparable<A>,
+): Comparable<ReadonlySet<A>> {
   const subset = isSubset(S);
   return fromCompare((second) => (first) =>
     subset(first)(second) && subset(second)(first)
@@ -867,7 +812,7 @@ export function getComparable<A>(S: Comparable<A>): Comparable<ReadonlySet<A>> {
  * import * as M from "./combinable.ts";
  * import { pipe } from "./fn.ts";
  *
- * const monoid = S.getUnionCombinable(N.ComparableNumber);
+ * const monoid = S.getCombinableSet(N.ComparableNumber);
  * const combineAll = M.getCombineAll(monoid);
  *
  * const result1 = combineAll(
@@ -880,8 +825,123 @@ export function getComparable<A>(S: Comparable<A>): Comparable<ReadonlySet<A>> {
  *
  * @since 2.0.0
  */
-export function getUnionCombinable<A>(
+export function getCombinableSet<A>(
   S: Comparable<A>,
 ): Combinable<ReadonlySet<A>> {
   return fromCombine(union(S));
 }
+
+/**
+ * Given an instance of Comparable<A> create a Combinable<ReadonlySet<A>> where
+ * combine creates a union of two ReadonlySets.
+ *
+ * @example
+ * ```ts
+ * import * as S from "./set.ts";
+ * import * as N from "./number.ts";
+ * import * as M from "./combinable.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const monoid = S.getInitializableSet(N.ComparableNumber);
+ * const combineAll = M.getCombineAll(monoid);
+ *
+ * const result1 = combineAll(
+ *   S.set(1, 2, 3),
+ *   S.set(4, 5, 6),
+ *   S.set(1, 3, 5, 7)
+ * ); // Set(1, 2, 3, 4, 5, 6, 7)
+ * const result3 = combineAll(S.init()); // Set()
+ * ```
+ *
+ * @since 2.0.0
+ */
+export function getInitializableSet<A>(
+  C: Comparable<A>,
+): Initializable<ReadonlySet<A>> {
+  return {
+    init: () => new Set(),
+    ...getCombinableSet(C),
+  };
+}
+
+/**
+ * The canonical implementation of Applicable for ReadonlySet. It contains
+ * the methods wrap, ap, and map.
+ *
+ * @since 2.0.0
+ */
+export const ApplicableSet: Applicable<KindReadonlySet> = { apply, map, wrap };
+
+/**
+ * The canonical implementation of Filterable for ReadonlySet. It contains
+ * the methods filter, filterMap, partition, and partitionMap.
+ *
+ * @since 2.0.0
+ */
+export const FilterableSet: Filterable<KindReadonlySet> = {
+  filter,
+  filterMap,
+  partition,
+  partitionMap,
+};
+
+/**
+ * The canonical implementation of Flatmappable for ReadonlySet. It contains
+ * the methods wrap, ap, map, join, and flatmap.
+ *
+ * @since 2.0.0
+ */
+export const FlatmappableSet: Flatmappable<KindReadonlySet> = {
+  apply,
+  flatmap,
+  map,
+  wrap,
+};
+
+/**
+ * The canonical implementation of Foldable for ReadonlySet. It contains
+ * the method fold.
+ *
+ * @since 2.0.0
+ */
+export const FoldableSet: Foldable<KindReadonlySet> = { fold };
+
+/**
+ * The canonical implementation of Mappable for ReadonlySet. It contains
+ * the method map.
+ *
+ * @since 2.0.0
+ */
+export const MappableSet: Mappable<KindReadonlySet> = { map };
+
+/**
+ * The canonical implementation of Traversable for ReadonlySet. It contains
+ * the methods map, fold, and traverse.
+ *
+ * @since 2.0.0
+ */
+export const TraversableSet: Traversable<KindReadonlySet> = {
+  map,
+  fold,
+  traverse,
+};
+
+/**
+ * @since 2.0.0
+ */
+export const WrappableSet: Wrappable<KindReadonlySet> = { wrap };
+
+/**
+ * @since 2.0.0
+ */
+export const tap = createTap(FlatmappableSet);
+
+/**
+ * @since 2.0.0
+ */
+export const bind = createBind(FlatmappableSet);
+
+/**
+ * @since 2.0.0
+ */
+export const bindTo = createBindTo(MappableSet);

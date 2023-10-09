@@ -3,6 +3,7 @@ import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 import * as A from "../async.ts";
 import * as AE from "../async_either.ts";
 import * as E from "../either.ts";
+import * as N from "../number.ts";
 import { pipe } from "../fn.ts";
 import { then, wait } from "../promise.ts";
 
@@ -174,21 +175,52 @@ Deno.test("AsyncEither match", async () => {
   assertEquals(await fold(AE.left("asdf"))(), "asdf");
 });
 
-// Deno.test("AsyncEither Do, bind, bindTo", () => {
-//   assertEqualsT(
-//     pipe(
-//       AE.Do<number, number, number>(),
-//       AE.bind("one", () => AE.right(1)),
-//       AE.bind("two", ({ one }) => AE.right(one + one)),
-//       AE.map(({ one, two }) => one + two),
-//     ),
-//     AE.right(3),
-//   );
-//   assertEqualsT(
-//     pipe(
-//       AE.right(1),
-//       AE.bindTo("one"),
-//     ),
-//     AE.right({ one: 1 }),
-//   );
-// });
+Deno.test("AsyncEither getCombinableAsyncEither", async () => {
+  const { combine } = AE.getCombinableAsyncEither(
+    N.InitializableNumberSum,
+    N.InitializableNumberSum,
+  );
+
+  const right = combine(AE.right(1));
+  const left = combine(AE.left(1));
+
+  assertEquals(await right(AE.right(2))(), E.right(3));
+  assertEquals(await right(AE.left(2))(), E.left(2));
+  assertEquals(await left(AE.right(2))(), E.left(1));
+  assertEquals(await left(AE.left(2))(), E.left(3));
+});
+
+Deno.test("AsyncEither getInitializableAsyncEither", async () => {
+  const { init, combine } = AE.getInitializableAsyncEither(
+    N.InitializableNumberSum,
+    N.InitializableNumberSum,
+  );
+
+  const right = combine(AE.right(1));
+  const left = combine(AE.left(1));
+
+  assertEquals(await init()(), E.right(0));
+  assertEquals(await right(AE.right(2))(), E.right(3));
+  assertEquals(await right(AE.left(2))(), E.left(2));
+  assertEquals(await left(AE.right(2))(), E.left(1));
+  assertEquals(await left(AE.left(2))(), E.left(3));
+});
+
+Deno.test("AsyncEither Do, bind, bindTo", () => {
+  assertEqualsT(
+    pipe(
+      AE.wrap({}),
+      AE.bind("one", () => AE.right(1)),
+      AE.bind("two", ({ one }) => AE.right(one + one)),
+      AE.map(({ one, two }) => one + two),
+    ),
+    AE.right(3),
+  );
+  assertEqualsT(
+    pipe(
+      AE.right(1),
+      AE.bindTo("one"),
+    ),
+    AE.right({ one: 1 }),
+  );
+});

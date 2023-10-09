@@ -304,44 +304,6 @@ Deno.test("Optic imap", () => {
   assertEquals(optic.view(1), 101);
 });
 
-Deno.test("Optic map", () => {
-  const optic = pipe(O.id<number>(), O.map((n) => n + 1));
-  assertEquals(optic.view(1), 2);
-});
-
-Deno.test("Optic ap", () => {
-  type Person = { name: string; age: number };
-  type State = { people: readonly Person[]; format: (p: Person) => string };
-
-  const fmt = pipe(O.id<State>(), O.prop("format"));
-  const adults = pipe(
-    O.id<State>(),
-    O.prop("people"),
-    O.array,
-    O.filter((p) => p.age > 18),
-  );
-
-  const formatted = pipe(fmt, O.apply(adults));
-
-  const fmt1 = (p: Person) => `${p.name} is ${p.age}`;
-  const fmt2 = (p: Person) => `At ${p.age} we have ${p.name}`;
-  const people1: readonly Person[] = [];
-  const people2: readonly Person[] = [
-    { name: "Brandon", age: 37 },
-    { name: "Rufus", age: 1 },
-  ];
-
-  const state1: State = { format: fmt1, people: people1 };
-  const state2: State = { format: fmt1, people: people2 };
-  const state3: State = { format: fmt2, people: people1 };
-  const state4: State = { format: fmt2, people: people2 };
-
-  assertEquals(formatted.view(state1), []);
-  assertEquals(formatted.view(state2), ["Brandon is 37"]);
-  assertEquals(formatted.view(state3), []);
-  assertEquals(formatted.view(state4), ["At 37 we have Brandon"]);
-});
-
 Deno.test("Optic prop", () => {
   type Foo = { one: number; two: string };
   const one = pipe(O.id<Foo>(), O.prop("one"));
@@ -551,8 +513,8 @@ Deno.test("Optic tree", () => {
   assertEquals(incr(T.tree(1, [T.tree(2)])), T.tree(2, [T.tree(3)]));
 });
 
-Deno.test("Optic nilable", () => {
-  const optic = pipe(O.id<number | null | undefined>(), O.nilable);
+Deno.test("Optic nil", () => {
+  const optic = pipe(O.id<number | null | undefined>(), O.nil);
   const incr = pipe(optic, O.modify(inc));
 
   assertEquals(optic.view(undefined), Op.none);
