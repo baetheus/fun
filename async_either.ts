@@ -23,7 +23,8 @@ import type { Wrappable } from "./wrappable.ts";
 import * as E from "./either.ts";
 import * as A from "./async.ts";
 import * as P from "./promise.ts";
-import { createBind, createTap } from "./flatmappable.ts";
+import { createTap } from "./failable.ts";
+import { createBind } from "./flatmappable.ts";
 import { createBindTo } from "./mappable.ts";
 import { handleThrow, pipe } from "./fn.ts";
 import { resolve } from "./promise.ts";
@@ -482,7 +483,7 @@ export const WrappableAsyncEither: Wrappable<KindAsyncEither> = {
 /**
  * @since 2.0.0
  */
-export const tap = createTap(FlatmappableAsyncEitherParallel);
+export const tap = createTap(FailableAsyncEitherParallel);
 
 /**
  * @since 2.0.0

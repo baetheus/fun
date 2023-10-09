@@ -1,7 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import * as RSS from "https://deno.land/x/rss@0.5.6/mod.ts";
-import * as TE from "https://raw.githubusercontent.com/baetheus/fun/main/task_either.ts";
-import { pipe } from "https://raw.githubusercontent.com/baetheus/fun/main/fns.ts";
+import * as AE from "../async_either.ts";
+import { pipe } from "../fn.ts";
 
 // ---
 // Try implementing a reusable error type
@@ -16,16 +16,11 @@ export type Err<T extends string, A> = {
 
 export type AnyErr = Err<string, any>;
 
-export const err = <T extends string, A>(type: T) =>
-(
-  error: unknown,
-  context: A,
-): Err<T, A> => ({
-  tag: "Error",
-  type,
-  context,
-  error,
-});
+export function err<T extends string, A>(
+  type: T,
+): (error: unknown, context: A) => Err<T, A> {
+  return (error, context) => ({ tag: "Error", type, context, error });
+}
 
 // ---
 // Use a little creative typing to extract tag and context pairs and
@@ -44,9 +39,11 @@ type MapFunc<T, B> = T extends Err<string, infer V>
 
 type ToRecord<T, B> = { [K in ExtractTags<T>]: MapFunc<MatchTag<K, T>, B> };
 
-export const foldErr =
-  <T extends AnyErr, B>(fns: ToRecord<T, B>) => (ta: T): B =>
-    (fns[ta.type as keyof ToRecord<T, B>])(ta.error, ta.context);
+export function foldErr<T extends AnyErr, B>(
+  fns: ToRecord<T, B>,
+): (ta: T) => B {
+  return (ta) => (fns[ta.type as keyof ToRecord<T, B>])(ta.error, ta.context);
+}
 
 /**
  * Wrapping the errors for tryCatch tend to all look like
@@ -56,7 +53,7 @@ export const foldErr =
 export const tagTryCatch = <T extends string, A extends unknown[], O>(
   tag: T,
   f: (...as: A) => O | PromiseLike<O>,
-) => TE.tryCatch(f, err(tag));
+) => AE.tryCatch(f, err(tag));
 
 // ---
 // Wrap external functions with tagged errors
@@ -74,24 +71,32 @@ export const stringify = tagTryCatch(
 // Get some xml, parse it as rss, and log it
 // ---
 
+function logError(annotation: string): <A>(err: unknown, args: A) => void {
+  return (err, args) => {
+    console.error(annotation);
+    console.error({ err, args });
+  };
+}
+
 export const run = pipe(
   // Start with a fetch
   safeFetch("https://hnrss.org/frontpage-blarg"),
-  // The default chain widens the left type, picking up the
+  AE.bindTo("response"),
+  // The default flatmap widens the left type, picking up the
   // additional Err types
-  TE.chain(getText),
+  AE.bind("text", ({ response }) => getText(response)),
   // Parse the body text
-  TE.chain(parseFeed),
+  AE.bind("parsed", ({ text }) => parseFeed(text)),
   // Stringify feed values
-  TE.chain(stringify),
+  AE.bind("result", ({ parsed }) => stringify(parsed)),
   // Output the date
-  TE.fold(
+  AE.match(
     // Use the taggedError fold to extract all unioned tags
     foldErr({
-      "FetchError": (_error, _args) => console.error("Hello"),
-      "RssError": console.error,
-      "TextError": console.error,
-      "StringifyError": console.error,
+      "FetchError": logError("Failed during fetch"),
+      "RssError": logError("Failed during RSS Parsing"),
+      "TextError": logError("Failed while parsing text body"),
+      "StringifyError": logError("Failed while stringifying result"),
     }),
     console.log,
   ),

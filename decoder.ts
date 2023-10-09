@@ -832,6 +832,16 @@ const traverseArray = A.traverse(FlatmappableDecoded);
 export type Decoder<D, A> = FnEither<D, DecodeError, A>;
 
 /**
+ * @since 2.0.1
+ */
+export type TypeIn<U> = U extends Decoder<infer D, infer _> ? D : never;
+
+/**
+ * @since 2.0.1
+ */
+export type TypeOut<U> = U extends Decoder<infer _, infer A> ? A : never;
+
+/**
  * A type that matches any decoder type.
  *
  * @since 2.0.0

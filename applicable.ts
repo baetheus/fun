@@ -70,27 +70,16 @@ export function apply<U extends Kind, V extends Kind>(
 ) => <I>(
   uvfai: $<U, [$<V, [(a: A) => I, B, C], [D], [E]>, J, K], [L], [M]>,
 ) => $<U, [$<V, [I, B, C], [D], [E]>, J, K], [L], [M]> {
-  return <
-    A,
-    B = never,
-    C = never,
-    D = unknown,
-    E = unknown,
-    J = never,
-    K = never,
-    L = unknown,
-    M = unknown,
-  >(uva: $<U, [$<V, [A, B, C], [D], [E]>, J, K], [L], [M]>) =>
-  <I>(
-    uvfai: $<U, [$<V, [(a: A) => I, B, C], [D], [E]>, J, K], [L], [M]>,
-  ): $<U, [$<V, [I, B, C], [D], [E]>, J, K], [L], [M]> => {
+  // deno-lint-ignore no-explicit-any
+  return ((uva: any) => (uvfai: any) => {
     return U.apply(uva)(
       U.map(
-        (vfai: $<V, [(a: A) => I, B, C], [D], [E]>) =>
-        (va: $<V, [A, B, C], [D], [E]>) => V.apply(va)(vfai),
+        // deno-lint-ignore no-explicit-any
+        (vfai: any) => (va: any) => V.apply(va)(vfai),
       )(uvfai),
     );
-  };
+    // deno-lint-ignore no-explicit-any
+  }) as any;
 }
 
 /**

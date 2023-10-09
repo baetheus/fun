@@ -12,6 +12,8 @@ import type { $, Hold, Kind } from "./kind.ts";
 import type { Flatmappable } from "./flatmappable.ts";
 import type { NonEmptyArray } from "./array.ts";
 
+import { flow } from "./fn.ts";
+
 /**
  * A Failable structure is a Flatmappable that allows for alternative instances,
  * failures, and recovery.
@@ -40,7 +42,7 @@ export interface Failable<U extends Kind> extends Flatmappable<U>, Hold<U> {
  * @since 2.0.0
  */
 export function createTryAll<U extends Kind>(
-  { alt }: Failable<U>,
+  { recover }: Failable<U>,
 ): <A, B, C, D, E>(
   ...uas: NonEmptyArray<$<U, [A, B, C], [D], [E]>>
 ) => $<U, [A, B, C], [D], [E]> {
@@ -48,8 +50,37 @@ export function createTryAll<U extends Kind>(
     const [head, ...tail] = uas;
     let out = head;
     for (const ua of tail) {
-      out = alt(ua)(out);
+      out = recover(() => ua)(out);
     }
     return out;
   };
+}
+
+/**
+ * Create a tap function for a structure with instances of Wrappable and
+ * Flatmappable. A tap function allows one to break out of the functional
+ * codeflow. It is generally not advised to use tap for code flow but to
+ * consider an escape hatch to do things like tracing or logging.
+ *
+ * @since 2.0.0
+ */
+export function createTap<U extends Kind>(
+  { wrap, fail, flatmap, recover }: Failable<U>,
+): <A, B>(
+  onSuccess: (value: A) => void,
+  onFailure: (value: B) => void,
+) => <C = never, D = unknown, E = unknown>(
+  ua: $<U, [A, B, C], [D], [E]>,
+) => $<U, [A, B, C], [D], [E]> {
+  return (onSuccess, onFailure) =>
+    flow(
+      flatmap((a) => {
+        onSuccess(a);
+        return wrap(a);
+      }),
+      recover((b) => {
+        onFailure(b);
+        return fail(b);
+      }),
+    );
 }

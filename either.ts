@@ -28,7 +28,8 @@ import type { Traversable } from "./traversable.ts";
 import type { Wrappable } from "./wrappable.ts";
 
 import * as O from "./option.ts";
-import { createBind, createTap } from "./flatmappable.ts";
+import { createTap } from "./failable.ts";
+import { createBind } from "./flatmappable.ts";
 import { createBindTo } from "./mappable.ts";
 import { isNotNil } from "./nil.ts";
 import { fromCompare } from "./comparable.ts";
@@ -506,7 +507,7 @@ export const WrappableEither: Wrappable<KindEither> = { wrap };
 /**
  * @since 2.0.0
  */
-export const tap = createTap(FlatmappableEither);
+export const tap = createTap(FailableEither);
 
 /**
  * @since 2.0.0

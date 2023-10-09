@@ -23,7 +23,8 @@ import type { Wrappable } from "./wrappable.ts";
 import * as E from "./either.ts";
 import * as I from "./sync.ts";
 import { constant, flow, pipe } from "./fn.ts";
-import { createBind, createTap } from "./flatmappable.ts";
+import { createTap } from "./failable.ts";
+import { createBind } from "./flatmappable.ts";
 import { createBindTo } from "./mappable.ts";
 
 /**
@@ -273,7 +274,7 @@ export const WrappableSyncEither: Wrappable<KindSyncEither> = { wrap };
 /**
  * @since 2.0.0
  */
-export const tap = createTap(FlatmappableSyncEither);
+export const tap = createTap(FailableSyncEither);
 
 /**
  * @since 2.0.0

@@ -172,11 +172,17 @@ export function _unsafeCast<U extends Tag, V extends Tag, S, A>(
  * * FoldTag => FlatmappableArray
  */
 function getFlatmappable<T extends Tag>(tag: T): Flatmappable<ToKind<T>> {
-  return (tag === FoldTag
-    ? A.FlatmappableArray
-    : tag === AffineTag
-    ? O.FlatmappableOption
-    : I.FlatmappableIdentity) as unknown as Flatmappable<ToKind<T>>;
+  type Result = Flatmappable<ToKind<T>>;
+  switch (tag) {
+    case FoldTag:
+      return A.FlatmappableArray as unknown as Result;
+    case AffineTag:
+      return O.FlatmappableOption as unknown as Result;
+    case LensTag:
+      return I.FlatmappableIdentity as unknown as Result;
+    default:
+      throw new Error(`Unable to get Flatmappable for ${tag}`);
+  }
 }
 
 /**

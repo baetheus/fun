@@ -1,11 +1,12 @@
-import * as DNT from "https://deno.land/x/dnt@0.21.2/mod.ts";
+import * as DNT from "https://deno.land/x/dnt@0.38.1/mod.ts";
 import { parse } from "https://deno.land/x/semver@v1.4.0/mod.ts";
-import { join } from "https://deno.land/std@0.146.0/path/mod.ts";
-import * as T from "../task_either.ts";
+import * as AE from "../async_either.ts";
 import * as D from "../decoder.ts";
-import * as A from "../array.ts";
 import * as E from "../either.ts";
-import { flow, pipe } from "../fns.ts";
+import * as I from "../iterable.ts";
+import * as O from "../option.ts";
+import * as S from "../string.ts";
+import { flow, pipe } from "../fn.ts";
 
 // Environment
 const semver = pipe(
@@ -19,15 +20,22 @@ const semver = pipe(
 );
 
 const Env = D.struct({
-  NAME: D.string,
-  DESCRIPTION: D.string,
   VERSION: semver,
-  BUILD_DIR: D.string,
-  ENTRYPOINTS: D.json(D.array(D.string)),
-  ADDITIONAL_FILES: D.json(D.array(D.string)),
 });
 
-type Env = D.TypeOf<typeof Env>;
+type Env = D.TypeOut<typeof Env>;
+
+/**
+ * Consts
+ */
+
+const BUILD_DIR = "./build";
+const ENTRYPOINTS = pipe(
+  Deno.readDirSync("./"),
+  I.map(({ name }) => name),
+  I.filterMap(O.fromPredicate(S.endsWith(".ts"))),
+  I.collect,
+) as string[];
 
 // Errors
 type BuildError = { message: string; context: Record<string, unknown> };
@@ -59,57 +67,60 @@ const printBuildError = ({ message, context }: BuildError) => {
 
 // Functions
 const createBuildOptions = (
-  { NAME, DESCRIPTION, BUILD_DIR, VERSION, ENTRYPOINTS }: Env,
+  { VERSION }: Env,
 ): DNT.BuildOptions => ({
-  entryPoints: ENTRYPOINTS.slice(),
+  entryPoints: ENTRYPOINTS,
   outDir: BUILD_DIR,
   typeCheck: false,
-  test: false,
+  test: true,
   shims: {
     deno: true,
   },
   package: {
-    name: NAME,
+    name: "@nll/fun",
     version: VERSION.toString(),
-    description: DESCRIPTION,
+    description: "A utility library for functional programming in TypeScript",
+    keywords: ["functional programming", "typescript", "fp"],
     license: "MIT",
+    bugs: {
+      url: "https://github.com/baetheus/fun/issues",
+      email: "brandon@null.pub",
+    },
+    author: {
+      "name": "Brandon Blaylock",
+      "email": "brandon@null.pub",
+      "url": "blaylock.dev",
+    },
+    repository: "github:baetheus/fun",
+  },
+  postBuild() {
+    Deno.copyFileSync("LICENSE", `${BUILD_DIR}/LICENSE`);
+    Deno.copyFileSync("README.md", `${BUILD_DIR}/README.md`);
   },
 });
 
-const getEnv = T.tryCatch(
+const getEnv = AE.tryCatch(
   Deno.env.toObject,
   (err, args) => buildError("Unable to get environment.", { err, args }),
 )();
 
 const parseEnv = flow(
   Env,
-  D.extract,
-  E.mapLeft((err) => buildError("Unable to parse environment.", { err })),
-  T.fromEither,
+  E.mapSecond((err) =>
+    buildError("Unable to parse environment.", { err: D.draw(err) })
+  ),
+  AE.fromEither,
 );
 
-const emptyDir = T.tryCatch(
+const emptyDir = AE.tryCatch(
   DNT.emptyDir,
   (err, args) => buildError("Unable to empty build directory.", { err, args }),
 );
 
-const build = T.tryCatch(
+const build = AE.tryCatch(
   DNT.build,
   (err, args) => buildError("Unable to build node package.", { err, args }),
 );
-
-const copyFile = T.tryCatch(
-  Deno.copyFile,
-  (err, args) => buildError("Unable to copy file.", { err, args }),
-);
-
-const traverse = A.traverse(T.Applicative);
-
-const copy = ({ BUILD_DIR, ADDITIONAL_FILES }: Env) =>
-  pipe(
-    ADDITIONAL_FILES,
-    traverse((file) => copyFile(file, join(BUILD_DIR, file))),
-  );
 
 const printComplete = (env: Env) =>
   `BUILD COMPLETE
@@ -117,11 +128,10 @@ ${JSON.stringify(env, null, 2)}`;
 
 export const run = pipe(
   getEnv,
-  T.chain(parseEnv),
-  T.chainFirst((env) => emptyDir(env.BUILD_DIR)),
-  T.chainFirst((env) => build(createBuildOptions(env))),
-  T.chainFirst(copy),
-  T.fold(
+  AE.flatmap(parseEnv),
+  AE.flatmapFirst(() => emptyDir(BUILD_DIR)),
+  AE.flatmapFirst((env) => build(createBuildOptions(env))),
+  AE.match(
     flow(printBuildError, console.error),
     flow(printComplete, console.log),
   ),
