@@ -295,6 +295,14 @@ Deno.test("Array zip", () => {
   ]]);
 });
 
+Deno.test("Array first", () => {
+  assertEquals(pipe(A.range(0), A.first((n) => n > 0)), O.none);
+  assertEquals(pipe(A.range(1), A.first((n) => n === 0)), O.some(0));
+  assertEquals(pipe(A.range(2), A.first((n) => n > 0)), O.some(1));
+  assertEquals(pipe(A.range(3), A.first((n) => n > 0, 1)), O.some(2));
+  assertEquals(pipe(A.range(4), A.first((n) => n > 10)), O.none);
+});
+
 Deno.test("Array range", () => {
   assertEquals(A.range(0), []);
   assertEquals(A.range(1), [0]);

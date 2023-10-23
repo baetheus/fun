@@ -39,3 +39,21 @@ Deno.test("Failable createTryAll", () => {
     E.left(3),
   );
 });
+
+Deno.test("Failable createTap", () => {
+  const tap = F.createTap(E.FailableEither);
+
+  let success: number | undefined;
+  let failure: number | undefined;
+
+  const _tap = tap((s: number) => {
+    success = s;
+  }, (f: number) => {
+    failure = f;
+  });
+
+  _tap(E.right(1));
+  _tap(E.left(2));
+
+  assertEquals([success, failure], [1, 2]);
+});

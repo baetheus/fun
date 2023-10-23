@@ -1283,6 +1283,50 @@ export function zip<A extends ReadonlyArray<AnyArray>>(
 }
 
 /**
+ * Find a value in an array using a predicate or refinement, optionally skipping
+ * some number of values. This find function returns early at the first found
+ * value after the supplied number of skips.
+ *
+ * @example
+ * ```ts
+ * import * as A from "./array.ts";
+ *
+ * const positive = A.first((n: number) => n > 0);
+ *
+ * const result1 = positive(A.range(3, -1)); // Some(1)
+ * const result2 = positive(A.range(3, -2)); // None
+ * ```
+ *
+ * @since 2.0.0
+ */
+export function first<A>(
+  predicate: (a: A, index: number) => boolean,
+  skip?: number,
+): (ua: ReadonlyArray<A>) => Option<A>;
+export function first<A, B extends A>(
+  predicate: (a: A, index: number) => a is B,
+  skip?: number,
+): (ua: ReadonlyArray<A>) => Option<B>;
+export function first<A>(
+  predicate: (a: A, index: number) => boolean,
+  skip = 0,
+): (ua: ReadonlyArray<A>) => Option<A> {
+  const _skip = Math.max(0, Math.floor(skip));
+  return (ua) => {
+    const length = ua.length;
+    let index = -1;
+    let found = 0;
+    while (++index < length) {
+      const value = ua[index];
+      if (predicate(value, index) && ++found > _skip) {
+        return some(value);
+      }
+    }
+    return none;
+  };
+}
+
+/**
  * @since 2.0.0
  */
 export function getCombinableArray<A>(): Combinable<ReadonlyArray<A>> {

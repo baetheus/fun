@@ -59,31 +59,31 @@ structures and more general algebraic structures.
 | [Sortable](./sortable.ts)            |                     | ✓                   |        | Ord                                   |
 | [Traversable](./traversable.ts)      |                     | ✓                   |        |                                       |
 | [Wrappable](./wrappable.ts)          |                     | ✓                   |        | Pointed                               |
-| [ReadonlyArray](./array.ts)          | ✓                   |                     | ✓      | Array                                 |
-| [Async](./async.ts)                  | ✓                   |                     |        | Task                                  |
-| [AsyncEither](./async_either.ts)     | ✓                   |                     |        | TaskEither                            |
+| [Newtype](./newtype.ts)              |                     |                     |        | Brand, Branded Type                   |
 | [AsyncIterable](./async_iterable.ts) | ✓                   |                     | ✓      |                                       |
 | [Boolean](./boolean.ts)              | ✓                   |                     | ✓      |                                       |
+| [Iterable](./iterable.ts)            | ✓                   |                     | ✓      |                                       |
+| [Number](./number.ts)                | ✓                   |                     | ✓      |                                       |
+| [Promise](./promise.ts)              | ✓                   |                     | ✓      |                                       |
+| [ReadonlyArray](./array.ts)          | ✓                   |                     | ✓      | Array                                 |
+| [ReadonlyMap](./map.ts)              | ✓                   |                     | ✓      | Map                                   |
+| [ReadonlySet](./set.ts)              | ✓                   |                     | ✓      | Set                                   |
+| [String](./string.ts)                | ✓                   |                     | ✓      |                                       |
+| [Async](./async.ts)                  | ✓                   |                     |        | Task                                  |
+| [AsyncEither](./async_either.ts)     | ✓                   |                     |        | TaskEither                            |
 | [Decoder](./decoder.ts)              | ✓                   |                     |        |                                       |
 | [Either](./either.ts)                | ✓                   |                     |        |                                       |
-| [Fn](./fn.ts)                        | ✓                   |                     | ✓      | Reader                                |
+| [Fn](./fn.ts)                        | ✓                   |                     |        | Reader                                |
 | [FnEither](./fn_either.ts)           | ✓                   |                     |        | ReaderEither                          |
 | [Identity](./identity.ts)            | ✓                   |                     |        | Trivial                               |
-| [Iterable](./iterable.ts)            | ✓                   |                     | ✓      |                                       |
 | [JsonSchema](./json_schema.ts)       | ✓                   |                     |        |                                       |
-| [ReadonlyMap](./map.ts)              | ✓                   |                     | ✓      | Map                                   |
-| [Newtype](./newtype.ts)              |                     |                     |        | Brand, Branded Type                   |
 | [Nilable](./nilable.ts)              | ✓                   |                     |        |                                       |
-| [Number](./number.ts)                | ✓                   |                     | ✓      |                                       |
 | [Optic](./optic.ts)                  | ✓                   |                     |        | Iso, Lens, Optional, Prism, Traversal |
 | [Option](./option.ts)                | ✓                   |                     |        | Maybe                                 |
 | [Pair](./pair.ts)                    | ✓                   |                     |        | Separated                             |
 | [Predicate](./predicate.ts)          | ✓                   |                     |        |                                       |
-| [Promise](./promise.ts)              | ✓                   |                     | ✓      |                                       |
 | [Refinement](./refinement.ts)        | ✓                   |                     |        |                                       |
-| [ReadonlySet](./set.ts)              | ✓                   |                     | ✓      | Set                                   |
 | [State](./state.ts)                  | ✓                   |                     |        |                                       |
-| [String](./string.ts)                | ✓                   |                     | ✓      |                                       |
 | [Sync](./sync.ts)                    | ✓                   |                     |        | IO                                    |
 | [SyncEither](./sync_either.ts)       | ✓                   |                     |        | IOEither                              |
 | [These](./these.ts)                  | ✓                   |                     |        |                                       |
