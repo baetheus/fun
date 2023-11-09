@@ -18,7 +18,7 @@
  * @since 2.0.0
  */
 
-import type { $, Kind, Out } from "./kind.ts";
+import type { Kind, Out } from "./kind.ts";
 import type { Applicable } from "./applicable.ts";
 import type { Combinable } from "./combinable.ts";
 import type { Either } from "./either.ts";
