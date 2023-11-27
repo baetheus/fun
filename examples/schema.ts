@@ -1,7 +1,8 @@
+import * as FC from "npm:fast-check@3.14.0";
 import { schema } from "../schemable.ts";
 import { SchemableDecoder } from "../decoder.ts";
 import { print, SchemableJsonBuilder } from "../json_schema.ts";
-import { sample, SchemableArbitrary } from "../contrib/fast-check.ts";
+import { getSchemableArbitrary } from "../contrib/fast-check.ts";
 import { pipe } from "../fn.ts";
 
 const Vector = schema((s) => s.tuple(s.number(), s.number(), s.number()));
@@ -57,10 +58,10 @@ const SpaceObject = schema((s) =>
 );
 
 const decoder = SpaceObject(SchemableDecoder);
-const arbitrary = SpaceObject(SchemableArbitrary);
+const arbitrary = SpaceObject(getSchemableArbitrary(FC));
 const json_schema = print(SpaceObject(SchemableJsonBuilder));
 
-const rands = sample(arbitrary, 10);
+const rands = FC.sample(arbitrary, 10);
 const checks = rands.map(decoder);
 
 console.log({ json_schema, rands, checks });
@@ -72,5 +73,5 @@ const intersect = schema((s) =>
   )
 );
 
-const iarbitrary = intersect(SchemableArbitrary);
-console.log("Intersect", sample(iarbitrary, 20));
+const iarbitrary = intersect(getSchemableArbitrary(FC));
+console.log("Intersect", FC.sample(iarbitrary, 20));

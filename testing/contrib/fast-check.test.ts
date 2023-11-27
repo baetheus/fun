@@ -1,5 +1,6 @@
 import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
+import * as FC from "npm:fast-check@3.14.0";
 import * as F from "../../contrib/fast-check.ts";
 import * as R from "../../refinement.ts";
 import { schema } from "../../schemable.ts";
@@ -66,28 +67,10 @@ Deno.test("Fast Check Schemable", () => {
   );
 
   const refinement = SpaceObject(R.SchemableRefinement);
-  const arbitrary = SpaceObject(F.SchemableArbitrary);
-  const rands = F.sample(arbitrary, 10);
+  const arbitrary = SpaceObject(F.getSchemableArbitrary(FC));
+  const rands = FC.sample(arbitrary, 10);
 
   for (const rand of rands) {
     assertEquals(refinement(rand), true);
   }
-});
-
-Deno.test("Fast Check IntersectArbitrary", () => {
-  const intersect = new F.IntersectArbitrary(
-    F.record({ one: F.integer() }),
-    F.record({ two: F.string() }),
-  );
-
-  assertEquals(intersect.canShrinkWithoutContext(null), false);
-  assertEquals(
-    intersect.canShrinkWithoutContext({ one: 1, two: "two" }),
-    false,
-  );
-
-  assertEquals(
-    intersect.shrink({ one: 1, two: "two" }, null),
-    F.Stream.of(new F.Value({ one: 1, two: "two" }, 0)),
-  );
 });

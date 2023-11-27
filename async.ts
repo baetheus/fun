@@ -155,6 +155,16 @@ export const FlatmappableAsync: Flatmappable<KindAsync> = {
 };
 
 /**
+ * @since 2.0.1
+ */
+export const FlatmappableAsyncSeq: Flatmappable<KindAsync> = {
+  apply: applySequential,
+  flatmap,
+  map,
+  wrap,
+};
+
+/**
  * @since 2.0.0
  */
 export const tap = createTap(FlatmappableAsync);
