@@ -2,7 +2,7 @@ import * as D from "../decoder.ts";
 import * as E from "../either.ts";
 import * as S from "../schemable.ts";
 import * as AE from "../async_either.ts";
-import * as O from "../optics.ts";
+import * as O from "../optic.ts";
 import * as J from "../json_schema.ts";
 import { flow, pipe } from "../fn.ts";
 

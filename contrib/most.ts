@@ -1,5 +1,5 @@
 import type { Scheduler, Stream } from "npm:@most/types@1.1.0";
-import type { $, In, InOut, Kind, Out } from "../kind.ts";
+import type { $, Kind, Nest, Out } from "../kind.ts";
 import type { Wrappable } from "../wrappable.ts";
 import type { Mappable } from "../mappable.ts";
 import type { Applicable } from "../applicable.ts";
@@ -76,7 +76,12 @@ export const map: Mappable<KindStream>["map"] = M.map;
 
 export const apply: Applicable<KindStream>["apply"] = M.ap;
 
-export const flatmap: Flatmappable<KindStream>["flatmap"] = M.chain;
+export const flatmap: Flatmappable<KindStream>["flatmap"] = (faui) => (ua) =>
+  pipe(
+    ua,
+    M.map(faui),
+    M.switchLatest,
+  );
 
 export const WrappableStream: Wrappable<KindStream> = { wrap };
 
@@ -98,14 +103,7 @@ export const bindTo = createBindTo(FlatmappableStream);
 export const tap = createTap(FlatmappableStream);
 
 export interface TransformStream<U extends Kind> extends Kind {
-  readonly kind: Stream<
-    $<
-      U,
-      [Out<this, 0>, Out<this, 1>, Out<this, 2>],
-      [In<this, 0>],
-      [InOut<this, 0>]
-    >
-  >;
+  readonly kind: Stream<Nest<U, this>>;
 }
 
 export function transformStream<U extends Kind>(

@@ -118,8 +118,7 @@ export interface Fix<A> extends Kind {
 /**
  * Create a scoped symbol for use with Hold.
  */
-const HoldSymbol = Symbol("Hold");
-type HoldSymbol = typeof HoldSymbol;
+declare const HoldSymbol: unique symbol;
 
 /**
  * The Hold interface allows one to trick the typescript compiler into holding
@@ -129,6 +128,17 @@ type HoldSymbol = typeof HoldSymbol;
 export interface Hold<A> {
   readonly [HoldSymbol]?: A;
 }
+
+/**
+ * Some Flatmappable Transform kinds only have one out type, in those cases we
+ * use this Nest type to make the transform kind cleaner.
+ */
+export type Nest<U extends Kind, S extends Substitutions> = $<
+  U,
+  [Out<S, 0>, Out<S, 1>, Out<S, 2>],
+  [In<S, 0>],
+  [InOut<S, 0>]
+>;
 
 /**
  * Spread the keys of a struct union into a single struct.

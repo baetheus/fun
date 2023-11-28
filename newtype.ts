@@ -23,12 +23,8 @@ import { fromPredicate } from "./option.ts";
 import { iso as _iso, prism as _prism } from "./optic.ts";
 import { identity, unsafeCoerce } from "./fn.ts";
 
-/**
- * These are phantom types used by Newtype to both identify and distinquish
- * between a Newtype and its representation value.
- */
-declare const Brand: unique symbol;
-declare const Value: unique symbol;
+declare const BrandSymbol: unique symbol;
+declare const ValueSymbol: unique symbol;
 
 /**
  * Create a branded type from an existing type. The branded
@@ -45,8 +41,8 @@ declare const Value: unique symbol;
  *
  * type Integer = Newtype<'Integer', number>;
  *
- * const int = 1 as unknown as Integer;
- * const num = 1;
+ * const int = 1 as Integer;
+ * const num = 1 as number;
  *
  * declare function addOne(n: Integer): number;
  *
@@ -56,7 +52,18 @@ declare const Value: unique symbol;
  *
  * @since 2.0.0
  */
-export type Newtype<B, A> = { readonly [Brand]: B; readonly [Value]: A };
+export type Newtype<B, A> = A & {
+  readonly [ValueSymbol]: A;
+  readonly [BrandSymbol]: B;
+};
+
+/**
+ * A type alias for Newtype<any, any> that is useful when constructing
+ * Newtype related runtime instances.
+ *
+ * @since 2.0.0
+ */
+export type AnyNewtype = Newtype<unknown, unknown>;
 
 /**
  * Extracts the inner type value from a Newtype.
@@ -72,15 +79,9 @@ export type Newtype<B, A> = { readonly [Brand]: B; readonly [Value]: A };
  *
  * @since 2.0.0
  */
-export type ToValue<T extends Newtype<unknown, unknown>> = T[typeof Value];
-
-/**
- * A type alias for Newtype<any, any> that is useful when constructing
- * Newtype related runtime instances.
- *
- * @since 2.0.0
- */
-export type AnyNewtype = Newtype<unknown, unknown>;
+export type ToValue<T extends AnyNewtype> = T extends Newtype<infer _, infer A>
+  ? A
+  : never;
 
 /**
  * Retype an existing Comparable from an inner type to a Newtype.
@@ -100,7 +101,7 @@ export type AnyNewtype = Newtype<unknown, unknown>;
 export function getComparable<T extends AnyNewtype>(
   eq: Comparable<ToValue<T>>,
 ): Comparable<T> {
-  return eq as Comparable<T>;
+  return eq as unknown as Comparable<T>;
 }
 
 /**
@@ -121,7 +122,7 @@ export function getComparable<T extends AnyNewtype>(
 export function getSortable<T extends AnyNewtype>(
   ord: Sortable<ToValue<T>>,
 ): Sortable<T> {
-  return ord as Sortable<T>;
+  return ord as unknown as Sortable<T>;
 }
 
 /**
@@ -227,6 +228,6 @@ export function prism<T extends AnyNewtype>(
 ): Prism<ToValue<T>, T> {
   return _prism<ToValue<T>, T>(
     fromPredicate(predicate) as (s: ToValue<T>) => Option<T>,
-    identity,
+    identity as (a: T) => ToValue<T>,
   );
 }
