@@ -12,6 +12,6 @@ trap exiting SIGINT
 rm -rf $OUTPUT_DIR
 deno fmt
 deno test --doc --parallel --coverage=$OUTPUT_DIR
-deno coverage --unstable ./$OUTPUT_DIR --lcov > ./$OUTPUT_DIR/lcov.info
+deno coverage ./$OUTPUT_DIR --lcov > ./$OUTPUT_DIR/lcov.info
 genhtml ./$OUTPUT_DIR/lcov.info --output-directory $OUTPUT_DIR
 darkhttpd ./$OUTPUT_DIR

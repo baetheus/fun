@@ -938,7 +938,9 @@ export function prepend<A>(
  *
  * @since 2.0.0
  */
-export function insert<A>(value: A) {
+export function insert<A>(
+  value: A,
+): (index: number) => (arr: ReadonlyArray<A>) => ReadonlyArray<A> {
   return (index: number) => (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
     index < 0 || index > arr.length ? arr : _unsafeInsertAt(index, value, arr);
 }
@@ -965,7 +967,9 @@ export function insert<A>(value: A) {
  *
  * @since 2.0.0
  */
-export function insertAt(index: number) {
+export function insertAt(
+  index: number,
+): <A>(value: A) => (arr: ReadonlyArray<A>) => ReadonlyArray<A> {
   return <A>(value: A) => (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
     index < 0 || index > arr.length ? arr : _unsafeInsertAt(index, value, arr);
 }
@@ -989,7 +993,9 @@ export function insertAt(index: number) {
  *
  * @since 2.0.0
  */
-export function update<A>(value: A) {
+export function update<A>(
+  value: A,
+): (index: number) => (arr: ReadonlyArray<A>) => ReadonlyArray<A> {
   return (index: number) => (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
     isOutOfBounds(index, arr) ? arr : _unsafeUpdateAt(index, value, arr);
 }
@@ -1013,8 +1019,10 @@ export function update<A>(value: A) {
  *
  * @since 2.0.0
  */
-export function updateAt(index: number) {
-  return <A>(value: A) => (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
+export function updateAt(
+  index: number,
+): <A>(value: A) => (arr: ReadonlyArray<A>) => ReadonlyArray<A> {
+  return (value) => (arr) =>
     isOutOfBounds(index, arr) ? arr : _unsafeUpdateAt(index, value, arr);
 }
 
@@ -1063,7 +1071,9 @@ export function modify<A>(modifyFn: (a: A) => A) {
  *
  * @since 2.0.0
  */
-export function modifyAt(index: number) {
+export function modifyAt(
+  index: number,
+): <A>(modifyFn: (a: A) => A) => (arr: ReadonlyArray<A>) => ReadonlyArray<A> {
   return <A>(modifyFn: (a: A) => A) =>
   (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
     isOutOfBounds(index, arr)
@@ -1092,7 +1102,7 @@ export function modifyAt(index: number) {
  *
  * @since 2.0.0
  */
-export function lookup(index: number) {
+export function lookup(index: number): <A>(arr: ReadonlyArray<A>) => Option<A> {
   return <A>(as: ReadonlyArray<A>): Option<A> =>
     isOutOfBounds(index, as) ? none : some(as[index]);
 }
@@ -1505,7 +1515,9 @@ export const WrappableArray: Wrappable<KindArray> = { wrap };
 /**
  * @since 2.0.0
  */
-export const tap = createTap(FlatmappableArray);
+export const tap: <A>(
+  fa: (value: A) => void,
+) => (ua: ReadonlyArray<A>) => ReadonlyArray<A> = createTap(FlatmappableArray);
 
 /**
  * @since 2.0.0
