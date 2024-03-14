@@ -33,9 +33,9 @@ Some non-goals of functional are:
 ## Usage
 
 This library is a collection of smaller tools. This means that each one should
-be imported separately. There is no barrel export, instead once should pull in
+be imported separately. There is no barrel export, instead one should pull in
 the modules they need individually. Following is an example importing from jsr
-withing deno.
+using the deno runtime.
 
 ```ts
 import * as A from "jsr:@baetheus/fun/array";
