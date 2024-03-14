@@ -1,3 +1,12 @@
+/**
+ * This module contains a Kind and Schemable for the Arbitrary type from
+ * fast-check. An Arbitrary can be used to do property based testing as well as
+ * to generate random data.
+ *
+ * @experimental
+ * @module FastCheck
+ * @since 2.0.1
+ */
 import type * as FC from "npm:fast-check@3.14.0";
 import type { Kind, Out, Spread } from "../kind.ts";
 import type {
