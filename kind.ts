@@ -120,7 +120,6 @@ export interface Fix<A> extends Kind {
  */
 const HoldSymbol = Symbol("Hold");
 
-
 /**
  * The Hold interface allows one to trick the typescript compiler into holding
  * onto type information that it would otherwise discard. This is useful when

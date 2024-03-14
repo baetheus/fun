@@ -43,8 +43,8 @@ import { pipe } from "jsr:@baetheus/fun/fn";
 
 pipe(
   A.range(5), // get 5 numbers 0-4
-  A.map(n => n * n), // square them
-  console.log // [ 0, 1, 4, 9, 16 ]
+  A.map((n) => n * n), // square them
+  console.log, // [ 0, 1, 4, 9, 16 ]
 );
 ```
 
