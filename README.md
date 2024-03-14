@@ -1,4 +1,4 @@
-# functional [![Coverage Status](https://coveralls.io/repos/github/baetheus/fun/badge.svg?branch=main)](https://coveralls.io/github/baetheus/fun?branch=main) [![deno module](https://shield.deno.dev/x/fun)](https://deno.land/x/fun)
+# functional [![Coverage Status](https://coveralls.io/repos/github/baetheus/fun/badge.svg?branch=main)](https://coveralls.io/github/baetheus/fun?branch=main) [![deno module](https://shield.deno.dev/x/fun)](https://deno.land/x/fun) [![JSR](https://jsr.io/badges/@baetheus/fun)](https://jsr.io/@baetheus/fun)
 
 Functional is a no dependency utility library for TypeScript and JavaScript that
 includes a full suite of functional programming tools. Recent versions have
@@ -51,7 +51,7 @@ pipe(
 ## Documentation
 
 Documentation is generated for each github tagged release. The latest
-documentation can be found [here](https://deno.land/x/fun). Following is a list
+documentation can be found [here](https://jsr.io/@baetheus/fun). Following is a list
 of the [algebraic data types](https://en.wikipedia.org/wiki/Algebraic_data_type)
 and
 [algebraic structures](https://en.wikipedia.org/wiki/Algebraic_structure)/[type classes](https://en.wikipedia.org/wiki/Type_class)
