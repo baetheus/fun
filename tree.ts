@@ -9,9 +9,9 @@
 import type { $, Kind, Out } from "./kind.ts";
 import type { Applicable } from "./applicable.ts";
 import type { Comparable, Compare } from "./comparable.ts";
-import type { Flatmappable } from "./flatmappable.ts";
+import type { Bind, Flatmappable, Tap } from "./flatmappable.ts";
 import type { Foldable } from "./foldable.ts";
-import type { Mappable } from "./mappable.ts";
+import type { BindTo, Mappable } from "./mappable.ts";
 import type { Showable } from "./showable.ts";
 import type { Traversable } from "./traversable.ts";
 import type { Wrappable } from "./wrappable.ts";
@@ -290,14 +290,14 @@ export const WrappableTree: Wrappable<KindTree> = { wrap };
 /**
  * @since 2.0.0
  */
-export const tap = createTap(FlatmappableTree);
+export const tap: Tap<KindTree> = createTap(FlatmappableTree);
 
 /**
  * @since 2.0.0
  */
-export const bind = createBind(FlatmappableTree);
+export const bind: Bind<KindTree> = createBind(FlatmappableTree);
 
 /**
  * @since 2.0.0
  */
-export const bindTo = createBindTo(MappableTree);
+export const bindTo: BindTo<KindTree> = createBindTo(MappableTree);

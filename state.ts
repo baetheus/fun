@@ -11,9 +11,9 @@
 import type { InOut, Kind, Out } from "./kind.ts";
 import type { Applicable } from "./applicable.ts";
 import type { Combinable } from "./combinable.ts";
-import type { Flatmappable } from "./flatmappable.ts";
+import type { Bind, Flatmappable, Tap } from "./flatmappable.ts";
 import type { Initializable } from "./initializable.ts";
-import type { Mappable } from "./mappable.ts";
+import type { BindTo, Mappable } from "./mappable.ts";
 import type { Wrappable } from "./wrappable.ts";
 
 import { flow } from "./fn.ts";
@@ -356,14 +356,14 @@ export const WrappableState: Wrappable<KindState> = { wrap };
 /**
  * @since 2.0.0
  */
-export const tap = createTap(FlatmappableState);
+export const tap: Tap<KindState> = createTap(FlatmappableState);
 
 /**
  * @since 2.0.0
  */
-export const bind = createBind(FlatmappableState);
+export const bind: Bind<KindState> = createBind(FlatmappableState);
 
 /**
  * @since 2.0.0
  */
-export const bindTo = createBindTo(MappableState);
+export const bindTo: BindTo<KindState> = createBindTo(MappableState);

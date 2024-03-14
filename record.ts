@@ -229,11 +229,11 @@ export function map<A, I>(
 export function fold<A, O>(
   foao: (o: O, a: A, i: string) => O,
   o: O,
-) {
-  return (rec: ReadonlyRecord<A>): O => {
+): (ua: ReadonlyRecord<A>) => O {
+  return (ua) => {
     let result = o;
-    for (const key in rec) {
-      result = foao(result, rec[key], key);
+    for (const key in ua) {
+      result = foao(result, ua[key], key);
     }
     return result;
   };
@@ -321,7 +321,7 @@ export function collapse<A>(
  * const result2 = swapOption({ one: O.some(1), two: O.none }); // None
  * ```
  *
- * TODO: Revisit because mutability is bad here
+ * TODO: Revisit because mutability needs proof
  * @since 2.0.0
  */
 export function traverse<V extends Kind>(
@@ -384,6 +384,17 @@ type Sequence<U extends Kind, R extends ReadonlyRecord<AnySub<U>>> = $<U, [
 >;
 
 /**
+ * The return type of sequence for use with type inference.
+ *
+ * @since 2.0.0
+ */
+export type SequenceRecord<U extends Kind> = <
+  US extends ReadonlyRecord<AnySub<U>>,
+>(
+  values: NonEmptyRecord<US>,
+) => Sequence<U, US>;
+
+/**
  * Sequence over an ReadonlyRecord of type V, inverting the relationship between V and
  * ReadonlyRecord. This function also keeps the indexed types of in each V at
  * covariant position 0. In other words sequence over [Option<number>,
@@ -437,9 +448,10 @@ export function sequence<V extends Kind>(
  *
  * @since 2.0.0
  */
-export function insert<A>(value: A) {
-  return (key: string) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
-    rec[key] === value ? rec : { ...rec, [key]: value };
+export function insert<A>(
+  value: A,
+): (key: string) => (ua: ReadonlyRecord<A>) => ReadonlyRecord<A> {
+  return (key) => (ua) => ua[key] === value ? ua : { ...ua, [key]: value };
 }
 
 /**
@@ -467,9 +479,10 @@ export function insert<A>(value: A) {
  *
  * @since 2.0.0
  */
-export function insertAt(key: string) {
-  return <A>(value: A) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
-    rec[key] === value ? rec : { ...rec, [key]: value };
+export function insertAt(
+  key: string,
+): <A>(value: A) => (ua: ReadonlyRecord<A>) => ReadonlyRecord<A> {
+  return (value) => (ua) => ua[key] === value ? ua : { ...ua, [key]: value };
 }
 
 /**
@@ -495,13 +508,15 @@ export function insertAt(key: string) {
  *
  * @since 2.0.0
  */
-export function modify<A>(modifyFn: (a: A) => A) {
-  return (key: string) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> => {
-    if (Object.hasOwn(rec, key)) {
-      const out = modifyFn(rec[key]);
-      return out === rec[key] ? rec : { ...rec, [key]: out };
+export function modify<A>(
+  modifyFn: (a: A) => A,
+): (key: string) => (ua: ReadonlyRecord<A>) => ReadonlyRecord<A> {
+  return (key) => (ua) => {
+    if (Object.hasOwn(ua, key)) {
+      const out = modifyFn(ua[key]);
+      return out === ua[key] ? ua : { ...ua, [key]: out };
     }
-    return rec;
+    return ua;
   };
 }
 
@@ -530,14 +545,15 @@ export function modify<A>(modifyFn: (a: A) => A) {
  *
  * @since 2.0.0
  */
-export function modifyAt(key: string) {
-  return <A>(modifyFn: (a: A) => A) =>
-  (rec: ReadonlyRecord<A>): ReadonlyRecord<A> => {
-    if (Object.hasOwn(rec, key)) {
-      const out = modifyFn(rec[key]);
-      return out === rec[key] ? rec : { ...rec, [key]: out };
+export function modifyAt(
+  key: string,
+): <A>(modifyFn: (a: A) => A) => (ua: ReadonlyRecord<A>) => ReadonlyRecord<A> {
+  return (modifyFn) => (ua) => {
+    if (Object.hasOwn(ua, key)) {
+      const out = modifyFn(ua[key]);
+      return out === ua[key] ? ua : { ...ua, [key]: out };
     }
-    return rec;
+    return ua;
   };
 }
 
@@ -565,9 +581,10 @@ export function modifyAt(key: string) {
  *
  * @since 2.0.0
  */
-export function update<A>(value: A) {
-  return (key: string) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
-    Object.hasOwn(rec, key) ? { ...rec, [key]: value } : rec;
+export function update<A>(
+  value: A,
+): (key: string) => (ua: ReadonlyRecord<A>) => ReadonlyRecord<A> {
+  return (key) => (ua) => Object.hasOwn(ua, key) ? { ...ua, [key]: value } : ua;
 }
 
 /**
@@ -595,9 +612,11 @@ export function update<A>(value: A) {
  *
  * @since 2.0.0
  */
-export function updateAt(key: string) {
-  return <A>(value: A) => (rec: ReadonlyRecord<A>): ReadonlyRecord<A> =>
-    Object.hasOwn(rec, key) ? { ...rec, [key]: value } : rec;
+export function updateAt(
+  key: string,
+): <A>(value: A) => (ua: ReadonlyRecord<A>) => ReadonlyRecord<A> {
+  return (value) => (ua) =>
+    Object.hasOwn(ua, key) ? { ...ua, [key]: value } : ua;
 }
 
 /**
@@ -621,9 +640,8 @@ export function updateAt(key: string) {
  *
  * @since 2.0.0
  */
-export function lookupAt(key: string) {
-  return <A>(rec: ReadonlyRecord<A>): Option<A> =>
-    Object.hasOwn(rec, key) ? some(rec[key]) : none;
+export function lookupAt(key: string): <A>(ua: ReadonlyRecord<A>) => Option<A> {
+  return (ua) => Object.hasOwn(ua, key) ? some(ua[key]) : none;
 }
 
 /**
@@ -648,10 +666,12 @@ export function lookupAt(key: string) {
  *
  * @since 2.0.0
  */
-export function lookupWithKey(key: string) {
-  return <A>(record: ReadonlyRecord<A>): Option<Pair<string, A>> => {
-    if (Object.hasOwn(record, key)) {
-      return some([key, record[key]]);
+export function lookupWithKey(
+  key: string,
+): <A>(ua: ReadonlyRecord<A>) => Option<Pair<string, A>> {
+  return (ua) => {
+    if (Object.hasOwn(ua, key)) {
+      return some([key, ua[key]]);
     }
     return none;
   };
@@ -680,16 +700,16 @@ export function lookupWithKey(key: string) {
  *
  * @since 2.0.0
  */
-export function deleteAt(key: string) {
-  return <A>(
-    rec: ReadonlyRecord<A>,
-  ): ReadonlyRecord<A> => {
-    if (Object.hasOwn(rec, key)) {
-      const out = { ...rec };
+export function deleteAt(
+  key: string,
+): <A>(ua: ReadonlyRecord<A>) => ReadonlyRecord<A> {
+  return (ua) => {
+    if (Object.hasOwn(ua, key)) {
+      const out = { ...ua };
       delete out[key];
       return out;
     }
-    return rec;
+    return ua;
   };
 }
 
@@ -716,17 +736,17 @@ export function deleteAt(key: string) {
  *
  * @since 2.0.0
  */
-export function deleteAtWithValue(key: string) {
-  return <A>(
-    rec: ReadonlyRecord<A>,
-  ): Pair<ReadonlyRecord<A>, Option<A>> => {
-    if (Object.hasOwn(rec, key)) {
-      const out = { ...rec };
-      const value = rec[key];
+export function deleteAtWithValue(
+  key: string,
+): <A>(ua: ReadonlyRecord<A>) => Pair<ReadonlyRecord<A>, Option<A>> {
+  return (ua) => {
+    if (Object.hasOwn(ua, key)) {
+      const out = { ...ua };
+      const value = ua[key];
       delete out[key];
       return [out, some(value)];
     }
-    return [rec, none];
+    return [ua, none];
   };
 }
 

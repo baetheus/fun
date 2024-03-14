@@ -22,6 +22,18 @@ export interface Mappable<U extends Kind> extends Hold<U> {
 }
 
 /**
+ * The return type for the createBindTo function on Mappable. Useful to reduce
+ * type inference in documentation.
+ *
+ * @since 2.0.0
+ */
+export type BindTo<U extends Kind> = <N extends string>(
+  name: N,
+) => <A, B = never, C = never, D = unknown, E = unknown>(
+  ua: $<U, [A, B, C], [D], [E]>,
+) => $<U, [{ readonly [K in N]: A }, B, C], [D], [E]>;
+
+/**
  * Create a bindTo function from a structure with an instance of Mappable. A
  * bindTo function takes the inner value of the structure and maps it to the
  * value of a struct with the given name. It is useful for lifting the value

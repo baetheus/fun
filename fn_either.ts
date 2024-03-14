@@ -13,10 +13,10 @@ import type { Bimappable } from "./bimappable.ts";
 import type { Combinable } from "./combinable.ts";
 import type { Composable } from "./composable.ts";
 import type { Either } from "./either.ts";
-import type { Failable } from "./failable.ts";
-import type { Flatmappable } from "./flatmappable.ts";
+import type { Failable, Tap } from "./failable.ts";
+import type { Bind, Flatmappable } from "./flatmappable.ts";
 import type { Fn } from "./fn.ts";
-import type { Mappable } from "./mappable.ts";
+import type { BindTo, Mappable } from "./mappable.ts";
 import type { Predicate } from "./predicate.ts";
 import type { Premappable } from "./premappable.ts";
 import type { Refinement } from "./refinement.ts";
@@ -740,14 +740,14 @@ export const WrappableFnEither: Wrappable<KindFnEither> = { wrap };
 /**
  * @since 2.0.0
  */
-export const tap = createTap(FailableFnEither);
+export const tap: Tap<KindFnEither> = createTap(FailableFnEither);
 
 /**
  * @since 2.0.0
  */
-export const bind = createBind(FlatmappableFnEither);
+export const bind: Bind<KindFnEither> = createBind(FlatmappableFnEither);
 
 /**
  * @since 2.0.0
  */
-export const bindTo = createBindTo(MappableFnEither);
+export const bindTo: BindTo<KindFnEither> = createBindTo(MappableFnEither);

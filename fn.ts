@@ -10,8 +10,8 @@
 import type { In, Kind, Out } from "./kind.ts";
 import type { Applicable } from "./applicable.ts";
 import type { Composable } from "./composable.ts";
-import type { Flatmappable } from "./flatmappable.ts";
-import type { Mappable } from "./mappable.ts";
+import type { Bind, Flatmappable, Tap } from "./flatmappable.ts";
+import type { BindTo, Mappable } from "./mappable.ts";
 import type { Premappable } from "./premappable.ts";
 import type { Wrappable } from "./wrappable.ts";
 
@@ -903,14 +903,14 @@ export const WrappableFn: Wrappable<KindFn> = { wrap };
 /**
  * @since 2.0.0
  */
-export const tap = createTap(FlatmappableFn);
+export const tap: Tap<KindFn> = createTap(FlatmappableFn);
 
 /**
  * @since 2.0.0
  */
-export const bind = createBind(FlatmappableFn);
+export const bind: Bind<KindFn> = createBind(FlatmappableFn);
 
 /**
  * @since 2.0.0
  */
-export const bindTo = createBindTo(MappableFn);
+export const bindTo: BindTo<KindFn> = createBindTo(MappableFn);

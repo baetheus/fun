@@ -118,7 +118,8 @@ export interface Fix<A> extends Kind {
 /**
  * Create a scoped symbol for use with Hold.
  */
-declare const HoldSymbol: unique symbol;
+const HoldSymbol = Symbol("Hold");
+
 
 /**
  * The Hold interface allows one to trick the typescript compiler into holding

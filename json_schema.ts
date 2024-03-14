@@ -11,8 +11,8 @@
 import type { Kind, Out } from "./kind.ts";
 import type { Literal, Schemable, TupleSchemable } from "./schemable.ts";
 import type { Flatmappable } from "./flatmappable.ts";
-import type { NonEmptyArray } from "./array.ts";
-import type { ReadonlyRecord } from "./record.ts";
+import type { NonEmptyArray, SequenceArray } from "./array.ts";
+import type { ReadonlyRecord, SequenceRecord } from "./record.ts";
 import type { Combinable } from "./combinable.ts";
 import type { State } from "./state.ts";
 
@@ -217,12 +217,16 @@ export const FlatmappableJsonBuilder = FlatmappableState as Flatmappable<
 /**
  * @since 2.0.0
  */
-export const sequenceArray = sequenceA(FlatmappableJsonBuilder);
+export const sequenceArray: SequenceArray<KindJsonBuilder> = sequenceA(
+  FlatmappableJsonBuilder,
+);
 
 /**
  * @since 2.0.0
  */
-export const sequenceRecord = sequenceR(FlatmappableJsonBuilder);
+export const sequenceRecord: SequenceRecord<KindJsonBuilder> = sequenceR(
+  FlatmappableJsonBuilder,
+);
 
 /**
  * @since 2.0.0

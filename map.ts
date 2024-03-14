@@ -230,8 +230,8 @@ export function values<A>(O: Sortable<A>): <K>(ta: ReadonlyMap<K, A>) => A[] {
 export function fold<B, A, O>(
   foldr: (accumulator: O, value: A, key: B) => O,
   initial: O,
-) {
-  return (ua: ReadonlyMap<B, A>): O => {
+): (ua: ReadonlyMap<B, A>) => O {
+  return (ua) => {
     let result = initial;
     for (const [key, value] of ua.entries()) {
       result = foldr(result, value, key);
@@ -282,11 +282,9 @@ export function deleteAt<B>(
  */
 export function insert<B>(
   S: Comparable<B>,
-) {
+): <A>(value: A) => (key: B) => (ua: ReadonlyMap<B, A>) => ReadonlyMap<B, A> {
   const _lookup = lookupWithKey(S);
-  return <A>(value: A) =>
-  (key: B) =>
-  (map: ReadonlyMap<B, A>): ReadonlyMap<B, A> =>
+  return (value) => (key) => (map) =>
     pipe(
       _lookup(key)(map),
       O.match(
@@ -312,7 +310,7 @@ export function insert<B>(
  */
 export function insertAt<B>(
   S: Comparable<B>,
-) {
+): (key: B) => <A>(value: A) => (ua: ReadonlyMap<B, A>) => ReadonlyMap<B, A> {
   const _insert = insert(S);
   return (key: B) => <A>(value: A) => _insert(value)(key);
 }

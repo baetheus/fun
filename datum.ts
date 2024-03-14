@@ -9,13 +9,12 @@
 import type { $, Kind, Out } from "./kind.ts";
 import type { Applicable } from "./applicable.ts";
 import type { Combinable } from "./combinable.ts";
-import type { Filterable } from "./filterable.ts";
-import type { Mappable } from "./mappable.ts";
-import type { Wrappable } from "./wrappable.ts";
 import type { Comparable } from "./comparable.ts";
 import type { Either } from "./either.ts";
-import type { Flatmappable } from "./flatmappable.ts";
+import type { Filterable } from "./filterable.ts";
+import type { Bind, Flatmappable, Tap } from "./flatmappable.ts";
 import type { Initializable } from "./initializable.ts";
+import type { BindTo, Mappable } from "./mappable.ts";
 import type { Option } from "./option.ts";
 import type { Pair } from "./pair.ts";
 import type { Predicate } from "./predicate.ts";
@@ -23,6 +22,7 @@ import type { Refinement } from "./refinement.ts";
 import type { Showable } from "./showable.ts";
 import type { Sortable } from "./sortable.ts";
 import type { Traversable } from "./traversable.ts";
+import type { Wrappable } from "./wrappable.ts";
 
 import * as O from "./option.ts";
 import { createBind, createTap } from "./flatmappable.ts";
@@ -218,17 +218,17 @@ export function match<A, B>(
   onPending: () => B,
   onReplete: (a: A) => B,
   onRefresh: (a: A) => B,
-) {
-  return (ma: Datum<A>): B => {
-    switch (ma.tag) {
+): (ua: Datum<A>) => B {
+  return (ua) => {
+    switch (ua.tag) {
       case "Initial":
         return onInitial();
       case "Pending":
         return onPending();
       case "Refresh":
-        return onRefresh(ma.value);
+        return onRefresh(ua.value);
       case "Replete":
-        return onReplete(ma.value);
+        return onReplete(ua.value);
     }
   };
 }
@@ -236,8 +236,8 @@ export function match<A, B>(
 /**
  * @since 2.0.0
  */
-export function getOrElse<A>(onNone: () => A) {
-  return match<A, A>(onNone, onNone, identity, identity);
+export function getOrElse<A>(onNone: () => A): (ua: Datum<A>) => A {
+  return match(onNone, onNone, identity, identity);
 }
 
 /**
@@ -565,14 +565,14 @@ export const FilterableDatum: Filterable<KindDatum> = {
 /**
  * @since 2.0.0
  */
-export const tap = createTap(FlatmappableDatum);
+export const tap: Tap<KindDatum> = createTap(FlatmappableDatum);
 
 /**
  * @since 2.0.0
  */
-export const bind = createBind(FlatmappableDatum);
+export const bind: Bind<KindDatum> = createBind(FlatmappableDatum);
 
 /**
  * @since 2.0.0
  */
-export const bindTo = createBindTo(MappableDatum);
+export const bindTo: BindTo<KindDatum> = createBindTo(MappableDatum);

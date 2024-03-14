@@ -126,8 +126,10 @@ export function not<A>(predicate: Predicate<A>): Predicate<A> {
  *
  * @since 2.0.0
  */
-export function or<A>(second: Predicate<A>) {
-  return (first: Predicate<A>): Predicate<A> => (a) => first(a) || second(a);
+export function or<A>(
+  second: Predicate<A>,
+): (first: Predicate<A>) => Predicate<A> {
+  return (first) => (a) => first(a) || second(a);
 }
 
 /**
@@ -154,8 +156,10 @@ export function or<A>(second: Predicate<A>) {
  *
  * @since 2.0.0
  */
-export function and<A>(second: Predicate<A>) {
-  return (first: Predicate<A>): Predicate<A> => (a) => first(a) && second(a);
+export function and<A>(
+  second: Predicate<A>,
+): (first: Predicate<A>) => Predicate<A> {
+  return (first) => (a) => first(a) && second(a);
 }
 
 /**

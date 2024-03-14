@@ -16,11 +16,11 @@ import type { Applicable } from "./applicable.ts";
 import type { Combinable } from "./combinable.ts";
 import type { Composable } from "./composable.ts";
 import type { Either } from "./either.ts";
-import type { Flatmappable } from "./flatmappable.ts";
+import type { Bind, Flatmappable, Tap } from "./flatmappable.ts";
 import type { FnEither } from "./fn_either.ts";
 import type { Forest } from "./tree.ts";
 import type { Literal, Schemable } from "./schemable.ts";
-import type { Mappable } from "./mappable.ts";
+import type { BindTo, Mappable } from "./mappable.ts";
 import type { Predicate } from "./predicate.ts";
 import type { Premappable } from "./premappable.ts";
 import type { ReadonlyRecord } from "./record.ts";
@@ -1469,7 +1469,7 @@ export function union<B, I>(
  *
  * @since 2.0.0
  */
-export const _null = literal(null);
+export const _null: Decoder<unknown, null> = literal(null);
 
 /**
  * A decoder combinator that modifies an existing decoder to accept null as an
@@ -1499,7 +1499,7 @@ export function nullable<D, A>(
  *
  * @since 2.0.0
  */
-export const _undefined = literal(undefined);
+export const _undefined: Decoder<unknown, undefined> = literal(undefined);
 
 /**
  * A decoder combinator that modifies an existing decoder to accept undefined
@@ -1915,14 +1915,14 @@ export const WrappableDecoder: Wrappable<KindDecoder> = { wrap };
 /**
  * @since 2.0.0
  */
-export const tap = createTap(FlatmappableDecoder);
+export const tap: Tap<KindDecoder> = createTap(FlatmappableDecoder);
 
 /**
  * @since 2.0.0
  */
-export const bind = createBind(FlatmappableDecoder);
+export const bind: Bind<KindDecoder> = createBind(FlatmappableDecoder);
 
 /**
  * @since 2.0.0
  */
-export const bindTo = createBindTo(MappableDecoder);
+export const bindTo: BindTo<KindDecoder> = createBindTo(MappableDecoder);

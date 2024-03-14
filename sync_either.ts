@@ -12,11 +12,11 @@ import type { Applicable } from "./applicable.ts";
 import type { Bimappable } from "./bimappable.ts";
 import type { Combinable } from "./combinable.ts";
 import type { Either } from "./either.ts";
-import type { Failable } from "./failable.ts";
-import type { Flatmappable } from "./flatmappable.ts";
+import type { Failable, Tap } from "./failable.ts";
+import type { Bind, Flatmappable } from "./flatmappable.ts";
 import type { Foldable } from "./foldable.ts";
 import type { Initializable } from "./initializable.ts";
-import type { Mappable } from "./mappable.ts";
+import type { BindTo, Mappable } from "./mappable.ts";
 import type { Sync } from "./sync.ts";
 import type { Wrappable } from "./wrappable.ts";
 
@@ -274,14 +274,14 @@ export const WrappableSyncEither: Wrappable<KindSyncEither> = { wrap };
 /**
  * @since 2.0.0
  */
-export const tap = createTap(FailableSyncEither);
+export const tap: Tap<KindSyncEither> = createTap(FailableSyncEither);
 
 /**
  * @since 2.0.0
  */
-export const bind = createBind(FlatmappableSyncEither);
+export const bind: Bind<KindSyncEither> = createBind(FlatmappableSyncEither);
 
 /**
  * @since 2.0.0
  */
-export const bindTo = createBindTo(MappableSyncEither);
+export const bindTo: BindTo<KindSyncEither> = createBindTo(MappableSyncEither);

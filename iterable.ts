@@ -23,10 +23,10 @@ import type { Applicable } from "./applicable.ts";
 import type { Combinable } from "./combinable.ts";
 import type { Either } from "./either.ts";
 import type { Filterable } from "./filterable.ts";
-import type { Flatmappable } from "./flatmappable.ts";
+import type { Bind, Flatmappable, Tap } from "./flatmappable.ts";
 import type { Foldable } from "./foldable.ts";
 import type { Initializable } from "./initializable.ts";
-import type { Mappable } from "./mappable.ts";
+import type { BindTo, Mappable } from "./mappable.ts";
 import type { Option } from "./option.ts";
 import type { Pair } from "./pair.ts";
 import type { Predicate } from "./predicate.ts";
@@ -176,8 +176,8 @@ export function forEach<A>(fa: (a: A) => void): (ta: Iterable<A>) => void {
 export function fold<A, O>(
   foldr: (accumulator: O, value: A) => O,
   initial: O,
-) {
-  return (ua: Iterable<A>): O => {
+): (ua: Iterable<A>) => O {
+  return (ua) => {
     let out = initial;
     for (const a of ua) {
       out = foldr(out, a);
@@ -480,14 +480,14 @@ export const WrappableIterable: Wrappable<KindIterable> = {
 /**
  * @since 2.0.0
  */
-export const tap = createTap(FlatmappableIterable);
+export const tap: Tap<KindIterable> = createTap(FlatmappableIterable);
 
 /**
  * @since 2.0.0
  */
-export const bind = createBind(FlatmappableIterable);
+export const bind: Bind<KindIterable> = createBind(FlatmappableIterable);
 
 /**
  * @since 2.0.0
  */
-export const bindTo = createBindTo(FlatmappableIterable);
+export const bindTo: BindTo<KindIterable> = createBindTo(FlatmappableIterable);

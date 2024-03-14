@@ -11,8 +11,8 @@ import type { Applicable } from "./applicable.ts";
 import type { Combinable } from "./combinable.ts";
 import type { Either } from "./either.ts";
 import type { Initializable } from "./initializable.ts";
-import type { Mappable } from "./mappable.ts";
-import type { Flatmappable } from "./flatmappable.ts";
+import type { BindTo, Mappable } from "./mappable.ts";
+import type { Bind, Flatmappable, Tap } from "./flatmappable.ts";
 import type { Wrappable } from "./wrappable.ts";
 
 import * as E from "./either.ts";
@@ -505,14 +505,14 @@ export const WrappablePromise: Wrappable<KindPromise> = { wrap };
 /**
  * @since 2.0.0
  */
-export const tap = createTap(FlatmappablePromise);
+export const tap: Tap<KindPromise> = createTap(FlatmappablePromise);
 
 /**
  * @since 2.0.0
  */
-export const bind = createBind(FlatmappablePromise);
+export const bind: Bind<KindPromise> = createBind(FlatmappablePromise);
 
 /**
  * @since 2.0.0
  */
-export const bindTo = createBindTo(MappablePromise);
+export const bindTo: BindTo<KindPromise> = createBindTo(MappablePromise);

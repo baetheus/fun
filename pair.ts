@@ -382,7 +382,9 @@ export function fold<A, B, O>(
  *
  * @since 2.0.0
  */
-export function traverse<V extends Kind>(A: Applicable<V>) {
+export function traverse<V extends Kind>(A: Applicable<V>): <A, I, J, K, L, M>(
+  favi: (a: A) => $<V, [I, J, K], [L], [M]>,
+) => <B>(ua: Pair<A, B>) => $<V, [Pair<I, B>, J, K], [L], [M]> {
   return <A, I, J, K, L, M>(
     favi: (a: A) => $<V, [I, J, K], [L], [M]>,
   ): <B>(ua: Pair<A, B>) => $<V, [Pair<I, B>, J, K], [L], [M]> =>

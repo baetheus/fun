@@ -8,15 +8,15 @@
 
 import type { Kind, Out } from "./kind.ts";
 import type { Applicable } from "./applicable.ts";
-import type { Wrappable } from "./wrappable.ts";
-import type { Filterable } from "./filterable.ts";
-import type { Mappable } from "./mappable.ts";
-import type { Option } from "./option.ts";
-import type { Flatmappable } from "./flatmappable.ts";
 import type { Either } from "./either.ts";
+import type { Filterable } from "./filterable.ts";
+import type { Bind, Flatmappable, Tap } from "./flatmappable.ts";
+import type { BindTo, Mappable } from "./mappable.ts";
+import type { Option } from "./option.ts";
 import type { Pair } from "./pair.ts";
 import type { Predicate } from "./predicate.ts";
 import type { Refinement } from "./refinement.ts";
+import type { Wrappable } from "./wrappable.ts";
 
 import { createBind, createTap } from "./flatmappable.ts";
 import { createBindTo } from "./mappable.ts";
@@ -429,14 +429,18 @@ export const WrappableAsyncIterable: Wrappable<KindAsyncIterable> = { wrap };
 /**
  * @since 2.0.0
  */
-export const tap = createTap(FlatmappableAsyncIterable);
+export const tap: Tap<KindAsyncIterable> = createTap(FlatmappableAsyncIterable);
 
 /**
  * @since 2.0.0
  */
-export const bind = createBind(FlatmappableAsyncIterable);
+export const bind: Bind<KindAsyncIterable> = createBind(
+  FlatmappableAsyncIterable,
+);
 
 /**
  * @since 2.0.0
  */
-export const bindTo = createBindTo(MappableAsyncIterable);
+export const bindTo: BindTo<KindAsyncIterable> = createBindTo(
+  MappableAsyncIterable,
+);

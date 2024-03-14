@@ -11,8 +11,8 @@ import type { Kind, Out } from "./kind.ts";
 import type { Applicable } from "./applicable.ts";
 import type { Combinable } from "./combinable.ts";
 import type { Initializable } from "./initializable.ts";
-import type { Flatmappable } from "./flatmappable.ts";
-import type { Mappable } from "./mappable.ts";
+import type { Bind, Flatmappable, Tap } from "./flatmappable.ts";
+import type { BindTo, Mappable } from "./mappable.ts";
 import type { Sync } from "./sync.ts";
 import type { Wrappable } from "./wrappable.ts";
 
@@ -167,14 +167,14 @@ export const FlatmappableAsyncSeq: Flatmappable<KindAsync> = {
 /**
  * @since 2.0.0
  */
-export const tap = createTap(FlatmappableAsync);
+export const tap: Tap<KindAsync> = createTap(FlatmappableAsync);
 
 /**
  * @since 2.0.0
  */
-export const bind = createBind(FlatmappableAsync);
+export const bind: Bind<KindAsync> = createBind(FlatmappableAsync);
 
 /**
  * @since 2.0.0
  */
-export const bindTo = createBindTo(MappableAsync);
+export const bindTo: BindTo<KindAsync> = createBindTo(MappableAsync);

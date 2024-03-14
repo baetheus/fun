@@ -10,9 +10,9 @@
 import type { $, Kind, Out } from "./kind.ts";
 import type { Applicable } from "./applicable.ts";
 import type { Combinable } from "./combinable.ts";
-import type { Flatmappable } from "./flatmappable.ts";
+import type { Bind, Flatmappable, Tap } from "./flatmappable.ts";
 import type { Initializable } from "./initializable.ts";
-import type { Mappable } from "./mappable.ts";
+import type { BindTo, Mappable } from "./mappable.ts";
 import type { Foldable } from "./foldable.ts";
 import type { Traversable } from "./traversable.ts";
 import type { Wrappable } from "./wrappable.ts";
@@ -145,14 +145,14 @@ export const WrappableSync: Wrappable<KindSync> = { wrap };
 /**
  * @since 2.0.0
  */
-export const tap = createTap(FlatmappableSync);
+export const tap: Tap<KindSync> = createTap(FlatmappableSync);
 
 /**
  * @since 2.0.0
  */
-export const bind = createBind(FlatmappableSync);
+export const bind: Bind<KindSync> = createBind(FlatmappableSync);
 
 /**
  * @since 2.0.0
  */
-export const bindTo = createBindTo(MappableSync);
+export const bindTo: BindTo<KindSync> = createBindTo(MappableSync);

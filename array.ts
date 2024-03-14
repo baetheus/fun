@@ -13,9 +13,9 @@ import type { Combinable } from "./combinable.ts";
 import type { Comparable } from "./comparable.ts";
 import type { Either } from "./either.ts";
 import type { Filterable } from "./filterable.ts";
-import type { Flatmappable } from "./flatmappable.ts";
+import type { Bind, Flatmappable, Tap } from "./flatmappable.ts";
 import type { Initializable } from "./initializable.ts";
-import type { Mappable } from "./mappable.ts";
+import type { BindTo, Mappable } from "./mappable.ts";
 import type { Option } from "./option.ts";
 import type { Pair } from "./pair.ts";
 import type { Foldable } from "./foldable.ts";
@@ -845,6 +845,15 @@ type Sequence<U extends Kind, R extends AnySub<U>[]> = $<U, [
 >;
 
 /**
+ * The return type of sequence for use with type inference.
+ *
+ * @since 2.0.0
+ */
+export type SequenceArray<U extends Kind> = <US extends AnySub<U>[]>(
+  ...uas: US
+) => Sequence<U, US>;
+
+/**
  * Sequence over an array of type V, inverting the relationship between V and
  * ReadonlyArray. This function also keeps the indexed types of in each V at
  * covariant position 0. In other words sequence over [Option<number>,
@@ -1045,8 +1054,10 @@ export function updateAt(
  *
  * @since 2.0.0
  */
-export function modify<A>(modifyFn: (a: A) => A) {
-  return (index: number) => (arr: ReadonlyArray<A>): ReadonlyArray<A> =>
+export function modify<A>(
+  modifyFn: (a: A) => A,
+): (index: number) => (ua: ReadonlyArray<A>) => ReadonlyArray<A> {
+  return (index) => (arr) =>
     isOutOfBounds(index, arr)
       ? arr
       : _unsafeUpdateAt(index, modifyFn(arr[index]), arr);
@@ -1122,9 +1133,10 @@ export function lookup(index: number): <A>(arr: ReadonlyArray<A>) => Option<A> {
  *
  * @since 2.0.0
  */
-export function deleteAt(index: number) {
-  return <A>(arr: ReadonlyArray<A>): ReadonlyArray<A> =>
-    isOutOfBounds(index, arr) ? arr : _unsafeDeleteAt(index, arr);
+export function deleteAt(
+  index: number,
+): <A>(ua: ReadonlyArray<A>) => ReadonlyArray<A> {
+  return (arr) => isOutOfBounds(index, arr) ? arr : _unsafeDeleteAt(index, arr);
 }
 
 /**
@@ -1515,16 +1527,14 @@ export const WrappableArray: Wrappable<KindArray> = { wrap };
 /**
  * @since 2.0.0
  */
-export const tap: <A>(
-  fa: (value: A) => void,
-) => (ua: ReadonlyArray<A>) => ReadonlyArray<A> = createTap(FlatmappableArray);
+export const tap: Tap<KindArray> = createTap(FlatmappableArray);
 
 /**
  * @since 2.0.0
  */
-export const bind = createBind(FlatmappableArray);
+export const bind: Bind<KindArray> = createBind(FlatmappableArray);
 
 /**
  * @since 2.0.0
  */
-export const bindTo = createBindTo(MappableArray);
+export const bindTo: BindTo<KindArray> = createBindTo(MappableArray);

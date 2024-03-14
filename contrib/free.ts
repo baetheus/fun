@@ -80,13 +80,13 @@ export function isLink<A>(ua: Free<A>): ua is Link<A> {
 export function match<A, O>(
   onNode: (value: A) => O,
   onLink: (first: Free<A>, second: Free<A>) => O,
-) {
-  return (ta: Free<A>): O => {
-    switch (ta.tag) {
+): (ua: Free<A>) => O {
+  return (ua) => {
+    switch (ua.tag) {
       case "Node":
-        return onNode(ta.value);
+        return onNode(ua.value);
       case "Link":
-        return onLink(ta.first, ta.second);
+        return onLink(ua.first, ua.second);
     }
   };
 }

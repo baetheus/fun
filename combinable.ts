@@ -327,8 +327,10 @@ export function min<A>(sortable: Sortable<A>): Combinable<A> {
  *
  * @since 2.0.0
  */
-export function intercalcate<A>(middle: A) {
-  return ({ combine }: Combinable<A>): Combinable<A> =>
+export function intercalcate<A>(
+  middle: A,
+): (C: Combinable<A>) => Combinable<A> {
+  return ({ combine }) =>
     fromCombine((second) => (first) => combine(second)(combine(middle)(first)));
 }
 

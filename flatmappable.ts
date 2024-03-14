@@ -22,6 +22,18 @@ export interface Flatmappable<U extends Kind> extends Applicable<U>, Hold<U> {
 }
 
 /**
+ * The return type for the createTap function on Flatmappable. Useful to reduce
+ * type inference in documentation.
+ *
+ * @since 2.0.0
+ */
+export type Tap<U extends Kind> = <A>(
+  fn: (value: A) => void,
+) => <B = never, C = never, D = unknown, E = unknown>(
+  ua: $<U, [A, B, C], [D], [E]>,
+) => $<U, [A, B, C], [D], [E]>;
+
+/**
  * Create a tap function for a structure with instances of Wrappable and
  * Flatmappable. A tap function allows one to break out of the functional
  * codeflow. It is generally not advised to use tap for code flow but to
@@ -42,6 +54,32 @@ export function createTap<U extends Kind>(
       return wrap(a);
     });
 }
+
+/**
+ * The return type for the createBind function on Flatmappable. Useful to reduce
+ * type inference in documentation.
+ *
+ * @since 2.0.0
+ */
+export type Bind<U extends Kind> = <
+  N extends string,
+  A,
+  I,
+  J = never,
+  K = never,
+  L = unknown,
+  M = unknown,
+>(
+  name: Exclude<N, keyof A>,
+  faui: (a: A) => $<U, [I, J, K], [L], [M]>,
+) => <B = never, C = never, D extends L = L>(
+  ua: $<U, [A, B, C], [D], [M]>,
+) => $<
+  U,
+  [{ readonly [K in keyof A | N]: K extends keyof A ? A[K] : I }, B | J, C | K],
+  [D & L],
+  [M]
+>;
 
 /**
  * Create a bind function for a structure with instances of Mappable and

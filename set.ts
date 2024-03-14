@@ -12,10 +12,10 @@ import type { Combinable } from "./combinable.ts";
 import type { Comparable } from "./comparable.ts";
 import type { Either } from "./either.ts";
 import type { Filterable } from "./filterable.ts";
-import type { Flatmappable } from "./flatmappable.ts";
+import type { Bind, Flatmappable, Tap } from "./flatmappable.ts";
 import type { Foldable } from "./foldable.ts";
 import type { Initializable } from "./initializable.ts";
-import type { Mappable } from "./mappable.ts";
+import type { BindTo, Mappable } from "./mappable.ts";
 import type { Option } from "./option.ts";
 import type { Pair } from "./pair.ts";
 import type { Predicate } from "./predicate.ts";
@@ -737,7 +737,9 @@ const unsafeAdd = <A>(ua: ReadonlySet<A>) => (a: A): Set<A> => {
  */
 export function traverse<V extends Kind>(
   A: Applicable<V>,
-) {
+): <A, I, J, K, L, M>(
+  favi: (a: A) => $<V, [I, J, K], [L], [M]>,
+) => (ua: ReadonlySet<A>) => $<V, [ReadonlySet<I>, J, K], [L], [M]> {
   return <A, I, J, K, L, M>(
     favi: (a: A) => $<V, [I, J, K], [L], [M]>,
   ): (ua: ReadonlySet<A>) => $<V, [ReadonlySet<I>, J, K], [L], [M]> =>
@@ -934,14 +936,14 @@ export const WrappableSet: Wrappable<KindReadonlySet> = { wrap };
 /**
  * @since 2.0.0
  */
-export const tap = createTap(FlatmappableSet);
+export const tap: Tap<KindReadonlySet> = createTap(FlatmappableSet);
 
 /**
  * @since 2.0.0
  */
-export const bind = createBind(FlatmappableSet);
+export const bind: Bind<KindReadonlySet> = createBind(FlatmappableSet);
 
 /**
  * @since 2.0.0
  */
-export const bindTo = createBindTo(MappableSet);
+export const bindTo: BindTo<KindReadonlySet> = createBindTo(MappableSet);

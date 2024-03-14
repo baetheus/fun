@@ -14,10 +14,10 @@ import type { Async } from "./async.ts";
 import type { Bimappable } from "./bimappable.ts";
 import type { Combinable } from "./combinable.ts";
 import type { Either } from "./either.ts";
-import type { Failable } from "./failable.ts";
-import type { Flatmappable } from "./flatmappable.ts";
+import type { Failable, Tap } from "./failable.ts";
+import type { Bind, Flatmappable } from "./flatmappable.ts";
 import type { Initializable } from "./initializable.ts";
-import type { Mappable } from "./mappable.ts";
+import type { BindTo, Mappable } from "./mappable.ts";
 import type { Wrappable } from "./wrappable.ts";
 
 import * as E from "./either.ts";
@@ -483,14 +483,18 @@ export const WrappableAsyncEither: Wrappable<KindAsyncEither> = {
 /**
  * @since 2.0.0
  */
-export const tap = createTap(FailableAsyncEitherParallel);
+export const tap: Tap<KindAsyncEither> = createTap(FailableAsyncEitherParallel);
 
 /**
  * @since 2.0.0
  */
-export const bind = createBind(FlatmappableAsyncEitherParallel);
+export const bind: Bind<KindAsyncEither> = createBind(
+  FlatmappableAsyncEitherParallel,
+);
 
 /**
  * @since 2.0.0
  */
-export const bindTo = createBindTo(FlatmappableAsyncEitherParallel);
+export const bindTo: BindTo<KindAsyncEither> = createBindTo(
+  FlatmappableAsyncEitherParallel,
+);

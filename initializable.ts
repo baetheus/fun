@@ -142,8 +142,10 @@ export function dual<A>(M: Initializable<A>): Initializable<A> {
  *
  * @since 2.0.0
  */
-export function intercalcate<A>(middle: A) {
-  return ({ combine, init }: Initializable<A>): Initializable<A> => ({
+export function intercalcate<A>(
+  middle: A,
+): (I: Initializable<A>) => Initializable<A> {
+  return ({ combine, init }) => ({
     combine: (second) => combine(combine(second)(middle)),
     init,
   });

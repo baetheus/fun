@@ -23,8 +23,8 @@ import { fromPredicate } from "./option.ts";
 import { iso as _iso, prism as _prism } from "./optic.ts";
 import { identity, unsafeCoerce } from "./fn.ts";
 
-declare const BrandSymbol: unique symbol;
-declare const ValueSymbol: unique symbol;
+const BrandSymbol = Symbol("Brand");
+const ValueSymbol = Symbol("Value");
 
 /**
  * Create a branded type from an existing type. The branded

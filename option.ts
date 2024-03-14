@@ -13,9 +13,9 @@ import type { Combinable } from "./combinable.ts";
 import type { Comparable } from "./comparable.ts";
 import type { Either } from "./either.ts";
 import type { Filterable } from "./filterable.ts";
-import type { Flatmappable } from "./flatmappable.ts";
+import type { Bind, Flatmappable, Tap } from "./flatmappable.ts";
 import type { Initializable } from "./initializable.ts";
-import type { Mappable } from "./mappable.ts";
+import type { BindTo, Mappable } from "./mappable.ts";
 import type { Pair } from "./pair.ts";
 import type { Predicate } from "./predicate.ts";
 import type { Foldable } from "./foldable.ts";
@@ -230,8 +230,11 @@ export function tryCatch<D extends unknown[], A>(
  *
  * @since 2.0.0
  */
-export function match<A, B>(onNone: () => B, onSome: (a: A) => B) {
-  return (ta: Option<A>): B => (isNone(ta) ? onNone() : onSome(ta.value));
+export function match<A, B>(
+  onNone: () => B,
+  onSome: (a: A) => B,
+): (ua: Option<A>) => B {
+  return (ua) => (isNone(ua) ? onNone() : onSome(ua.value));
 }
 
 /**
@@ -250,8 +253,8 @@ export function match<A, B>(onNone: () => B, onSome: (a: A) => B) {
  *
  * @since 2.0.0
  */
-export function getOrElse<B>(onNone: () => B) {
-  return (ta: Option<B>): B => isNone(ta) ? onNone() : ta.value;
+export function getOrElse<B>(onNone: () => B): (ua: Option<B>) => B {
+  return (ua) => isNone(ua) ? onNone() : ua.value;
 }
 
 /**
@@ -864,14 +867,14 @@ export const WrappableOption: Wrappable<KindOption> = { wrap };
 /**
  * @since 2.0.0
  */
-export const tap = createTap(FlatmappableOption);
+export const tap: Tap<KindOption> = createTap(FlatmappableOption);
 
 /**
  * @since 2.0.0
  */
-export const bind = createBind(FlatmappableOption);
+export const bind: Bind<KindOption> = createBind(FlatmappableOption);
 
 /**
  * @since 2.0.0
  */
-export const bindTo = createBindTo(MappableOption);
+export const bindTo: BindTo<KindOption> = createBindTo(MappableOption);

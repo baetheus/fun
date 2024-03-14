@@ -35,6 +35,16 @@ export interface Failable<U extends Kind> extends Flatmappable<U>, Hold<U> {
 }
 
 /**
+ * The return type of createTryAll for Failable. Useful for reducing type
+ * inference in the docs.
+ *
+ * @since 2.0.0
+ */
+export type TryAll<U extends Kind> = <A, B, C, D, E>(
+  ...uas: NonEmptyArray<$<U, [A, B, C], [D], [E]>>
+) => $<U, [A, B, C], [D], [E]>;
+
+/**
  * Create a tryAll function from an instance of Failable. The tryAll function
  * allows the trying any number of Failable structures in order until a
  * non-failed one is found.
@@ -55,6 +65,19 @@ export function createTryAll<U extends Kind>(
     return out;
   };
 }
+
+/**
+ * The return type of createTap for Failable. Useful for reducing type
+ * inference in the docs.
+ *
+ * @since 2.0.0
+ */
+export type Tap<U extends Kind> = <A, B>(
+  onSuccess: (value: A) => void,
+  onFailure: (value: B) => void,
+) => <C = never, D = unknown, E = unknown>(
+  ua: $<U, [A, B, C], [D], [E]>,
+) => $<U, [A, B, C], [D], [E]>;
 
 /**
  * Create a tap function for a structure with instances of Wrappable and

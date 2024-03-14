@@ -168,10 +168,12 @@ export function length(a: string): number {
  *
  * @since 2.0.0
  */
-export function split(separator: string | RegExp) {
-  return (s: string): NonEmptyArray<string> => {
-    const out = s.split(separator);
-    return isNonEmpty(out) ? out : [s];
+export function split(
+  separator: string | RegExp,
+): (str: string) => NonEmptyArray<string> {
+  return (str) => {
+    const out = str.split(separator);
+    return isNonEmpty(out) ? out : [str];
   };
 }
 
@@ -192,8 +194,11 @@ export function split(separator: string | RegExp) {
  *
  * @since 2.0.0
  */
-export function includes(searchString: string, position?: number) {
-  return (s: string): boolean => s.includes(searchString, position);
+export function includes(
+  searchString: string,
+  position?: number,
+): (str: string) => boolean {
+  return (str) => str.includes(searchString, position);
 }
 
 /**
@@ -216,9 +221,9 @@ export function includes(searchString: string, position?: number) {
 export function startsWith<T extends string>(
   searchString: T,
   position?: number,
-) {
-  return (s: string): s is `${T}${string}` =>
-    s.startsWith(searchString, position);
+): (str: string) => str is `${T}${string}` {
+  return (str: string): str is `${T}${string}` =>
+    str.startsWith(searchString, position);
 }
 
 /**
@@ -238,9 +243,12 @@ export function startsWith<T extends string>(
  *
  * @since 2.0.0
  */
-export function endsWith<T extends string>(searchString: T, position?: number) {
-  return (s: string): s is `${string}${T}` =>
-    s.endsWith(searchString, position);
+export function endsWith<T extends string>(
+  searchString: T,
+  position?: number,
+): (str: string) => str is `${string}${T}` {
+  return (str: string): str is `${string}${T}` =>
+    str.endsWith(searchString, position);
 }
 
 /**
@@ -290,8 +298,11 @@ export function toLowerCase(a: string): string {
  *
  * @since 2.0.0
  */
-export function replace(searchValue: string | RegExp, replaceValue: string) {
-  return (s: string): string => s.replace(searchValue, replaceValue);
+export function replace(
+  searchValue: string | RegExp,
+  replaceValue: string,
+): (str: string) => string {
+  return (str) => str.replace(searchValue, replaceValue);
 }
 
 /**
@@ -394,8 +405,8 @@ export function plural(
  *
  * @since 2.0.0
  */
-export function slice(start: number, end: number) {
-  return (a: string): string => a.slice(start, end);
+export function slice(start: number, end: number): (str: string) => string {
+  return (str) => str.slice(start, end);
 }
 
 /**
@@ -416,8 +427,10 @@ export function slice(start: number, end: number) {
  *
  * @since 2.0.0
  */
-export function match(regex: RegExp) {
-  return (a: string): Option<RegExpMatchArray> => fromNullable(a.match(regex));
+export function match(
+  regex: RegExp,
+): (str: string) => Option<RegExpMatchArray> {
+  return (str) => fromNullable(str.match(regex));
 }
 
 /**
@@ -440,14 +453,14 @@ export function match(regex: RegExp) {
  *
  * @since 2.0.0
  */
-export function test(r: RegExp) {
-  return (s: string): boolean => {
+export function test(r: RegExp): (str: string) => boolean {
+  return (str) => {
     // See https://tinyurl.com/2fdh6458
     // RegExp.test keeps state from any runs,
     // this function resets that state to
     // avoid unexpected behavior
     const initialIndex = r.lastIndex;
-    const result = r.test(s);
+    const result = r.test(str);
     r.lastIndex = initialIndex;
     return result;
   };

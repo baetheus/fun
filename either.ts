@@ -13,12 +13,12 @@ import type { Applicable } from "./applicable.ts";
 import type { Bimappable } from "./bimappable.ts";
 import type { Combinable } from "./combinable.ts";
 import type { Comparable } from "./comparable.ts";
-import type { Failable } from "./failable.ts";
+import type { Failable, Tap } from "./failable.ts";
 import type { Filterable } from "./filterable.ts";
-import type { Flatmappable } from "./flatmappable.ts";
+import type { Bind, Flatmappable } from "./flatmappable.ts";
 import type { Foldable } from "./foldable.ts";
 import type { Initializable } from "./initializable.ts";
-import type { Mappable } from "./mappable.ts";
+import type { BindTo, Mappable } from "./mappable.ts";
 import type { Pair } from "./pair.ts";
 import type { Predicate } from "./predicate.ts";
 import type { Refinement } from "./refinement.ts";
@@ -96,10 +96,10 @@ export function fail<A = never, B = never>(b: B): Either<B, A> {
 /**
  * @since 2.0.0
  */
-export function fromNullable<E>(fe: () => E) {
-  return <A>(
-    a: A,
-  ): Either<E, NonNullable<A>> => (isNotNil(a) ? right(a) : left(fe()));
+export function fromNullable<E>(
+  fe: () => E,
+): <A>(value: A) => Either<E, NonNullable<A>> {
+  return (a) => (isNotNil(a) ? right(a) : left(fe()));
 }
 
 /**
@@ -146,8 +146,8 @@ export function match<L, R, B>(
 /**
  * @since 2.0.0
  */
-export function getOrElse<E, A>(onLeft: (e: E) => A) {
-  return (ma: Either<E, A>): A => isLeft(ma) ? onLeft(ma.left) : ma.right;
+export function getOrElse<E, A>(onLeft: (e: E) => A): (ua: Either<E, A>) => A {
+  return (ua) => isLeft(ua) ? onLeft(ua.left) : ua.right;
 }
 
 /**
@@ -507,14 +507,14 @@ export const WrappableEither: Wrappable<KindEither> = { wrap };
 /**
  * @since 2.0.0
  */
-export const tap = createTap(FailableEither);
+export const tap: Tap<KindEither> = createTap(FailableEither);
 
 /**
  * @since 2.0.0
  */
-export const bind = createBind(FlatmappableEither);
+export const bind: Bind<KindEither> = createBind(FlatmappableEither);
 
 /**
  * @since 2.0.0
  */
-export const bindTo = createBindTo(MappableEither);
+export const bindTo: BindTo<KindEither> = createBindTo(MappableEither);
