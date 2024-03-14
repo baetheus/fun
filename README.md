@@ -30,6 +30,24 @@ Some non-goals of functional are:
 - To be an exact port of fp-ts. Many changes have been implemented throughout
   functional that diverge sharply from fp-ts, this is often on purpose.
 
+## Usage
+
+This library is a collection of smaller tools. This means that each one should
+be imported separately. There is no barrel export, instead once should pull in
+the modules they need individually. Following is an example importing from jsr
+withing deno.
+
+```ts
+import * as A from "jsr:@baetheus/fun/array";
+import { pipe } from "jsr:@baetheus/fun/fn";
+
+pipe(
+  A.range(5), // get 5 numbers 0-4
+  A.map(n => n * n), // square them
+  console.log // [ 0, 1, 4, 9, 16 ]
+);
+```
+
 ## Documentation
 
 Documentation is generated for each github tagged release. The latest

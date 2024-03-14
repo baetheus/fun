@@ -20,7 +20,7 @@ jobs:
 
     strategy:
       matrix:
-        deno: ["v1.36"]
+        deno: ["v1.41.1"]
         os: [ubuntu-latest]
 
     steps:
@@ -40,7 +40,7 @@ jobs:
 
     strategy:
       matrix:
-        deno: ["v1.36"]
+        deno: ["v1.41.1"]
         # os: [macOS-latest, windows-latest, ubuntu-latest]
         os: [ubuntu-latest]
 
