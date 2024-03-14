@@ -51,9 +51,9 @@ pipe(
 ## Documentation
 
 Documentation is generated for each github tagged release. The latest
-documentation can be found [here](https://jsr.io/@baetheus/fun). Following is a list
-of the [algebraic data types](https://en.wikipedia.org/wiki/Algebraic_data_type)
-and
+documentation can be found [here](https://jsr.io/@baetheus/fun). Following is a
+list of the
+[algebraic data types](https://en.wikipedia.org/wiki/Algebraic_data_type) and
 [algebraic structures](https://en.wikipedia.org/wiki/Algebraic_structure)/[type classes](https://en.wikipedia.org/wiki/Type_class)
 that are implemented in fun. Note that some of these types are bote data
 structures and more general algebraic structures.

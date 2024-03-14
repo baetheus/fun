@@ -1,6 +1,6 @@
 {
   "name": "@baetheus/fun",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "exports": {
     "./applicable": "./applicable.ts",
     "./array": "./array.ts",
@@ -13,6 +13,7 @@
     "./comparable": "./comparable.ts",
     "./composable": "./composable.ts",
     "./datum": "./datum.ts",
+    "./datum_either": "./datum_either.ts",
     "./decoder": "./decoder.ts",
     "./either": "./either.ts",
     "./failable": "./failable.ts",
@@ -51,6 +52,7 @@
     "./traversable": "./traversable.ts",
     "./tree": "./tree.ts",
     "./wrappable": "./wrappable.ts",
+    "./contrib/dux": "./contrib/dux.ts",
     "./contrib/fast-check": "./contrib/fast-check.ts",
     "./contrib/free": "./contrib/free.ts",
     "./contrib/most": "./contrib/most.ts"

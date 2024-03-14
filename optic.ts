@@ -30,6 +30,7 @@
 
 import type { $, Kind } from "./kind.ts";
 import type { Comparable } from "./comparable.ts";
+import type { DatumEither } from "./datum_either.ts";
 import type { Initializable } from "./initializable.ts";
 import type { Either } from "./either.ts";
 import type { Flatmappable } from "./flatmappable.ts";
@@ -41,13 +42,14 @@ import type { Refinement } from "./refinement.ts";
 import type { Traversable } from "./traversable.ts";
 import type { Tree } from "./tree.ts";
 
-import * as I from "./identity.ts";
-import * as O from "./option.ts";
 import * as A from "./array.ts";
-import * as R from "./record.ts";
+import * as DE from "./datum_either.ts";
 import * as E from "./either.ts";
+import * as I from "./identity.ts";
 import * as M from "./map.ts";
+import * as O from "./option.ts";
 import * as P from "./pair.ts";
+import * as R from "./record.ts";
 import { TraversableSet } from "./set.ts";
 import { TraversableTree } from "./tree.ts";
 import { isNotNil } from "./nil.ts";
@@ -1520,3 +1522,21 @@ export const first: <U extends Tag, S, B, A>(
 export const second: <U extends Tag, S, B, A>(
   optic: Optic<U, S, Pair<A, B>>,
 ) => Optic<Align<U, LensTag>, S, B> = compose(lens(P.getSecond, P.mapSecond));
+
+/**
+ * @since 2.1.0
+ */
+export const success: <U extends Tag, S, B, A>(
+  optic: Optic<U, S, DatumEither<B, A>>,
+) => Optic<Align<U, AffineTag>, S, A> = compose(
+  prism(DE.getSuccess, DE.success, DE.map),
+);
+
+/**
+ * @since 2.1.0
+ */
+export const failure: <U extends Tag, S, B, A>(
+  optic: Optic<U, S, DatumEither<B, A>>,
+) => Optic<Align<U, AffineTag>, S, B> = compose(
+  prism(DE.getFailure, DE.failure, DE.mapSecond),
+);
