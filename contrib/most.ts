@@ -2,7 +2,7 @@ import type { $, Kind, Nest, Out } from "../kind.ts";
 import type { Applicable } from "../applicable.ts";
 import type { Bind, Flatmappable, Tap } from "../flatmappable.ts";
 import type { BindTo, Mappable } from "../mappable.ts";
-import type { Scheduler, Stream } from "npm:@most/types@1.1.0";
+import type { Scheduler, Sink, Stream } from "npm:@most/types@1.1.0";
 import type { Wrappable } from "../wrappable.ts";
 
 import * as M from "npm:@most/core@1.6.1";
@@ -69,6 +69,23 @@ export async function collect<A>(
   await M.runEffects(pipe(stream, M.tap((a) => as.push(a))), scheduler);
   return as;
 }
+
+export function sink<A>(
+  event: (time: number, value: A) => void,
+  error: (e: unknown) => void,
+  end: () => void,
+): Sink<A> {
+  return { event, end, error };
+}
+
+export const debugSink: Sink<unknown> = sink(
+  console.log,
+  console.error,
+  console.log,
+);
+
+const noop = () => {};
+export const voidSink: Sink<unknown> = sink(noop, noop, noop);
 
 export const wrap: Wrappable<KindStream>["wrap"] = M.now;
 
