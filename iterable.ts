@@ -38,6 +38,8 @@ import { isSome } from "./option.ts";
 import { isLeft, isRight } from "./either.ts";
 import { createBind, createTap } from "./flatmappable.ts";
 import { createBindTo } from "./mappable.ts";
+import { pipe } from "./fn.ts";
+import { not } from "./predicate.ts";
 
 /**
  * @since 2.0.0
@@ -260,20 +262,8 @@ export function partition<A>(
   return (ua) => {
     const cloned = clone(ua);
     return [
-      iterable(function* partitionFirst() {
-        for (const a of cloned) {
-          if (predicate(a)) {
-            yield a;
-          }
-        }
-      }),
-      iterable(function* partitionSecond() {
-        for (const a of cloned) {
-          if (!predicate(a)) {
-            yield a;
-          }
-        }
-      }),
+      pipe(cloned, filter(predicate)),
+      pipe(cloned, filter(not(predicate))),
     ];
   };
 }
