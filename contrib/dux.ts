@@ -1,10 +1,12 @@
 import type { DatumEither } from "../datum_either.ts";
+import type { Stream } from "./most.ts";
 import type { Lens } from "../optic.ts";
 
+import * as A from "../array.ts";
 import * as D from "../datum.ts";
 import * as DE from "../datum_either.ts";
+import * as M from "./most.ts";
 import * as O from "../optic.ts";
-
 import { pipe } from "../fn.ts";
 
 // =======
@@ -61,7 +63,7 @@ export type ActionCreator<P> =
 /**
  * Extract an Action type from an ActionCreator
  *
- * @since 8.0.0
+ * @since 2.1.0
  */
 export type ExtractAction<T> = T extends ActionCreator<infer P>[] ? Action<P>
   : never;
@@ -134,8 +136,6 @@ function tagFactory(...tags: string[]): ActionType {
  * The simplest way to create an action.
  * Generally, for all but the simplest of applications, using
  * actionCreatorsFactory is a better move.
- *
- * @since 7.0.0
  */
 export function actionFactory<P>(type: string): ActionFunction<P> {
   return ((value: P) => ({ type, value })) as ActionFunction<P>;
@@ -274,7 +274,7 @@ export function asyncReducerFactory<P, R, E, S>(
 /**
  * Filters actions by first section of action type to bypass sections of the store
  *
- * @since 7.1.0
+ * @since 2.1.0
  */
 export const filterReducer = <S>(
   match: string,
@@ -282,3 +282,137 @@ export const filterReducer = <S>(
 ): Reducer<S, ActionType> =>
 (state, action) =>
   action.type.startsWith(match) ? reducer(state, action) : state;
+
+// ============
+// MetaReducers
+// ============
+
+export type MetaReducer<S, A extends ActionType = ActionType> = (
+  reducer: Reducer<S, A>,
+) => Reducer<S, A>;
+
+export function metaReducerFn<S, A extends ActionType>(
+  metareducer: MetaReducer<S, A>,
+): MetaReducer<S, A> {
+  return metareducer;
+}
+
+// =======
+// Effects
+// =======
+
+/**
+ * @since 2.1.2
+ */
+export type Effect<A extends ActionType = ActionType> = (
+  a: A,
+) => Stream<ActionType>;
+
+/**
+ * @since 2.1.2
+ */
+export type EffectWide<A extends ActionType = ActionType> = (
+  a: A,
+) => ActionType | Promise<ActionType> | Stream<ActionType>;
+
+function liftAction(
+  action: ActionType | Promise<ActionType> | Stream<ActionType>,
+): Stream<ActionType> {
+  if ("type" in action) {
+    return M.wrap(action);
+  } else if ("then" in action) {
+    return M.fromPromise(action);
+  } else {
+    return action;
+  }
+}
+
+/**
+ * @since 2.1.2
+ */
+export function caseEff<P>(
+  action: ActionCreator<P>,
+  effect: EffectWide<Action<P>>,
+): Effect<ActionType> {
+  return (a) => action.match(a) ? liftAction(effect(a)) : M.empty();
+}
+
+/**
+ * @since 2.1.2
+ */
+export function caseEffs<A extends ActionCreator<unknown>[]>(
+  actionCreators: A,
+  effect: EffectWide<ExtractAction<A>>,
+): Effect<ActionType> {
+  return (a) =>
+    actionCreators.some(({ match }) => match(a))
+      ? liftAction(effect(<ExtractAction<A>> a))
+      : M.empty();
+}
+
+/**
+ * @since 2.1.2
+ */
+export function effectFn(
+  ...cases: ReadonlyArray<Effect<ActionType>>
+): Effect<ActionType> {
+  return (action) =>
+    pipe(
+      cases,
+      A.map((a) => liftAction(a(action))),
+      M.mergeArray,
+    );
+}
+
+// ==========
+// MetaEffect
+// ==========
+
+/**
+ * @since 2.1.2
+ */
+export type MetaEffect<A extends ActionType = ActionType> = (
+  effect: Effect<A>,
+) => Effect<A>;
+
+/**
+ * @since 2.1.2
+ */
+export function metaEffectFn<A extends ActionType>(
+  metaEffect: MetaEffect<A>,
+): MetaEffect<A> {
+  return metaEffect;
+}
+
+// =====
+// Store
+// =====
+
+/**
+ * @since 2.1.2
+ */
+export type Store<S> = {
+  readonly state: Stream<S>;
+  readonly dispatch: (action: ActionType) => void;
+};
+
+/**
+ * @since 2.1.2
+ */
+export function createStore<S>(
+  initial: S,
+  reducer: Reducer<S>,
+  effect: Effect = () => M.empty(),
+): Store<S> {
+  const [dispatch, dispatched] = M.createAdapter<ActionType>();
+  const state = pipe(
+    dispatched,
+    M.mergeMapConcurrently(
+      (a) => M.startWith(a, effect(a)),
+      Number.POSITIVE_INFINITY,
+    ),
+    M.scan(reducer, initial),
+  );
+
+  return { state, dispatch };
+}
