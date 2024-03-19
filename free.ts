@@ -9,10 +9,10 @@
  * @since 2.0.0
  */
 
-import type { Kind, Out } from "../kind.ts";
-import type { Combinable } from "../combinable.ts";
+import type { Kind, Out } from "./kind.ts";
+import type { Combinable } from "./combinable.ts";
 
-import { flow, pipe } from "../fn.ts";
+import { flow, pipe } from "./fn.ts";
 
 /**
  * @since 2.0.0

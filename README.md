@@ -55,7 +55,7 @@ documentation can be found [here](https://jsr.io/@baetheus/fun). Following is a
 list of the
 [algebraic data types](https://en.wikipedia.org/wiki/Algebraic_data_type) and
 [algebraic structures](https://en.wikipedia.org/wiki/Algebraic_structure)/[type classes](https://en.wikipedia.org/wiki/Type_class)
-that are implemented in fun. Note that some of these types are bote data
+that are implemented in fun. Note that some of these types are both data
 structures and more general algebraic structures.
 
 | Type                                 | Algebraic Data Type | Algebraic Structure | Native | Other Names                           |
@@ -102,6 +102,7 @@ structures and more general algebraic structures.
 | [Predicate](./predicate.ts)          | ✓                   |                     |        |                                       |
 | [Refinement](./refinement.ts)        | ✓                   |                     |        |                                       |
 | [State](./state.ts)                  | ✓                   |                     |        |                                       |
+| [Stream](./stream.ts)                | ✓                   |                     |        | Observable                            |
 | [Sync](./sync.ts)                    | ✓                   |                     |        | IO                                    |
 | [SyncEither](./sync_either.ts)       | ✓                   |                     |        | IOEither                              |
 | [These](./these.ts)                  | ✓                   |                     |        |                                       |
@@ -110,10 +111,10 @@ structures and more general algebraic structures.
 ## Major Versions
 
 In the fashion of semantic versioning function makes an effort to not break APIs
-on minor or patch releases. Occasionally, candidate tags (2.0.0-alpha.1) will be
-used to indicate a commit is ready for inspection by other developers of fun.
-The main branch of fun is for bleeding edge developement and is not considered
-to be a production ready import.
+on minor or patch releases. Occasionally, candidate tags (eg. 2.0.0-alpha.1)
+will be used to indicate a commit is ready for inspection by other developers of
+fun. The main branch of fun is for bleeding edge developement and is not
+considered to be a production ready import.
 
 | Version | Deno Release                                                    | TypeScript Version                                                   |
 | ------- | --------------------------------------------------------------- | -------------------------------------------------------------------- |
@@ -125,7 +126,7 @@ to be a production ready import.
 functional started as an exploratory project in late 2020 to learn more about
 higher kinded type implementations in TypeScript and to assess how much effort
 it would take to port fp-ts to a Deno-native format. Through that process it
-became clear that the things I had learned could serve as both a useful tool and
+became clear that the things I had learned could serve as both useful tools and
 as a learning resource in and of itself. At various times functional has used
 multiple hkt encodings, type class definitions, and implementation methods. Some
 of the key history moments of functional are in the hkts history. Specifically,
@@ -168,10 +169,5 @@ export. After that, if I'm behind on test coverage that is a great place to
 start. Last, if you wish to add a feature it's good to start a discussion about
 the feature with a few concrete use cases before submitting a PR. This will
 allow for others to chime in without crowding the issues section.
-
-Also, primary development takes places on one of my servers where I use fossil
-instead of git as a VCS. I still use github for interfacing with users and for
-releases, but if you wish to become a long term contributor learning to get
-around with fossil is a must.
 
 Thanks for you interest!

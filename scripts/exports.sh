@@ -1,3 +1,3 @@
 #!/usr/bin/env zsh
 
-for i in *.ts contrib/*.ts; do echo "\"${i:s/\.ts//}\": \"./$i\","; done
+for i in *.ts; do echo "\"./${i:s/\.ts//}\": \"./$i\","; done

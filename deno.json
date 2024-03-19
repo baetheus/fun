@@ -1,7 +1,8 @@
 {
   "name": "@baetheus/fun",
-  "version": "2.1.3",
+  "version": "2.2.0",
   "exports": {
+    "./ideas/dux": "./ideas/dux.ts",
     "./applicable": "./applicable.ts",
     "./array": "./array.ts",
     "./async": "./async.ts",
@@ -22,6 +23,7 @@
     "./fn": "./fn.ts",
     "./fn_either": "./fn_either.ts",
     "./foldable": "./foldable.ts",
+    "./free": "./free.ts",
     "./identity": "./identity.ts",
     "./initializable": "./initializable.ts",
     "./iterable": "./iterable.ts",
@@ -45,17 +47,14 @@
     "./showable": "./showable.ts",
     "./sortable": "./sortable.ts",
     "./state": "./state.ts",
+    "./stream": "./stream.ts",
     "./string": "./string.ts",
     "./sync": "./sync.ts",
     "./sync_either": "./sync_either.ts",
     "./these": "./these.ts",
     "./traversable": "./traversable.ts",
     "./tree": "./tree.ts",
-    "./wrappable": "./wrappable.ts",
-    "./contrib/dux": "./contrib/dux.ts",
-    "./contrib/fast-check": "./contrib/fast-check.ts",
-    "./contrib/free": "./contrib/free.ts",
-    "./contrib/most": "./contrib/most.ts"
+    "./wrappable": "./wrappable.ts"
   },
   "include": [
     "LICENSE",

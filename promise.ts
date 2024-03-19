@@ -135,7 +135,8 @@ export function abortable<B>(
 }
 
 /**
- * Create a Promise<void> that resolve after ms milliseconds.
+ * Create a Promise<void> that resolve after ms milliseconds that can also be
+ * disposed early.
  *
  * @example
  * ```ts
@@ -153,8 +154,26 @@ export function abortable<B>(
  *
  * @since 2.0.0
  */
-export function wait(ms: number): Promise<void> {
-  return new Promise((res) => setTimeout(res, ms));
+export function wait(ms: number): Promise<number> & Disposable {
+  const disposable = {} as unknown as Disposable;
+  const result = new Promise<number>((res) => {
+    let open = true;
+    const resolve = () => {
+      if (open) {
+        open = false;
+        res(ms);
+      }
+    };
+    const handle = setTimeout(resolve, ms);
+    disposable[Symbol.dispose] = () => {
+      if (open) {
+        clearTimeout(handle);
+        resolve();
+      }
+    };
+  });
+
+  return Object.assign(result, disposable);
 }
 
 /**

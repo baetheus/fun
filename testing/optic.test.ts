@@ -41,30 +41,6 @@ Deno.test("Optics _unsafeCast", () => {
   assertExists(O._unsafeCast(fold, O.FoldTag));
 });
 
-Deno.test("Optics viewer", () => {
-  const lens = O.viewer(O.LensTag, (n: number) => n);
-  const affine = O.viewer(
-    O.AffineTag,
-    (n: number) => n > 0 ? Op.some(n) : Op.none,
-  );
-  const fold = O.viewer(O.FoldTag, (n: number[]) => n);
-
-  assertEquals(lens.view(1), 1);
-  assertEquals(affine.view(0), Op.none);
-  assertEquals(affine.view(1), Op.some(1));
-  assertEquals(fold.view([1]), [1]);
-});
-
-Deno.test("Optics modifier", () => {
-  const mod = O.modifier(E.map);
-  assertStrictEquals(mod.modify, E.map);
-});
-
-Deno.test("Optics reviewer", () => {
-  const rev = O.reviewer(E.wrap);
-  assertStrictEquals(rev.review, E.wrap);
-});
-
 Deno.test("Optics optic", () => {
   const optic = O.optic<O.LensTag, P.Pair<number, number>, number>(
     O.LensTag,
@@ -76,7 +52,7 @@ Deno.test("Optics optic", () => {
   assertStrictEquals(optic.view, P.getFirst);
   assertStrictEquals(optic.modify, P.map);
 
-  const optic2 = O.optic<O.AffineTag, Op.Option<number>, number>(
+  const optic2 = O.optic<O.AffineTag, Op.Option<number>, number, O.YesRev>(
     O.AffineTag,
     identity,
     Op.map,
@@ -203,25 +179,6 @@ Deno.test("Optic fromPredicate", () => {
   assertStrictEquals(noninit.tag, O.AffineTag);
 });
 
-Deno.test("Optic view", () => {
-  assertEquals(pipe(O.id<number>(), O.view(1)), 1);
-});
-
-Deno.test("Optic modify", () => {
-  const mod = pipe(O.id<number>(), O.modify(inc));
-  assertEquals(mod(1), 2);
-});
-
-Deno.test("Optic replace", () => {
-  const set = pipe(O.id<number>(), O.replace(0));
-  assertEquals(set(1), 0);
-});
-
-Deno.test("Optic review", () => {
-  const shift = O.iso((n: number) => n + 1, (n) => n - 1);
-  assertEquals(pipe(shift, O.review(1)), 0);
-});
-
 Deno.test("Optic id", () => {
   const id = O.id<number>();
 
@@ -282,21 +239,15 @@ Deno.test("Optic compost", () => {
   assertStrictEquals(ff.tag, O.FoldTag);
 });
 
-Deno.test("Optic composeReviewer", () => {
-  const trivial = pipe(O.id<number>(), O.composeReviewer(O.id<number>()));
-
-  assertEquals(trivial.review(1), 1);
-
-  const some = <A>() => O.prism<Op.Option<A>, A>(identity, Op.wrap, Op.map);
-  const arr = <A>() => O.refold<ReadonlyArray<A>, A>(identity, A.wrap, A.map);
-  const opArr = pipe(some<ReadonlyArray<number>>(), O.composeReviewer(arr()));
-
-  assertEquals(opArr.review(1), Op.some([1]));
-});
-
 Deno.test("Optic wrap", () => {
   const value = { one: 1 };
-  assertStrictEquals(O.wrap(value).view(null), value);
+  const optic = O.wrap(value);
+
+  assertStrictEquals(optic.view({ one: 2 }), value);
+  assertEquals(optic.modify(({ one }) => ({ one: one + 1 }))(value), {
+    one: 2,
+  });
+  assertStrictEquals(optic.review(value), value);
 });
 
 Deno.test("Optic imap", () => {
@@ -335,7 +286,7 @@ Deno.test("Optic prop", () => {
 
 Deno.test("Optic index", () => {
   const atOne = pipe(O.id<readonly string[]>(), O.index(1));
-  const double = pipe(atOne, O.modify((s) => s + s));
+  const double = atOne.modify((s) => s + s);
 
   const value = ["Hello", "World"];
 
@@ -348,7 +299,7 @@ Deno.test("Optic index", () => {
 
 Deno.test("Optic key", () => {
   const atOne = pipe(O.id<Record<string, string>>(), O.key("one"));
-  const double = pipe(atOne, O.modify((s) => s + s));
+  const double = atOne.modify((s) => s + s);
 
   const value = { one: "one", two: "two" };
 
@@ -363,8 +314,8 @@ Deno.test("Optic key", () => {
 
 Deno.test("Optic atKey", () => {
   const atOne = pipe(O.id<Record<string, number>>(), O.atKey("one"));
-  const double = pipe(atOne, O.modify(Op.map(inc)));
-  const remove = pipe(atOne, O.replace(Op.constNone()));
+  const double = atOne.modify(Op.map(inc));
+  const remove = atOne.modify(Op.constNone);
 
   const value = { one: 1, two: 2 };
 
@@ -390,11 +341,8 @@ Deno.test("Optic filter", () => {
   const filterRefine = pipe(O.id<Array<number>>(), O.filter(refine));
   const filterPred = pipe(O.id<number>(), O.filter(pred));
 
-  const refineInc = pipe(
-    filterRefine,
-    O.modify(([val]): [number] => [inc(val)]),
-  );
-  const predInc = pipe(filterPred, O.modify(inc));
+  const refineInc = filterRefine.modify(([val]): [number] => [inc(val)]);
+  const predInc = filterPred.modify(inc);
 
   assertEquals(filterRefine.view([]), Op.none);
   assertEquals(filterRefine.view([1]), Op.some([1]));
@@ -410,8 +358,8 @@ Deno.test("Optic atMap", () => {
   const atMap = O.atMap(N.ComparableNumber);
   const one = pipe(O.id<ReadonlyMap<number, number>>(), atMap(1));
 
-  const double = pipe(one, O.modify(Op.map(inc)));
-  const remove = pipe(one, O.replace(Op.constNone()));
+  const double = one.modify(Op.map(inc));
+  const remove = one.modify(Op.constNone);
 
   const m1 = new Map<number, number>();
   const m2 = new Map([[1, 1]]);
@@ -440,7 +388,7 @@ Deno.test("Optic traverse", () => {
     O.prop("tree"),
     O.traverse(T.TraversableTree),
   );
-  const increase = pipe(num, O.modify(inc));
+  const increase = num.modify(inc);
 
   const s1: State = { tree: T.tree(1) };
   const s2: State = { tree: T.tree(1, [T.tree(2, [T.tree(3)])]) };
@@ -475,7 +423,7 @@ Deno.test("Optic combineAll", () => {
 
 Deno.test("Optic record", () => {
   const optic = pipe(O.id<ReadonlyRecord<number>>(), O.record);
-  const incr = pipe(optic, O.modify(inc));
+  const incr = optic.modify(inc);
 
   assertEquals(optic.view({}), []);
   assertEquals(optic.view({ one: 1, two: 2 }), [1, 2]);
@@ -485,7 +433,7 @@ Deno.test("Optic record", () => {
 
 Deno.test("Optic array", () => {
   const optic = pipe(O.id<ReadonlyArray<number>>(), O.array);
-  const incr = pipe(optic, O.modify(inc));
+  const incr = optic.modify(inc);
 
   assertEquals(optic.view([]), []);
   assertEquals(optic.view([1, 2]), [1, 2]);
@@ -495,7 +443,7 @@ Deno.test("Optic array", () => {
 
 Deno.test("Optic set", () => {
   const optic = pipe(O.id<ReadonlySet<number>>(), O.set);
-  const incr = pipe(optic, O.modify(inc));
+  const incr = optic.modify(inc);
 
   assertEquals(optic.view(S.init()), []);
   assertEquals(optic.view(S.set(1, 2)), [1, 2]);
@@ -505,7 +453,7 @@ Deno.test("Optic set", () => {
 
 Deno.test("Optic tree", () => {
   const optic = pipe(O.id<T.Tree<number>>(), O.tree);
-  const incr = pipe(optic, O.modify(inc));
+  const incr = optic.modify(inc);
 
   assertEquals(optic.view(T.tree(1)), [1]);
   assertEquals(optic.view(T.tree(1, [T.tree(2)])), [1, 2]);
@@ -515,7 +463,7 @@ Deno.test("Optic tree", () => {
 
 Deno.test("Optic nil", () => {
   const optic = pipe(O.id<number | null | undefined>(), O.nil);
-  const incr = pipe(optic, O.modify(inc));
+  const incr = optic.modify(inc);
 
   assertEquals(optic.view(undefined), Op.none);
   assertEquals(optic.view(null), Op.none);
@@ -527,7 +475,7 @@ Deno.test("Optic nil", () => {
 
 Deno.test("Optic some", () => {
   const optic = pipe(O.id<Option<number>>(), O.some);
-  const incr = pipe(optic, O.modify(inc));
+  const incr = optic.modify(inc);
 
   assertEquals(optic.view(Op.none), Op.none);
   assertEquals(optic.view(Op.some(1)), Op.some(1));
@@ -537,7 +485,7 @@ Deno.test("Optic some", () => {
 
 Deno.test("Optic right", () => {
   const optic = pipe(O.id<Either<number, number>>(), O.right);
-  const incr = pipe(optic, O.modify(inc));
+  const incr = optic.modify(inc);
 
   assertEquals(optic.view(E.left(1)), Op.none);
   assertEquals(optic.view(E.right(1)), Op.some(1));
@@ -547,7 +495,7 @@ Deno.test("Optic right", () => {
 
 Deno.test("Optic left", () => {
   const optic = pipe(O.id<Either<number, number>>(), O.left);
-  const incr = pipe(optic, O.modify(inc));
+  const incr = optic.modify(inc);
 
   assertEquals(optic.view(E.right(1)), Op.none);
   assertEquals(optic.view(E.left(1)), Op.some(1));
@@ -557,7 +505,7 @@ Deno.test("Optic left", () => {
 
 Deno.test("Optic first", () => {
   const optic = pipe(O.id<Pair<number, number>>(), O.first);
-  const incr = pipe(optic, O.modify(inc));
+  const incr = optic.modify(inc);
 
   assertEquals(optic.view(P.pair(1, 2)), 1);
   assertEquals(incr(P.pair(1, 2)), P.pair(2, 2));
@@ -565,7 +513,7 @@ Deno.test("Optic first", () => {
 
 Deno.test("Optic second", () => {
   const optic = pipe(O.id<Pair<number, number>>(), O.second);
-  const incr = pipe(optic, O.modify(inc));
+  const incr = optic.modify(inc);
 
   assertEquals(optic.view(P.pair(1, 2)), 2);
   assertEquals(incr(P.pair(1, 2)), P.pair(1, 3));

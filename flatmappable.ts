@@ -13,10 +13,12 @@ import type { Applicable } from "./applicable.ts";
 /**
  * A Flatmappable structure.
  */
-export interface Flatmappable<U extends Kind> extends Applicable<U>, Hold<U> {
+export interface Flatmappable<
+  U extends Kind,
+> extends Applicable<U>, Hold<U> {
   readonly flatmap: <A, I, J = never, K = never, L = unknown, M = unknown>(
     fati: (a: A) => $<U, [I, J, K], [L], [M]>,
-  ) => <B = never, C = never, D extends L = L>(
+  ) => <B = never, C = never, D = unknown>(
     ta: $<U, [A, B, C], [D], [M]>,
   ) => $<U, [I, B | J, C | K], [D & L], [M]>;
 }

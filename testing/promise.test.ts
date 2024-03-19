@@ -71,6 +71,10 @@ Deno.test("Promise wait", async () => {
   await waiter;
   const end = Date.now();
   assertEquals(end - start >= 100, true);
+
+  {
+    using _ = P.wait(100);
+  }
 });
 
 Deno.test("Promise delay", async () => {

@@ -70,7 +70,7 @@ export type AnyNonEmptyArray = NonEmptyArray<any>;
  *
  * @since 2.0.0
  */
-export interface KindArray extends Kind {
+export interface KindReadonlyArray extends Kind {
   readonly kind: ReadonlyArray<Out<this, 0>>;
 }
 
@@ -849,7 +849,7 @@ type Sequence<U extends Kind, R extends AnySub<U>[]> = $<U, [
  *
  * @since 2.0.0
  */
-export type SequenceArray<U extends Kind> = <US extends AnySub<U>[]>(
+export type SequenceArray<U extends Kind> = <const US extends AnySub<U>[]>(
   ...uas: US
 ) => Sequence<U, US>;
 
@@ -874,7 +874,7 @@ export type SequenceArray<U extends Kind> = <US extends AnySub<U>[]>(
  */
 export function sequence<V extends Kind>(
   A: Applicable<V>,
-): <VS extends AnySub<V>[]>(
+): <const VS extends AnySub<V>[]>(
   ...ua: VS
 ) => Sequence<V, VS> {
   // deno-lint-ignore no-explicit-any
@@ -1203,6 +1203,33 @@ export function binarySearch<A>(
   };
 }
 
+export function monoSearch<A>(
+  { sort }: Sortable<A>,
+): (value: A, sorted: ReadonlyArray<A>) => number {
+  return (value, sorted) => {
+    if (sorted.length === 0) {
+      return 0;
+    }
+
+    let bot = 0;
+    let mid: number;
+    let top = sorted.length;
+    let ordering;
+
+    while (top > 1) {
+      mid = Math.floor(top / 2);
+      ordering = sort(value, sorted[bot + mid]);
+
+      if (ordering >= 0) {
+        bot += mid;
+      }
+      top -= mid;
+    }
+
+    return sort(value, sorted[bot]) === 0 ? bot : bot + 1;
+  };
+}
+
 /**
  * Given an Sortable<A> construct a curried insert function that inserts values into
  * a new array in a sorted fashion. Internally this uses binarySearch to find
@@ -1474,7 +1501,7 @@ export function getInitializableArray<A = never>(): Initializable<
 /**
  * @since 2.0.0
  */
-export const ApplicableArray: Applicable<KindArray> = {
+export const ApplicableArray: Applicable<KindReadonlyArray> = {
   apply,
   map,
   wrap,
@@ -1483,7 +1510,7 @@ export const ApplicableArray: Applicable<KindArray> = {
 /**
  * @since 2.0.0
  */
-export const FilterableArray: Filterable<KindArray> = {
+export const FilterableArray: Filterable<KindReadonlyArray> = {
   filter,
   filterMap,
   partition,
@@ -1493,7 +1520,7 @@ export const FilterableArray: Filterable<KindArray> = {
 /**
  * @since 2.0.0
  */
-export const FlatmappableArray: Flatmappable<KindArray> = {
+export const FlatmappableArray: Flatmappable<KindReadonlyArray> = {
   wrap,
   map,
   apply,
@@ -1503,17 +1530,17 @@ export const FlatmappableArray: Flatmappable<KindArray> = {
 /**
  * @since 2.0.0
  */
-export const MappableArray: Mappable<KindArray> = { map };
+export const MappableArray: Mappable<KindReadonlyArray> = { map };
 
 /**
  * @since 2.0.0
  */
-export const FoldableArray: Foldable<KindArray> = { fold };
+export const FoldableArray: Foldable<KindReadonlyArray> = { fold };
 
 /**
  * @since 2.0.0
  */
-export const TraversableArray: Traversable<KindArray> = {
+export const TraversableArray: Traversable<KindReadonlyArray> = {
   map,
   fold,
   traverse,
@@ -1522,19 +1549,19 @@ export const TraversableArray: Traversable<KindArray> = {
 /**
  * @since 2.0.0
  */
-export const WrappableArray: Wrappable<KindArray> = { wrap };
+export const WrappableArray: Wrappable<KindReadonlyArray> = { wrap };
 
 /**
  * @since 2.0.0
  */
-export const tap: Tap<KindArray> = createTap(FlatmappableArray);
+export const tap: Tap<KindReadonlyArray> = createTap(FlatmappableArray);
 
 /**
  * @since 2.0.0
  */
-export const bind: Bind<KindArray> = createBind(FlatmappableArray);
+export const bind: Bind<KindReadonlyArray> = createBind(FlatmappableArray);
 
 /**
  * @since 2.0.0
  */
-export const bindTo: BindTo<KindArray> = createBindTo(MappableArray);
+export const bindTo: BindTo<KindReadonlyArray> = createBindTo(MappableArray);

@@ -52,6 +52,15 @@ export function fromIterable<A>(ta: Iterable<A>): AsyncIterable<A> {
 }
 
 /**
+ * @since 2.2.0
+ */
+export function fromPromise<A>(ua: Promise<A>): AsyncIterable<A> {
+  return asyncIterable(async function* () {
+    yield await ua;
+  });
+}
+
+/**
  * @since 2.0.0
  */
 export function range(
@@ -68,6 +77,21 @@ export function range(
       value += step;
     }
   });
+}
+
+export function loop<A, B, S>(
+  stepper: (state: S, value: A) => [S, B],
+  seed: S,
+): (ua: AsyncIterable<A>) => AsyncIterable<B> {
+  return (ua) =>
+    asyncIterable(async function* () {
+      let hold: S = seed;
+      for await (const a of ua) {
+        const [next, value] = stepper(hold, a);
+        hold = next;
+        yield value;
+      }
+    });
 }
 
 /**
@@ -340,18 +364,13 @@ export function takeWhile<A>(
  * @since 2.0.0
  */
 export function scan<A, O>(
-  foldr: (accumulator: O, value: A, index: number) => O,
-  initial: O,
+  scanner: (accumulator: O, value: A) => O,
+  seed: O,
 ): (ta: AsyncIterable<A>) => AsyncIterable<O> {
-  return (ta) =>
-    asyncIterable(async function* () {
-      let result = initial;
-      let index = 0;
-      for await (const a of ta) {
-        result = foldr(result, a, index++);
-        yield result;
-      }
-    });
+  return loop((accumulator, value) => {
+    const result = scanner(accumulator, value);
+    return [result, result];
+  }, seed);
 }
 
 /**

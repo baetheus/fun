@@ -9,7 +9,6 @@
 
 import type { $, Hold, Kind, Spread } from "./kind.ts";
 import type { NonEmptyArray } from "./array.ts";
-import type { ReadonlyRecord } from "./record.ts";
 
 import { memoize } from "./fn.ts";
 
@@ -99,7 +98,7 @@ export interface UndefinableSchemable<U extends Kind> extends Hold<U> {
 export interface RecordSchemable<U extends Kind> extends Hold<U> {
   readonly record: <A, B, C, D, E>(
     codomain: $<U, [A, B, C], [D], [E]>,
-  ) => $<U, [ReadonlyRecord<A>, B, C], [D], [E]>;
+  ) => $<U, [Record<string, A>, B, C], [D], [E]>;
 }
 
 /**

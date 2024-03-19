@@ -82,13 +82,25 @@ export type FoldTag = typeof FoldTag;
  */
 export type Tag = LensTag | AffineTag | FoldTag;
 
+export const YesRev = "YesRev" as const;
+export type YesRev = typeof YesRev;
+
+export const NoRev = "NoRev" as const;
+export type NoRev = typeof NoRev;
+
+export type Rev = YesRev | NoRev;
+
+export type AlignRev<A extends Rev, B extends Rev> = A extends YesRev
+  ? B extends YesRev ? YesRev : NoRev
+  : NoRev;
+
 /**
  * A type level mapping from an Optic Tag to its associated output Kind. This is
  * used to substitute the container of the output of a view function.
  */
 type ToKind<T extends Tag> = T extends LensTag ? I.KindIdentity
   : T extends AffineTag ? O.KindOption
-  : T extends FoldTag ? A.KindArray
+  : T extends FoldTag ? A.KindReadonlyArray
   : never;
 /**
  * A type level computation of Optic Tags. When composing the view functions of
@@ -129,7 +141,6 @@ function align<A extends Tag, B extends Tag>(
  * * AffineTag => AffineTag
  * * AffineTag => FoldTag
  * * FoldTag => FoldTag
- *
  * The following are unsupported casts which will throw at runtime:
  *
  * * AffineTag => LensTag
@@ -140,30 +151,30 @@ function align<A extends Tag, B extends Tag>(
  * to extend its functionality by replicating the cast logic, these cases must
  * be considered.
  */
-export function _unsafeCast<U extends Tag, V extends Tag, S, A>(
-  viewer: Viewer<U, S, A>,
+export function _unsafeCast<U extends Tag, V extends Tag, S, A, R extends Rev>(
+  optic: Optic<U, S, A, R>,
   tag: V,
-): Viewer<V, S, A>["view"] {
-  type Out = Viewer<V, S, A>["view"];
+): Optic<V, S, A, R>["view"] {
+  type Out = Optic<V, S, A, R>["view"];
   // Covers Lens => Lens, AffineFold => AffineFold, Fold => Fold
-  if (viewer.tag === tag as LensTag) {
-    return viewer.view as Out;
+  if (optic.tag === tag as LensTag) {
+    return optic.view as Out;
     // AffineFold => Fold
-  } else if (tag === FoldTag && viewer.tag === AffineTag) {
+  } else if (tag === FoldTag && optic.tag === AffineTag) {
     return (s: S) => {
-      const ua = viewer.view(s) as Option<A>;
+      const ua = optic.view(s) as Option<A>;
       return (O.isNone(ua) ? [] : [ua.value]) as ReturnType<Out>;
     };
     // Lens => Fold
-  } else if (tag === FoldTag && viewer.tag === LensTag) {
-    return (s: S) => [viewer.view(s)] as ReturnType<Out>;
+  } else if (tag === FoldTag && optic.tag === LensTag) {
+    return (s: S) => [optic.view(s)] as ReturnType<Out>;
     // Lens => AffineFold
-  } else if (tag === AffineTag && viewer.tag == LensTag) {
-    return (s) => O.wrap(viewer.view(s)) as ReturnType<Out>;
+  } else if (tag === AffineTag && optic.tag == LensTag) {
+    return (s) => O.wrap(optic.view(s)) as ReturnType<Out>;
   }
   // Non-valid casts will throw an error at runtime.
   // This is not reachable with the combinators in this lib.
-  throw new Error(`Attempted to cast ${viewer.tag} to ${tag}`);
+  throw new Error(`Attempted to cast ${optic.tag} to ${tag}`);
 }
 
 /**
@@ -188,49 +199,29 @@ function getFlatmappable<T extends Tag>(tag: T): Flatmappable<ToKind<T>> {
 }
 
 /**
- * A Viewer<T, S, A> implements a view function `(s: S) => T<A>`. This is
- * effectively a Kliesli Arrow. The valid types of T are Identity, Option, and
- * Array. Viewer also includes a runtime tag corresponding to the return type of
- * the view function to aid in composition.
- *
- * @since 2.0.0
- */
-export interface Viewer<T extends Tag, S, A> {
-  readonly tag: T;
-  readonly view: (s: S) => $<ToKind<T>, [A, never, never]>;
-}
-
-/**
- * The Modifier<S, A> type implements the modify function
- * `(mod: (a: A) => A) => (s: S) => S`. This type is directly composable and
- * from it one can recover set/replace behavior.
- *
- * @since 2.0.0
- */
-export interface Modifier<S, A> {
-  readonly modify: (modifyFn: (a: A) => A) => (s: S) => S;
-}
-
-/**
- * The Reviewer<S, A. type implements the review function `(a: A) => S`. This
- * type is directly composable and is used when the S type in Viewer<U, S, A>
- * can be reconstructed from A. Some examples are constructing `Option<number>`
- * from `number`, `Array<number>` from `number`, etc.
- *
- * @since 2.0.0
- */
-export interface Reviewer<S, A> {
-  readonly review: (a: A) => S;
-}
-
-/**
  * An Optic<T, S, A> is defined as a Viewer<T, S, A> combined with a Modifier<S,
  * A>. This is the root type for the specific types of Optics defined below.
  *
  * @since 2.0.0
  */
-export interface Optic<T extends Tag, S, A>
-  extends Viewer<T, S, A>, Modifier<S, A> {}
+export interface Optic<T extends Tag, S, A, R extends Rev = NoRev> {
+  readonly tag: T;
+  readonly view: (s: S) => $<ToKind<T>, [A, never, never]>;
+  readonly modify: (modifyFn: (a: A) => A) => (s: S) => S;
+  readonly review: R extends YesRev ? (a: A) => S : never;
+}
+
+export type TagOf<U> = U extends Optic<infer T, infer _, infer __, infer ___>
+  ? T
+  : never;
+
+export type ViewOf<U> = U extends Optic<infer _, infer S, infer __, infer ___>
+  ? S
+  : never;
+
+export type TypeOf<U> = U extends Optic<infer _, infer __, infer A, infer ___>
+  ? A
+  : never;
 
 /**
  * Lens<S, A> is an alias of Optic<LensTag, S, A>. This means that the view
@@ -249,7 +240,7 @@ export type Lens<S, A> = Optic<LensTag, S, A>;
  *
  * @since 2.0.0
  */
-export type Iso<S, A> = Lens<S, A> & Reviewer<S, A>;
+export type Iso<S, A> = Optic<LensTag, S, A, YesRev>;
 
 /**
  * AffineFold<S, A> is an alias of Optic<AffineTag, S, A>. This means the view
@@ -272,7 +263,7 @@ export type AffineFold<S, A> = Optic<AffineTag, S, A>;
  *
  * @since 2.0.0
  */
-export type Prism<S, A> = AffineFold<S, A> & Reviewer<S, A>;
+export type Prism<S, A> = Optic<AffineTag, S, A, YesRev>;
 
 /**
  * Fold<S, A> is an alias of Optic<FoldTag, S, A>. This means that the view
@@ -293,96 +284,7 @@ export type Fold<S, A> = Optic<FoldTag, S, A>;
  *
  * @since 2.0.0
  */
-export type Refold<S, A> = Fold<S, A> & Reviewer<S, A>;
-
-/**
- * Construct a Viewer<T, S, A> from a tag T and a view function that matches
- * said tag. This is a raw constructor and is generally only useful if there is
- * a case where a structure can be lensed into but not reconstructed or
- * traversed. However, this is the core composable structure of optics, as they
- * are primarily meant as a way to retrieve data from an existing structure.
- *
- * @example The "Lens" viewer retrieves a single value that always exists.
- * ```ts
- * import type { Pair } from "./pair.ts";
- *
- * import * as O from "./optic.ts";
- * import * as P from "./pair.ts";
- *
- * const fst = <A, B = unknown>() => O.viewer<O.LensTag, Pair<A, B>, A>(
- *   O.LensTag,
- *   P.getFirst,
- * );
- *
- * const numPair = fst<number, number>();
- *
- * const result1 = numPair.view(P.pair(1, 2)); // 1
- * const result2 = numPair.view(P.pair(2, 1)); // 2
- * ```
- *
- * @example The "Affine" viewer retrieves a single value that might exists.
- * ```ts
- * import type { Either } from "./either.ts";
- *
- * import * as O from "./optic.ts";
- * import * as E from "./either.ts";
- *
- * const right = <R, L = unknown>() => O.viewer<O.AffineTag, Either<L, R>, R>(
- *   O.AffineTag,
- *   E.getRight,
- * );
- *
- * const numberEither = right<number, string>();
- *
- * const result1 = numberEither.view(E.right(1)); // Some(1)
- * const result2 = numberEither.view(E.left("Hello")); // None
- * ```
- *
- * @example The "Fold" viewer retrieves zero or more values as an Array.
- * ```ts
- * import * as O from "./optic.ts";
- *
- * const record = <A>() => O.viewer<O.FoldTag, Record<string, A>, A>(
- *   O.FoldTag,
- *   Object.values,
- * );
- *
- * const numberRecord = record<number>();
- *
- * const result = numberRecord.view({
- *   "one": 1,
- *   "two": 2,
- * }); // [1, 2]
- * ```
- *
- * @since 2.0.0
- */
-export function viewer<T extends Tag, S, A>(
-  tag: T,
-  view: (s: S) => $<ToKind<T>, [A, never, never]>,
-): Viewer<T, S, A> {
-  return { tag, view };
-}
-
-/**
- * Construct a Modifier<S, A. from a modify function.
- *
- * @since 2.0.0
- */
-export function modifier<S, A>(
-  modify: (modifyFn: (a: A) => A) => (s: S) => S,
-): Modifier<S, A> {
-  return { modify };
-}
-
-/**
- * Construct a Reviewer<S, A> from a review function.
- *
- * @since 2.0.0
- */
-export function reviewer<S, A>(review: (a: A) => S): Reviewer<S, A> {
-  return { review };
-}
+export type Refold<S, A> = Optic<FoldTag, S, A, YesRev>;
 
 /**
  * Construct an Optic<U, S, A> & Reviewer<S, A> from a tag as well as view,
@@ -390,31 +292,15 @@ export function reviewer<S, A>(review: (a: A) => S): Reviewer<S, A> {
  *
  * @since 2.0.0
  */
-export function optic<U extends Tag, S, A>(
-  tag: U,
-  view: (s: S) => $<ToKind<U>, [A, never, never]>,
-  modify: (modifyFn: (a: A) => A) => (s: S) => S,
-  review: (a: A) => S,
-): Optic<U, S, A> & Reviewer<S, A>;
-/**
- * Construct an Optic<U, S, A> from a tag as well as view and modify functions.
- *
- * @since 2.0.0
- */
-export function optic<U extends Tag, S, A>(
-  tag: U,
-  view: (s: S) => $<ToKind<U>, [A, never, never]>,
-  modify: (modifyFn: (a: A) => A) => (s: S) => S,
-): Optic<U, S, A>;
-export function optic<U extends Tag, S, A>(
+export function optic<U extends Tag, S, A, R extends Rev = NoRev>(
   tag: U,
   view: (s: S) => $<ToKind<U>, [A, never, never]>,
   modify: (modifyFn: (a: A) => A) => (s: S) => S,
   review?: (a: A) => S,
-): Optic<U, S, A> | Optic<U, S, A> & Reviewer<S, A> {
-  return typeof review === "function"
+): Optic<U, S, A, R> {
+  return (typeof review === "function"
     ? { tag, view, modify, review }
-    : { tag, view, modify };
+    : { tag, view, modify }) as Optic<U, S, A, R>;
 }
 
 /**
@@ -663,114 +549,6 @@ export function fromPredicate<A>(predicate: Predicate<A>): Prism<A, A> {
 }
 
 /**
- * A pipeable view function that applies a value S to a Viewer<S, A>. It will
- * return either a raw value, an option, or a readonlyarray based on the tag of
- * the Viewer. Note: All Optics are Viewers.
- *
- * @example
- * ```ts
- * import * as O from "./optic.ts";
- * import { pipe } from "./fn.ts";
- *
- * type Foo = { readonly bar: number };
- *
- * const bar = pipe(O.id<Foo>(), O.prop("bar"));
- *
- * const result = pipe(bar, O.view({ bar: 1 })); // 1
- * ```
- *
- * @since 2.0.0
- */
-export function view<S>(
-  s: S,
-): <U extends Tag, A>(
-  viewer: Viewer<U, S, A>,
-) => ReturnType<typeof viewer.view> {
-  return (viewer) => viewer.view(s);
-}
-
-/**
- * A pipeable modify function that applies a modification function to a
- * Modifier<S, A> modify function. It will return a function S -> S that applies
- * the modify function according to the type of optic. Note: All Optics are
- * Modifiers.
- *
- * @example
- * ```ts
- * import * as O from "./optic.ts";
- * import { pipe } from "./fn.ts";
- *
- * type Person = { readonly name: string };
- *
- * const name = pipe(O.id<Person>(), O.prop("name"));
- *
- * const upper = pipe(name, O.modify(s => s.toUpperCase()));
- *
- * const result1 = upper({ name: "brandon" }); // { name: "BRANDON" }
- * ```
- *
- * @since 2.0.0
- */
-export function modify<A>(faa: (a: A) => A): <S>(
-  modifier: Modifier<S, A>,
-) => ReturnType<typeof modifier.modify> {
-  return (modifier) => modifier.modify(faa);
-}
-
-/**
- * A pipeable replace function, that uses the modify function of an Optic to
- * replace an existing value over the structure S.
- *
- * @example
- * ```ts
- * import * as O from "./optic.ts";
- * import { pipe } from "./fn.ts";
- *
- * type Person = { name: string };
- *
- * const name = pipe(O.id<Person>(), O.prop("name"));
- * const toBrandon = pipe(name, O.replace("Brandon"));
- *
- * const tina: Person = { name: "Tina" }
- *
- * const result = toBrandon(tina); // { name: "Brandon" }
- * ```
- *
- * @since 2.0.0
- */
-export function replace<A>(a: A): <S>(
-  modifier: Modifier<S, A>,
-) => (s: S) => S {
-  const value = () => a;
-  return (modifier) => modifier.modify(value);
-}
-
-/**
- * A pipeable review function that applies a value A to the the review function
- * of a Reviewer<S, A>. It returns a value S.
- *
- * @example
- * ```ts
- * import * as O from "./optic.ts";
- * import * as S from "./set.ts";
- * import { pipe } from "./fn.ts";
- *
- * const numberSet = O.refold<ReadonlySet<number>, number>(
- *   Array.from,
- *   S.wrap,
- *   S.map,
- * );
- *
- * const result = pipe(numberSet, O.review(1)); // ReadonlySet(1)
- * ```
- *
- * @since 2.0.0
- */
-export function review<A>(a: A): <S>(reviewer: Reviewer<S, A>) => S {
-  return (reviewer) => reviewer.review(a);
-}
-
-/**
  * All id functions for Optics are satisfied by iso(identity, identity). Thus,
  * we construct a singleton to cut down on computation. Generally, this function
  * will be inlined.
@@ -800,6 +578,12 @@ export function id<A>(): Iso<A, A> {
   return _identity;
 }
 
+function hasReview<T extends Tag, S, A>(
+  optic: Optic<T, S, A, Rev>,
+): optic is Optic<T, S, A, YesRev> {
+  return Object.hasOwn(optic, "review") && typeof optic.review === "function";
+}
+
 /**
  * Compose two optics, aligning their tag and building the composition using
  * natural transformations and monadic chaining for the view function and using
@@ -826,11 +610,11 @@ export function id<A>(): Iso<A, A> {
  *   even,
  *   O.compose(positive),
  * );
- * const addTwo = pipe(evenPos, O.modify(n => n + 2));
+ * const addTwo = evenPos.modify(n => n + 2);
  *
- * const result1 = pipe(evenPos, O.view(0)); // None
- * const result2 = pipe(evenPos, O.view(1)); // None
- * const result3 = pipe(evenPos, O.view(2)); // Some(2)
+ * const result1 = evenPos.view(0); // None
+ * const result2 = evenPos.view(1); // None
+ * const result3 = evenPos.view(2); // Some(2)
  * const result4 = addTwo(0); // 0
  * const result5 = addTwo(1); // 1
  * const result6 = addTwo(2); // 2
@@ -838,14 +622,14 @@ export function id<A>(): Iso<A, A> {
  *
  * @since 2.0.0
  */
-export function compose<V extends Tag, A, I>(
-  second: Optic<V, A, I>,
-): <U extends Tag, S>(
-  first: Optic<U, S, A>,
-) => Optic<Align<U, V>, S, I> {
-  return <U extends Tag, S>(
-    first: Optic<U, S, A>,
-  ): Optic<Align<U, V>, S, I> => {
+export function compose<V extends Tag, A, I, R2 extends Rev>(
+  second: Optic<V, A, I, R2>,
+): <U extends Tag, S, R1 extends Rev>(
+  first: Optic<U, S, A, R1>,
+) => Optic<Align<U, V>, S, I, AlignRev<R1, R2>> {
+  return <U extends Tag, S, R1 extends Rev>(
+    first: Optic<U, S, A, R1>,
+  ): Optic<Align<U, V>, S, I, AlignRev<R1, R2>> => {
     const tag = align(first.tag, second.tag);
     const _chain = getFlatmappable(tag).flatmap;
     const _first = _unsafeCast(first, tag);
@@ -854,40 +638,13 @@ export function compose<V extends Tag, A, I>(
     const view = flow(_first, _chain(_second));
     const modify = flow(second.modify, first.modify);
 
+    if (hasReview(first) && hasReview(second)) {
+      const review = flow(second.review, first.review);
+      return optic(tag, view, modify, review);
+    }
+
     return optic(tag, view, modify);
   };
-}
-
-/**
- * Compose two reviewer functions, allowing one to create nested Reviewer
- * structures.
- *
- * @example
- * ```ts
- * import * as O from "./optic.ts";
- * import * as S from "./set.ts";
- * import { pipe } from "./fn.ts";
- *
- * const set = <A>() => O.refold<ReadonlySet<A>, A>(
- *   Array.from,
- *   S.wrap,
- *   S.map,
- * );
- *
- * const sets = pipe(
- *   set<ReadonlySet<number>>(),
- *   O.composeReviewer(set()),
- * );
- *
- * const result = sets.review(1); // Set(Set(1))
- * ```
- *
- * @since 2.0.0
- */
-export function composeReviewer<A, I>(
-  second: Reviewer<A, I>,
-): <S>(first: Reviewer<S, A>) => Reviewer<S, I> {
-  return (first) => reviewer((i) => first.review(second.review(i)));
 }
 
 /**
@@ -906,8 +663,8 @@ export function composeReviewer<A, I>(
  *
  * @since 2.0.0
  */
-export function wrap<A, S = unknown>(a: A): Viewer<LensTag, S, A> {
-  return viewer(LensTag, (_: S) => a);
+export function wrap<A>(a: A): Iso<A, A> {
+  return iso(() => a, identity, (faa) => faa);
 }
 
 /**
@@ -933,9 +690,9 @@ export function wrap<A, S = unknown>(a: A): Viewer<LensTag, S, A> {
 export function imap<A, I>(
   fai: (a: A) => I,
   fia: (i: I) => A,
-): <U extends Tag, S>(
-  first: Optic<U, S, A>,
-) => Optic<Align<U, LensTag>, S, I> {
+): <U extends Tag, S, R extends Rev>(
+  first: Optic<U, S, A, R>,
+) => Optic<Align<U, LensTag>, S, I, AlignRev<R, YesRev>> {
   return compose(iso(fai, fia));
 }
 
@@ -957,9 +714,9 @@ export function imap<A, I>(
  * const brandon: Person = { name: "Brandon", age: 37 };
  * const emily: Person = { name: "Emily", age: 35 };
  *
- * const result1 = pipe(name, O.view(brandon)); // "Brandon"
- * const result2 = pipe(name, O.view(emily)); // "Emily"
- * const result3 = pipe(age, O.view(brandon)); // 37
+ * const result1 = name.view(brandon); // "Brandon"
+ * const result2 = name.view(emily); // "Emily"
+ * const result3 = age.view(brandon); // 37
  * const result4 = pipe(brandon, name.modify(toUpperCase));
  * // { name: "BRANDON", age: 37 }
  * ```
@@ -968,7 +725,9 @@ export function imap<A, I>(
  */
 export function prop<A, P extends keyof A>(
   prop: P,
-): <U extends Tag, S>(sa: Optic<U, S, A>) => Optic<Align<U, LensTag>, S, A[P]> {
+): <U extends Tag, S, R extends Rev>(
+  sa: Optic<U, S, A, R>,
+) => Optic<Align<U, LensTag>, S, A[P]> {
   return compose(lens((s: A) => s[prop], (fii) => (a) => {
     const out = fii(a[prop]);
     return a[prop] === out ? a : { ...a, [prop]: out };
@@ -999,16 +758,16 @@ export function prop<A, P extends keyof A>(
  *   published: new Date("May 01 1979"),
  * };
  *
- * const result1 = pipe(short, O.view(suttree));
+ * const result1 = short.view(suttree);
  * // { title: "Suttree", description: "Cormac on Cormac" }
  * ```
  *
  * @since 2.0.0
  */
-export function props<A extends ReadonlyRecord<unknown>, P extends keyof A>(
+export function props<A extends Record<string, unknown>, P extends keyof A>(
   ...props: [P, P, ...Array<P>]
-): <U extends Tag, S>(
-  first: Optic<U, S, A>,
+): <U extends Tag, S, R extends Rev>(
+  first: Optic<U, S, A, R>,
 ) => Optic<Align<U, LensTag>, S, { [K in P]: A[K] }> {
   const pick = R.pick<A, P>(...props);
   return compose(lens(
@@ -1036,16 +795,16 @@ export function props<A extends ReadonlyRecord<unknown>, P extends keyof A>(
  *   O.index(1),
  * );
  *
- * const result1 = pipe(second, O.view([])); // None
- * const result2 = pipe(second, O.view(["Hello", "World"])); // Some("World")
+ * const result1 = second.view([]); // None
+ * const result2 = second.view(["Hello", "World"]); // Some("World")
  * ```
  *
  * @since 2.0.0
  */
 export function index(
   index: number,
-): <U extends Tag, S, A>(
-  first: Optic<U, S, ReadonlyArray<A>>,
+): <U extends Tag, S, A, R extends Rev>(
+  first: Optic<U, S, ReadonlyArray<A>, R>,
 ) => Optic<Align<U, AffineTag>, S, A> {
   return compose(affineFold(A.lookup(index), A.modifyAt(index)));
 }
@@ -1063,16 +822,16 @@ export function index(
  *   O.key("one"),
  * );
  *
- * const result1 = pipe(one, O.view({})); // None
- * const result2 = pipe(one, O.view({ one: "one" })); // Some("one")
+ * const result1 = one.view({}); // None
+ * const result2 = one.view({ one: "one" }); // Some("one")
  * ```
  *
  * @since 2.0.0
  */
 export function key(
   key: string,
-): <U extends Tag, S, A>(
-  first: Optic<U, S, ReadonlyRecord<A>>,
+): <U extends Tag, S, A, R extends Rev>(
+  first: Optic<U, S, Record<string, A>, R>,
 ) => Optic<Align<U, AffineTag>, S, A> {
   return compose(affineFold(R.lookupAt(key), R.modifyAt(key)));
 }
@@ -1092,10 +851,10 @@ export function key(
  *   O.id<Readonly<Record<string, string>>>(),
  *   O.atKey("one"),
  * );
- * const removeAtOne = pipe(atOne, O.replace(constNone()));
+ * const removeAtOne = atOne.modify(constNone);
  *
- * const result1 = pipe(atOne, O.view({})); // None
- * const result2 = pipe(atOne, O.view({ one: "one" })); // Some("one")
+ * const result1 = atOne.view({}); // None
+ * const result2 = atOne.view({ one: "one" }); // Some("one")
  * const result3 = removeAtOne({}); // {}
  * const result4 = removeAtOne({ one: "one" }); // {}
  * const result5 = removeAtOne({ one: "one", two: "two" }); // { two: "two" }
@@ -1105,8 +864,8 @@ export function key(
  */
 export function atKey(
   key: string,
-): <U extends Tag, S, A>(
-  first: Optic<U, S, Readonly<Record<string, A>>>,
+): <U extends Tag, S, A, R extends Rev>(
+  first: Optic<U, S, Readonly<Record<string, A>>, R>,
 ) => Optic<Align<U, LensTag>, S, Option<A>> {
   const lookup = R.lookupAt(key);
   const _deleteAt = R.deleteAt(key);
@@ -1132,8 +891,8 @@ export function atKey(
  *
  * const positive = pipe(O.id<number>(), O.filter(n => n > 0));
  *
- * const result1 = pipe(positive, O.view(1)); // Some(1);
- * const result2 = pipe(positive, O.view(0)); // None
+ * const result1 = positive.view(1); // Some(1);
+ * const result2 = positive.view(0); // None
  * const result3 = pipe(1, positive.modify(n => n + 1)); // 2
  * const result4 = pipe(0, positive.modify(n => n + 1)); // 0
  * ```
@@ -1142,19 +901,19 @@ export function atKey(
  */
 export function filter<A, B extends A>(
   r: Refinement<A, B>,
-): <U extends Tag, S>(
-  first: Optic<U, S, A>,
-) => Optic<Align<U, AffineTag>, S, B>;
+): <U extends Tag, S, R extends Rev>(
+  first: Optic<U, S, A, R>,
+) => Optic<Align<U, AffineTag>, S, B, AlignRev<R, YesRev>>;
 export function filter<A>(
   r: Predicate<A>,
-): <U extends Tag, S>(
-  first: Optic<U, S, A>,
-) => Optic<Align<U, AffineTag>, S, A>;
+): <U extends Tag, S, R extends Rev>(
+  first: Optic<U, S, A, R>,
+) => Optic<Align<U, AffineTag>, S, A, AlignRev<R, YesRev>>;
 export function filter<A>(
   predicate: Predicate<A>,
-): <U extends Tag, S>(
-  first: Optic<U, S, A>,
-) => Optic<Align<U, AffineTag>, S, A> {
+): <U extends Tag, S, R extends Rev>(
+  first: Optic<U, S, A, R>,
+) => Optic<Align<U, AffineTag>, S, A, AlignRev<R, YesRev>> {
   return compose(fromPredicate(predicate));
 }
 
@@ -1177,18 +936,20 @@ export function filter<A>(
  * const insensitive = pipe(ComparableString, premap(toLowerCase));
  *
  * const fun = pipe(O.id<Words>(), O.atMap(insensitive)("fun"));
- * const remove = pipe(fun, O.replace(constNone()));
+ * const remove = fun.modify(constNone);
  *
- * const result1 = pipe(fun, O.view(new Map([["FUN", 100]]))); // Some(100)
- * const result2 = pipe(fun, O.view(M.init())); // None
- * const result3 = remove(new Map([["FUN", 100], ["not", 10]]));
+ * const result1 = fun.view(M.readonlyMap(["FUN", 100])); // Some(100)
+ * const result2 = fun.view(M.init()); // None
+ * const result3 = remove(M.readonlyMap(["FUN", 100], ["not", 10]));
  * // Map("not": 10);
  * ```
  *
  * @since 2.0.0
  */
-export function atMap<B>(eq: Comparable<B>): (key: B) => <U extends Tag, S, A>(
-  first: Optic<U, S, ReadonlyMap<B, A>>,
+export function atMap<B>(
+  eq: Comparable<B>,
+): (key: B) => <U extends Tag, S, A, R extends Rev>(
+  first: Optic<U, S, ReadonlyMap<B, A>, R>,
 ) => Optic<Align<U, LensTag>, S, Option<A>> {
   return (key) => {
     const lookup = M.lookup(eq)(key);
@@ -1223,8 +984,8 @@ export function atMap<B>(eq: Comparable<B>): (key: B) => <U extends Tag, S, A>(
  * const tree1: Data = { tree: T.tree(1, [T.tree(2), T.tree(3)]) };
  * const tree2: Data = { tree: T.tree(0) };
  *
- * const result1 = pipe(numbers, O.view(tree1)); // [1, 2, 3]
- * const result2 = pipe(numbers, O.view(tree2)); // [0]
+ * const result1 = numbers.view(tree1); // [1, 2, 3]
+ * const result2 = numbers.view(tree2); // [0]
  * const result3 = pipe(tree1, numbers.modify(n => n + 1));
  * // Tree(2, [Tree(3), Tree(4)])
  * ```
@@ -1233,8 +994,8 @@ export function atMap<B>(eq: Comparable<B>): (key: B) => <U extends Tag, S, A>(
  */
 export function traverse<T extends Kind>(
   T: Traversable<T>,
-): <U extends Tag, S, A, B, C, D, E>(
-  first: Optic<U, S, $<T, [A, B, C], [D], [E]>>,
+): <U extends Tag, S, A, B, C, D, E, R extends Rev>(
+  first: Optic<U, S, $<T, [A, B, C], [D], [E]>, R>,
 ) => Optic<Align<U, FoldTag>, S, A> {
   return compose(fold(
     T.fold((as, a) => [...as, a], (<A>(): A[] => [])()),
@@ -1278,9 +1039,11 @@ export function traverse<T extends Kind>(
 export function combineAll<A, I>(
   initializable: Initializable<I>,
   fai: (a: A) => I,
-): <U extends Tag, S>(first: Optic<U, S, A>) => (s: S) => I {
+): <U extends Tag, S, R extends Rev>(first: Optic<U, S, A, R>) => (s: S) => I {
   const _combineAll = getCombineAll(initializable);
-  return <U extends Tag, S>(first: Optic<U, S, A>): (s: S) => I => {
+  return <U extends Tag, S, R extends Rev>(
+    first: Optic<U, S, A, R>,
+  ): (s: S) => I => {
     const view = _unsafeCast(first, FoldTag);
     return flow(view, A.map(fai), (is) => _combineAll(...is));
   };
@@ -1294,17 +1057,18 @@ export function combineAll<A, I>(
  * import * as O from "./optic.ts";
  * import { pipe } from "./fn.ts";
  *
- * const result = pipe(
+ * const nums = pipe(
  *   O.id<Readonly<Record<string, number>>>(),
  *   O.record,
- *   O.view({ one: 1, two: 2 }),
- * ); // [1, 2]
+ * );
+ *
+ * const result = nums.view({ one: 1, two: 2 }); // [1, 2]
  * ```
  *
  * @since 2.0.0
  */
 export const record: <U extends Tag, S, A>(
-  first: Optic<U, S, ReadonlyRecord<A>>,
+  first: Optic<U, S, ReadonlyRecord<A>, Rev>,
 ) => Optic<Align<U, FoldTag>, S, A> = traverse(R.TraversableRecord);
 
 /**
@@ -1315,18 +1079,18 @@ export const record: <U extends Tag, S, A>(
  * import * as O from "./optic.ts";
  * import { pipe } from "./fn.ts";
  *
- * const result = pipe(
+ * const filtered = pipe(
  *   O.id<ReadonlyArray<number>>(),
  *   O.array,
  *   O.filter(n => n % 2 === 0),
- *   O.view([1, 2, 3]),
- * ); // [2]
+ * );
+ * const result = filtered.view([1, 2, 3]); // [2]
  * ```
  *
  * @since 2.0.0
  */
-export const array: <U extends Tag, S, A>(
-  first: Optic<U, S, ReadonlyArray<A>>,
+export const array: <U extends Tag, S, A, R extends Rev>(
+  first: Optic<U, S, ReadonlyArray<A>, R>,
 ) => Optic<Align<U, FoldTag>, S, A> = traverse(A.TraversableArray);
 
 /**
@@ -1337,17 +1101,18 @@ export const array: <U extends Tag, S, A>(
  * import * as O from "./optic.ts";
  * import { pipe } from "./fn.ts";
  *
- * const result = pipe(
+ * const nums = pipe(
  *   O.id<ReadonlySet<number>>(),
  *   O.set,
- *   O.view(new Set([1, 2, 3])),
- * ); // [1, 2, 3]
+ * );
+ *
+ * const result = nums.view(new Set([1, 2, 3])); // [1, 2, 3]
  * ```
  *
  * @since 2.0.0
  */
-export const set: <U extends Tag, S, A>(
-  first: Optic<U, S, ReadonlySet<A>>,
+export const set: <U extends Tag, S, A, R extends Rev>(
+  first: Optic<U, S, ReadonlySet<A>, R>,
 ) => Optic<Align<U, FoldTag>, S, A> = traverse(TraversableSet);
 
 /**
@@ -1360,17 +1125,18 @@ export const set: <U extends Tag, S, A>(
  * import * as T from "./tree.ts";
  * import { pipe } from "./fn.ts";
  *
- * const result = pipe(
+ * const nums = pipe(
  *   O.id<Tree<number>>(),
  *   O.tree,
- *   O.view(T.tree(1, [T.tree(2, [T.tree(3)])])),
- * ); // [1, 2, 3]
+ * );
+ *
+ * const result = nums.view(T.tree(1, [T.tree(2, [T.tree(3)])])); // [1, 2, 3]
  * ```
  *
  * @since 2.0.0
  */
-export const tree: <U extends Tag, S, A>(
-  first: Optic<U, S, Tree<A>>,
+export const tree: <U extends Tag, S, A, R extends Rev>(
+  first: Optic<U, S, Tree<A>, R>,
 ) => Optic<Align<U, FoldTag>, S, A> = traverse(TraversableTree);
 
 /**
@@ -1387,15 +1153,16 @@ export const tree: <U extends Tag, S, A>(
  *
  * const value = pipe(O.id<Input>(), O.prop("value"), O.nil);
  *
- * const result1 = pipe(value, O.view({})); // None
- * const result2 = pipe(value, O.view({ value: "Hello" })); // Some("Hello")
+ * const result1 = value.view({}); // None
+ * const result2 = value.view({ value: "Hello" }); // Some("Hello")
  * ```
  *
  * @since 2.0.0
  */
-export const nil: <U extends Tag, S, A>(
-  first: Optic<U, S, A>,
-) => Optic<Align<U, AffineTag>, S, NonNullable<A>> = filter(isNotNil);
+export const nil: <U extends Tag, S, A, R extends Rev>(
+  first: Optic<U, S, A, R>,
+) => Optic<Align<U, AffineTag>, S, NonNullable<A>, AlignRev<R, YesRev>> =
+  filter(isNotNil);
 
 /**
  * A preconstructed composed prism that focuses on the Some value of an Option.
@@ -1414,14 +1181,16 @@ export const nil: <U extends Tag, S, A>(
  * const brandon: Person = { name: "Brandon", talent: none };
  * const emily: Person = { name: "Emily", talent: some("Knitting") };
  *
- * const result = pipe(talent, O.view([brandon, emily])); // ["Knitting"];
+ * const result = talent.view([brandon, emily]); // ["Knitting"];
  * ```
  *
  * @since 2.0.0
  */
-export const some: <U extends Tag, S, A>(
-  optic: Optic<U, S, Option<A>>,
-) => Optic<Align<U, AffineTag>, S, A> = compose(prism(identity, O.wrap, O.map));
+export const some: <U extends Tag, S, A, R extends Rev>(
+  optic: Optic<U, S, Option<A>, R>,
+) => Optic<Align<U, AffineTag>, S, A, AlignRev<R, YesRev>> = compose(
+  prism(identity, O.wrap, O.map),
+);
 
 /**
  * A preconstructed composed prism that focuses on the Right value of an Either.
@@ -1436,17 +1205,17 @@ export const some: <U extends Tag, S, A>(
  *
  * const value = pipe(O.id<Response>(), O.right);
  *
- * const result1 = pipe(value, O.view(E.right("Good job!")));
+ * const result1 = value.view(E.right("Good job!"));
  * // Some("Good job!")
- * const result2 = pipe(value, O.view(E.left(new Error("Something broke"))));
+ * const result2 = value.view(E.left(new Error("Something broke")));
  * // None
  * ```
  *
  * @since 2.0.0
  */
-export const right: <U extends Tag, S, B, A>(
-  optic: Optic<U, S, Either<B, A>>,
-) => Optic<Align<U, AffineTag>, S, A> = compose(
+export const right: <U extends Tag, S, B, A, R extends Rev>(
+  optic: Optic<U, S, Either<B, A>, R>,
+) => Optic<Align<U, AffineTag>, S, A, AlignRev<R, YesRev>> = compose(
   prism(E.getRight, E.right, E.map),
 );
 
@@ -1463,17 +1232,17 @@ export const right: <U extends Tag, S, B, A>(
  *
  * const value = pipe(O.id<Response>(), O.left);
  *
- * const result1 = pipe(value, O.view(E.right("Good job!")));
+ * const result1 = value.view(E.right("Good job!"));
  * // None
- * const result2 = pipe(value, O.view(E.left(new Error("Something broke"))));
+ * const result2 = value.view(E.left(new Error("Something broke")));
  * // Some(Error("Something broke"))
  * ```
  *
  * @since 2.0.0
  */
-export const left: <U extends Tag, S, B, A>(
-  optic: Optic<U, S, Either<B, A>>,
-) => Optic<Align<U, AffineTag>, S, B> = compose(
+export const left: <U extends Tag, S, B, A, R extends Rev>(
+  optic: Optic<U, S, Either<B, A>, R>,
+) => Optic<Align<U, AffineTag>, S, B, AlignRev<R, YesRev>> = compose(
   prism(E.getLeft, E.left, E.mapSecond),
 );
 
@@ -1491,13 +1260,13 @@ export const left: <U extends Tag, S, B, A>(
  *
  * const numerator = pipe(O.id<Rational>(), O.first);
  *
- * const result = pipe(numerator, O.view(P.pair(1, 1))); // 1
+ * const result = numerator.view(P.pair(1, 1)); // 1
  * ```
  *
  * @since 2.0.0
  */
-export const first: <U extends Tag, S, B, A>(
-  optic: Optic<U, S, Pair<A, B>>,
+export const first: <U extends Tag, S, B, A, R extends Rev>(
+  optic: Optic<U, S, Pair<A, B>, R>,
 ) => Optic<Align<U, LensTag>, S, A> = compose(lens(P.getFirst, P.map));
 
 /**
@@ -1514,29 +1283,29 @@ export const first: <U extends Tag, S, B, A>(
  *
  * const denominator = pipe(O.id<Rational>(), O.first);
  *
- * const result = pipe(denominator, O.view(P.pair(1, 2))); // 2
+ * const result = denominator.view(P.pair(1, 2)); // 2
  * ```
  *
  * @since 2.0.0
  */
-export const second: <U extends Tag, S, B, A>(
-  optic: Optic<U, S, Pair<A, B>>,
+export const second: <U extends Tag, S, B, A, R extends Rev>(
+  optic: Optic<U, S, Pair<A, B>, R>,
 ) => Optic<Align<U, LensTag>, S, B> = compose(lens(P.getSecond, P.mapSecond));
 
 /**
  * @since 2.1.0
  */
-export const success: <U extends Tag, S, B, A>(
-  optic: Optic<U, S, DatumEither<B, A>>,
-) => Optic<Align<U, AffineTag>, S, A> = compose(
+export const success: <U extends Tag, S, B, A, R extends Rev>(
+  optic: Optic<U, S, DatumEither<B, A>, R>,
+) => Optic<Align<U, AffineTag>, S, A, AlignRev<R, YesRev>> = compose(
   prism(DE.getSuccess, DE.success, DE.map),
 );
 
 /**
  * @since 2.1.0
  */
-export const failure: <U extends Tag, S, B, A>(
-  optic: Optic<U, S, DatumEither<B, A>>,
-) => Optic<Align<U, AffineTag>, S, B> = compose(
+export const failure: <U extends Tag, S, B, A, R extends Rev>(
+  optic: Optic<U, S, DatumEither<B, A>, R>,
+) => Optic<Align<U, AffineTag>, S, B, AlignRev<R, YesRev>> = compose(
   prism(DE.getFailure, DE.failure, DE.mapSecond),
 );

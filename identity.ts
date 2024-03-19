@@ -14,6 +14,7 @@ import type { Flatmappable } from "./flatmappable.ts";
 import type { Wrappable } from "./wrappable.ts";
 
 /**
+ * Represents the Identity type constructor.
  * @since 2.0.0
  */
 export type Identity<A> = A;
@@ -26,6 +27,23 @@ export interface KindIdentity extends Kind {
 }
 
 /**
+ * Wraps a value into an Identity type.
+ * This function allows any value to be lifted into the context of an Identity,
+ * making it possible to interact with other functions that operate on the Identity type.
+ *
+ * @example
+ * ```ts
+ * import { wrap } from "./identity.ts";
+ *
+ * // numberIdentity is Identity<number> with value 5
+ * const numberIdentity = wrap(5);
+ *
+ * // stringIdentity is Identity<string> with value "hello"
+ * const stringIdentity = wrap("hello");
+ * ```
+ *
+ * @param a - The value to wrap.
+ * @returns The wrapped value as an Identity.
  * @since 2.0.0
  */
 export function wrap<A>(a: A): Identity<A> {
@@ -35,9 +53,7 @@ export function wrap<A>(a: A): Identity<A> {
 /**
  * @since 2.0.0
  */
-export function map<A, I>(
-  fai: (a: A) => I,
-): (ta: Identity<A>) => Identity<I> {
+export function map<A, I>(fai: (a: A) => I): (ta: Identity<A>) => Identity<I> {
   return fai;
 }
 

@@ -25,6 +25,11 @@ Deno.test("AsyncIterable fromIterable", async () => {
   assertEquals(await AI.collect(asyncIterable), [0, 1, 2]);
 });
 
+Deno.test("AsyncIterable fromPromise", async () => {
+  const asyncIterable = AI.fromPromise(Promise.resolve(1));
+  assertEquals(await pipe(AI.collect(asyncIterable)), [1]);
+});
+
 Deno.test("AsyncIterable range", async () => {
   assertEquals(await pipe(AI.range(3), AI.collect), [0, 1, 2]);
 });

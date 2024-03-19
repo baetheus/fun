@@ -664,7 +664,7 @@ export function constant<A>(a: A): () => A {
  */
 export function apply<D, A>(
   ua: Fn<D, A>,
-): <I>(ufai: Fn<D, (a: A) => I>) => Fn<D, I> {
+): <L, I>(ufai: Fn<L, (a: A) => I>) => Fn<D & L, I> {
   return (ufai) => (d) => ufai(d)(ua(d));
 }
 

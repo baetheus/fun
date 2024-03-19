@@ -276,6 +276,17 @@ Deno.test("Array binarySearch", () => {
   assertEquals(search(1000, sorted), 100);
 });
 
+Deno.test("Array monoSearch", () => {
+  const sorted = A.range(100_000);
+  const search = A.monoSearch(N.SortableNumber);
+  assertEquals(search(0, sorted), 0);
+  assertEquals(search(50, sorted), 50);
+  assertEquals(search(100, sorted), 100);
+  assertEquals(search(1000, sorted), 1000);
+  assertEquals(search(100, new Array<number>()), 0);
+  assertEquals(search(1, [0]), 1);
+});
+
 Deno.test("Array orderedInsert", () => {
   const even = A.range(5, 0, 2);
   const ins = A.orderedInsert(N.SortableNumber);

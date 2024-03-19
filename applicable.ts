@@ -20,13 +20,25 @@ import type { Wrappable } from "./wrappable.ts";
  *
  * @since 2.0.0
  */
-export interface Applicable<U extends Kind>
-  extends Mappable<U>, Wrappable<U>, Hold<U> {
-  readonly apply: <A, B = never, C = never, D = unknown, E = unknown>(
+export interface Applicable<
+  U extends Kind,
+> extends Mappable<U>, Wrappable<U>, Hold<U> {
+  readonly apply: <
+    A,
+    B = never,
+    C = never,
+    D = unknown,
+    E = unknown,
+  >(
     ta: $<U, [A, B, C], [D], [E]>,
-  ) => <I, J = never, K = never>(
-    tfai: $<U, [(value: A) => I, J, K], [D], [E]>,
-  ) => $<U, [I, B | J, C | K], [D], [E]>;
+  ) => <
+    I,
+    J = never,
+    K = never,
+    L = unknown,
+  >(
+    tfai: $<U, [(value: A) => I, J, K], [L], [E]>,
+  ) => $<U, [I, B | J, C | K], [D & L], [E]>;
 }
 
 /**

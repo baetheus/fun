@@ -95,17 +95,19 @@ export type $<
 /**
  * Access the Covariant substitution type at index N
  */
-export type Out<T extends Kind, N extends keyof T["out"]> = T["out"][N];
+export type Out<T extends Substitutions, N extends keyof T["out"]> =
+  T["out"][N];
 
 /**
  * Access the Premappable substitution type at index N
  */
-export type In<T extends Kind, N extends keyof T["in"]> = T["in"][N];
+export type In<T extends Substitutions, N extends keyof T["in"]> = T["in"][N];
 
 /**
  * Access the Invariant substitution type at index N
  */
-export type InOut<T extends Kind, N extends keyof T["inout"]> = T["inout"][N];
+export type InOut<T extends Substitutions, N extends keyof T["inout"]> =
+  T["inout"][N];
 
 /**
  * Fix a concrete type as a non-substituting Kind. This allows one to define

@@ -946,7 +946,7 @@ export function wrap<A, D = unknown>(a: A): Decoder<D, A> {
  */
 export function apply<A, D = unknown>(
   ua: Decoder<D, A>,
-): <I>(ufai: Decoder<D, (a: A) => I>) => Decoder<D, I> {
+): <L, I>(ufai: Decoder<L, (a: A) => I>) => Decoder<D & L, I> {
   return FlatmappableDecoder.apply(ua);
 }
 
