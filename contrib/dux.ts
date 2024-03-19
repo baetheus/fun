@@ -31,7 +31,6 @@ export type ActionType = {
  */
 export interface Action<P> extends ActionType {
   readonly value: P;
-  readonly error: boolean;
 }
 
 /**
@@ -196,7 +195,7 @@ export function actionCreatorFactory<G extends string>(
  *
  * @since 2.1.0
  */
-export type Reducer<S, A extends ActionType = ActionType> = (s: S, a: A) => S;
+export type Reducer<S, A = ActionType> = (s: S, a: A) => S;
 
 /**
  * Case function matches ActionCreator to Reducer.
@@ -205,9 +204,9 @@ export type Reducer<S, A extends ActionType = ActionType> = (s: S, a: A) => S;
  */
 export function caseFn<S, P>(
   action: ActionCreator<P>,
-  reducer: Reducer<S, Action<P>>,
+  reducer: Reducer<S, P>,
 ): Reducer<S, ActionType> {
-  return (s, a) => (action.match(a) ? reducer(s, a) : s);
+  return (s, a) => (action.match(a) ? reducer(s, a.value) : s);
 }
 
 /**
@@ -217,11 +216,11 @@ export function caseFn<S, P>(
  */
 export function casesFn<S, A extends ActionCreator<unknown>[]>(
   actionCreators: A,
-  reducer: Reducer<S, ExtractAction<A>>,
+  reducer: Reducer<S, ExtractAction<A>["value"]>,
 ): Reducer<S, ActionType> {
   return (s, a) =>
     actionCreators.some(({ match }) => match(a))
-      ? reducer(s, <ExtractAction<A>> a)
+      ? reducer(s, (<ExtractAction<A>> a).value)
       : s;
 }
 
@@ -304,14 +303,14 @@ export function metaReducerFn<S, A extends ActionType>(
 /**
  * @since 2.1.2
  */
-export type Effect<A extends ActionType = ActionType> = (
+export type Effect<A = ActionType> = (
   a: A,
 ) => Stream<ActionType>;
 
 /**
  * @since 2.1.2
  */
-export type EffectWide<A extends ActionType = ActionType> = (
+export type EffectWide<A = ActionType> = (
   a: A,
 ) => ActionType | Promise<ActionType> | Stream<ActionType>;
 
@@ -332,9 +331,9 @@ function liftAction(
  */
 export function caseEff<P>(
   action: ActionCreator<P>,
-  effect: EffectWide<Action<P>>,
+  effect: EffectWide<P>,
 ): Effect<ActionType> {
-  return (a) => action.match(a) ? liftAction(effect(a)) : M.empty();
+  return (a) => action.match(a) ? liftAction(effect(a.value)) : M.empty();
 }
 
 /**
@@ -342,11 +341,11 @@ export function caseEff<P>(
  */
 export function caseEffs<A extends ActionCreator<unknown>[]>(
   actionCreators: A,
-  effect: EffectWide<ExtractAction<A>>,
+  effect: EffectWide<ExtractAction<A>["value"]>,
 ): Effect<ActionType> {
   return (a) =>
     actionCreators.some(({ match }) => match(a))
-      ? liftAction(effect(<ExtractAction<A>> a))
+      ? liftAction(effect((<ExtractAction<A>> a).value))
       : M.empty();
 }
 
