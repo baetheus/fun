@@ -261,11 +261,11 @@ export function asyncReducerFactory<P, R, E, S>(
     caseFn(action.pending, pipe(lens, O.modify(D.toLoading))),
     caseFn(
       action.success,
-      (s, a) => pipe(lens, O.replace(DE.success(a.value.result)))(s),
+      (s, { result }) => pipe(lens, O.replace(DE.success(result)))(s),
     ),
     caseFn(
       action.failure,
-      (s, a) => pipe(lens, O.replace(DE.failure(a.value.error)))(s),
+      (s, { error }) => pipe(lens, O.replace(DE.failure(error)))(s),
     ),
   );
 }
