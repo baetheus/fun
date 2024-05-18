@@ -22,6 +22,7 @@ import type { KindReadonlyRecord } from "../record.ts";
 import type { KindReadonlyArray } from "../array.ts";
 import type { KindReadonlyMap } from "../map.ts";
 import type { KindReadonlySet } from "../set.ts";
+import type { Optic, Rev, Tag } from "../optic.ts";
 
 import * as D from "../datum.ts";
 import * as DE from "../datum_either.ts";
@@ -465,8 +466,22 @@ export function onAction<A = ActionType>(
  * @since 2.1.2
  */
 export type Store<S> = {
-  readonly state: Stream<S>;
+  /**
+   * A function to dispatch an action to be reduced by the store.
+   */
   readonly dispatch: (action: ActionType) => void;
+  /**
+   * A stream of state changes, emitting changes after every dispatched and
+   * reduced action.
+   */
+  readonly state: Stream<S>;
+  /**
+   * A syncronous function that returns the current state.
+   */
+  readonly get: {
+    (): S;
+    <A>(viewFn: (s: S) => A): A;
+  };
 };
 
 /**
@@ -490,18 +505,22 @@ export function createStore<State, Env>(
 export function createStore<State, Env>(
   initial: State,
   reducer: Reducer<State>,
-  effect: Effect<State, ActionType, Env> = () => S.empty(),
+  effect: Effect<State, ActionType, Env> = S.empty,
   env: Env = S.DefaultEnv as Env,
 ): Store<State> {
+  let heldState = initial;
+
   const [dispatch, action] = S.createAdapter<ActionType>();
 
   const state = pipe(
+    // Start with initial state
     S.wrap(initial),
+    // Then continue with a new state with each reduced action
     S.combine(pipe(
       action,
       S.scan(reducer, initial),
     )),
-    S.distinct(),
+    S.tap((state) => heldState = state),
     S.hold,
   );
 
@@ -510,5 +529,11 @@ export function createStore<State, Env>(
     S.forEach(dispatch, () => {}, env),
   );
 
-  return { state, dispatch };
+  function get(): State;
+  function get<A>(viewFn: (s: State) => A): A;
+  function get<A>(viewFn?: (s: State) => A): State | A {
+    return typeof viewFn === "function" ? viewFn(heldState) : heldState;
+  }
+
+  return { dispatch, state, get };
 }
