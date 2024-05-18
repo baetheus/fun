@@ -60,11 +60,13 @@ export type ActionMatcher<P> = {
 };
 
 /**
- * Interface for action creator function
+ * Interface for action creator function. We could type the output action but
+ * that causes specificity issues when branching to the creation of more than
+ * one action.
  *
  * @since 2.1.0
  */
-export type ActionFunction<P> = (payload: P) => Action<P>;
+export type ActionFunction<P> = (payload: P) => ActionType;
 
 /**
  * Interface for action creator intersection

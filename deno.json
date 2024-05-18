@@ -1,6 +1,6 @@
 {
   "name": "@baetheus/fun",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "exports": {
     "./ideas/dux": "./ideas/dux.ts",
     "./applicable": "./applicable.ts",
