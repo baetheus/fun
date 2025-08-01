@@ -9,12 +9,11 @@
  */
 
 import type { Hold, In, Kind, Out, Spread } from "./kind.ts";
-import type { NonEmptyArray } from "./array.ts";
-import type { ReadonlyRecord } from "./record.ts";
 import type { Literal, Schemable } from "./schemable.ts";
 
 import { handleThrow, identity, memoize, uncurry2 } from "./fn.ts";
-import { isSubrecord } from "./record.ts";
+
+type ReadonlyRecord<A> = Readonly<Record<string, A>>;
 
 /**
  * The compare function in a Comparable.
@@ -205,7 +204,7 @@ export const boolean: Comparable<boolean> = STRICT_EQUALITY;
  *
  * @since 2.0.0
  */
-export function literal<A extends NonEmptyArray<Literal>>(
+export function literal<A extends [Literal, ...Literal[]]>(
   ..._: A
 ): Comparable<A[number]> {
   return STRICT_EQUALITY;
@@ -276,9 +275,16 @@ export function undefinable<A>(
  * @since 2.0.0
  */
 export function record<A>(eq: Comparable<A>): Comparable<ReadonlyRecord<A>> {
-  const isSub = isSubrecord(eq);
+  const isSub = (first: ReadonlyRecord<A>, second: ReadonlyRecord<A>) => {
+    for (const key in first) {
+      if (!Object.hasOwn(second, key) || !eq.compare(second[key])(first[key])) {
+        return false;
+      }
+    }
+    return true;
+  };
   return fromCompare((second) => (first) =>
-    isSub(second)(first) && isSub(first)(second)
+    isSub(first, second) && isSub(second, first)
   );
 }
 

@@ -136,7 +136,7 @@ export function over<A, I>(faai: (a: A) => (a: A) => I): (a: A) => I {
  *
  * @since 2.0.0
  */
-export function tryThunk<A, E>(ua: Fn<void, A>, onThrow: Fn<E, A>): A {
+export function tryThunk<A>(ua: Fn<void, A>, onThrow: Fn<unknown, A>): A {
   try {
     return ua();
   } catch (err) {

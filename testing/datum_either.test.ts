@@ -8,7 +8,6 @@ import * as D from "../datum.ts";
 import * as E from "../either.ts";
 import * as O from "../option.ts";
 import * as N from "../number.ts";
-import * as Sortable from "../sortable.ts";
 import { pipe } from "../fn.ts";
 
 Deno.test("DatumEither left", () => {

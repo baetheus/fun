@@ -10,7 +10,6 @@
 
 import type { $, Hold, Kind } from "./kind.ts";
 import type { Flatmappable } from "./flatmappable.ts";
-import type { NonEmptyArray } from "./array.ts";
 
 import { flow } from "./fn.ts";
 
@@ -32,38 +31,6 @@ export interface Failable<U extends Kind> extends Flatmappable<U>, Hold<U> {
   ) => <A = never, C = never>(
     ua: $<U, [A, B, C], [L], [M]>,
   ) => $<U, [A | I, J, C | K], [L], [M]>;
-}
-
-/**
- * The return type of createTryAll for Failable. Useful for reducing type
- * inference in the docs.
- *
- * @since 2.0.0
- */
-export type TryAll<U extends Kind> = <A, B, C, D, E>(
-  ...uas: NonEmptyArray<$<U, [A, B, C], [D], [E]>>
-) => $<U, [A, B, C], [D], [E]>;
-
-/**
- * Create a tryAll function from an instance of Failable. The tryAll function
- * allows the trying any number of Failable structures in order until a
- * non-failed one is found.
- *
- * @since 2.0.0
- */
-export function createTryAll<U extends Kind>(
-  { recover }: Failable<U>,
-): <A, B, C, D, E>(
-  ...uas: NonEmptyArray<$<U, [A, B, C], [D], [E]>>
-) => $<U, [A, B, C], [D], [E]> {
-  return (...uas) => {
-    const [head, ...tail] = uas;
-    let out = head;
-    for (const ua of tail) {
-      out = recover(() => ua)(out);
-    }
-    return out;
-  };
 }
 
 /**

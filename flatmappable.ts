@@ -77,12 +77,12 @@ export function createTap<U extends Kind>(
     });
 }
 
-/**
- * The return type for the createBind function on Flatmappable. Useful to reduce
- * type inference in documentation.
- *
- * @since 2.0.0
- */
+// /**
+//  * The return type for the createBind function on Flatmappable. Useful to reduce
+//  * type inference in documentation.
+//  *
+//  * @since 2.0.0
+//  */
 export type Bind<U extends Kind> = <
   N extends string,
   A,
@@ -103,90 +103,87 @@ export type Bind<U extends Kind> = <
   [M]
 >;
 
-/**
- * Create a bind function for a structure with instances of Mappable and
- * Flatmappable. A bind function allows one to flatmap into named fields in a
- * struct, collecting values from the result of the flatmap in the order that
- * they are completed.
- *
- * @example
- * ```ts
- * import { createBind } from "./flatmappable.ts";
- * import * as O from "./option.ts";
- * import { pipe } from "./fn.ts";
- *
- * const bind = createBind(O.FlatmappableOption);
- * const option = O.some({ name: "John" });
- *
- * const result = pipe(
- *   option,
- *   bind("age", user => O.some(30))
- * );
- *
- * console.log(result); // Some({ name: "John", age: 30 })
- * ```
- *
- * @since 2.0.0
- */
-export function createBind<U extends Kind>({ flatmap, map }: Flatmappable<U>): <
-  N extends string,
-  A,
-  I,
-  J = never,
-  K = never,
-  L = unknown,
-  M = unknown,
->(
-  name: Exclude<N, keyof A>,
-  faui: (a: A) => $<U, [I, J, K], [L], [M]>,
-) => <B = never, C = never, D extends L = L>(
-  ua: $<U, [A, B, C], [D], [M]>,
-) => $<
-  U,
-  [{ readonly [K in keyof A | N]: K extends keyof A ? A[K] : I }, B | J, C | K],
-  [D & L],
-  [M]
-> {
-  return (name, faui) =>
-    flatmap((a) =>
-      // deno-lint-ignore no-explicit-any
-      map((i) => Object.assign({}, a, { [name]: i }) as any)(faui(a))
-    );
+// /**
+//  * Create a bind function for a structure with instances of Mappable and
+//  * Flatmappable. A bind function allows one to flatmap into named fields in a
+//  * struct, collecting values from the result of the flatmap in the order that
+//  * they are completed.
+//  *
+//  * @example
+//  * ```ts
+//  * import { createBind } from "./flatmappable.ts";
+//  * import * as O from "./option.ts";
+//  * import { pipe } from "./fn.ts";
+//  *
+//  * const bind = createBind(O.FlatmappableOption);
+//  * const option = O.some({ name: "John" });
+//  *
+//  * const result = pipe(
+//  *   option,
+//  *   bind("age", user => O.some(30))
+//  * );
+//  *
+//  * console.log(result); // Some({ name: "John", age: 30 })
+//  * ```
+//  *
+//  * @since 2.0.0
+//  */
+export function createBind<U extends Kind>(
+  { flatmap, map }: Flatmappable<U>,
+): Bind<U> {
+  return <
+    N extends string,
+    A,
+    I,
+    J = never,
+    K = never,
+    L = unknown,
+    M = unknown,
+  >(name: Exclude<N, keyof A>, faui: (a: A) => $<U, [I, J, K], [L], [M]>) =>
+    flatmap((a: A) => {
+      const mapper = map((i: I) => {
+        type Bound = {
+          readonly [K in keyof A | N]: K extends keyof A ? A[K] : I;
+        };
+        return Object.assign({}, a, { [name]: i }) as unknown as Bound;
+      });
+      return mapper(faui(a));
+    });
 }
 
-/**
- * Create a Flatmappable instance from wrap and flatmap functions.
- *
- * @example
- * ```ts
- * import type { Kind, Out } from "./kind.ts";
- * import { createFlatmappable } from "./flatmappable.ts";
- * import { pipe } from "./fn.ts";
- *
- * // Create a Kind for Promise<A>
- * interface KindPromise extends Kind {
- *   readonly kind: Promise<Out<this, 0>>;
- * };
- *
- * // Create an of and chain function for Promise<A>
- * const wrap = <A>(a: A): Promise<A> => Promise.resolve(a);
- * const flatmap = <A, I>(faui: (a: A) => Promise<I>) =>
- *   (ua: Promise<A>): Promise<I> => ua.then(faui);
- *
- * // Derive a Flatmappable for Promise
- * const M = createFlatmappable<KindPromise>({ wrap, flatmap });
- *
- * const result = await pipe(
- *   M.wrap((n: number) => (m: number) => n + m),
- *   M.apply(M.wrap(1)),
- *   M.apply(M.wrap(1)),
- * ); // 2
- * ```
- *
- * @experimental
- *
- * @since 2.0.0
- */
+// /**
+//  * Create a Flatmappable instance from wrap and flatmap functions.
+//  *
+//  * @example
+//  * ```ts
+//  * import type { Kind, Out } from "./kind.ts";
+//  * import { createFlatmappable } from "./flatmappable.ts";
+//  * import { pipe } from "./fn.ts";
+//  *
+//  * // Create a Kind for Promise<A>
+//  * interface KindPromise extends Kind {
+//  *   readonly kind: Promise<Out<this, 0>>;
+//  * };
+//  *
+//  * // Create an of and chain function for Promise<A>
+//  * const wrap = <A>(a: A): Promise<A> => Promise.resolve(a);
+//  * const flatmap = <A, I>(faui: (a: A) => Promise<I>) =>
+//  *   (ua: Promise<A>): Promise<I> => ua.then(faui);
+//  *
+//  * // Derive a Flatmappable for Promise
+//  * const M = createFlatmappable<KindPromise>({ wrap, flatmap });
+//  *
+//  * const result = await pipe(
+//  *   M.wrap((n: number) => (m: number) => n + m),
+//  *   M.apply(M.wrap(1)),
+//  *   M.apply(M.wrap(1)),
+//  * ); // 2
+//  * ```
+//  *
+//  * @experimental
+//  *
+//  * @since 2.0.0
+//  */
 export function createFlatmappable<U extends Kind>(
   { wrap, flatmap }: Pick<Flatmappable<U>, "wrap" | "flatmap">,
 ): Flatmappable<U> {

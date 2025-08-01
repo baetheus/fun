@@ -27,11 +27,10 @@ import type { Wrappable } from "./wrappable.ts";
 import * as E from "./either.ts";
 import * as D from "./datum.ts";
 import { none, some } from "./option.ts";
-import { apply as createApply } from "./applicable.ts";
 import { createBind } from "./flatmappable.ts";
 import { createBindTo } from "./mappable.ts";
 import { createTap } from "./failable.ts";
-import { handleThrow, pipe } from "./fn.ts";
+import { flow, handleThrow, pipe } from "./fn.ts";
 import { isNotNil } from "./nil.ts";
 
 /**
@@ -466,16 +465,6 @@ export function mapSecond<B, J>(
 }
 
 /**
- * TODO: revisit createApply to align types.
- *
- * @since 2.1.0
- */
-const _apply: Applicable<KindDatumEither>["apply"] = createApply(
-  D.ApplicableDatum,
-  E.ApplicableEither,
-) as Applicable<KindDatumEither>["apply"];
-
-/**
  * Apply an argument to a function under the *Right* side.
  *
  * @since 2.1.0
@@ -483,7 +472,12 @@ const _apply: Applicable<KindDatumEither>["apply"] = createApply(
 export function apply<A, B>(
   ua: DatumEither<B, A>,
 ): <I, J>(ufai: DatumEither<J, (a: A) => I>) => DatumEither<B | J, I> {
-  return _apply(ua);
+  return <I, J>(ufai: DatumEither<J, (a: A) => I>): DatumEither<B | J, I> =>
+    pipe(
+      ufai,
+      D.map((efai) => (ea: Either<J, A>) => E.apply(ea)(efai)),
+      D.apply(ua),
+    ) as DatumEither<B | J, I>;
 }
 
 /**

@@ -5,7 +5,6 @@ import {
 
 import * as P from "../pair.ts";
 import * as N from "../number.ts";
-import * as C from "../comparable.ts";
 import { pipe } from "../fn.ts";
 
 Deno.test("Pair pair", () => {

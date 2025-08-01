@@ -8,7 +8,6 @@
  */
 
 import type { $, Hold, Kind, Spread } from "./kind.ts";
-import type { NonEmptyArray } from "./array.ts";
 
 import { memoize } from "./fn.ts";
 
@@ -63,7 +62,7 @@ export interface BooleanSchemable<U extends Kind> extends Hold<U> {
  * @since 2.0.0
  */
 export interface LiteralSchemable<U extends Kind> extends Hold<U> {
-  readonly literal: <A extends NonEmptyArray<Literal>, B, C, D, E>(
+  readonly literal: <A extends [Literal, ...Literal[]], B, C, D, E>(
     ...s: A
   ) => $<U, [A[number], B, C], [D], [E]>;
 }

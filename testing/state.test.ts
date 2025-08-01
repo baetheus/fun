@@ -2,7 +2,6 @@ import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
 
 import * as S from "../state.ts";
 import * as N from "../number.ts";
-import * as C from "../combinable.ts";
 import { pipe } from "../fn.ts";
 
 const add = (n: number) => n + 1;
@@ -84,7 +83,7 @@ Deno.test("State getInitializableState", () => {
 Deno.test("State Do, bind, bindTo", () => {
   assertEquals(
     pipe(
-      S.wrap<{}, number>({}),
+      S.wrap<Record<never, unknown>, number>({}),
       S.bind("one", () => S.state(1, 1)),
       S.bind("two", ({ one }) => S.state(one + one, 1)),
       S.map(({ one, two }) => one + two),

@@ -10,9 +10,13 @@
  */
 
 import type { Combinable } from "./combinable.ts";
-import type { AnyReadonlyRecord } from "./record.ts";
 
 import * as C from "./combinable.ts";
+
+type ReadonlyRecord<A> = Readonly<Record<string, A>>;
+
+// deno-lint-ignore no-explicit-any
+type AnyReadonlyRecord = ReadonlyRecord<any>;
 
 /**
  * A Initializable structure has the method init.
