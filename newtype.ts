@@ -44,7 +44,7 @@ const ValueSymbol = Symbol("Value");
  * const int = 1 as Integer;
  * const num = 1 as number;
  *
- * declare function addOne(n: Integer): number;
+ * const addOne = (n: Integer): number => (n as unknown as number) + 1;
  *
  * addOne(int); // This is ok!
  * // addOne(num); // This is not
