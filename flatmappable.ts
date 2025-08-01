@@ -12,6 +12,8 @@ import type { Applicable } from "./applicable.ts";
 
 /**
  * A Flatmappable structure.
+ *
+ * @since 2.0.0
  */
 export interface Flatmappable<
   U extends Kind,
@@ -40,6 +42,24 @@ export type Tap<U extends Kind> = <A>(
  * Flatmappable. A tap function allows one to break out of the functional
  * codeflow. It is generally not advised to use tap for code flow but to
  * consider an escape hatch to do things like tracing or logging.
+ *
+ * @example
+ * ```ts
+ * import { createTap } from "./flatmappable.ts";
+ * import * as O from "./option.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const tap = createTap(O.FlatmappableOption);
+ * const option = O.some(5);
+ *
+ * const result = pipe(
+ *   option,
+ *   tap(value => console.log(`Processing: ${value}`))
+ * );
+ *
+ * // Output: "Processing: 5"
+ * console.log(result); // Some(5)
+ * ```
  *
  * @since 2.0.0
  */
@@ -89,6 +109,23 @@ export type Bind<U extends Kind> = <
  * struct, collecting values from the result of the flatmap in the order that
  * they are completed.
  *
+ * @example
+ * ```ts
+ * import { createBind } from "./flatmappable.ts";
+ * import * as O from "./option.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const bind = createBind(O.FlatmappableOption);
+ * const option = O.some({ name: "John" });
+ *
+ * const result = pipe(
+ *   option,
+ *   bind("age", user => O.some(30))
+ * );
+ *
+ * console.log(result); // Some({ name: "John", age: 30 })
+ * ```
+ *
  * @since 2.0.0
  */
 export function createBind<U extends Kind>({ flatmap, map }: Flatmappable<U>): <
@@ -118,8 +155,7 @@ export function createBind<U extends Kind>({ flatmap, map }: Flatmappable<U>): <
 }
 
 /**
- * Derive a Flatmappable instance from unwrap, flatmap, and a Kind.
- * This is the simplest way to get a Flatmappable instance.
+ * Create a Flatmappable instance from wrap and flatmap functions.
  *
  * @example
  * ```ts

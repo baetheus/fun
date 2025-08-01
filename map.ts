@@ -1,11 +1,18 @@
 /**
- * This file contains the ReadonlyMap algebraic data type. ReadonlyMap is a
- * built in data structure in javascript that allows the association of
- * arbitrary key anv value pairs. Generally, keys in a ReadonlyMap are only
- * equal if their memory addresses are equal. This means that while strings and
- * numbers work as expected as keys, complex objects such as [1] or { one: 1 }
- * do not. Thus, there are many utility functions in this file that allow one to
- * specify how to determine equality for keys in a ReadonlyMap.
+ * The ReadonlyMap module contains utilities for working with the ReadonlyMap
+ * algebraic data type. ReadonlyMap is a built-in JavaScript data structure that
+ * allows the association of arbitrary key-value pairs in a type-safe manner.
+ *
+ * ReadonlyMap provides an immutable interface to the native Map structure,
+ * ensuring that operations return new maps rather than modifying existing ones.
+ * This makes it suitable for functional programming patterns where immutability
+ * is desired.
+ *
+ * ⚠️ **Important Note:** Keys in a ReadonlyMap are only equal if their memory
+ * addresses are equal. This means that while strings and numbers work as expected
+ * as keys, complex objects such as `[1]` or `{ one: 1 }` do not behave as
+ * expected for equality comparisons. The module provides utility functions to
+ * specify custom equality semantics for keys.
  *
  * @module ReadonlyMap
  * @since 2.0.0
@@ -30,6 +37,10 @@ import { fromCombine } from "./combinable.ts";
 import { flow, pipe } from "./fn.ts";
 
 /**
+ * Specifies ReadonlyMap as a Higher Kinded Type, with covariant parameter A
+ * corresponding to the 0th index and covariant parameter B corresponding to
+ * the 1st index of any substitutions.
+ *
  * @since 2.0.0
  */
 export interface KindReadonlyMap extends Kind {
@@ -37,6 +48,9 @@ export interface KindReadonlyMap extends Kind {
 }
 
 /**
+ * Specifies ReadonlyMap as a Higher Kinded Type with a fixed key type B,
+ * with covariant parameter A corresponding to the 0th index of any substitutions.
+ *
  * @since 2.0.0
  */
 export interface KindKeyedReadonlyMap<B> extends Kind {
@@ -44,16 +58,46 @@ export interface KindKeyedReadonlyMap<B> extends Kind {
 }
 
 /**
+ * Extract the value type from a ReadonlyMap type.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ *
+ * type MyMap = ReadonlyMap<string, number>;
+ * type ValueType = M.TypeOf<MyMap>; // number
+ * ```
+ *
  * @since 2.0.0
  */
 export type TypeOf<U> = U extends ReadonlyMap<infer _, infer A> ? A : never;
 
 /**
+ * Extract the key type from a ReadonlyMap type.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ *
+ * type MyMap = ReadonlyMap<string, number>;
+ * type KeyType = M.KeyOf<MyMap>; // string
+ * ```
+ *
  * @since 2.0.0
  */
 export type KeyOf<U> = U extends ReadonlyMap<infer B, infer _> ? B : never;
 
 /**
+ * Create an empty ReadonlyMap.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ *
+ * const empty = M.init<string, number>();
+ * const isEmpty = M.isEmpty(empty); // true
+ * ```
+ *
  * @since 2.0.0
  */
 export function init<K, A>(): ReadonlyMap<K, A> {
@@ -61,6 +105,16 @@ export function init<K, A>(): ReadonlyMap<K, A> {
 }
 
 /**
+ * Create a ReadonlyMap with a single key-value pair.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ *
+ * const single = M.singleton("key", 42);
+ * const size = M.size(single); // 1
+ * ```
+ *
  * @since 2.0.0
  */
 export function singleton<K, A>(k: K, a: A): ReadonlyMap<K, A> {
@@ -68,6 +122,19 @@ export function singleton<K, A>(k: K, a: A): ReadonlyMap<K, A> {
 }
 
 /**
+ * Check if a ReadonlyMap is empty.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ *
+ * const empty = M.init<string, number>();
+ * const hasItems = M.readonlyMap(["a", 1], ["b", 2]);
+ *
+ * const isEmpty1 = M.isEmpty(empty); // true
+ * const isEmpty2 = M.isEmpty(hasItems); // false
+ * ```
+ *
  * @since 2.0.0
  */
 export function isEmpty<A, B>(ta: ReadonlyMap<B, A>): boolean {
@@ -75,6 +142,20 @@ export function isEmpty<A, B>(ta: ReadonlyMap<B, A>): boolean {
 }
 
 /**
+ * Create a ReadonlyMap from key-value pairs.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ *
+ * const map = M.readonlyMap(
+ *   ["a", 1],
+ *   ["b", 2],
+ *   ["c", 3]
+ * );
+ * const size = M.size(map); // 3
+ * ```
+ *
  * @since 2.0.0
  */
 export function readonlyMap<K = never, A = never>(
@@ -84,6 +165,19 @@ export function readonlyMap<K = never, A = never>(
 }
 
 /**
+ * Apply a function to each value in a ReadonlyMap, creating a new map
+ * with the transformed values.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ *
+ * const original = M.readonlyMap(["a", 1], ["b", 2], ["c", 3]);
+ * const doubled = M.map((n: number) => n * 2)(original);
+ *
+ * // doubled contains: ["a", 2], ["b", 4], ["c", 6]
+ * ```
+ *
  * @since 2.0.0
  */
 export function map<A, I>(
@@ -99,6 +193,21 @@ export function map<A, I>(
 }
 
 /**
+ * Apply functions to both keys and values of a ReadonlyMap.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ *
+ * const original = M.readonlyMap(["a", 1], ["b", 2]);
+ * const transformed = M.bimap(
+ *   (key: string) => key.toUpperCase(),
+ *   (value: number) => value * 10
+ * )(original);
+ *
+ * // transformed contains: ["A", 10], ["B", 20]
+ * ```
+ *
  * @since 2.0.0
  */
 export function bimap<A, B, I, J>(
@@ -115,6 +224,19 @@ export function bimap<A, B, I, J>(
 }
 
 /**
+ * Apply a function to each key in a ReadonlyMap, creating a new map
+ * with the transformed keys.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ *
+ * const original = M.readonlyMap(["a", 1], ["b", 2]);
+ * const upperKeys = M.mapSecond((key: string) => key.toUpperCase())(original);
+ *
+ * // upperKeys contains: ["A", 1], ["B", 2]
+ * ```
+ *
  * @since 2.0.0
  */
 export function mapSecond<B, J>(
@@ -130,6 +252,16 @@ export function mapSecond<B, J>(
 }
 
 /**
+ * Get the number of key-value pairs in a ReadonlyMap.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ *
+ * const map = M.readonlyMap(["a", 1], ["b", 2], ["c", 3]);
+ * const count = M.size(map); // 3
+ * ```
+ *
  * @since 2.0.0
  */
 export function size<K, A>(d: ReadonlyMap<K, A>): number {
@@ -137,6 +269,24 @@ export function size<K, A>(d: ReadonlyMap<K, A>): number {
 }
 
 /**
+ * Look up a key in a ReadonlyMap using a custom equality function,
+ * returning both the key and value if found.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ * import * as S from "./string.ts";
+ * import * as O from "./option.ts";
+ *
+ * const map = M.readonlyMap(["a", 1], ["b", 2], ["c", 3]);
+ * const lookup = M.lookupWithKey(S.ComparableString)("a")(map);
+ *
+ * if (O.isSome(lookup)) {
+ *   const [key, value] = lookup.value;
+ *   console.log(`Found ${key}: ${value}`); // Found a: 1
+ * }
+ * ```
+ *
  * @since 2.0.0
  */
 export function lookupWithKey<K>(
@@ -154,6 +304,23 @@ export function lookupWithKey<K>(
 }
 
 /**
+ * Look up a key in a ReadonlyMap using a custom equality function,
+ * returning only the value if found.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ * import * as S from "./string.ts";
+ * import * as O from "./option.ts";
+ *
+ * const map = M.readonlyMap(["a", 1], ["b", 2], ["c", 3]);
+ * const value = M.lookup(S.ComparableString)("a")(map);
+ *
+ * if (O.isSome(value)) {
+ *   console.log(`Value: ${value.value}`); // Value: 1
+ * }
+ * ```
+ *
  * @since 2.0.0
  */
 export function lookup<K>(
@@ -172,6 +339,18 @@ export function lookup<K>(
 }
 
 /**
+ * Check if a key exists in a ReadonlyMap using a custom equality function.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ * import * as S from "./string.ts";
+ *
+ * const map = M.readonlyMap(["a", 1], ["b", 2], ["c", 3]);
+ * const hasA = M.member(S.ComparableString)("a")(map); // true
+ * const hasZ = M.member(S.ComparableString)("z")(map); // false
+ * ```
+ *
  * @since 2.0.0
  */
 export function member<K>(
@@ -182,6 +361,18 @@ export function member<K>(
 }
 
 /**
+ * Check if a value exists in a ReadonlyMap using a custom equality function.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ * import * as N from "./number.ts";
+ *
+ * const map = M.readonlyMap(["a", 1], ["b", 2], ["c", 3]);
+ * const hasOne = M.elem(N.ComparableNumber)(1)(map); // true
+ * const hasTen = M.elem(N.ComparableNumber)(10)(map); // false
+ * ```
+ *
  * @since 2.0.0
  */
 export function elem<A>(
@@ -201,6 +392,18 @@ export function elem<A>(
 }
 
 /**
+ * Get all entries from a ReadonlyMap as a sorted array.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ * import * as S from "./string.ts";
+ *
+ * const map = M.readonlyMap(["c", 3], ["a", 1], ["b", 2]);
+ * const sortedEntries = M.entries(S.SortableString)(map);
+ * // [["a", 1], ["b", 2], ["c", 3]]
+ * ```
+ *
  * @since 2.0.0
  */
 export function entries<B>(
@@ -211,6 +414,18 @@ export function entries<B>(
 }
 
 /**
+ * Get all keys from a ReadonlyMap as a sorted array.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ * import * as S from "./string.ts";
+ *
+ * const map = M.readonlyMap(["c", 3], ["a", 1], ["b", 2]);
+ * const sortedKeys = M.keys(S.SortableString)(map);
+ * // ["a", "b", "c"]
+ * ```
+ *
  * @since 2.0.0
  */
 export function keys<K>(O: Sortable<K>): <A>(ta: ReadonlyMap<K, A>) => K[] {
@@ -218,6 +433,18 @@ export function keys<K>(O: Sortable<K>): <A>(ta: ReadonlyMap<K, A>) => K[] {
 }
 
 /**
+ * Get all values from a ReadonlyMap as a sorted array.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ * import * as N from "./number.ts";
+ *
+ * const map = M.readonlyMap(["a", 3], ["b", 1], ["c", 2]);
+ * const sortedValues = M.values(N.SortableNumber)(map);
+ * // [1, 2, 3]
+ * ```
+ *
  * @since 2.0.0
  */
 export function values<A>(O: Sortable<A>): <K>(ta: ReadonlyMap<K, A>) => A[] {
@@ -225,6 +452,20 @@ export function values<A>(O: Sortable<A>): <K>(ta: ReadonlyMap<K, A>) => A[] {
 }
 
 /**
+ * Fold a ReadonlyMap into a single value using a reducer function.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ *
+ * const map = M.readonlyMap(["a", 1], ["b", 2], ["c", 3]);
+ * const sum = M.fold(
+ *   (acc: number, value: number, key: string) => acc + value,
+ *   0
+ * )(map);
+ * // 6
+ * ```
+ *
  * @since 2.0.0
  */
 export function fold<B, A, O>(
@@ -241,6 +482,21 @@ export function fold<B, A, O>(
 }
 
 /**
+ * Collect all key-value pairs from a ReadonlyMap into an array,
+ * applying a function to each pair.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ * import * as S from "./string.ts";
+ *
+ * const map = M.readonlyMap(["a", 1], ["b", 2], ["c", 3]);
+ * const formatted = M.collect(S.SortableString)(
+ *   (key: string, value: number) => `${key}: ${value}`
+ * )(map);
+ * // ["a: 1", "b: 2", "c: 3"]
+ * ```
+ *
  * @since 2.0.0
  */
 export function collect<B>(
@@ -257,6 +513,18 @@ export function collect<B>(
 }
 
 /**
+ * Delete a key from a ReadonlyMap using a custom equality function.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ * import * as S from "./string.ts";
+ *
+ * const original = M.readonlyMap(["a", 1], ["b", 2], ["c", 3]);
+ * const withoutB = M.deleteAt(S.ComparableString)("b")(original);
+ * // Contains: ["a", 1], ["c", 3]
+ * ```
+ *
  * @since 2.0.0
  */
 export function deleteAt<B>(
@@ -278,6 +546,21 @@ export function deleteAt<B>(
 }
 
 /**
+ * Insert or update a key-value pair in a ReadonlyMap using a custom equality function.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ * import * as S from "./string.ts";
+ *
+ * const original = M.readonlyMap(["a", 1], ["b", 2]);
+ * const updated = M.insert(S.ComparableString)(42)("a")(original);
+ * // Contains: ["a", 42], ["b", 2]
+ *
+ * const inserted = M.insert(S.ComparableString)(3)("c")(original);
+ * // Contains: ["a", 1], ["b", 2], ["c", 3]
+ * ```
+ *
  * @since 2.0.0
  */
 export function insert<B>(
@@ -306,6 +589,19 @@ export function insert<B>(
 }
 
 /**
+ * Insert or update a key-value pair in a ReadonlyMap using a custom equality function.
+ * This is a curried version of insert with different parameter order.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ * import * as S from "./string.ts";
+ *
+ * const original = M.readonlyMap(["a", 1], ["b", 2]);
+ * const updated = M.insertAt(S.ComparableString)("a")(42)(original);
+ * // Contains: ["a", 42], ["b", 2]
+ * ```
+ *
  * @since 2.0.0
  */
 export function insertAt<B>(
@@ -316,6 +612,21 @@ export function insertAt<B>(
 }
 
 /**
+ * Modify a value in a ReadonlyMap using a custom equality function.
+ * If the key doesn't exist, the map is unchanged.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ * import * as S from "./string.ts";
+ *
+ * const original = M.readonlyMap(["a", 1], ["b", 2]);
+ * const doubled = M.modify(S.ComparableString)(
+ *   (value: number) => value * 2
+ * )("a")(original);
+ * // Contains: ["a", 2], ["b", 2]
+ * ```
+ *
  * @since 2.0.0
  */
 export function modify<B>(
@@ -339,6 +650,21 @@ export function modify<B>(
 }
 
 /**
+ * Modify a value in a ReadonlyMap using a custom equality function.
+ * This is a curried version of modify with different parameter order.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ * import * as S from "./string.ts";
+ *
+ * const original = M.readonlyMap(["a", 1], ["b", 2]);
+ * const doubled = M.modifyAt(S.ComparableString)("a")(
+ *   (value: number) => value * 2
+ * )(original);
+ * // Contains: ["a", 2], ["b", 2]
+ * ```
+ *
  * @since 2.0.0
  */
 export function modifyAt<B>(
@@ -352,6 +678,19 @@ export function modifyAt<B>(
 }
 
 /**
+ * Update a value in a ReadonlyMap using a custom equality function.
+ * This is equivalent to modify with a constant function.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ * import * as S from "./string.ts";
+ *
+ * const original = M.readonlyMap(["a", 1], ["b", 2]);
+ * const updated = M.update(S.ComparableString)(42)("a")(original);
+ * // Contains: ["a", 42], ["b", 2]
+ * ```
+ *
  * @since 2.0.0
  */
 export function update<B>(
@@ -361,6 +700,19 @@ export function update<B>(
 }
 
 /**
+ * Update a value in a ReadonlyMap using a custom equality function.
+ * This is a curried version of update with different parameter order.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ * import * as S from "./string.ts";
+ *
+ * const original = M.readonlyMap(["a", 1], ["b", 2]);
+ * const updated = M.updateAt(S.ComparableString)("a")(42)(original);
+ * // Contains: ["a", 42], ["b", 2]
+ * ```
+ *
  * @since 2.0.0
  */
 export function updateAt<B>(
@@ -370,6 +722,24 @@ export function updateAt<B>(
 }
 
 /**
+ * Remove a key from a ReadonlyMap and return both the value and the new map.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ * import * as S from "./string.ts";
+ * import * as O from "./option.ts";
+ *
+ * const original = M.readonlyMap(["a", 1], ["b", 2], ["c", 3]);
+ * const popped = M.pop(S.ComparableString)("b")(original);
+ *
+ * if (O.isSome(popped)) {
+ *   const [value, newMap] = popped.value;
+ *   console.log(`Removed: ${value}`); // Removed: 2
+ *   // newMap contains: ["a", 1], ["c", 3]
+ * }
+ * ```
+ *
  * @since 2.0.0
  */
 export function pop<B>(
@@ -389,6 +759,21 @@ export function pop<B>(
 }
 
 /**
+ * Check if one ReadonlyMap is a submap of another using custom equality functions.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ * import * as S from "./string.ts";
+ * import * as N from "./number.ts";
+ *
+ * const map1 = M.readonlyMap(["a", 1], ["b", 2]);
+ * const map2 = M.readonlyMap(["a", 1], ["b", 2], ["c", 3]);
+ *
+ * const isSubmap = M.isSubmap(S.ComparableString, N.ComparableNumber)(map2)(map1);
+ * // true (map1 is a submap of map2)
+ * ```
+ *
  * @since 2.0.0
  */
 export function isSubmap<K, A>(
@@ -414,6 +799,25 @@ export function isSubmap<K, A>(
 }
 
 /**
+ * Create a Flatmappable instance for ReadonlyMap with a fixed key type.
+ * This is useful when you want to maintain a consistent key type throughout
+ * a computation chain.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ * import * as S from "./string.ts";
+ *
+ * const flatmappable = M.getFlatmappableReadonlyMap(S.InitializableString);
+ * const map1 = M.readonlyMap(["a", 1], ["b", 2]);
+ * const map2 = M.readonlyMap(["c", 3], ["d", 4]);
+ *
+ * const combined = flatmappable.flatmap((value: number) =>
+ *   M.readonlyMap([`${value}_key`, value * 2])
+ * )(map1);
+ * // Contains: ["1_key", 2], ["2_key", 4]
+ * ```
+ *
  * @since 2.0.0
  */
 export function getFlatmappableReadonlyMap<B>(
@@ -445,6 +849,22 @@ export function getFlatmappableReadonlyMap<B>(
 }
 
 /**
+ * Create a Comparable instance for ReadonlyMap given Comparable instances
+ * for both keys and values.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ * import * as S from "./string.ts";
+ * import * as N from "./number.ts";
+ *
+ * const comparable = M.getComparable(S.ComparableString, N.ComparableNumber);
+ * const map1 = M.readonlyMap(["a", 1], ["b", 2]);
+ * const map2 = M.readonlyMap(["a", 1], ["b", 2]);
+ *
+ * const isEqual = comparable.compare(map2)(map1); // true
+ * ```
+ *
  * @since 2.0.0
  */
 export function getComparable<K, A>(
@@ -458,6 +878,23 @@ export function getComparable<K, A>(
 }
 
 /**
+ * Create a Combinable instance for ReadonlyMap given Comparable and Combinable
+ * instances for keys and values respectively.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ * import * as S from "./string.ts";
+ * import * as N from "./number.ts";
+ *
+ * const combinable = M.getCombinable(S.ComparableString, N.CombinableNumberSum);
+ * const map1 = M.readonlyMap(["a", 1], ["b", 2]);
+ * const map2 = M.readonlyMap(["a", 10], ["c", 3]);
+ *
+ * const combined = combinable.combine(map2)(map1);
+ * // Contains: ["a", 11], ["b", 2], ["c", 3] (values for "a" are combined)
+ * ```
+ *
  * @since 2.0.0
  */
 export function getCombinable<K, A>(
@@ -488,6 +925,21 @@ export function getCombinable<K, A>(
 }
 
 /**
+ * Create a Showable instance for ReadonlyMap given Showable instances
+ * for both keys and values.
+ *
+ * @example
+ * ```ts
+ * import * as M from "./map.ts";
+ * import * as S from "./string.ts";
+ * import * as N from "./number.ts";
+ *
+ * const showable = M.getShowable(S.ShowableString, N.ShowableNumber);
+ * const map = M.readonlyMap(["a", 1], ["b", 2]);
+ * const result = showable.show(map);
+ * // "new ReadonlyMap([[a, 1], [b, 2]])"
+ * ```
+ *
  * @since 2.0.0
  */
 export function getShowable<K, A>(
@@ -505,16 +957,25 @@ export function getShowable<K, A>(
 }
 
 /**
+ * The canonical implementation of Mappable for ReadonlyMap. It contains
+ * the method map.
+ *
  * @since 2.0.0
  */
 export const MappableMap: Mappable<KindReadonlyMap> = { map };
 
 /**
+ * The canonical implementation of Bimappable for ReadonlyMap. It contains
+ * the methods map and mapSecond.
+ *
  * @since 2.0.0
  */
 export const BimappableMap: Bimappable<KindReadonlyMap> = { map, mapSecond };
 
 /**
+ * The canonical implementation of Foldable for ReadonlyMap. It contains
+ * the method fold.
+ *
  * @since 2.0.0
  */
 export const FoldableMap: Foldable<KindReadonlyMap> = { fold };

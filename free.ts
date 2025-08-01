@@ -15,6 +15,8 @@ import type { Combinable } from "./combinable.ts";
 import { flow, pipe } from "./fn.ts";
 
 /**
+ * A Node represents a single value in the Free structure.
+ *
  * @since 2.0.0
  */
 export type Node<A> = {
@@ -23,6 +25,8 @@ export type Node<A> = {
 };
 
 /**
+ * A Link represents a combination of two Free structures.
+ *
  * @since 2.0.0
  */
 export type Link<A> = {
@@ -32,11 +36,16 @@ export type Link<A> = {
 };
 
 /**
+ * The Free type represents either a Node (single value) or a Link (combination of two Free structures).
+ *
  * @since 2.0.0
  */
 export type Free<A> = Node<A> | Link<A>;
 
 /**
+ * Specifies Free as a Higher Kinded Type, with covariant
+ * parameter A corresponding to the 0th index of any substitutions.
+ *
  * @since 2.0.0
  */
 export interface KindFree extends Kind {
@@ -44,6 +53,16 @@ export interface KindFree extends Kind {
 }
 
 /**
+ * Create a Node containing a single value.
+ *
+ * @example
+ * ```ts
+ * import { node } from "./free.ts";
+ *
+ * const singleValue = node(42);
+ * console.log(singleValue); // { tag: "Node", value: 42 }
+ * ```
+ *
  * @since 2.0.0
  */
 export function node<A>(value: A): Free<A> {
@@ -51,6 +70,18 @@ export function node<A>(value: A): Free<A> {
 }
 
 /**
+ * Create a Link combining two Free structures.
+ *
+ * @example
+ * ```ts
+ * import { link, node } from "./free.ts";
+ *
+ * const first = node(1);
+ * const second = node(2);
+ * const combined = link(first, second);
+ * console.log(combined); // { tag: "Link", first: { tag: "Node", value: 1 }, second: { tag: "Node", value: 2 } }
+ * ```
+ *
  * @since 2.0.0
  */
 export function link<A>(
@@ -61,6 +92,19 @@ export function link<A>(
 }
 
 /**
+ * Check if a Free structure is a Node.
+ *
+ * @example
+ * ```ts
+ * import { isNode, node, link } from "./free.ts";
+ *
+ * const single = node(1);
+ * const combined = link(node(1), node(2));
+ *
+ * console.log(isNode(single)); // true
+ * console.log(isNode(combined)); // false
+ * ```
+ *
  * @since 2.0.0
  */
 export function isNode<A>(ua: Free<A>): ua is Node<A> {
@@ -68,6 +112,19 @@ export function isNode<A>(ua: Free<A>): ua is Node<A> {
 }
 
 /**
+ * Check if a Free structure is a Link.
+ *
+ * @example
+ * ```ts
+ * import { isLink, node, link } from "./free.ts";
+ *
+ * const single = node(1);
+ * const combined = link(node(1), node(2));
+ *
+ * console.log(isLink(single)); // false
+ * console.log(isLink(combined)); // true
+ * ```
+ *
  * @since 2.0.0
  */
 export function isLink<A>(ua: Free<A>): ua is Link<A> {
@@ -75,6 +132,24 @@ export function isLink<A>(ua: Free<A>): ua is Link<A> {
 }
 
 /**
+ * Pattern match on a Free structure to extract values.
+ *
+ * @example
+ * ```ts
+ * import { match, node, link } from "./free.ts";
+ *
+ * const matcher = match(
+ *   (value) => `Single value: ${value}`,
+ *   (first, second) => `Combined: ${first} and ${second}`
+ * );
+ *
+ * const single = node(42);
+ * const combined = link(node(1), node(2));
+ *
+ * console.log(matcher(single)); // "Single value: 42"
+ * console.log(matcher(combined)); // "Combined: [object Object] and [object Object]"
+ * ```
+ *
  * @since 2.0.0
  */
 export function match<A, O>(
@@ -92,6 +167,20 @@ export function match<A, O>(
 }
 
 /**
+ * Combine two Free structures.
+ *
+ * @example
+ * ```ts
+ * import { combine, node } from "./free.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const first = node(1);
+ * const second = node(2);
+ * const combined = pipe(first, combine(second));
+ *
+ * console.log(combined.tag); // "Link"
+ * ```
+ *
  * @since 2.0.0
  */
 export function combine<A>(
@@ -101,6 +190,16 @@ export function combine<A>(
 }
 
 /**
+ * Wrap a value in a Free structure.
+ *
+ * @example
+ * ```ts
+ * import { wrap } from "./free.ts";
+ *
+ * const wrapped = wrap("Hello");
+ * console.log(wrapped); // { tag: "Node", value: "Hello" }
+ * ```
+ *
  * @since 2.0.0
  */
 export function wrap<A>(a: A): Free<A> {
@@ -108,6 +207,22 @@ export function wrap<A>(a: A): Free<A> {
 }
 
 /**
+ * Apply a function to the value in a Free structure.
+ *
+ * @example
+ * ```ts
+ * import { map, node } from "./free.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const free = node(5);
+ * const doubled = pipe(
+ *   free,
+ *   map(n => n * 2)
+ * );
+ *
+ * console.log(doubled); // { tag: "Node", value: 10 }
+ * ```
+ *
  * @since 2.0.0
  */
 export function map<A, I>(
@@ -121,6 +236,22 @@ export function map<A, I>(
 }
 
 /**
+ * Chain Free computations together.
+ *
+ * @example
+ * ```ts
+ * import { flatmap, node } from "./free.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const free = node(5);
+ * const chained = pipe(
+ *   free,
+ *   flatmap(n => node(n * 2))
+ * );
+ *
+ * console.log(chained); // { tag: "Node", value: 10 }
+ * ```
+ *
  * @since 2.0.0
  */
 export function flatmap<A, I>(
@@ -134,6 +265,23 @@ export function flatmap<A, I>(
 }
 
 /**
+ * Apply a function wrapped in a Free to a value wrapped in a Free.
+ *
+ * @example
+ * ```ts
+ * import { apply, node } from "./free.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const freeFn = node((n: number) => n * 2);
+ * const freeValue = node(5);
+ * const result = pipe(
+ *   freeValue,
+ *   apply(freeFn)
+ * );
+ *
+ * console.log(result); // { tag: "Node", value: 10 }
+ * ```
+ *
  * @since 2.0.0
  */
 export function apply<A>(ua: Free<A>): <I>(ufai: Free<(a: A) => I>) => Free<I> {
@@ -141,6 +289,25 @@ export function apply<A>(ua: Free<A>): <I>(ufai: Free<(a: A) => I>) => Free<I> {
 }
 
 /**
+ * Fold over a Free structure to produce a single value.
+ *
+ * @example
+ * ```ts
+ * import { fold, node, link } from "./free.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const free = link(node(1), node(2));
+ * const sum = pipe(
+ *   free,
+ *   fold(
+ *     (value, acc) => value + acc,
+ *     0
+ *   )
+ * );
+ *
+ * console.log(sum); // 3
+ * ```
+ *
  * @since 2.0.0
  */
 export function fold<A, O>(
@@ -163,6 +330,21 @@ export function fold<A, O>(
 }
 
 /**
+ * Create a Combinable instance for Free.
+ *
+ * @example
+ * ```ts
+ * import { getCombinable, node } from "./free.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const combinable = getCombinable<number>();
+ * const first = node(1);
+ * const second = node(2);
+ * const combined = pipe(first, combinable.combine(second));
+ *
+ * console.log(combined.tag); // "Link"
+ * ```
+ *
  * @since 2.0.0
  */
 export function getCombinable<A>(): Combinable<Free<A>> {

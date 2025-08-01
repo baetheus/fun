@@ -42,6 +42,19 @@ export interface Applicable<
 }
 
 /**
+ * Create a Combinable instance for an Applicable structure given a Combinable for the inner type.
+ *
+ * @example
+ * ```ts
+ * import * as A from "./applicable.ts";
+ * import * as O from "./option.ts";
+ * import * as N from "./number.ts";
+ *
+ * const combinableOption = A.getApplicableCombinable(O.ApplicableOption)(N.CombinableNumberSum);
+ *
+ * const result = combinableOption.combine(O.some(2))(O.some(3)); // Some(5)
+ * ```
+ *
  * @since 2.0.0
  */
 export function getApplicableCombinable<U extends Kind>(
@@ -61,6 +74,19 @@ export function getApplicableCombinable<U extends Kind>(
 
 /**
  * Compose two Applicables into a new apply function.
+ *
+ * @example
+ * ```ts
+ * import * as A from "./applicable.ts";
+ * import * as O from "./option.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const composed = A.apply(O.ApplicableOption, O.ApplicableOption);
+ * const nestedOption = O.some(O.some((n: number) => n + 1));
+ * const value = O.some(O.some(5));
+ *
+ * const result = pipe(nestedOption, composed(value)); // Some(Some(6))
+ * ```
  *
  * @since 2.0.0
  */
@@ -95,6 +121,21 @@ export function apply<U extends Kind, V extends Kind>(
 }
 
 /**
+ * Apply the first value and discard the second value from an Applicable structure.
+ *
+ * @example
+ * ```ts
+ * import * as A from "./applicable.ts";
+ * import * as O from "./option.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const applyFirst = A.applyFirst(O.ApplicableOption);
+ * const first = O.some(1);
+ * const second = O.some(2);
+ *
+ * const result = pipe(first, applyFirst(second)); // Some(1)
+ * ```
+ *
  * @since 2.0.0
  */
 export function applyFirst<U extends Kind>(
@@ -110,6 +151,21 @@ export function applyFirst<U extends Kind>(
 }
 
 /**
+ * Apply the second value and discard the first value from an Applicable structure.
+ *
+ * @example
+ * ```ts
+ * import * as A from "./applicable.ts";
+ * import * as O from "./option.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const applySecond = A.applySecond(O.ApplicableOption);
+ * const first = O.some(1);
+ * const second = O.some(2);
+ *
+ * const result = pipe(first, applySecond(second)); // Some(2)
+ * ```
+ *
  * @since 2.0.0
  */
 export function applySecond<U extends Kind>(

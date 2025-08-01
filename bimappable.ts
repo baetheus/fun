@@ -14,6 +14,8 @@ import { pipe } from "./fn.ts";
 
 /**
  * The Bimappable interface. Bimapple includes the methods map and mapSecond.
+ *
+ * @since 2.0.0
  */
 export interface Bimappable<U extends Kind> extends Mappable<U>, Hold<U> {
   readonly mapSecond: <B, J>(
@@ -24,6 +26,24 @@ export interface Bimappable<U extends Kind> extends Mappable<U>, Hold<U> {
 }
 
 /**
+ * Apply two functions simultaneously to the first and second values in a Bimappable structure.
+ *
+ * @example
+ * ```ts
+ * import * as B from "./bimappable.ts";
+ * import * as E from "./either.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const bimap = B.bimap(E.BimappableEither);
+ * const transform = bimap(
+ *   (n: number) => n * 2,
+ *   (s: string) => s.toUpperCase()
+ * );
+ *
+ * const result1 = pipe(E.right("hello"), transform); // Right("HELLO")
+ * const result2 = pipe(E.left(5), transform); // Left(10)
+ * ```
+ *
  * @since 2.0.0
  */
 export function bimap<U extends Kind>(

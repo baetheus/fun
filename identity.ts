@@ -20,6 +20,9 @@ import type { Wrappable } from "./wrappable.ts";
 export type Identity<A> = A;
 
 /**
+ * Specifies Identity as a Higher Kinded Type, with covariant
+ * parameter A corresponding to the 0th index of any substitutions.
+ *
  * @since 2.0.0
  */
 export interface KindIdentity extends Kind {
@@ -51,6 +54,22 @@ export function wrap<A>(a: A): Identity<A> {
 }
 
 /**
+ * Apply a function to the value in an Identity.
+ *
+ * @example
+ * ```ts
+ * import { map, wrap } from "./identity.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const identity = wrap(5);
+ * const doubled = pipe(
+ *   identity,
+ *   map(n => n * 2)
+ * );
+ *
+ * console.log(doubled); // 10
+ * ```
+ *
  * @since 2.0.0
  */
 export function map<A, I>(fai: (a: A) => I): (ta: Identity<A>) => Identity<I> {
@@ -58,6 +77,23 @@ export function map<A, I>(fai: (a: A) => I): (ta: Identity<A>) => Identity<I> {
 }
 
 /**
+ * Apply a function wrapped in an Identity to a value wrapped in an Identity.
+ *
+ * @example
+ * ```ts
+ * import { apply, wrap } from "./identity.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const identityFn = wrap((n: number) => n * 2);
+ * const identityValue = wrap(5);
+ * const result = pipe(
+ *   identityValue,
+ *   apply(identityFn)
+ * );
+ *
+ * console.log(result); // 10
+ * ```
+ *
  * @since 2.0.0
  */
 export function apply<A>(
@@ -67,6 +103,22 @@ export function apply<A>(
 }
 
 /**
+ * Chain Identity computations together.
+ *
+ * @example
+ * ```ts
+ * import { flatmap, wrap } from "./identity.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const identity = wrap(5);
+ * const chained = pipe(
+ *   identity,
+ *   flatmap(n => wrap(n * 2))
+ * );
+ *
+ * console.log(chained); // 10
+ * ```
+ *
  * @since 2.0.0
  */
 export function flatmap<A, I>(
@@ -76,6 +128,8 @@ export function flatmap<A, I>(
 }
 
 /**
+ * The canonical implementation of Applicable for Identity.
+ *
  * @since 2.0.0
  */
 export const ApplicableIdentity: Applicable<KindIdentity> = {
@@ -85,11 +139,15 @@ export const ApplicableIdentity: Applicable<KindIdentity> = {
 };
 
 /**
+ * The canonical implementation of Mappable for Identity.
+ *
  * @since 2.0.0
  */
 export const MappableIdentity: Mappable<KindIdentity> = { map };
 
 /**
+ * The canonical implementation of Flatmappable for Identity.
+ *
  * @since 2.0.0
  */
 export const FlatmappableIdentity: Flatmappable<KindIdentity> = {

@@ -1,8 +1,12 @@
 /**
- * This file contains the Either algebraic data type. Either is used to
- * represent two exclusive types. Generally, Either is used to represent either
- * a successful computation or a failed computation, with the result of the
- * failed computation being kept in Left.
+ * The Either module contains the Either algebraic data type, which represents
+ * two exclusive types. Either is commonly used to represent either a successful
+ * computation or a failed computation, with the result of the failed computation
+ * being kept in Left and successful results in Right.
+ *
+ * Either provides a type-safe way to handle operations that can fail, allowing
+ * you to explicitly handle both success and error cases without throwing exceptions.
+ * This makes error handling more predictable and composable.
  *
  * @module Either
  * @since 2.0.0
@@ -37,21 +41,60 @@ import { fromSort } from "./sortable.ts";
 import { flow, pipe } from "./fn.ts";
 
 /**
+ * The Left type represents the left side of an Either, typically used to hold
+ * error values or failed computation results.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ *
+ * const errorResult = E.left("Something went wrong");
+ * // { tag: "Left", left: "Something went wrong" }
+ * ```
+ *
  * @since 2.0.0
  */
 export type Left<L> = { tag: "Left"; left: L };
 
 /**
+ * The Right type represents the right side of an Either, typically used to hold
+ * successful computation results.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ *
+ * const successResult = E.right(42);
+ * // { tag: "Right", right: 42 }
+ * ```
+ *
  * @since 2.0.0
  */
 export type Right<R> = { tag: "Right"; right: R };
 
 /**
+ * The Either type is a discriminated union of Left and Right, representing
+ * two exclusive possibilities. Either<L, R> can be either Left<L> or Right<R>.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ *
+ * type Result = E.Either<string, number>;
+ *
+ * const success: Result = E.right(42);
+ * const failure: Result = E.left("Invalid input");
+ * ```
+ *
  * @since 2.0.0
  */
 export type Either<L, R> = Left<L> | Right<R>;
 
 /**
+ * Specifies Either as a Higher Kinded Type, with covariant parameter R
+ * corresponding to the 0th index and covariant parameter L corresponding to
+ * the 1st index of any substitutions.
+ *
  * @since 2.0.0
  */
 export interface KindEither extends Kind {
@@ -59,6 +102,9 @@ export interface KindEither extends Kind {
 }
 
 /**
+ * Specifies Either as a Higher Kinded Type with a fixed left type B,
+ * with covariant parameter A corresponding to the 0th index of any substitutions.
+ *
  * @since 2.0.0
  */
 export interface KindRightEither<B> extends Kind {
@@ -66,6 +112,19 @@ export interface KindRightEither<B> extends Kind {
 }
 
 /**
+ * Construct a Left value from an error or failure value.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ *
+ * const result1 = E.left("Network error");
+ * // { tag: "Left", left: "Network error" }
+ *
+ * const result2 = E.left(new Error("Something failed"));
+ * // { tag: "Left", left: Error("Something failed") }
+ * ```
+ *
  * @since 2.0.0
  */
 export function left<E, A = never>(left: E): Either<E, A> {
@@ -73,6 +132,19 @@ export function left<E, A = never>(left: E): Either<E, A> {
 }
 
 /**
+ * Construct a Right value from a successful result.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ *
+ * const result1 = E.right(42);
+ * // { tag: "Right", right: 42 }
+ *
+ * const result2 = E.right("Success!");
+ * // { tag: "Right", right: "Success!" }
+ * ```
+ *
  * @since 2.0.0
  */
 export function right<A, E = never>(right: A): Either<E, A> {
@@ -80,6 +152,17 @@ export function right<A, E = never>(right: A): Either<E, A> {
 }
 
 /**
+ * Construct a Right value from a value. This is an alias for right and is
+ * commonly used in contexts where you want to emphasize wrapping a value.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ *
+ * const result = E.wrap(42);
+ * // { tag: "Right", right: 42 }
+ * ```
+ *
  * @since 2.0.0
  */
 export function wrap<A, B = never>(a: A): Either<B, A> {
@@ -87,6 +170,17 @@ export function wrap<A, B = never>(a: A): Either<B, A> {
 }
 
 /**
+ * Construct a Left value from an error. This is an alias for left and is
+ * commonly used in contexts where you want to emphasize failure.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ *
+ * const result = E.fail("Operation failed");
+ * // { tag: "Left", left: "Operation failed" }
+ * ```
+ *
  * @since 2.0.0
  */
 export function fail<A = never, B = never>(b: B): Either<B, A> {
@@ -94,6 +188,21 @@ export function fail<A = never, B = never>(b: B): Either<B, A> {
 }
 
 /**
+ * Convert a nullable value to an Either. If the value is null or undefined,
+ * it becomes a Left with the result of calling the error function. Otherwise,
+ * it becomes a Right with the non-null value.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ *
+ * const parseNumber = E.fromNullable(() => "Value is null or undefined");
+ *
+ * const result1 = parseNumber(42); // Right(42)
+ * const result2 = parseNumber(null); // Left("Value is null or undefined")
+ * const result3 = parseNumber(undefined); // Left("Value is null or undefined")
+ * ```
+ *
  * @since 2.0.0
  */
 export function fromNullable<E>(
@@ -103,6 +212,23 @@ export function fromNullable<E>(
 }
 
 /**
+ * Execute a function that might throw an exception and convert the result to
+ * an Either. If the function throws, the error is caught and converted to a
+ * Left using the onError function. If successful, the result is wrapped in Right.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ *
+ * const safeDivide = E.tryCatch(
+ *   (a: number, b: number) => a / b,
+ *   (error) => `Division failed: ${error}`
+ * );
+ *
+ * const result1 = safeDivide(10, 2); // Right(5)
+ * const result2 = safeDivide(10, 0); // Left("Division failed: Error: Division by zero")
+ * ```
+ *
  * @since 2.0.0
  */
 export function tryCatch<E, A, AS extends unknown[]>(
@@ -119,6 +245,21 @@ export function tryCatch<E, A, AS extends unknown[]>(
 }
 
 /**
+ * Create an Either from a predicate function. If the predicate returns true
+ * for the input value, the result is Right with the value. If false, the
+ * result is Left with the original value.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ *
+ * const isPositive = E.fromPredicate((n: number) => n > 0);
+ *
+ * const result1 = isPositive(5); // Right(5)
+ * const result2 = isPositive(-3); // Left(-3)
+ * const result3 = isPositive(0); // Left(0)
+ * ```
+ *
  * @since 2.0.0
  */
 export function fromPredicate<A, B extends A>(
@@ -134,6 +275,28 @@ export function fromPredicate<A>(
 }
 
 /**
+ * Pattern match on an Either value. Provides a function for handling Left
+ * values and a function for handling Right values.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ *
+ * const result = E.right(42);
+ * const message = E.match(
+ *   (error) => `Error: ${error}`,
+ *   (value) => `Success: ${value}`
+ * )(result);
+ * // "Success: 42"
+ *
+ * const errorResult = E.left("Something went wrong");
+ * const errorMessage = E.match(
+ *   (error) => `Error: ${error}`,
+ *   (value) => `Success: ${value}`
+ * )(errorResult);
+ * // "Error: Something went wrong"
+ * ```
+ *
  * @since 2.0.0
  */
 export function match<L, R, B>(
@@ -144,6 +307,19 @@ export function match<L, R, B>(
 }
 
 /**
+ * Extract the value from an Either, providing a default value for Left cases.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ *
+ * const result1 = E.getOrElse(() => "default")(E.right("success"));
+ * // "success"
+ *
+ * const result2 = E.getOrElse(() => "default")(E.left("error"));
+ * // "default"
+ * ```
+ *
  * @since 2.0.0
  */
 export function getOrElse<E, A>(onLeft: (e: E) => A): (ua: Either<E, A>) => A {
@@ -151,6 +327,21 @@ export function getOrElse<E, A>(onLeft: (e: E) => A): (ua: Either<E, A>) => A {
 }
 
 /**
+ * Extract the Right value as an Option. Returns Some(value) for Right values
+ * and None for Left values.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ * import * as O from "./option.ts";
+ *
+ * const result1 = E.getRight(E.right(42));
+ * // Some(42)
+ *
+ * const result2 = E.getRight(E.left("error"));
+ * // None
+ * ```
+ *
  * @since 2.0.0
  */
 export function getRight<E, A>(ma: Either<E, A>): O.Option<A> {
@@ -158,6 +349,21 @@ export function getRight<E, A>(ma: Either<E, A>): O.Option<A> {
 }
 
 /**
+ * Extract the Left value as an Option. Returns Some(error) for Left values
+ * and None for Right values.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ * import * as O from "./option.ts";
+ *
+ * const result1 = E.getLeft(E.left("error"));
+ * // Some("error")
+ *
+ * const result2 = E.getLeft(E.right(42));
+ * // None
+ * ```
+ *
  * @since 2.0.0
  */
 export function getLeft<E, A>(ma: Either<E, A>): O.Option<E> {
@@ -165,6 +371,18 @@ export function getLeft<E, A>(ma: Either<E, A>): O.Option<E> {
 }
 
 /**
+ * Type guard that checks if an Either is a Left value.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ *
+ * const result = E.left("error");
+ * if (E.isLeft(result)) {
+ *   console.log("Error:", result.left);
+ * }
+ * ```
+ *
  * @since 2.0.0
  */
 export function isLeft<L, R>(m: Either<L, R>): m is Left<L> {
@@ -172,6 +390,18 @@ export function isLeft<L, R>(m: Either<L, R>): m is Left<L> {
 }
 
 /**
+ * Type guard that checks if an Either is a Right value.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ *
+ * const result = E.right(42);
+ * if (E.isRight(result)) {
+ *   console.log("Success:", result.right);
+ * }
+ * ```
+ *
  * @since 2.0.0
  */
 export function isRight<L, R>(m: Either<L, R>): m is Right<R> {
@@ -179,6 +409,33 @@ export function isRight<L, R>(m: Either<L, R>): m is Right<R> {
 }
 
 /**
+ * Apply functions to both sides of an Either. The first function is applied
+ * to Left values, the second to Right values.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const result1 = pipe(
+ *   E.right(21),
+ *   E.bimap(
+ *     (error) => `Error: ${error}`,
+ *     (value) => value * 2
+ *   )
+ * );
+ * // Right(42)
+ *
+ * const result2 = pipe(
+ *   E.left("Something failed"),
+ *   E.bimap(
+ *     (error) => `Error: ${error}`,
+ *     (value) => value * 2
+ *   )
+ * );
+ * // Left("Error: Something failed")
+ * ```
+ *
  * @since 2.0.0
  */
 export function bimap<A, B, I, J>(
@@ -189,6 +446,19 @@ export function bimap<A, B, I, J>(
 }
 
 /**
+ * Swap the Left and Right values of an Either.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ *
+ * const result1 = E.swap(E.right(42));
+ * // Left(42)
+ *
+ * const result2 = E.swap(E.left("error"));
+ * // Right("error")
+ * ```
+ *
  * @since 2.0.0
  */
 export function swap<E, A>(ma: Either<E, A>): Either<A, E> {
@@ -196,6 +466,19 @@ export function swap<E, A>(ma: Either<E, A>): Either<A, E> {
 }
 
 /**
+ * Apply a function to the Right value of an Either. Left values are unchanged.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ *
+ * const result1 = E.map((n: number) => n * 2)(E.right(21));
+ * // Right(42)
+ *
+ * const result2 = E.map((n: number) => n * 2)(E.left("error"));
+ * // Left("error")
+ * ```
+ *
  * @since 2.0.0
  */
 export function map<A, I>(
@@ -205,6 +488,19 @@ export function map<A, I>(
 }
 
 /**
+ * Apply a function to the Left value of an Either. Right values are unchanged.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ *
+ * const result1 = E.mapSecond((error: string) => `Error: ${error}`)(E.left("failed"));
+ * // Left("Error: failed")
+ *
+ * const result2 = E.mapSecond((error: string) => `Error: ${error}`)(E.right(42));
+ * // Right(42)
+ * ```
+ *
  * @since 2.0.0
  */
 export function mapSecond<B, J>(
@@ -214,6 +510,25 @@ export function mapSecond<B, J>(
 }
 
 /**
+ * Apply a function wrapped in an Either to a value wrapped in an Either.
+ * If either is Left, the result is Left. If both are Right, the function
+ * is applied to the value.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ *
+ * const add = (a: number) => (b: number) => a + b;
+ * const addEither = E.right(add);
+ * const valueEither = E.right(5);
+ *
+ * const result = E.apply(valueEither)(addEither);
+ * // Right((b: number) => 5 + b)
+ *
+ * const result2 = E.apply(E.left("error"))(addEither);
+ * // Left("error")
+ * ```
+ *
  * @since 2.0.0
  */
 export function apply<A, B>(
@@ -224,6 +539,26 @@ export function apply<A, B>(
 }
 
 /**
+ * Chain computations by applying a function that returns an Either to the
+ * Right value of an Either. Left values are unchanged.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ *
+ * const divide = (a: number) => (b: number) =>
+ *   b === 0 ? E.left("Division by zero") : E.right(a / b);
+ *
+ * const result1 = E.flatmap(divide(10))(E.right(2));
+ * // Right(5)
+ *
+ * const result2 = E.flatmap(divide(10))(E.right(0));
+ * // Left("Division by zero")
+ *
+ * const result3 = E.flatmap(divide(10))(E.left("Invalid input"));
+ * // Left("Invalid input")
+ * ```
+ *
  * @since 2.0.0
  */
 export function flatmap<A, I, J>(
@@ -233,6 +568,24 @@ export function flatmap<A, I, J>(
 }
 
 /**
+ * Chain computations by applying a function that returns an Either to the
+ * Right value, but keep the original Right value if the function succeeds.
+ * This is useful for validation or side effects.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ *
+ * const validatePositive = (n: number) =>
+ *   n > 0 ? E.right(n) : E.left("Number must be positive");
+ *
+ * const result1 = E.flatmapFirst(validatePositive)(E.right(5));
+ * // Right(5)
+ *
+ * const result2 = E.flatmapFirst(validatePositive)(E.right(-3));
+ * // Left("Number must be positive")
+ * ```
+ *
  * @since 2.0.0
  */
 export function flatmapFirst<A, I = never, J = never>(
@@ -249,6 +602,22 @@ export function flatmapFirst<A, I = never, J = never>(
 }
 
 /**
+ * Recover from a Left value by applying a function that returns an Either.
+ * Right values are unchanged.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ *
+ * const fallback = (error: string) => E.right(`Fallback: ${error}`);
+ *
+ * const result1 = E.recover(fallback)(E.left("Something failed"));
+ * // Right("Fallback: Something failed")
+ *
+ * const result2 = E.recover(fallback)(E.right(42));
+ * // Right(42)
+ * ```
+ *
  * @since 2.0.0
  */
 export function recover<B, I, J>(
@@ -258,6 +627,20 @@ export function recover<B, I, J>(
 }
 
 /**
+ * Provide an alternative Either value if the first one is Left.
+ * If the first is Right, it's returned unchanged.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ *
+ * const result1 = E.alt(E.right("fallback"))(E.left("error"));
+ * // Right("fallback")
+ *
+ * const result2 = E.alt(E.right("fallback"))(E.right("original"));
+ * // Right("original")
+ * ```
+ *
  * @since 2.0.0
  */
 export function alt<A, J>(
@@ -267,6 +650,25 @@ export function alt<A, J>(
 }
 
 /**
+ * Fold an Either into a single value by providing functions for both Left
+ * and Right cases, along with an initial value.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ *
+ * const foldResult = E.fold(
+ *   (acc: string, value: number) => `${acc}, ${value}`,
+ *   "Values:"
+ * );
+ *
+ * const result1 = foldResult(E.right(42));
+ * // "Values:, 42"
+ *
+ * const result2 = foldResult(E.left("error"));
+ * // "Values:"
+ * ```
+ *
  * @since 2.0.0
  */
 export function fold<A, O>(
@@ -277,6 +679,25 @@ export function fold<A, O>(
 }
 
 /**
+ * Traverse an Either with an Applicative. If the Either is Left, it's wrapped
+ * in the Applicative. If it's Right, the function is applied and the result
+ * is wrapped.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ * import * as A from "./array.ts";
+ *
+ * const traverseArray = E.traverse(A.ApplicableArray);
+ * const double = (n: number) => [n * 2];
+ *
+ * const result1 = traverseArray(double)(E.right(21));
+ * // [Right(42)]
+ *
+ * const result2 = traverseArray(double)(E.left("error"));
+ * // [Left("error")]
+ * ```
+ *
  * @since 2.0.0
  */
 export function traverse<V extends Kind>(
@@ -292,6 +713,24 @@ export function traverse<V extends Kind>(
 }
 
 /**
+ * Create a Showable instance for Either given Showable instances for both
+ * Left and Right types.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ * import * as S from "./string.ts";
+ * import * as N from "./number.ts";
+ *
+ * const showableEither = E.getShowableEither(S.ShowableString, N.ShowableNumber);
+ *
+ * const result1 = showableEither.show(E.right(42));
+ * // "Right(42)"
+ *
+ * const result2 = showableEither.show(E.left("error"));
+ * // "Left(error)"
+ * ```
+ *
  * @since 2.0.0
  */
 export function getShowableEither<A, B>(
@@ -307,6 +746,27 @@ export function getShowableEither<A, B>(
 }
 
 /**
+ * Create a Comparable instance for Either given Comparable instances for both
+ * Left and Right types. Left values are compared before Right values.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ * import * as S from "./string.ts";
+ * import * as N from "./number.ts";
+ *
+ * const comparableEither = E.getComparableEither(S.ComparableString, N.ComparableNumber);
+ *
+ * const result1 = comparableEither.compare(E.right(5))(E.right(3));
+ * // true (5 > 3)
+ *
+ * const result2 = comparableEither.compare(E.left("a"))(E.left("b"));
+ * // false ("a" < "b")
+ *
+ * const result3 = comparableEither.compare(E.right(5))(E.left("error"));
+ * // false (Right comes after Left)
+ * ```
+ *
  * @since 2.0.0
  */
 export function getComparableEither<A, B>(
@@ -329,6 +789,22 @@ export function getComparableEither<A, B>(
 }
 
 /**
+ * Create a Sortable instance for Either given Sortable instances for both
+ * Left and Right types. Left values are sorted before Right values.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ * import * as S from "./string.ts";
+ * import * as N from "./number.ts";
+ *
+ * const sortableEither = E.getSortableEither(S.SortableString, N.SortableNumber);
+ *
+ * const values = [E.right(3), E.left("b"), E.right(1), E.left("a")];
+ * const sorted = values.sort((a, b) => sortableEither.sort(a, b));
+ * // [Left("a"), Left("b"), Right(1), Right(3)]
+ * ```
+ *
  * @since 2.0.0
  */
 export function getSortableEither<A, B>(
@@ -345,6 +821,32 @@ export function getSortableEither<A, B>(
 }
 
 /**
+ * Create a Combinable instance for Either given Combinable instances for both
+ * Left and Right types. The combine operation combines Left values or Right
+ * values depending on which side the Either values are on.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ * import * as S from "./string.ts";
+ * import * as N from "./number.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const combinableEither = E.getCombinableEither(S.CombinableString, N.CombinableNumberSum);
+ *
+ * const result1 = pipe(
+ *   E.right("hello"),
+ *   combinableEither.combine(E.right("world"))
+ * );
+ * // Right("helloworld")
+ *
+ * const result2 = pipe(
+ *   E.left(2),
+ *   combinableEither.combine(E.left(1))
+ * );
+ * // Left(3) (assuming number combination is addition)
+ * ```
+ *
  * @since 2.0.0
  */
 export function getCombinableEither<A, B>(
@@ -367,6 +869,22 @@ export function getCombinableEither<A, B>(
 }
 
 /**
+ * Create an Initializable instance for Either given Initializable instances
+ * for both Left and Right types. The init value is a Right containing the
+ * initial value of the Right type.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ * import * as S from "./string.ts";
+ * import * as N from "./number.ts";
+ *
+ * const initializableEither = E.getInitializableEither(N.InitializableNumberSum, S.InitializableString);
+ *
+ * const result = initializableEither.init();
+ * // Right(0) (assuming number init is 0)
+ * ```
+ *
  * @since 2.0.0
  */
 export function getInitializableEither<A, B>(
@@ -380,6 +898,23 @@ export function getInitializableEither<A, B>(
 }
 
 /**
+ * Create a Flatmappable instance for Either with a fixed left type.
+ * This is useful when you want to maintain a consistent error type
+ * throughout a computation chain.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ * import * as S from "./string.ts";
+ *
+ * const flatmappableEither = E.getFlatmappableRight(S.CombinableString);
+ *
+ * const result = flatmappableEither.flatmap((n: number) =>
+ *   n > 0 ? E.right(n * 2) : E.left("Number must be positive")
+ * )(E.right(5));
+ * // Right(10)
+ * ```
+ *
  * @since 2.0.0
  */
 export function getFlatmappableRight<E>(
@@ -397,6 +932,27 @@ export function getFlatmappableRight<E>(
 }
 
 /**
+ * Create a Filterable instance for Either with a fixed left type.
+ * This allows filtering Right values and converting them to Left values
+ * when they don't meet certain criteria.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ * import * as S from "./string.ts";
+ *
+ * const filterableEither = E.getFilterableEither(S.InitializableString);
+ *
+ * const isPositive = (n: number) => n > 0;
+ * const filterPositive = filterableEither.filter(isPositive);
+ *
+ * const result1 = filterPositive(E.right(5));
+ * // Right(5)
+ *
+ * const result2 = filterPositive(E.right(-3));
+ * // Left("") (assuming string init is empty string)
+ * ```
+ *
  * @since 2.0.0
  */
 export function getFilterableEither<B>(
@@ -448,16 +1004,25 @@ export function getFilterableEither<B>(
 }
 
 /**
+ * The canonical implementation of Applicable for Either. It contains
+ * the methods wrap, apply, and map.
+ *
  * @since 2.0.0
  */
 export const ApplicableEither: Applicable<KindEither> = { apply, map, wrap };
 
 /**
+ * The canonical implementation of Bimappable for Either. It contains
+ * the methods map and mapSecond.
+ *
  * @since 2.0.0
  */
 export const BimappableEither: Bimappable<KindEither> = { map, mapSecond };
 
 /**
+ * The canonical implementation of Failable for Either. It contains
+ * the methods wrap, fail, map, flatmap, apply, alt, and recover.
+ *
  * @since 2.0.0
  */
 export const FailableEither: Failable<KindEither> = {
@@ -471,6 +1036,9 @@ export const FailableEither: Failable<KindEither> = {
 };
 
 /**
+ * The canonical implementation of Flatmappable for Either. It contains
+ * the methods wrap, apply, map, and flatmap.
+ *
  * @since 2.0.0
  */
 export const FlatmappableEither: Flatmappable<KindEither> = {
@@ -481,16 +1049,25 @@ export const FlatmappableEither: Flatmappable<KindEither> = {
 };
 
 /**
+ * The canonical implementation of Mappable for Either. It contains
+ * the method map.
+ *
  * @since 2.0.0
  */
 export const MappableEither: Mappable<KindEither> = { map };
 
 /**
+ * The canonical implementation of Foldable for Either. It contains
+ * the method fold.
+ *
  * @since 2.0.0
  */
 export const FoldableEither: Foldable<KindEither> = { fold };
 
 /**
+ * The canonical implementation of Traversable for Either. It contains
+ * the methods map, fold, and traverse.
+ *
  * @since 2.0.0
  */
 export const TraversableEither: Traversable<KindEither> = {
@@ -500,21 +1077,81 @@ export const TraversableEither: Traversable<KindEither> = {
 };
 
 /**
+ * The canonical implementation of Wrappable for Either. It contains
+ * the method wrap.
+ *
  * @since 2.0.0
  */
 export const WrappableEither: Wrappable<KindEither> = { wrap };
 
 /**
+ * Execute a side effect on the Right value of an Either and return the
+ * original Either unchanged.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const logValue = (n: number) => console.log(`Value: ${n}`);
+ * const errorValue = (e: string) => console.log(`Error: ${e}`);
+ * const result1 = pipe(
+ *   E.right(42),
+ *   E.tap(logValue, errorValue)
+ * );
+ * // Logs: "Value: 42"
+ * // Returns: Right(42)
+ *
+ * const result2 = pipe(
+ *   E.left("Something failed"),
+ *   E.tap(logValue, errorValue)
+ * );
+ * // Logs: "Error: Something failed"
+ * // Returns: Left("Something failed")
+ * ```
+ *
  * @since 2.0.0
  */
 export const tap: Tap<KindEither> = createTap(FailableEither);
 
 /**
+ * Bind a value from an Either to a name for use in subsequent computations.
+ * This is useful for chaining multiple operations that depend on previous results.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const computation = pipe(
+ *   E.right(5),
+ *   E.bindTo("x"),
+ *   E.bind("y", ({ x }) => E.right(x * 2)),
+ *   E.map(({ x, y }) => x + y)
+ * );
+ * // Right(15)
+ * ```
+ *
  * @since 2.0.0
  */
 export const bind: Bind<KindEither> = createBind(FlatmappableEither);
 
 /**
+ * Bind a value to a specific name in an Either computation.
+ * This is useful for creating named intermediate values.
+ *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const computation = pipe(
+ *   E.right(42),
+ *   E.bindTo("result"),
+ * )
+ * // Right({ result: 84 })
+ * ```
+ *
  * @since 2.0.0
  */
 export const bindTo: BindTo<KindEither> = createBindTo(MappableEither);

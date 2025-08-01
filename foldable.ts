@@ -12,6 +12,23 @@ import type { Initializable } from "./initializable.ts";
 /**
  * A Foldable structure has the method fold.
  *
+ * @example
+ * ```ts
+ * import * as A from "./array.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const numbers = [1, 2, 3, 4, 5];
+ * const sum = pipe(
+ *   numbers,
+ *   A.FoldableArray.fold(
+ *     (acc, value) => acc + value,
+ *     0
+ *   )
+ * );
+ *
+ * console.log(sum); // 15
+ * ```
+ *
  * @since 2.0.0
  */
 export interface Foldable<U extends Kind> extends Hold<U> {
@@ -24,6 +41,23 @@ export interface Foldable<U extends Kind> extends Hold<U> {
 }
 
 /**
+ * Collect all values from a Foldable structure using the provided Initializable.
+ *
+ * @example
+ * ```ts
+ * import { collect } from "./foldable.ts";
+ * import * as A from "./array.ts";
+ * import * as N from "./number.ts";
+ *
+ * const numbers = [1, 2, 3, 4, 5];
+ * const sum = collect(
+ *   A.FoldableArray,
+ *   N.InitializableNumberSum
+ * )(numbers);
+ *
+ * console.log(sum); // 15
+ * ```
+ *
  * @experimental
  * @since 2.0.0
  */

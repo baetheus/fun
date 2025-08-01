@@ -1,18 +1,20 @@
 /**
- * This file contains the Iterable algebraic data type. Iterable is a lazy,
- * synchronous, and native structure defined by ecmascript. Generally, one
- * interacts with the Iterator structure directly, but the Iterable type, being
- * more generic, is a better target for functional. Any data structure that
- * implements Iterable (ie. Array, Map, Set, etc) can use the iterable methods
- * contained here if neeeded.
+ * The Iterable module contains utilities for working with the Iterable algebraic
+ * data type. Iterable is a lazy, synchronous, and native structure defined by
+ * ECMAScript that represents a sequence of values that can be iterated over.
  *
- * Something to keep in mind here is that Iterables can have nasty edge cases
- * that don't exist for non-lazy data structures. Specifically, an iterable can
- * generate a theoretically infinite number of values, making the draining of an
- * iterable potentially impossible (trying it will cause the runtime to hang).
- * Additionally, many iterables are constructed using generators, which cannot
- * be easily cloned. This makes the process of chaining iterables a resource
- * intensive operation. As always, use these combinators with care.
+ * Any data structure that implements the Iterable interface (Array, Map, Set,
+ * etc.) can use the iterable methods contained here. The module provides
+ * functional programming utilities for transforming, filtering, and combining
+ * iterables in a lazy, memory-efficient manner.
+ *
+ * ⚠️ **Important Considerations:**
+ * - Iterables can generate infinite sequences, potentially causing the runtime
+ *   to hang if drained completely
+ * - Many iterables use generators which cannot be easily cloned, making
+ *   chaining operations resource-intensive
+ * - Use these combinators with care, especially with potentially infinite
+ *   iterables
  *
  * @module Iterable
  * @since 2.0.0
@@ -42,6 +44,9 @@ import { pipe } from "./fn.ts";
 import { not } from "./predicate.ts";
 
 /**
+ * Specifies Iterable as a Higher Kinded Type, with covariant parameter A
+ * corresponding to the 0th index of any substitutions.
+ *
  * @since 2.0.0
  */
 export interface KindIterable extends Kind {
@@ -49,6 +54,22 @@ export interface KindIterable extends Kind {
 }
 
 /**
+ * Create an Iterable from a function that returns an Iterator.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ *
+ * const numbers = I.iterable(function* () {
+ *   yield 1;
+ *   yield 2;
+ *   yield 3;
+ * });
+ *
+ * const result = Array.from(numbers);
+ * // [1, 2, 3]
+ * ```
+ *
  * @since 2.0.0
  */
 export function iterable<A>(
@@ -58,6 +79,28 @@ export function iterable<A>(
 }
 
 /**
+ * Create a cloneable version of an Iterable. This caches the results of
+ * iteration, allowing the iterable to be consumed multiple times.
+ * Note: This can be memory-intensive for large or infinite iterables.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ *
+ * const generator = function* () {
+ *   yield 1;
+ *   yield 2;
+ *   yield 3;
+ * };
+ *
+ * const original = I.iterable(generator);
+ * const cloned = I.clone(original);
+ *
+ * // Can iterate multiple times
+ * const first = Array.from(cloned);  // [1, 2, 3]
+ * const second = Array.from(cloned); // [1, 2, 3]
+ * ```
+ *
  * @since 2.0.0
  */
 export function clone<A>(ta: Iterable<A>): Iterable<A> {
@@ -86,6 +129,21 @@ export function clone<A>(ta: Iterable<A>): Iterable<A> {
 }
 
 /**
+ * Create an Iterable that yields a range of numbers.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ *
+ * const range1 = I.range(5); // 0, 1, 2, 3, 4
+ * const range2 = I.range(3, 10); // 10, 11, 12
+ * const range3 = I.range(4, 0, 2); // 0, 2, 4, 6
+ *
+ * const result1 = Array.from(range1); // [0, 1, 2, 3, 4]
+ * const result2 = Array.from(range2); // [10, 11, 12]
+ * const result3 = Array.from(range3); // [0, 2, 4, 6]
+ * ```
+ *
  * @since 2.0.0
  */
 export function range(
@@ -105,6 +163,19 @@ export function range(
 }
 
 /**
+ * Create an Iterable from a variable number of values.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ *
+ * const numbers = I.wrap(1, 2, 3, 4, 5);
+ * const strings = I.wrap("hello", "world");
+ *
+ * const result1 = Array.from(numbers); // [1, 2, 3, 4, 5]
+ * const result2 = Array.from(strings); // ["hello", "world"]
+ * ```
+ *
  * @since 2.0.0
  */
 export function wrap<A>(...a: A[]): Iterable<A> {
@@ -118,6 +189,23 @@ export function wrap<A>(...a: A[]): Iterable<A> {
 }
 
 /**
+ * Apply functions from an Iterable to values from another Iterable.
+ * This creates the cartesian product of functions and values.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ *
+ * const functions = I.wrap(
+ *   (x: number) => x * 2,
+ *   (x: number) => x + 1
+ * );
+ * const values = I.wrap(1, 2, 3);
+ *
+ * const result = Array.from(I.apply(values)(functions));
+ * // [2, 4, 6, 2, 3, 4] (2*1, 2*2, 2*3, 1+1, 2+1, 3+1)
+ * ```
+ *
  * @since 2.0.0
  */
 export function apply<A>(
@@ -134,6 +222,18 @@ export function apply<A>(
 }
 
 /**
+ * Apply a function to each element of an Iterable.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ *
+ * const numbers = I.wrap(1, 2, 3, 4, 5);
+ * const doubled = I.map((n: number) => n * 2)(numbers);
+ *
+ * const result = Array.from(doubled); // [2, 4, 6, 8, 10]
+ * ```
+ *
  * @since 2.0.0
  */
 export function map<A, I>(fai: (a: A) => I): (ta: Iterable<A>) => Iterable<I> {
@@ -146,6 +246,19 @@ export function map<A, I>(fai: (a: A) => I): (ta: Iterable<A>) => Iterable<I> {
 }
 
 /**
+ * Chain computations by applying a function that returns an Iterable to each
+ * element, then flattening the results.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ *
+ * const numbers = I.wrap(1, 2, 3);
+ * const expand = I.flatmap((n: number) => I.wrap(n, n * 2))(numbers);
+ *
+ * const result = Array.from(expand); // [1, 2, 2, 4, 3, 6]
+ * ```
+ *
  * @since 2.0.0
  */
 export function flatmap<A, I>(
@@ -162,6 +275,17 @@ export function flatmap<A, I>(
 }
 
 /**
+ * Execute a side effect for each element of an Iterable.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ *
+ * const numbers = I.wrap(1, 2, 3, 4, 5);
+ * I.forEach((n: number) => console.log(`Number: ${n}`))(numbers);
+ * // Logs: Number: 1, Number: 2, Number: 3, Number: 4, Number: 5
+ * ```
+ *
  * @since 2.0.0
  */
 export function forEach<A>(fa: (a: A) => void): (ta: Iterable<A>) => void {
@@ -173,6 +297,23 @@ export function forEach<A>(fa: (a: A) => void): (ta: Iterable<A>) => void {
 }
 
 /**
+ * Fold an Iterable into a single value using a reducer function and initial value.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ *
+ * const numbers = I.wrap(1, 2, 3, 4, 5);
+ * const sum = I.fold((acc: number, n: number) => acc + n, 0)(numbers);
+ * // 15
+ *
+ * const concatenated = I.fold(
+ *   (acc: string, s: string) => acc + s,
+ *   ""
+ * )(I.wrap("hello", " ", "world"));
+ * // "hello world"
+ * ```
+ *
  * @since 2.0.0
  */
 export function fold<A, O>(
@@ -189,6 +330,18 @@ export function fold<A, O>(
 }
 
 /**
+ * Create an Iterable that yields accumulated values from a fold operation.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ *
+ * const numbers = I.wrap(1, 2, 3, 4, 5);
+ * const runningSum = I.scan((acc: number, n: number) => acc + n, 0)(numbers);
+ *
+ * const result = Array.from(runningSum); // [1, 3, 6, 10, 15]
+ * ```
+ *
  * @since 2.0.0
  */
 export function scan<A, O>(
@@ -207,6 +360,18 @@ export function scan<A, O>(
 }
 
 /**
+ * Filter an Iterable to only include elements that satisfy a predicate.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ *
+ * const numbers = I.wrap(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+ * const evens = I.filter((n: number) => n % 2 === 0)(numbers);
+ *
+ * const result = Array.from(evens); // [2, 4, 6, 8, 10]
+ * ```
+ *
  * @since 2.0.0
  */
 export function filter<A, B extends A>(
@@ -229,6 +394,22 @@ export function filter<A>(
 }
 
 /**
+ * Filter and map an Iterable simultaneously. Elements that result in None
+ * are filtered out, while Some values are unwrapped.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ * import * as O from "./option.ts";
+ *
+ * const numbers = I.wrap(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+ * const evenDoubled = I.filterMap((n: number) =>
+ *   n % 2 === 0 ? O.some(n * 2) : O.none
+ * )(numbers);
+ *
+ * const result = Array.from(evenDoubled); // [4, 8, 12, 16, 20]
+ * ```
+ *
  * @since 2.0.0
  */
 export function filterMap<A, I>(
@@ -248,6 +429,21 @@ export function filterMap<A, I>(
 }
 
 /**
+ * Partition an Iterable into two Iterables based on a predicate.
+ * The first contains elements that satisfy the predicate, the second
+ * contains elements that don't.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ *
+ * const numbers = I.wrap(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+ * const [evens, odds] = I.partition((n: number) => n % 2 === 0)(numbers);
+ *
+ * const evenResult = Array.from(evens); // [2, 4, 6, 8, 10]
+ * const oddResult = Array.from(odds);   // [1, 3, 5, 7, 9]
+ * ```
+ *
  * @since 2.0.0
  */
 export function partition<A, B extends A>(
@@ -269,6 +465,23 @@ export function partition<A>(
 }
 
 /**
+ * Partition an Iterable into two Iterables based on an Either result.
+ * Right values go to the first Iterable, Left values to the second.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ * import * as E from "./either.ts";
+ *
+ * const numbers = I.wrap(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+ * const [evens, odds] = I.partitionMap((n: number) =>
+ *   n % 2 === 0 ? E.right(n) : E.left(n)
+ * )(numbers);
+ *
+ * const evenResult = Array.from(evens); // [2, 4, 6, 8, 10]
+ * const oddResult = Array.from(odds);   // [1, 3, 5, 7, 9]
+ * ```
+ *
  * @since 2.0.0
  */
 export function partitionMap<A, I, J>(
@@ -298,8 +511,22 @@ export function partitionMap<A, I, J>(
 }
 
 /**
- * Collect all values of an iterable into an array. WARNING: If the iterable is
- * infinite then this will cause the program to hang indefinitely.
+ * Collect all values of an Iterable into an array.
+ *
+ * ⚠️ **Warning:** If the Iterable is infinite, this will cause the program
+ * to hang indefinitely.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ *
+ * const numbers = I.wrap(1, 2, 3, 4, 5);
+ * const array = I.collect(numbers); // [1, 2, 3, 4, 5]
+ *
+ * // Be careful with infinite iterables!
+ * // const infinite = I.range(); // Infinite range
+ * // const result = I.collect(infinite); // This will hang!
+ * ```
  *
  * @since 2.0.0
  */
@@ -314,6 +541,18 @@ export function collect<A>(
 }
 
 /**
+ * Take the first n elements from an Iterable.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ *
+ * const numbers = I.wrap(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+ * const firstThree = I.take(3)(numbers);
+ *
+ * const result = Array.from(firstThree); // [1, 2, 3]
+ * ```
+ *
  * @since 2.0.0
  */
 export function take(n: number): <A>(ta: Iterable<A>) => Iterable<A> {
@@ -330,6 +569,19 @@ export function take(n: number): <A>(ta: Iterable<A>) => Iterable<A> {
 }
 
 /**
+ * Take elements from an Iterable until a predicate is satisfied.
+ * The element that satisfies the predicate is not included.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ *
+ * const numbers = I.wrap(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+ * const untilFive = I.takeUntil((n: number) => n === 5)(numbers);
+ *
+ * const result = Array.from(untilFive); // [1, 2, 3, 4]
+ * ```
+ *
  * @since 2.0.0
  */
 export function takeUntil<A>(
@@ -347,6 +599,19 @@ export function takeUntil<A>(
 }
 
 /**
+ * Take elements from an Iterable while a predicate is satisfied.
+ * Stops at the first element that doesn't satisfy the predicate.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ *
+ * const numbers = I.wrap(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+ * const whileLessThanFive = I.takeWhile((n: number) => n < 5)(numbers);
+ *
+ * const result = Array.from(whileLessThanFive); // [1, 2, 3, 4]
+ * ```
+ *
  * @since 2.0.0
  */
 export function takeWhile<A>(
@@ -356,6 +621,18 @@ export function takeWhile<A>(
 }
 
 /**
+ * Repeat an Iterable n times.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ *
+ * const numbers = I.wrap(1, 2, 3);
+ * const repeated = I.repeat(3)(numbers);
+ *
+ * const result = Array.from(repeated); // [1, 2, 3, 1, 2, 3, 1, 2, 3]
+ * ```
+ *
  * @since 2.0.0
  */
 export function repeat(
@@ -373,6 +650,16 @@ export function repeat(
 }
 
 /**
+ * Create an empty Iterable.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ *
+ * const empty = I.init<number>();
+ * const result = Array.from(empty); // []
+ * ```
+ *
  * @since 2.0.0
  */
 export function init<A>(): Iterable<A> {
@@ -380,6 +667,19 @@ export function init<A>(): Iterable<A> {
 }
 
 /**
+ * Combine two Iterables by concatenating their elements.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ *
+ * const first = I.wrap(1, 2, 3);
+ * const second = I.wrap(4, 5, 6);
+ * const combined = I.combine(second)(first);
+ *
+ * const result = Array.from(combined); // [1, 2, 3, 4, 5, 6]
+ * ```
+ *
  * @since 2.0.0
  */
 export function combine<A>(
@@ -397,6 +697,17 @@ export function combine<A>(
 }
 
 /**
+ * Create a Combinable instance for Iterable.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ *
+ * const combinable = I.getCombinable<number>();
+ * const combined = combinable.combine(I.wrap(4, 5, 6))(I.wrap(1, 2, 3));
+ * const result = Array.from(combined); // [1, 2, 3, 4, 5, 6]
+ * ```
+ *
  * @since 2.0.0
  */
 export function getCombinable<A>(): Combinable<Iterable<A>> {
@@ -404,6 +715,18 @@ export function getCombinable<A>(): Combinable<Iterable<A>> {
 }
 
 /**
+ * Create an Initializable instance for Iterable.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ *
+ * const initializable = I.getInitializable<number>();
+ * const empty = initializable.init(); // Empty iterable
+ * const combined = initializable.combine(I.wrap(1, 2, 3))(empty);
+ * const result = Array.from(combined); // [1, 2, 3]
+ * ```
+ *
  * @since 2.0.0
  */
 export function getInitializable<A>(): Initializable<Iterable<A>> {
@@ -411,6 +734,18 @@ export function getInitializable<A>(): Initializable<Iterable<A>> {
 }
 
 /**
+ * Create a Showable instance for Iterable given a Showable instance for its elements.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ * import * as N from "./number.ts";
+ *
+ * const showable = I.getShowable(N.ShowableNumber);
+ * const numbers = I.wrap(1, 2, 3, 4, 5);
+ * const result = showable.show(numbers); // "Iterable[1, 2, 3, 4, 5]"
+ * ```
+ *
  * @since 2.0.0
  */
 export function getShowable<A>(S: Showable<A>): Showable<Iterable<A>> {
@@ -420,6 +755,9 @@ export function getShowable<A>(S: Showable<A>): Showable<Iterable<A>> {
 }
 
 /**
+ * The canonical implementation of Applicable for Iterable. It contains
+ * the methods wrap, apply, and map.
+ *
  * @since 2.0.0
  */
 export const ApplicableIterable: Applicable<KindIterable> = {
@@ -429,6 +767,9 @@ export const ApplicableIterable: Applicable<KindIterable> = {
 };
 
 /**
+ * The canonical implementation of Flatmappable for Iterable. It contains
+ * the methods wrap, apply, map, and flatmap.
+ *
  * @since 2.0.0
  */
 export const FlatmappableIterable: Flatmappable<KindIterable> = {
@@ -439,6 +780,9 @@ export const FlatmappableIterable: Flatmappable<KindIterable> = {
 };
 
 /**
+ * The canonical implementation of Filterable for Iterable. It contains
+ * the methods filter, filterMap, partition, and partitionMap.
+ *
  * @since 2.0.0
  */
 export const FilterableIterable: Filterable<KindIterable> = {
@@ -449,11 +793,17 @@ export const FilterableIterable: Filterable<KindIterable> = {
 };
 
 /**
+ * The canonical implementation of Foldable for Iterable. It contains
+ * the method fold.
+ *
  * @since 2.0.0
  */
 export const FoldableIterable: Foldable<KindIterable> = { fold };
 
 /**
+ * The canonical implementation of Mappable for Iterable. It contains
+ * the method map.
+ *
  * @since 2.0.0
  */
 export const MappableIterable: Mappable<KindIterable> = {
@@ -461,6 +811,9 @@ export const MappableIterable: Mappable<KindIterable> = {
 };
 
 /**
+ * The canonical implementation of Wrappable for Iterable. It contains
+ * the method wrap.
+ *
  * @since 2.0.0
  */
 export const WrappableIterable: Wrappable<KindIterable> = {
@@ -468,16 +821,63 @@ export const WrappableIterable: Wrappable<KindIterable> = {
 };
 
 /**
+ * Execute a side effect on each element of an Iterable and return the
+ * original Iterable unchanged.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ *
+ * const numbers = I.wrap(1, 2, 3, 4, 5);
+ * const logged = I.tap((n: number) => console.log(`Processing: ${n}`))(numbers);
+ * // Logs: Processing: 1, Processing: 2, Processing: 3, Processing: 4, Processing: 5
+ * // Returns: Iterable<number>
+ * ```
+ *
  * @since 2.0.0
  */
 export const tap: Tap<KindIterable> = createTap(FlatmappableIterable);
 
 /**
+ * Bind a value from an Iterable to a name for use in subsequent computations.
+ * This is useful for chaining multiple operations that depend on previous results.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const computation = pipe(
+ *   I.wrap(5),
+ *   I.bindTo("x"),
+ *   I.bind("y", ({ x }) => I.wrap(x * 2)),
+ *   I.map(({ x, y }) => x + y)
+ * );
+ * // Iterable<number> containing [8]
+ * ```
+ *
  * @since 2.0.0
  */
 export const bind: Bind<KindIterable> = createBind(FlatmappableIterable);
 
 /**
+ * Bind a value to a specific name in an Iterable computation.
+ * This is useful for creating named intermediate values.
+ *
+ * @example
+ * ```ts
+ * import * as I from "./iterable.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const computation = pipe(
+ *   I.wrap(42),
+ *   I.bindTo("result"),
+ *   I.map(({ result }) => result * 2)
+ * );
+ *
+ * const result = Array.from(computation); // [{ result: 84 }]
+ * ```
+ *
  * @since 2.0.0
  */
 export const bindTo: BindTo<KindIterable> = createBindTo(FlatmappableIterable);

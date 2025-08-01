@@ -598,6 +598,10 @@ export function pipe<A, B, C, D, E, F, G, H, I, J, K, L>(
 export function pipe(
   value: unknown,
   ...fns: AnyFn[]
+): unknown;
+export function pipe(
+  value: unknown,
+  ...fns: AnyFn[]
 ): unknown {
   return fns.reduce((val, fn) => fn(val), value);
 }

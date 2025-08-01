@@ -45,11 +45,15 @@ import { isNotNil } from "./nil.ts";
 export type DatumEither<L, R> = Datum<Either<L, R>>;
 
 /**
+ * The Success type represents a DatumEither that has successfully completed.
+ *
  * @since 2.0.0
  */
 export type Success<A> = D.Refresh<E.Right<A>> | D.Replete<E.Right<A>>;
 
 /**
+ * The Failure type represents a DatumEither that has failed.
+ *
  * @since 2.0.0
  */
 export type Failure<B> = D.Refresh<E.Left<B>> | D.Replete<E.Left<B>>;
@@ -64,6 +68,16 @@ export type Failure<B> = D.Refresh<E.Left<B>> | D.Replete<E.Left<B>>;
 export interface KindDatumEither extends Kind {
   readonly kind: DatumEither<Out<this, 1>, Out<this, 0>>;
 }
+
+/**
+ * @since 2.1.0
+ */
+export const initial: D.Initial = D.initial;
+
+/**
+ * @since 2.1.0
+ */
+export const pending: D.Pending = D.pending;
 
 /**
  * Constructs a DatumEither from a value and wraps it in an inner *Left*
@@ -100,16 +114,16 @@ export function right<A = never, B = never>(right: A): DatumEither<B, A> {
 }
 
 /**
- * @since 2.1.0
- */
-export const initial: D.Initial = { tag: "Initial" };
-
-/**
- * @since 2.1.0
- */
-export const pending: D.Pending = { tag: "Pending" };
-
-/**
+ * Create a Success DatumEither with optional refresh state.
+ *
+ * @example
+ * ```ts
+ * import * as DE from "./datum_either.ts";
+ *
+ * const success = DE.success(42); // Replete(Right(42))
+ * const refreshing = DE.success(42, true); // Refresh(Right(42))
+ * ```
+ *
  * @since 2.1.0
  */
 export function success<A, B = never>(
@@ -120,6 +134,16 @@ export function success<A, B = never>(
 }
 
 /**
+ * Create a Failure DatumEither with optional refresh state.
+ *
+ * @example
+ * ```ts
+ * import * as DE from "./datum_either.ts";
+ *
+ * const failure = DE.failure("Error"); // Replete(Left("Error"))
+ * const refreshing = DE.failure("Error", true); // Refresh(Left("Error"))
+ * ```
+ *
  * @since 2.1.0
  */
 export function failure<B, A = never>(
@@ -130,26 +154,72 @@ export function failure<B, A = never>(
 }
 
 /**
+ * Create a constant Initial DatumEither.
+ *
+ * @example
+ * ```ts
+ * import * as DE from "./datum_either.ts";
+ *
+ * const initial = DE.constInitial(); // Initial
+ * ```
+ *
  * @since 2.1.0
  */
 export function constInitial<A = never, B = never>(): DatumEither<B, A> {
-  return initial;
+  return D.initial;
 }
 
 /**
+ * Create a constant Pending DatumEither.
+ *
+ * @example
+ * ```ts
+ * import * as DE from "./datum_either.ts";
+ *
+ * const pending = DE.constPending(); // Pending
+ * ```
+ *
  * @since 2.1.0
  */
 export function constPending<A = never, B = never>(): DatumEither<B, A> {
-  return pending;
+  return D.pending;
 }
 
 /**
+ * Create a DatumEither from a nullable value.
+ *
+ * @example
+ * ```ts
+ * import * as DE from "./datum_either.ts";
+ *
+ * const success = DE.fromNullable("value"); // Replete(Right("value"))
+ * const failure = DE.fromNullable(null); // Initial
+ * ```
+ *
  * @since 2.1.0
  */
 export function fromNullable<A>(a: A): DatumEither<never, NonNullable<A>> {
-  return isNotNil(a) ? success(a as NonNullable<A>) : initial;
+  return isNotNil(a) ? success(a) : constInitial();
 }
+
 /**
+ * Pattern match on a DatumEither to extract values.
+ *
+ * @example
+ * ```ts
+ * import * as DE from "./datum_either.ts";
+ *
+ * const matcher = DE.match(
+ *   () => "Not started",
+ *   () => "Loading...",
+ *   (error, refreshing) => `Failed${refreshing ? " (retrying)" : ""}: ${error}`,
+ *   (value, refreshing) => `Success${refreshing ? " (refreshing)" : ""}: ${value}`
+ * );
+ *
+ * console.log(matcher(DE.success(42))); // "Success: 42"
+ * console.log(matcher(DE.failure("Error"))); // "Failed: Error"
+ * ```
+ *
  * @since 2.1.0
  */
 export function match<A, B, O>(
@@ -179,8 +249,20 @@ export function match<A, B, O>(
 }
 
 /**
- * Wraps a Datum of A in a try-catch block which upon failure returns B instead.
- * Upon success returns a *Right<A>* and *Left<B>* for a failure.
+ * Create a DatumEither from a function that might throw.
+ *
+ * @example
+ * ```ts
+ * import * as DE from "./datum_either.ts";
+ *
+ * const safeParse = DE.tryCatch(
+ *   JSON.parse,
+ *   (error) => `Parse error: ${error}`
+ * );
+ *
+ * const result1 = safeParse('{"key": "value"}'); // Replete(Right({key: "value"}))
+ * const result2 = safeParse('invalid json'); // Replete(Left("Parse error: ..."))
+ * ```
  *
  * @since 2.1.0
  */
@@ -196,28 +278,51 @@ export function tryCatch<AS extends unknown[], A, B>(
 }
 
 /**
- * @since 2.0.0
+ * Check if a DatumEither is a Success.
+ *
+ * @example
+ * ```ts
+ * import * as DE from "./datum_either.ts";
+ *
+ * console.log(DE.isSuccess(DE.success(42))); // true
+ * console.log(DE.isSuccess(DE.failure("Error"))); // false
+ * console.log(DE.isSuccess(DE.constInitial())); // false
+ * ```
+ *
+ * @since 2.1.0
  */
 export function isSuccess<A, B>(ua: DatumEither<B, A>): ua is Success<A> {
   return D.isSome(ua) && E.isRight(ua.value);
 }
 
 /**
- * @since 2.0.0
+ * Check if a DatumEither is a Failure.
+ *
+ * @example
+ * ```ts
+ * import * as DE from "./datum_either.ts";
+ *
+ * console.log(DE.isFailure(DE.success(42))); // false
+ * console.log(DE.isFailure(DE.failure("Error"))); // true
+ * console.log(DE.isFailure(DE.constInitial())); // false
+ * ```
+ *
+ * @since 2.1.0
  */
 export function isFailure<A, B>(ua: DatumEither<B, A>): ua is Failure<B> {
   return D.isSome(ua) && E.isLeft(ua.value);
 }
 
 /**
- * Lift an always succeeding async computation (Datum) into a DatumEither.
+ * Convert a Datum to a DatumEither.
  *
  * @example
  * ```ts
  * import * as DE from "./datum_either.ts";
  * import * as D from "./datum.ts";
  *
- * const value = DE.fromDatum(D.wrap(1));
+ * const datum = D.replete(42);
+ * const datumEither = DE.fromDatum(datum); // Replete(Right(42))
  * ```
  *
  * @since 2.1.0
@@ -227,15 +332,15 @@ export function fromDatum<A, B = never>(ta: Datum<A>): DatumEither<B, A> {
 }
 
 /**
- * Lifts an Either<B,A> into a DatumEither<B, A>.
+ * Convert an Either to a DatumEither.
  *
  * @example
  * ```ts
  * import * as DE from "./datum_either.ts";
  * import * as E from "./either.ts";
  *
- * const value1 = DE.fromEither(E.right(1));
- * const value2 = DE.fromEither(E.left("Error!"));
+ * const either = E.right(42);
+ * const datumEither = DE.fromEither(either); // Replete(Right(42))
  * ```
  *
  * @since 2.1.0
@@ -245,6 +350,17 @@ export function fromEither<A, B>(ta: Either<B, A>): DatumEither<B, A> {
 }
 
 /**
+ * Extract the success value as an Option.
+ *
+ * @example
+ * ```ts
+ * import * as DE from "./datum_either.ts";
+ *
+ * const success = DE.getSuccess(DE.success(42)); // Some(42)
+ * const failure = DE.getSuccess(DE.failure("Error")); // None
+ * const initial = DE.getSuccess(DE.constInitial()); // None
+ * ```
+ *
  * @since 2.1.0
  */
 export function getSuccess<A, B>(ua: DatumEither<B, A>): Option<A> {
@@ -252,6 +368,17 @@ export function getSuccess<A, B>(ua: DatumEither<B, A>): Option<A> {
 }
 
 /**
+ * Extract the failure value as an Option.
+ *
+ * @example
+ * ```ts
+ * import * as DE from "./datum_either.ts";
+ *
+ * const success = DE.getFailure(DE.success(42)); // None
+ * const failure = DE.getFailure(DE.failure("Error")); // Some("Error")
+ * const initial = DE.getFailure(DE.constInitial()); // None
+ * ```
+ *
  * @since 2.1.0
  */
 export function getFailure<A, B>(ua: DatumEither<B, A>): Option<B> {
@@ -259,13 +386,14 @@ export function getFailure<A, B>(ua: DatumEither<B, A>): Option<B> {
 }
 
 /**
- * Construct an DatumEither<B, A> from a value D.
+ * Wrap a value in a Success DatumEither.
  *
  * @example
  * ```ts
  * import * as DE from "./datum_either.ts";
  *
- * const value = DE.wrap(1);
+ * const wrapped = DE.wrap(42);
+ * console.log(wrapped); // Replete(Right(42))
  * ```
  *
  * @since 2.1.0
@@ -275,13 +403,14 @@ export function wrap<A, B = never>(a: A): DatumEither<B, A> {
 }
 
 /**
- * Construct an DatumEither<B, A> from a value B.
+ * Create a DatumEither that always fails with the given error.
  *
  * @example
  * ```ts
  * import * as DE from "./datum_either.ts";
  *
- * const value = DE.fail("Error!");
+ * const failure = DE.fail("Something went wrong");
+ * console.log(failure); // Replete(Left("Something went wrong"))
  * ```
  *
  * @since 2.1.0
@@ -291,25 +420,49 @@ export function fail<A = never, B = never>(b: B): DatumEither<B, A> {
 }
 
 /**
- * Map a function over the *Right* side of a DatumEither
+ * Apply a function to the success value of a DatumEither.
+ *
+ * @example
+ * ```ts
+ * import * as DE from "./datum_either.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const result = pipe(
+ *   DE.success(5),
+ *   DE.map(n => n * 2)
+ * );
+ * console.log(result); // Replete(Right(10))
+ * ```
  *
  * @since 2.1.0
  */
 export function map<A, I>(
   fai: (a: A) => I,
 ): <B>(ta: DatumEither<B, A>) => DatumEither<B, I> {
-  return (ta) => pipe(ta, D.map(E.map(fai)));
+  return D.map(E.map(fai));
 }
 
 /**
- * Map a function over the *Left* side of a DatumEither
+ * Apply a function to the failure value of a DatumEither.
+ *
+ * @example
+ * ```ts
+ * import * as DE from "./datum_either.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const result = pipe(
+ *   DE.failure("Error"),
+ *   DE.mapSecond(e => `Error: ${e}`)
+ * );
+ * console.log(result); // Replete(Left("Error: Error"))
+ * ```
  *
  * @since 2.1.0
  */
 export function mapSecond<B, J>(
   fbj: (b: B) => J,
 ): <A>(ta: DatumEither<B, A>) => DatumEither<J, A> {
-  return (ta) => pipe(ta, D.map(E.mapSecond(fbj)));
+  return D.map(E.mapSecond(fbj));
 }
 
 /**
@@ -334,7 +487,19 @@ export function apply<A, B>(
 }
 
 /**
- * Chain DatumEither based computations together in a pipeline
+ * Chain DatumEither computations together.
+ *
+ * @example
+ * ```ts
+ * import * as DE from "./datum_either.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const result = pipe(
+ *   DE.success(5),
+ *   DE.flatmap(n => DE.success(n * 2))
+ * );
+ * console.log(result); // Replete(Right(10))
+ * ```
  *
  * @since 2.1.0
  */
@@ -352,8 +517,19 @@ export function flatmap<A, I, J>(
 }
 
 /**
- * Chain DatumEither based failures, *Left* sides, useful for recovering
- * from error conditions.
+ * Recover from a failure by applying a function to the error.
+ *
+ * @example
+ * ```ts
+ * import * as DE from "./datum_either.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const result = pipe(
+ *   DE.failure("Error"),
+ *   DE.recover(e => DE.success(`Recovered from: ${e}`))
+ * );
+ * console.log(result); // Replete(Right("Recovered from: Error"))
+ * ```
  *
  * @since 2.1.0
  */
@@ -371,8 +547,19 @@ export function recover<B, J, I>(
 }
 
 /**
- * Provide an alternative for a failed computation.
- * Useful for implementing defaults.
+ * Provide an alternative DatumEither if the current one fails.
+ *
+ * @example
+ * ```ts
+ * import * as DE from "./datum_either.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const result = pipe(
+ *   DE.failure("Error"),
+ *   DE.alt(DE.success("fallback"))
+ * );
+ * console.log(result); // Replete(Right("fallback"))
+ * ```
  *
  * @since 2.1.0
  */
@@ -383,6 +570,21 @@ export function alt<I, J>(
 }
 
 /**
+ * Create a Showable instance for DatumEither given Showable instances for the success and failure types.
+ *
+ * @example
+ * ```ts
+ * import * as DE from "./datum_either.ts";
+ *
+ * const showable = DE.getShowableDatumEither(
+ *   { show: (n: number) => n.toString() },
+ *   { show: (s: string) => s }
+ * );
+ *
+ * console.log(showable.show(DE.success(42))); // "Replete(Right(42))"
+ * console.log(showable.show(DE.failure("Error"))); // "Replete(Left(Error))"
+ * ```
+ *
  * @since 2.1.0
  */
 export function getShowableDatumEither<A, B>(
@@ -393,6 +595,20 @@ export function getShowableDatumEither<A, B>(
 }
 
 /**
+ * Create a Combinable instance for DatumEither given Combinable instances for the success and failure types.
+ *
+ * @example
+ * ```ts
+ * import * as DE from "./datum_either.ts";
+ * import * as N from "./number.ts";
+ * import * as S from "./string.ts";
+ *
+ * const combinable = DE.getCombinableDatumEither(N.CombinableNumberSum, S.CombinableString);
+ * const de1 = DE.success(2);
+ * const de2 = DE.success(3);
+ * const result = combinable.combine(de2)(de1); // Replete(Right(5))
+ * ```
+ *
  * @since 2.1.0
  */
 export function getCombinableDatumEither<A, B>(
@@ -403,6 +619,17 @@ export function getCombinableDatumEither<A, B>(
 }
 
 /**
+ * Create an Initializable instance for DatumEither given Initializable instances for the success and failure types.
+ *
+ * @example
+ * ```ts
+ * import * as DE from "./datum_either.ts";
+ * import * as N from "./number.ts";
+ *
+ * const initializable = DE.getInitializableDatumEither(N.InitializableNumberSum, N.InitializableNumberSum);
+ * const init = initializable.init(); // Initial
+ * ```
+ *
  * @since 2.1.0
  */
 export function getInitializableDatumEither<A, B>(
@@ -413,6 +640,19 @@ export function getInitializableDatumEither<A, B>(
 }
 
 /**
+ * Create a Comparable instance for DatumEither given Comparable instances for the success and failure types.
+ *
+ * @example
+ * ```ts
+ * import * as DE from "./datum_either.ts";
+ * import * as N from "./number.ts";
+ *
+ * const comparable = DE.getComparableDatumEither(N.ComparableNumber, N.ComparableNumber);
+ * const de1 = DE.success(5);
+ * const de2 = DE.success(3);
+ * const result = comparable.compare(de2)(de1); // false (5 !== 3)
+ * ```
+ *
  * @since 2.1.0
  */
 export function getComparableDatumEither<A, B>(
@@ -423,6 +663,24 @@ export function getComparableDatumEither<A, B>(
 }
 
 /**
+ * Create a Sortable instance for DatumEither given Sortable instances for the success and failure types.
+ *
+ * @example
+ * ```ts
+ * import * as DE from "./datum_either.ts";
+ * import * as N from "./number.ts";
+ * import * as A from "./array.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const sortable = DE.getSortableDatumEither(N.SortableNumber, N.SortableNumber);
+ * const data = [DE.success(3), DE.failure(1), DE.success(1)];
+ * const sorted = pipe(
+ *   data,
+ *   A.sort(sortable)
+ * );
+ * // [failure(1), success(1), success(3)]
+ * ```
+ *
  * @since 2.1.0
  */
 export function getSortableDatumEither<A, B>(

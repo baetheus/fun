@@ -294,7 +294,17 @@ export function fromSort<A>(sort: Sort<A>): Sortable<A> {
 }
 
 /**
- * Create a Sortable<A> from a curried Sort<A>.
+ * Create a Sortable from a curried Sort function.
+ *
+ * @example
+ * ```ts
+ * import { fromCurriedSort } from "./sortable.ts";
+ *
+ * const numberSortable = fromCurriedSort<number>(
+ *   (second) => (first) => first < second ? -1 : first > second ? 1 : 0
+ * );
+ * const result = numberSortable.sort(3, 5); // -1
+ * ```
  *
  * @since 2.0.0
  */

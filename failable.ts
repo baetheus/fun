@@ -85,6 +85,26 @@ export type Tap<U extends Kind> = <A, B>(
  * codeflow. It is generally not advised to use tap for code flow but to
  * consider an escape hatch to do things like tracing or logging.
  *
+ * @example
+ * ```ts
+ * import * as E from "./either.ts";
+ * import { createTap } from "./failable.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const tap = createTap(E.FailableEither);
+ *
+ * const result = pipe(
+ *   E.right(42),
+ *   tap(
+ *     value => console.log(`Success: ${value}`),
+ *     () => console.log("Failure")
+ *   )
+ * );
+ *
+ * // Output: "Success: 42"
+ * console.log(result); // Some(42)
+ * ```
+ *
  * @since 2.0.0
  */
 export function createTap<U extends Kind>(

@@ -22,6 +22,21 @@ import { flow, pipe } from "./fn.ts";
  * structure. This includes standard filter, filterMap, partition, and
  * partitionMap.
  *
+ * @example
+ * ```ts
+ * import type { Filterable } from "./filterable.ts";
+ * import * as A from "./array.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * // Example with Array filterable
+ * const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+ * const evens = pipe(
+ *   numbers,
+ *   A.FilterableArray.filter(n => n % 2 === 0)
+ * );
+ * console.log(evens); // [2, 4, 6, 8, 10]
+ * ```
+ *
  * @since 2.0.0
  */
 export interface Filterable<U extends Kind> extends Hold<U> {
@@ -62,6 +77,24 @@ export interface Filterable<U extends Kind> extends Hold<U> {
 }
 
 /**
+ * Create a filter function that works with nested structures.
+ *
+ * @example
+ * ```ts
+ * import { filter } from "./filterable.ts";
+ * import * as A from "./array.ts";
+ * import * as O from "./option.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const filterNested = filter(A.MappableArray, O.FilterableOption);
+ * const options = [O.some(1), O.none, O.some(2), O.some(3)];
+ * const filtered = pipe(
+ *   options,
+ *   filterNested(n => n > 1)
+ * );
+ * console.log(filtered); // [None, None, Some(2), Some(3)]
+ * ```
+ *
  * @since 2.0.0
  */
 export function filter<U extends Kind, V extends Kind>(
@@ -85,6 +118,24 @@ export function filter<U extends Kind, V extends Kind>(
 }
 
 /**
+ * Create a filterMap function that works with nested structures.
+ *
+ * @example
+ * ```ts
+ * import { filterMap } from "./filterable.ts";
+ * import * as A from "./array.ts";
+ * import * as O from "./option.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const filterMapNested = filterMap(A.MappableArray, O.FilterableOption);
+ * const options = [O.some(1), O.none, O.some(2), O.some(3)];
+ * const filtered = pipe(
+ *   options,
+ *   filterMapNested(n => n > 1 ? O.some(n * 2) : O.none)
+ * );
+ * console.log(filtered); // [None, None, Some(4), Some(6)]
+ * ```
+ *
  * @since 2.0.0
  */
 export function filterMap<U extends Kind, V extends Kind>(
@@ -108,6 +159,25 @@ export function filterMap<U extends Kind, V extends Kind>(
 }
 
 /**
+ * Create a partition function that works with nested structures.
+ *
+ * @example
+ * ```ts
+ * import { partition } from "./filterable.ts";
+ * import * as A from "./array.ts";
+ * import * as O from "./option.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const partitionNested = partition(A.MappableArray, O.FilterableOption);
+ * const options = [O.some(1), O.none, O.some(2), O.some(3)];
+ * const [evens, odds] = pipe(
+ *   options,
+ *   partitionNested((n: number): n is number => n % 2 === 0)
+ * );
+ * console.log(evens); // [None, None, Some(2), None]
+ * console.log(odds); // [Some(1), None, None, Some(3)]
+ * ```
+ *
  * @since 2.0.0
  */
 export function partition<U extends Kind, V extends Kind>(
@@ -183,6 +253,28 @@ export function partition<U extends Kind, V extends Kind>(
 }
 
 /**
+ * Create a partitionMap function that works with nested structures.
+ *
+ * @example
+ * ```ts
+ * import { partitionMap } from "./filterable.ts";
+ * import * as A from "./array.ts";
+ * import * as O from "./option.ts";
+ * import * as E from "./either.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const partitionMapNested = partitionMap(A.MappableArray, O.FilterableOption);
+ * const options = [O.some(1), O.none, O.some(2), O.some(3)];
+ * const [evens, odds] = pipe(
+ *   options,
+ *   partitionMapNested(n =>
+ *     n % 2 === 0 ? E.right(n) : E.left(n)
+ *   )
+ * );
+ * console.log(evens); // [None, None, Some(2), None]
+ * console.log(odds); // [Some(1), None, None, Some(3)]
+ * ```
+ *
  * @since 2.0.0
  */
 export function partitionMap<U extends Kind, V extends Kind>(

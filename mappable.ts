@@ -40,6 +40,23 @@ export type BindTo<U extends Kind> = <N extends string>(
  * such that it can then be used with a `bind` function, effectively allowing
  * for `Do`-like notation in typescript.
  *
+ * @example
+ * ```ts
+ * import { createBindTo } from "./mappable.ts";
+ * import * as O from "./option.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const bindTo = createBindTo(O.MappableOption);
+ * const option = O.some(5);
+ *
+ * const result = pipe(
+ *   option,
+ *   bindTo("value")
+ * );
+ *
+ * console.log(result); // Some({ value: 5 })
+ * ```
+ *
  * @since 2.0.0
  */
 export function createBindTo<U extends Kind>(

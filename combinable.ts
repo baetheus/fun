@@ -52,6 +52,16 @@ export type TypeOf<T> = T extends Combinable<infer A> ? A : never;
 /**
  * Create a Combinable<A> from a Combine<A> and an init function.
  *
+ * @example
+ * ```ts
+ * import { fromCombine } from "./combinable.ts";
+ *
+ * const numberCombinable = fromCombine<number>(
+ *   (second) => (first) => first + second
+ * );
+ * const result = numberCombinable.combine(5)(3); // 8
+ * ```
+ *
  * @since 2.0.0
  */
 export function fromCombine<A>(

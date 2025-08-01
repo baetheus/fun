@@ -89,6 +89,15 @@ function drawString(indentation: string, forest: Forest<string>): string {
  * This is a constructor function, taking a single value A and optionally an
  * array of Tree<A> and returning a Tree<A>.
  *
+ * @example
+ * ```ts
+ * import { tree } from "./tree.ts";
+ *
+ * const leaf = tree("leaf");
+ * const node = tree("root", [leaf]);
+ * console.log(node); // { value: "root", forest: [{ value: "leaf", forest: [] }] }
+ * ```
+ *
  * @since 2.0.0
  */
 export function tree<A>(value: A, forest: Forest<A> = []): Tree<A> {
@@ -98,6 +107,14 @@ export function tree<A>(value: A, forest: Forest<A> = []): Tree<A> {
 /**
  * The wrap function for Wrappable<KindTree>.
  *
+ * @example
+ * ```ts
+ * import { wrap } from "./tree.ts";
+ *
+ * const wrapped = wrap(42);
+ * console.log(wrapped); // { value: 42, forest: [] }
+ * ```
+ *
  * @since 2.0.0
  */
 export function wrap<A>(value: A, forest: Forest<A> = []): Tree<A> {
@@ -105,16 +122,42 @@ export function wrap<A>(value: A, forest: Forest<A> = []): Tree<A> {
 }
 
 /**
- * The map function for Mappable<KindTree>.
+ * Apply a function to the value in a Tree.
+ *
+ * @example
+ * ```ts
+ * import { map, tree } from "./tree.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const tree1 = tree(5, [tree(3), tree(7)]);
+ * const doubled = pipe(
+ *   tree1,
+ *   map(n => n * 2)
+ * );
+ * console.log(doubled); // { value: 10, forest: [{ value: 6, forest: [] }, { value: 14, forest: [] }] }
+ * ```
  *
  * @since 2.0.0
  */
 export function map<A, I>(fai: (a: A) => I): (ta: Tree<A>) => Tree<I> {
-  return (ta) => wrap(fai(ta.value), ta.forest.map(map(fai)));
+  return (ta) => tree(fai(ta.value), ta.forest.map(map(fai)));
 }
 
 /**
- * The flatmap function for Flatmappable<KindTree>.
+ * Chain Tree computations together.
+ *
+ * @example
+ * ```ts
+ * import { flatmap, tree } from "./tree.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const tree1 = tree(5);
+ * const chained = pipe(
+ *   tree1,
+ *   flatmap(n => tree(n * 2, [tree(n), tree(n + 1)]))
+ * );
+ * console.log(chained); // { value: 10, forest: [{ value: 5, forest: [] }, { value: 6, forest: [] }] }
+ * ```
  *
  * @since 2.0.0
  */
@@ -128,7 +171,21 @@ export function flatmap<A, I>(
 }
 
 /**
- * The apply function for Applicable<KindTree>.
+ * Apply a function wrapped in a Tree to a value wrapped in a Tree.
+ *
+ * @example
+ * ```ts
+ * import { apply, tree } from "./tree.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const treeFn = tree((n: number) => n * 2);
+ * const treeValue = tree(5);
+ * const result = pipe(
+ *   treeValue,
+ *   apply(treeFn)
+ * );
+ * console.log(result); // { value: 10, forest: [] }
+ * ```
  *
  * @since 2.0.0
  */
@@ -137,7 +194,19 @@ export function apply<A>(ua: Tree<A>): <I>(tfai: Tree<(a: A) => I>) => Tree<I> {
 }
 
 /**
- * The fold function for Foldable<KindTree>.
+ * Fold over a Tree to produce a single value.
+ *
+ * @example
+ * ```ts
+ * import { fold, tree } from "./tree.ts";
+ *
+ * const tree1 = tree(5, [tree(3), tree(7)]);
+ * const sum = fold(
+ *   (acc: number, value: number) => acc + value,
+ *   0
+ * )(tree1);
+ * console.log(sum); // 15
+ * ```
  *
  * @since 2.0.0
  */
@@ -150,7 +219,21 @@ export function fold<A, O>(
 }
 
 /**
- * The traverse function for Traversable<KindTree>.
+ * Traverse over a Tree using the supplied Applicable.
+ *
+ * @example
+ * ```ts
+ * import { traverse, tree } from "./tree.ts";
+ * import * as O from "./option.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const tree1 = tree(5, [tree(3), tree(7)]);
+ * const traversed = pipe(
+ *   tree1,
+ *   traverse(O.ApplicableOption)(n => O.some(n * 2))
+ * );
+ * console.log(traversed); // Some({ value: 10, forest: [Some({ value: 6, forest: [] }), Some({ value: 14, forest: [] })] })
+ * ```
  *
  * @since 2.0.0
  */
@@ -178,7 +261,16 @@ export function traverse<V extends Kind>(
 }
 
 /**
- * The unwrap function for Unwrappable<KindTree>
+ * Extract the value from a Tree.
+ *
+ * @example
+ * ```ts
+ * import { unwrap, tree } from "./tree.ts";
+ *
+ * const tree1 = tree(42);
+ * const value = unwrap(tree1);
+ * console.log(value); // 42
+ * ```
  *
  * @since 2.0.0
  */
@@ -187,7 +279,19 @@ export function unwrap<A>({ value }: Tree<A>): A {
 }
 
 /**
- * Converts a Forest<string> into a tree representation.
+ * Draw a Forest as an ASCII string representation.
+ *
+ * @example
+ * ```ts
+ * import { drawForest, tree } from "./tree.ts";
+ *
+ * const forest = [tree("a"), tree("b", [tree("c")])];
+ * const ascii = drawForest(forest);
+ * console.log(ascii);
+ * // ├─ a
+ * // └─ b
+ * //    └─ c
+ * ```
  *
  * @since 2.0.0
  */
@@ -196,7 +300,20 @@ export function drawForest(forest: Forest<string>): string {
 }
 
 /**
- * Converts a Tree<string> into a tree representation.
+ * Draw a Tree as an ASCII string representation.
+ *
+ * @example
+ * ```ts
+ * import { drawTree, tree } from "./tree.ts";
+ *
+ * const tree1 = tree("root", [tree("a"), tree("b", [tree("c")])]);
+ * const ascii = drawTree(tree1);
+ * console.log(ascii);
+ * // root
+ * // ├─ a
+ * // └─ b
+ * //    └─ c
+ * ```
  *
  * @since 2.0.0
  */
@@ -205,8 +322,17 @@ export function drawTree(tree: Tree<string>): string {
 }
 
 /**
- * The match function is a recursive fold that collapses a Tree<A> into a single
- * value I. It does this from the head of the Tree first.
+ * Pattern match on a Tree to extract values.
+ *
+ * @example
+ * ```ts
+ * import { match, tree } from "./tree.ts";
+ *
+ * const tree1 = tree(5, [tree(3), tree(7)]);
+ * const matcher = match((value: number, children: number[]) => value + children.reduce((sum, child) => sum + child, 0));
+ * const result = matcher(tree1);
+ * console.log(result); // 15
+ * ```
  *
  * @since 2.0.0
  */
@@ -218,7 +344,18 @@ export function match<A, I>(
 }
 
 /**
- * Create an instance of Comparable<Tree<A>> from an instance of Comparable<A>.
+ * Create a Comparable instance for Tree given a Comparable for the inner type.
+ *
+ * @example
+ * ```ts
+ * import { getComparableTree, tree } from "./tree.ts";
+ * import * as N from "./number.ts";
+ *
+ * const comparable = getComparableTree(N.ComparableNumber);
+ * const tree1 = tree(5);
+ * const tree2 = tree(3);
+ * const result = comparable.compare(tree2)(tree1); // false (5 > 3)
+ * ```
  *
  * @since 2.0.0
  */
@@ -244,7 +381,17 @@ export function getComparableTree<A>(
 }
 
 /**
- * Get an instance of Showable<Tree<A>> from an instance of Showable<A>.
+ * Create a Showable instance for Tree given a Showable for the inner type.
+ *
+ * @example
+ * ```ts
+ * import { getShowable, tree } from "./tree.ts";
+ *
+ * const showable = getShowable({ show: (n: number) => n.toString() });
+ * const tree1 = tree(5, [tree(3), tree(7)]);
+ * const result = showable.show(tree1);
+ * console.log(result); // "Tree(5, [Tree(3, []), Tree(7, [])])"
+ * ```
  *
  * @since 2.0.0
  */

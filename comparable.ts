@@ -24,6 +24,8 @@ import { isSubrecord } from "./record.ts";
 export type Compare<A> = (second: A) => (first: A) => boolean;
 
 /**
+ * Extract the type parameter from a Comparable.
+ *
  * @since 2.0.0
  */
 export type TypeOf<U> = U extends Comparable<infer A> ? A : never;
@@ -93,14 +95,15 @@ export function fromCompare<A>(
 }
 
 /**
- * A single instance of Camparable that uses strict equality for comparison.
+ * A single instance of Comparable that uses strict equality for comparison.
+ *
+ * @since 2.0.0
  */
 // deno-lint-ignore no-explicit-any
 const STRICT_EQUALITY: Comparable<any> = fromCompare();
 
 /**
- * Create a Comparable that casts the inner type of another Comparable to
- * Readonly.
+ * Create a Comparable for Readonly types.
  *
  * @example
  * ```ts
@@ -209,17 +212,17 @@ export function literal<A extends NonEmptyArray<Literal>>(
 }
 
 /**
- * Creates a derivative Comparable that can also compare null
- * values in addition to the source eq.
+ * Create a Comparable for nullable types.
  *
  * @example
  * ```ts
- * import { nullable, number } from "./comparable.ts";
+ * import { nullable } from "./comparable.ts";
+ * import * as N from "./number.ts";
  *
- * const { compare } = nullable(number);
- *
- * const result1 = compare(1)(null); // false
- * const result2 = compare(null)(null); // true
+ * const nullableComparable = nullable(N.ComparableNumber);
+ * const result1 = nullableComparable.compare(5)(5); // true
+ * const result2 = nullableComparable.compare(null)(null); // true
+ * const result3 = nullableComparable.compare(5)(null); // false
  * ```
  *
  * @since 2.0.0
@@ -233,17 +236,17 @@ export function nullable<A>({ compare }: Comparable<A>): Comparable<A | null> {
 }
 
 /**
- * Creates a derivative Comparable that can also compare undefined
- * values in addition to the source eq.
+ * Create a Comparable for undefined types.
  *
  * @example
  * ```ts
- * import { undefinable, number } from "./comparable.ts";
+ * import { undefinable } from "./comparable.ts";
+ * import * as N from "./number.ts";
  *
- * const { compare } = undefinable(number);
- *
- * const result1 = compare(1)(undefined); // false
- * const result2 = compare(undefined)(undefined); // true
+ * const undefinableComparable = undefinable(N.ComparableNumber);
+ * const result1 = undefinableComparable.compare(5)(5); // true
+ * const result2 = undefinableComparable.compare(undefined)(undefined); // true
+ * const result3 = undefinableComparable.compare(5)(undefined); // false
  * ```
  *
  * @since 2.0.0
@@ -259,17 +262,15 @@ export function undefinable<A>(
 }
 
 /**
- * Creates a Comparable that compares readonly records with items
- * that have the type compared in the supplied eq.
+ * Create a Comparable for record types.
  *
  * @example
  * ```ts
- * import { record, number } from "./comparable.ts";
+ * import { record } from "./comparable.ts";
+ * import * as N from "./number.ts";
  *
- * const { compare } = record(number);
- *
- * const result1 = compare({ one: 1 })({ one: 2 }); // false
- * const result2 = compare({ one: 1 })({ one: 1 }); // true
+ * const recordComparable = record(N.ComparableNumber);
+ * const result = recordComparable.compare({ a: 1, b: 2 })({ a: 1, b: 2 }); // true
  * ```
  *
  * @since 2.0.0
@@ -282,17 +283,15 @@ export function record<A>(eq: Comparable<A>): Comparable<ReadonlyRecord<A>> {
 }
 
 /**
- * Creates a Comparable that compares readonly array with items
- * that have the type compared in the supplied eq.
+ * Create a Comparable for array types.
  *
  * @example
  * ```ts
- * import { array, number } from "./comparable.ts";
+ * import { array } from "./comparable.ts";
+ * import * as N from "./number.ts";
  *
- * const { compare } = array(number);
- *
- * const result1 = compare([1, 2])([1, 2, 3]); // false
- * const result2 = compare([1, 2])([1, 2]); // true
+ * const arrayComparable = array(N.ComparableNumber);
+ * const result = arrayComparable.compare([1, 2, 3])([1, 2, 3]); // true
  * ```
  *
  * @since 2.0.0
@@ -308,17 +307,16 @@ export function array<A>(
 }
 
 /**
- * Creates a eq that compares, index for index, tuples according
- * to the order and eqs passed into tuple.
+ * Create a Comparable for tuple types.
  *
  * @example
  * ```ts
- * import { tuple, number, string } from "./comparable.ts";
+ * import { tuple } from "./comparable.ts";
+ * import * as N from "./number.ts";
+ * import * as S from "./string.ts";
  *
- * const { compare } = tuple(number, string);
- *
- * const result1 = compare([1, "Hello"])([1, "Goodbye"]); // false
- * const result2 = compare([1, ""])([1, ""]); // true
+ * const tupleComparable = tuple(N.ComparableNumber, S.ComparableString);
+ * const result = tupleComparable.compare([1, "hello"])([1, "hello"]); // true
  * ```
  *
  * @since 2.0.0
@@ -339,20 +337,19 @@ export function tuple<T extends ReadonlyArray<Comparable<any>>>(
 }
 
 /**
- * Create a eq that compares, key for key, structs according
- * to the structure of the eqs passed into struct.
+ * Create a Comparable for struct types.
  *
  * @example
  * ```ts
- * import { struct, number, string } from "./comparable.ts";
+ * import { struct } from "./comparable.ts";
+ * import * as N from "./number.ts";
+ * import * as S from "./string.ts";
  *
- * const { compare } = struct({ name: string, age: number });
- *
- * const brandon = { name: "Brandon", age: 37 };
- * const emily = { name: "Emily", age: 32 };
- *
- * const result1 = compare(brandon)(emily); // false
- * const result2 = compare(brandon)(brandon); // true
+ * const structComparable = struct({
+ *   id: N.ComparableNumber,
+ *   name: S.ComparableString
+ * });
+ * const result = structComparable.compare({ id: 1, name: "John" })({ id: 1, name: "John" }); // true
  * ```
  *
  * @since 2.0.0
@@ -370,21 +367,19 @@ export function struct<A>(
 }
 
 /**
- * Create a eq that compares, key for key, structs according
- * to the structure of the eqs passed into struct. It allows
- * the values in the struct to be optional or null.
+ * Create a Comparable for partial types.
  *
  * @example
  * ```ts
- * import { struct, number, string } from "./comparable.ts";
+ * import { partial } from "./comparable.ts";
+ * import * as N from "./number.ts";
+ * import * as S from "./string.ts";
  *
- * const { compare } = struct({ name: string, age: number });
- *
- * const brandon = { name: "Brandon", age: 37 };
- * const emily = { name: "Emily", age: 32 };
- *
- * const result1 = compare(brandon)(emily); // false
- * const result2 = compare(brandon)(brandon); // true
+ * const partialComparable = partial({
+ *   id: N.ComparableNumber,
+ *   name: S.ComparableString
+ * });
+ * const result = partialComparable.compare({ id: 1 })({ id: 1 }); // true
  * ```
  *
  * @since 2.0.0
@@ -407,8 +402,7 @@ export function partial<A>(
 }
 
 /**
- * Create a eq from two other eqs. The resultant eq checks
- * that any two values are equal according to both supplied eqs.
+ * Create a Comparable for intersection types.
  *
  * @example
  * ```ts
@@ -483,8 +477,7 @@ export function union<I>(
 }
 
 /**
- * Create a eq that evaluates lazily. This is useful for equality
- * of recursive types (either mutual or otherwise).
+ * Create a lazy Comparable that defers evaluation.
  *
  * @example
  * ```ts
@@ -514,10 +507,7 @@ export function lazy<A>(_: string, f: () => Comparable<A>): Comparable<A> {
 }
 
 /**
- * Create a eq that tests the output of a thunk (IO). This assumes that
- * the output of the thunk is always the same, which for true IO is not
- * the case. This assumes that the context for the function is undefined,
- * which means that it doesn't rely on "this" to execute.
+ * Create a Comparable for thunk types.
  *
  * @example
  * ```ts
@@ -539,12 +529,7 @@ export function thunk<A>({ compare }: Comparable<A>): Comparable<() => A> {
 }
 
 /**
- * Create a eq from a method on a class or prototypical object. This
- * exists because many objects in javascript do now allow you to pass an
- * object method around on its own without its parent object. For example,
- * if you pass Date.valueOf (type () => number) into another function and
- * call it, the call will fail because valueOf does not carry the reference
- * of its parent object around.
+ * Create a Comparable for method types.
  *
  * @example
  * ```ts

@@ -123,7 +123,7 @@ export function tryCatch<AS extends unknown[], A, B>(
 }
 
 /**
- * Lift an always succeeding async computation (Async) into a AsyncEither.
+ * Convert an Async to an AsyncEither, treating any failure as a Left.
  *
  * @example
  * ```ts
@@ -142,7 +142,7 @@ export function fromAsync<A, B = never>(ta: Async<A>): AsyncEither<B, A> {
 }
 
 /**
- * Lifts an Either<B,A> into a AsyncEither<B, A>.
+ * Convert an Either to an AsyncEither.
  *
  * @example
  * ```ts
@@ -199,7 +199,20 @@ export function fail<A = never, B = never>(b: B): AsyncEither<B, A> {
 }
 
 /**
- * Map a function over the *Right* side of a AsyncEither
+ * Apply a function to the Right value of an AsyncEither.
+ *
+ * @example
+ * ```ts
+ * import * as AE from "./async_either.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const result = pipe(
+ *   AE.right(5),
+ *   AE.map(n => n * 2)
+ * );
+ *
+ * const value = await result(); // Right(10)
+ * ```
  *
  * @since 2.0.0
  */
@@ -210,7 +223,20 @@ export function map<A, I>(
 }
 
 /**
- * Map a function over the *Left* side of a AsyncEither
+ * Apply a function to the Left value of an AsyncEither.
+ *
+ * @example
+ * ```ts
+ * import * as AE from "./async_either.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const result = pipe(
+ *   AE.left("error"),
+ *   AE.mapSecond(e => `Error: ${e}`)
+ * );
+ *
+ * const value = await result(); // Left("Error: error")
+ * ```
  *
  * @since 2.0.0
  */
@@ -221,7 +247,23 @@ export function mapSecond<B, J>(
 }
 
 /**
- * Apply an argument to a function under the *Right* side.
+ * Apply a function wrapped in an AsyncEither to a value wrapped in an AsyncEither.
+ *
+ * @example
+ * ```ts
+ * import * as AE from "./async_either.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const asyncEitherFn = AE.right((n: number) => n * 2);
+ * const asyncEitherValue = AE.right(5);
+ *
+ * const result = pipe(
+ *   asyncEitherFn,
+ *   AE.apply(asyncEitherValue),
+ * );
+ *
+ * const value = await result(); // Right(10)
+ * ```
  *
  * @since 2.0.0
  */
@@ -236,7 +278,23 @@ export function apply<A, B>(
 }
 
 /**
- * Sequentially apply arguments
+ * Apply a function wrapped in an AsyncEither to a value wrapped in an AsyncEither, sequentially.
+ *
+ * @example
+ * ```ts
+ * import * as AE from "./async_either.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const asyncEitherFn = AE.right((n: number) => n * 2);
+ * const asyncEitherValue = AE.right(5);
+ *
+ * const result = pipe(
+ *   asyncEitherFn,
+ *   AE.applySequential(asyncEitherValue)
+ * );
+ *
+ * const value = await result(); // Right(10)
+ * ```
  *
  * @since 2.0.0
  */
@@ -251,8 +309,9 @@ export function applySequential<A, B>(
 }
 
 /**
- * Chain AsyncEither based computations together in a pipeline
+ * Chain AsyncEither computations together.
  *
+ * @example
  * ```ts
  * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
  * import * as TE from "./async_either.ts";
@@ -280,6 +339,21 @@ export function flatmap<A, I, J>(
 }
 
 /**
+ * Chain AsyncEither computations together, but keep the original value if the chain fails.
+ *
+ * @example
+ * ```ts
+ * import * as AE from "./async_either.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const result = pipe(
+ *   AE.right(5),
+ *   AE.flatmapFirst(n => AE.left("Failed"))
+ * );
+ *
+ * const value = await result(); // Left("Failed")
+ * ```
+ *
  * @since 2.0.0
  */
 export function flatmapFirst<A, I, J>(
@@ -300,6 +374,7 @@ export function flatmapFirst<A, I, J>(
  * Chain AsyncEither based failures, *Left* sides, useful for recovering
  * from error conditions.
  *
+ * @example
  * ```ts
  * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
  * import * as TE from "./async_either.ts";
@@ -330,6 +405,7 @@ export function recover<B, J, I>(
  * Provide an alternative for a failed computation.
  * Useful for implementing defaults.
  *
+ * @example
  * ```ts
  * import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
  * import * as TE from "./async_either.ts";
@@ -356,8 +432,20 @@ export function alt<I, J>(
 }
 
 /**
- * Fold away the inner Either from the `AsyncEither` leaving us with the
- * result of our computation in the form of a `Async`
+ * Pattern match on an AsyncEither to extract the value.
+ *
+ * @example
+ * ```ts
+ * import * as AE from "./async_either.ts";
+ *
+ * const matcher = AE.match(
+ *   (error) => `Error: ${error}`,
+ *   (value) => `Success: ${value}`
+ * );
+ *
+ * const result1 = await matcher(AE.right(5))(); // "Success: 5"
+ * const result2 = await matcher(AE.left("error"))(); // "Error: error"
+ * ```
  *
  * @since 2.0.0
  */
@@ -374,6 +462,21 @@ export function match<L = unknown, R = unknown, B = never>(
 //    () => Promise.race([ta(), wait(ms).then(flow(onTimeout, E.left))]);
 
 /**
+ * Create a Combinable instance for AsyncEither given Combinable instances for the Left and Right types.
+ *
+ * @example
+ * ```ts
+ * import * as AE from "./async_either.ts";
+ * import * as N from "./number.ts";
+ * import * as S from "./string.ts";
+ *
+ * const combinable = AE.getCombinableAsyncEither(N.CombinableNumberSum, S.CombinableString);
+ * const ae1 = AE.right(2);
+ * const ae2 = AE.right(3);
+ *
+ * const result = await combinable.combine(ae2)(ae1)(); // Right(5)
+ * ```
+ *
  * @since 2.0.0
  */
 export function getCombinableAsyncEither<A, B>(
@@ -388,6 +491,22 @@ export function getCombinableAsyncEither<A, B>(
 }
 
 /**
+ * Create an Initializable instance for AsyncEither given Initializable instances for the Left and Right types.
+ *
+ * @example
+ * ```ts
+ * import * as AE from "./async_either.ts";
+ * import * as N from "./number.ts";
+ * import * as S from "./string.ts";
+ *
+ * const initializable = AE.getInitializableAsyncEither(N.InitializableNumberSum, S.InitializableString);
+ * const ae1 = AE.right(2);
+ * const ae2 = AE.right(3);
+ *
+ * const result = await initializable.combine(ae2)(ae1)(); // Right(5)
+ * const init = await initializable.init()(); // Right(0)
+ * ```
+ *
  * @since 2.0.0
  */
 export function getInitializableAsyncEither<A, B>(

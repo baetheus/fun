@@ -22,11 +22,16 @@ import { resolve, wait } from "./promise.ts";
 import { handleThrow } from "./fn.ts";
 
 /**
+ * The Async type represents a lazy, asynchronous computation that returns a value of type A.
+ *
  * @since 2.0.0
  */
 export type Async<A> = Sync<Promise<A>>;
 
 /**
+ * Specifies Async as a Higher Kinded Type, with covariant
+ * parameter A corresponding to the 0th index of any substitutions.
+ *
  * @since 2.0.0
  */
 export interface KindAsync extends Kind {
@@ -34,6 +39,23 @@ export interface KindAsync extends Kind {
 }
 
 /**
+ * Add a delay to an Async computation.
+ *
+ * @example
+ * ```ts
+ * import { delay } from "./async.ts";
+ * import { wrap } from "./async.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const delayed = pipe(
+ *   wrap("Hello"),
+ *   delay(1000)
+ * );
+ *
+ * // This will wait 1 second before resolving to "Hello"
+ * const result = await delayed();
+ * ```
+ *
  * @since 2.0.0
  */
 export function delay(ms: number): <A>(ma: Async<A>) => Async<A> {
@@ -41,6 +63,19 @@ export function delay(ms: number): <A>(ma: Async<A>) => Async<A> {
 }
 
 /**
+ * Convert a synchronous computation to an asynchronous one.
+ *
+ * @example
+ * ```ts
+ * import { fromSync } from "./async.ts";
+ * import { wrap } from "./sync.ts";
+ *
+ * const sync = wrap(() => "Hello");
+ * const async = fromSync(sync);
+ *
+ * const result = await async(); // "Hello"
+ * ```
+ *
  * @since 2.0.0
  */
 export function fromSync<A>(fa: Sync<A>): Async<A> {
@@ -48,6 +83,23 @@ export function fromSync<A>(fa: Sync<A>): Async<A> {
 }
 
 /**
+ * Wrap a function that can throw in a try/catch block, returning an Async.
+ *
+ * @example
+ * ```ts
+ * import { tryCatch } from "./async.ts";
+ *
+ * const riskyFunction = (n: number) => {
+ *   if (n < 0) throw new Error("Negative number");
+ *   return n * 2;
+ * };
+ *
+ * const safe = tryCatch(riskyFunction, (e, args) => 0);
+ *
+ * const result1 = await safe(5)(); // 10
+ * const result2 = await safe(-1)(); // 0
+ * ```
+ *
  * @since 2.0.0
  */
 export function tryCatch<AS extends unknown[], A>(
@@ -65,6 +117,16 @@ export function tryCatch<AS extends unknown[], A>(
 }
 
 /**
+ * Wrap a value in an Async computation.
+ *
+ * @example
+ * ```ts
+ * import { wrap } from "./async.ts";
+ *
+ * const asyncValue = wrap("Hello");
+ * const result = await asyncValue(); // "Hello"
+ * ```
+ *
  * @since 2.0.0
  */
 export function wrap<A>(a: A): Async<A> {
@@ -72,6 +134,22 @@ export function wrap<A>(a: A): Async<A> {
 }
 
 /**
+ * Apply a function to the result of an Async computation.
+ *
+ * @example
+ * ```ts
+ * import { map } from "./async.ts";
+ * import { wrap } from "./async.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const result = pipe(
+ *   wrap(5),
+ *   map(n => n * 2)
+ * );
+ *
+ * const value = await result(); // 10
+ * ```
+ *
  * @since 2.0.0
  */
 export function map<A, I>(fai: (a: A) => I): (ta: Async<A>) => Async<I> {
@@ -79,6 +157,25 @@ export function map<A, I>(fai: (a: A) => I): (ta: Async<A>) => Async<I> {
 }
 
 /**
+ * Apply a function wrapped in an Async to a value wrapped in an Async.
+ *
+ * @example
+ * ```ts
+ * import { apply } from "./async.ts";
+ * import { wrap } from "./async.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const asyncFn = wrap((n: number) => n * 2);
+ * const asyncValue = wrap(5);
+ *
+ * const result = pipe(
+ *   asyncFn,
+ *   apply(asyncValue)
+ * );
+ *
+ * const value = await result(); // 10
+ * ```
+ *
  * @since 2.0.0
  */
 export function apply<A>(
@@ -88,6 +185,25 @@ export function apply<A>(
 }
 
 /**
+ * Apply a function wrapped in an Async to a value wrapped in an Async, sequentially.
+ *
+ * @example
+ * ```ts
+ * import { applySequential } from "./async.ts";
+ * import { wrap } from "./async.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const asyncFn = wrap((n: number) => n * 2);
+ * const asyncValue = wrap(5);
+ *
+ * const result = pipe(
+ *   asyncFn,
+ *   applySequential(asyncValue)
+ * );
+ *
+ * const value = await result(); // 10
+ * ```
+ *
  * @since 2.0.0
  */
 export function applySequential<A>(
@@ -97,27 +213,84 @@ export function applySequential<A>(
 }
 
 /**
+ * Chain Async computations together.
+ *
+ * @example
+ * ```ts
+ * import { flatmap } from "./async.ts";
+ * import { wrap } from "./async.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const result = pipe(
+ *   wrap(5),
+ *   flatmap(n => wrap(n * 2))
+ * );
+ *
+ * const value = await result(); // 10
+ * ```
+ *
  * @since 2.0.0
  */
 export function flatmap<A, I>(
   fati: (a: A) => Async<I>,
 ): (ta: Async<A>) => Async<I> {
-  return (ta) => () => ta().then((a) => fati(a)());
+  return (ta) => () => ta().then(fati).then((ti) => ti());
 }
 
 /**
+ * Create a Combinable instance for Async given a Combinable for the inner type.
+ *
+ * @example
+ * ```ts
+ * import { getCombinableAsync, wrap } from "./async.ts";
+ * import * as N from "./number.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const combinableAsync = getCombinableAsync(N.CombinableNumberSum);
+ * const async1 = wrap(2);
+ * const async2 = wrap(3);
+ *
+ * const result = await pipe(
+ *   async1,
+ *   combinableAsync.combine(async2),
+ * ); // 5
+ * ```
+ *
  * @since 2.0.0
  */
 export function getCombinableAsync<A>(
   { combine }: Combinable<A>,
 ): Combinable<Async<A>> {
   return {
-    combine: (second) => (first) => async () =>
-      combine(await second())(await first()),
+    combine: (second) => (first) => () =>
+      Promise.all([first(), second()]).then(([a, b]) => combine(b)(a)),
   };
 }
 
 /**
+ * Create an Initializable instance for Async given an Initializable for the inner type.
+ *
+ * @example
+ * ```ts
+ * import { getInitializableAsync, wrap } from "./async.ts";
+ * import * as N from "./number.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const initializableAsync = getInitializableAsync(N.InitializableNumberSum);
+ * const async1 = wrap(2);
+ * const async2 = wrap(3);
+ *
+ * const result = await pipe(
+ *   async1,
+ *   initializableAsync.combine(async2),
+ * ); // 5
+ *
+ * const init = await pipe(
+ *   initializableAsync,
+ *   initializableAsync.init()
+ * ); // 0
+ * ```
+ *
  * @since 2.0.0
  */
 export function getInitializableAsync<A>(

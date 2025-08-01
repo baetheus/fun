@@ -22,26 +22,38 @@ import * as E from "./either.ts";
 import { pipe } from "./fn.ts";
 
 /**
+ * The Left type represents a complete failure with only a left value.
+ *
  * @since 2.0.0
  */
 export type Left<B> = E.Left<B>;
 
 /**
+ * The Right type represents a complete success with only a right value.
+ *
  * @since 2.0.0
  */
 export type Right<A> = E.Right<A>;
 
 /**
+ * The Both type represents a partial success with both left and right values.
+ *
  * @since 2.0.0
  */
 export type Both<B, A> = { tag: "Both"; left: B; right: A };
 
 /**
+ * The These type represents either a complete failure (Left), complete success (Right), or partial success (Both).
+ *
  * @since 2.0.0
  */
 export type These<B, A> = Left<B> | Right<A> | Both<B, A>;
 
 /**
+ * Specifies These as a Higher Kinded Type, with covariant
+ * parameter A corresponding to the 0th index of any substitutions and covariant
+ * parameter B corresponding to the 1st index of any substitutions.
+ *
  * @since 2.0.0
  */
 export interface KindThese extends Kind {
@@ -49,6 +61,8 @@ export interface KindThese extends Kind {
 }
 
 /**
+ * Specifies These with a fixed left type as a Higher Kinded Type.
+ *
  * @since 2.0.0
  */
 export interface KindRightThese<E> extends Kind {
@@ -56,6 +70,16 @@ export interface KindRightThese<E> extends Kind {
 }
 
 /**
+ * Create a These that represents a complete failure.
+ *
+ * @example
+ * ```ts
+ * import { left } from "./these.ts";
+ *
+ * const failure = left("Error occurred");
+ * console.log(failure); // { tag: "Left", left: "Error occurred" }
+ * ```
+ *
  * @since 2.0.0
  */
 export function left<A = never, B = never>(left: B): These<B, A> {
@@ -63,6 +87,16 @@ export function left<A = never, B = never>(left: B): These<B, A> {
 }
 
 /**
+ * Create a These that represents a complete success.
+ *
+ * @example
+ * ```ts
+ * import { right } from "./these.ts";
+ *
+ * const success = right(42);
+ * console.log(success); // { tag: "Right", right: 42 }
+ * ```
+ *
  * @since 2.0.0
  */
 export function right<A = never, B = never>(right: A): These<B, A> {
@@ -70,6 +104,16 @@ export function right<A = never, B = never>(right: A): These<B, A> {
 }
 
 /**
+ * Create a These that represents a partial success with both values.
+ *
+ * @example
+ * ```ts
+ * import { both } from "./these.ts";
+ *
+ * const partial = both("Warning", 42);
+ * console.log(partial); // { tag: "Both", left: "Warning", right: 42 }
+ * ```
+ *
  * @since 2.0.0
  */
 export function both<A, B>(left: B, right: A): These<B, A> {
@@ -77,6 +121,23 @@ export function both<A, B>(left: B, right: A): These<B, A> {
 }
 
 /**
+ * Pattern match on a These to extract values.
+ *
+ * @example
+ * ```ts
+ * import { match, left, right, both } from "./these.ts";
+ *
+ * const matcher = match(
+ *   (error) => `Error: ${error}`,
+ *   (value) => `Success: ${value}`,
+ *   (warning, value) => `Partial: ${warning} - ${value}`
+ * );
+ *
+ * console.log(matcher(left("Failed"))); // "Error: Failed"
+ * console.log(matcher(right(42))); // "Success: 42"
+ * console.log(matcher(both("Warning", 42))); // "Partial: Warning - 42"
+ * ```
+ *
  * @since 2.0.0
  */
 export function match<A, B, O>(
@@ -89,6 +150,17 @@ export function match<A, B, O>(
 }
 
 /**
+ * Check if a These is a Left (complete failure).
+ *
+ * @example
+ * ```ts
+ * import { isLeft, left, right, both } from "./these.ts";
+ *
+ * console.log(isLeft(left("Error"))); // true
+ * console.log(isLeft(right(42))); // false
+ * console.log(isLeft(both("Warning", 42))); // false
+ * ```
+ *
  * @since 2.0.0
  */
 export function isLeft<A, B>(ta: These<B, A>): ta is Left<B> {
@@ -96,6 +168,17 @@ export function isLeft<A, B>(ta: These<B, A>): ta is Left<B> {
 }
 
 /**
+ * Check if a These is a Right (complete success).
+ *
+ * @example
+ * ```ts
+ * import { isRight, left, right, both } from "./these.ts";
+ *
+ * console.log(isRight(left("Error"))); // false
+ * console.log(isRight(right(42))); // true
+ * console.log(isRight(both("Warning", 42))); // false
+ * ```
+ *
  * @since 2.0.0
  */
 export function isRight<A, B>(ta: These<B, A>): ta is Right<A> {
@@ -103,6 +186,17 @@ export function isRight<A, B>(ta: These<B, A>): ta is Right<A> {
 }
 
 /**
+ * Check if a These is a Both (partial success).
+ *
+ * @example
+ * ```ts
+ * import { isBoth, left, right, both } from "./these.ts";
+ *
+ * console.log(isBoth(left("Error"))); // false
+ * console.log(isBoth(right(42))); // false
+ * console.log(isBoth(both("Warning", 42))); // true
+ * ```
+ *
  * @since 2.0.0
  */
 export function isBoth<A, B>(ta: These<B, A>): ta is Both<B, A> {
@@ -110,6 +204,16 @@ export function isBoth<A, B>(ta: These<B, A>): ta is Both<B, A> {
 }
 
 /**
+ * Wrap a value in a These as a Right.
+ *
+ * @example
+ * ```ts
+ * import { wrap } from "./these.ts";
+ *
+ * const wrapped = wrap(42);
+ * console.log(wrapped); // { tag: "Right", right: 42 }
+ * ```
+ *
  * @since 2.0.0
  */
 export function wrap<A, B = never>(a: A): These<B, A> {
@@ -117,6 +221,16 @@ export function wrap<A, B = never>(a: A): These<B, A> {
 }
 
 /**
+ * Create a These that always fails with the given error.
+ *
+ * @example
+ * ```ts
+ * import { fail } from "./these.ts";
+ *
+ * const failure = fail("Something went wrong");
+ * console.log(failure); // { tag: "Left", left: "Something went wrong" }
+ * ```
+ *
  * @since 2.0.0
  */
 export function fail<A = never, B = never>(b: B): These<B, A> {
@@ -124,6 +238,20 @@ export function fail<A = never, B = never>(b: B): These<B, A> {
 }
 
 /**
+ * Apply a function to the Right value of a These.
+ *
+ * @example
+ * ```ts
+ * import { map, right, both } from "./these.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const result1 = pipe(right(5), map(n => n * 2));
+ * console.log(result1); // { tag: "Right", right: 10 }
+ *
+ * const result2 = pipe(both("Warning", 5), map(n => n * 2));
+ * console.log(result2); // { tag: "Both", left: "Warning", right: 10 }
+ * ```
+ *
  * @since 2.0.0
  */
 export function map<A, I>(
@@ -137,6 +265,20 @@ export function map<A, I>(
 }
 
 /**
+ * Apply a function to the Left value of a These.
+ *
+ * @example
+ * ```ts
+ * import { mapSecond, left, both } from "./these.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const result1 = pipe(left("Error"), mapSecond(e => `Error: ${e}`));
+ * console.log(result1); // { tag: "Left", left: "Error: Error" }
+ *
+ * const result2 = pipe(both("Warning", 5), mapSecond(w => `Warning: ${w}`));
+ * console.log(result2); // { tag: "Both", left: "Warning: Warning", right: 5 }
+ * ```
+ *
  * @since 2.0.0
  */
 export function mapSecond<B, J>(
@@ -150,6 +292,22 @@ export function mapSecond<B, J>(
 }
 
 /**
+ * Fold over a These to produce a single value.
+ *
+ * @example
+ * ```ts
+ * import { fold, left, right, both } from "./these.ts";
+ *
+ * const folder = fold(
+ *   (acc: number, value: number) => acc + value,
+ *   0
+ * );
+ *
+ * console.log(folder(left("Error"))); // 0
+ * console.log(folder(right(5))); // 5
+ * console.log(folder(both("Warning", 3))); // 3
+ * ```
+ *
  * @since 2.0.0
  */
 export function fold<A, O>(
@@ -160,6 +318,22 @@ export function fold<A, O>(
 }
 
 /**
+ * Traverse over a These using the supplied Applicable.
+ *
+ * @example
+ * ```ts
+ * import { traverse, right, both } from "./these.ts";
+ * import * as O from "./option.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const traversed = pipe(
+ *   right(5),
+ *   traverse(O.ApplicableOption)(n => O.some(n * 2))
+ * );
+ *
+ * console.log(traversed); // Some({ tag: "Right", right: 10 })
+ * ```
+ *
  * @since 2.0.0
  */
 export function traverse<U extends Kind>(
@@ -176,6 +350,21 @@ export function traverse<U extends Kind>(
 }
 
 /**
+ * Create a Showable instance for These given Showable instances for the Left and Right types.
+ *
+ * @example
+ * ```ts
+ * import { getShowableThese, right, both } from "./these.ts";
+ *
+ * const showable = getShowableThese(
+ *   { show: (s: string) => s },
+ *   { show: (n: number) => n.toString() }
+ * );
+ *
+ * console.log(showable.show(right(42))); // "Right(42)"
+ * console.log(showable.show(both("Warning", 42))); // "Both(Warning, 42)"
+ * ```
+ *
  * @since 2.0.0
  */
 export function getShowableThese<A, B>(
@@ -192,6 +381,20 @@ export function getShowableThese<A, B>(
 }
 
 /**
+ * Create a Combinable instance for These given Combinable instances for the Left and Right types.
+ *
+ * @example
+ * ```ts
+ * import { getCombinableThese, right, both } from "./these.ts";
+ * import * as N from "./number.ts";
+ * import * as S from "./string.ts";
+ *
+ * const combinable = getCombinableThese(N.CombinableNumberSum, S.CombinableString);
+ * const th1 = right(2);
+ * const th2 = right(3);
+ * const result = combinable.combine(th2)(th1); // Right(5)
+ * ```
+ *
  * @since 2.0.0
  */
 export function getCombinableThese<A, B>(
@@ -229,6 +432,21 @@ export function getCombinableThese<A, B>(
 }
 
 /**
+ * Create an Initializable instance for These given Initializable instances for the Left and Right types.
+ *
+ * @example
+ * ```ts
+ * import { getInitializableThese, right, both } from "./these.ts";
+ * import * as N from "./number.ts";
+ * import * as S from "./string.ts";
+ *
+ * const initializable = getInitializableThese(N.InitializableNumberSum, S.InitializableString);
+ * const th1 = right(2);
+ * const th2 = right(3);
+ * const result = initializable.combine(th2)(th1); // Right(5)
+ * const init = initializable.init(); // Right(0)
+ * ```
+ *
  * @since 2.0.0
  */
 export function getInitializableThese<A, B>(
@@ -242,6 +460,22 @@ export function getInitializableThese<A, B>(
 }
 
 /**
+ * Create a Flatmappable instance for These with a fixed left type.
+ *
+ * @example
+ * ```ts
+ * import { getFlatmappableRight, right, both, left } from "./these.ts";
+ * import * as S from "./string.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const { flatmap } = getFlatmappableRight(S.CombinableString);
+ * const result1 = pipe(right, flatmap((n: number) => right(n * 2))); // Right(10)
+ * const result2 = pipe(
+ *   both("Warning", 5),
+ *   flatmap((n: number) => right(n * 2))
+ * ); // Both("Warning", 10)
+ * ```
+ *
  * @since 2.0.0
  */
 export function getFlatmappableRight<B>(

@@ -22,11 +22,16 @@ import { createBind, createTap } from "./flatmappable.ts";
 import { createBindTo } from "./mappable.ts";
 
 /**
+ * The Sync type represents a lazy computation that returns a value of type A.
+ *
  * @since 2.0.0
  */
 export type Sync<A> = () => A;
 
 /**
+ * Specifies Sync as a Higher Kinded Type, with covariant
+ * parameter A corresponding to the 0th index of any substitutions.
+ *
  * @since 2.0.0
  */
 export interface KindSync extends Kind {
@@ -34,6 +39,16 @@ export interface KindSync extends Kind {
 }
 
 /**
+ * Wrap a value in a Sync computation.
+ *
+ * @example
+ * ```ts
+ * import { wrap } from "./sync.ts";
+ *
+ * const syncValue = wrap("Hello");
+ * const result = syncValue(); // "Hello"
+ * ```
+ *
  * @since 2.0.0
  */
 export function wrap<A>(a: A): Sync<A> {
@@ -41,6 +56,23 @@ export function wrap<A>(a: A): Sync<A> {
 }
 
 /**
+ * Apply a function wrapped in a Sync to a value wrapped in a Sync.
+ *
+ * @example
+ * ```ts
+ * import { apply, wrap } from "./sync.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const syncFn = wrap((n: number) => n * 2);
+ * const syncValue = wrap(5);
+ * const result = pipe(
+ *   syncFn,
+ *   apply(syncValue)
+ * );
+ *
+ * const value = result(); // 10
+ * ```
+ *
  * @since 2.0.0
  */
 export function apply<A>(ua: Sync<A>): <I>(ta: Sync<(a: A) => I>) => Sync<I> {
@@ -48,6 +80,22 @@ export function apply<A>(ua: Sync<A>): <I>(ta: Sync<(a: A) => I>) => Sync<I> {
 }
 
 /**
+ * Apply a function to the result of a Sync computation.
+ *
+ * @example
+ * ```ts
+ * import { map, wrap } from "./sync.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const syncValue = wrap(5);
+ * const result = pipe(
+ *   syncValue,
+ *   map(n => n * 2)
+ * );
+ *
+ * const value = result(); // 10
+ * ```
+ *
  * @since 2.0.0
  */
 export function map<A, I>(fai: (a: A) => I): (ta: Sync<A>) => Sync<I> {
@@ -55,6 +103,22 @@ export function map<A, I>(fai: (a: A) => I): (ta: Sync<A>) => Sync<I> {
 }
 
 /**
+ * Chain Sync computations together.
+ *
+ * @example
+ * ```ts
+ * import { flatmap, wrap } from "./sync.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const syncValue = wrap(5);
+ * const result = pipe(
+ *   syncValue,
+ *   flatmap(n => wrap(n * 2))
+ * );
+ *
+ * const value = result(); // 10
+ * ```
+ *
  * @since 2.0.0
  */
 export function flatmap<A, I>(
@@ -64,6 +128,21 @@ export function flatmap<A, I>(
 }
 
 /**
+ * Fold over a Sync computation to produce a single value.
+ *
+ * @example
+ * ```ts
+ * import { fold, wrap } from "./sync.ts";
+ *
+ * const syncValue = wrap(5);
+ * const result = fold(
+ *   (acc: number, value: number) => acc + value,
+ *   0
+ * )(syncValue);
+ *
+ * console.log(result); // 5
+ * ```
+ *
  * @since 2.0.0
  */
 export function fold<A, O>(
@@ -74,6 +153,21 @@ export function fold<A, O>(
 }
 
 /**
+ * Traverse over a Sync using the supplied Applicable.
+ *
+ * @example
+ * ```ts
+ * import { traverse, wrap } from "./sync.ts";
+ * import * as O from "./option.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const syncValue = wrap(5);
+ * const faui = (n: number) => O.some(n * 2);
+ * const traverseOption = traverse(O.ApplicableOption)(faui);
+ *
+ * const result = traverseOption(syncValue); // Some(Sync(10))
+ * ```
+ *
  * @since 2.0.0
  */
 export function traverse<V extends Kind>(
@@ -85,6 +179,19 @@ export function traverse<V extends Kind>(
 }
 
 /**
+ * Create a Combinable instance for Sync given a Combinable for the inner type.
+ *
+ * @example
+ * ```ts
+ * import { getCombinableSync, wrap } from "./sync.ts";
+ * import * as N from "./number.ts";
+ *
+ * const combinableSync = getCombinableSync(N.CombinableNumberSum);
+ * const sync1 = wrap(2);
+ * const sync2 = wrap(3);
+ * const result = combinableSync.combine(sync2)(sync1)(); // 5
+ * ```
+ *
  * @since 2.0.0
  */
 export function getCombinableSync<A>(
@@ -96,6 +203,20 @@ export function getCombinableSync<A>(
 }
 
 /**
+ * Create an Initializable instance for Sync given an Initializable for the inner type.
+ *
+ * @example
+ * ```ts
+ * import { getInitializableSync, wrap } from "./sync.ts";
+ * import * as N from "./number.ts";
+ *
+ * const initializableSync = getInitializableSync(N.InitializableNumberSum);
+ * const sync1 = wrap(2);
+ * const sync2 = wrap(3);
+ * const result = initializableSync.combine(sync2)(sync1)(); // 5
+ * const init = initializableSync.init()(); // 0
+ * ```
+ *
  * @since 2.0.0
  */
 export function getInitializableSync<A>(

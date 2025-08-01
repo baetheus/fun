@@ -32,6 +32,8 @@ import { isNotNil } from "./nil.ts";
 import { flow, handleThrow, identity, pipe } from "./fn.ts";
 
 /**
+ * The Initial state represents a datum that has not been loaded yet.
+ *
  * @since 2.0.0
  */
 export type Initial = {
@@ -39,6 +41,8 @@ export type Initial = {
 };
 
 /**
+ * The Pending state represents a datum that is currently loading.
+ *
  * @since 2.0.0
  */
 export type Pending = {
@@ -46,6 +50,8 @@ export type Pending = {
 };
 
 /**
+ * The Refresh state represents a datum that is refreshing with stale data.
+ *
  * @since 2.0.0
  */
 export type Refresh<A> = {
@@ -54,6 +60,8 @@ export type Refresh<A> = {
 };
 
 /**
+ * The Replete state represents a datum that has been fully loaded.
+ *
  * @since 2.0.0
  */
 export type Replete<A> = {
@@ -62,26 +70,37 @@ export type Replete<A> = {
 };
 
 /**
+ * The Datum type represents an optional value with loading states.
+ *
  * @since 2.0.0
  */
 export type Datum<A> = Initial | Pending | Refresh<A> | Replete<A>;
 
 /**
+ * The None type represents states without a value.
+ *
  * @since 2.0.0
  */
 export type None = Initial | Pending;
 
 /**
+ * The Some type represents states with a value.
+ *
  * @since 2.0.0
  */
 export type Some<A> = Refresh<A> | Replete<A>;
 
 /**
+ * The Loading type represents states that are currently loading.
+ *
  * @since 2.0.0
  */
 export type Loading<A> = Pending | Refresh<A>;
 
 /**
+ * Specifies Datum as a Higher Kinded Type, with covariant
+ * parameter A corresponding to the 0th index of any substitutions.
+ *
  * @since 2.0.0
  */
 export interface KindDatum extends Kind {
@@ -89,16 +108,46 @@ export interface KindDatum extends Kind {
 }
 
 /**
+ * Create an Initial datum.
+ *
+ * @example
+ * ```ts
+ * import { initial } from "./datum.ts";
+ *
+ * const datum = initial;
+ * console.log(datum); // { tag: "Initial" }
+ * ```
+ *
  * @since 2.0.0
  */
 export const initial: Initial = { tag: "Initial" };
 
 /**
+ * Create a Pending datum.
+ *
+ * @example
+ * ```ts
+ * import { pending } from "./datum.ts";
+ *
+ * const datum = pending;
+ * console.log(datum); // { tag: "Pending" }
+ * ```
+ *
  * @since 2.0.0
  */
 export const pending: Pending = { tag: "Pending" };
 
 /**
+ * Create a Refresh datum with a value.
+ *
+ * @example
+ * ```ts
+ * import { refresh } from "./datum.ts";
+ *
+ * const datum = refresh("stale data");
+ * console.log(datum); // { tag: "Refresh", value: "stale data" }
+ * ```
+ *
  * @since 2.0.0
  */
 export function refresh<D>(value: D): Datum<D> {
@@ -106,6 +155,16 @@ export function refresh<D>(value: D): Datum<D> {
 }
 
 /**
+ * Create a Replete datum with a value.
+ *
+ * @example
+ * ```ts
+ * import { replete } from "./datum.ts";
+ *
+ * const datum = replete("fresh data");
+ * console.log(datum); // { tag: "Replete", value: "fresh data" }
+ * ```
+ *
  * @since 2.0.0
  */
 export function replete<D>(value: D): Datum<D> {
@@ -113,6 +172,16 @@ export function replete<D>(value: D): Datum<D> {
 }
 
 /**
+ * Create a constant Initial datum.
+ *
+ * @example
+ * ```ts
+ * import { constInitial } from "./datum.ts";
+ *
+ * const datum = constInitial();
+ * console.log(datum); // { tag: "Initial" }
+ * ```
+ *
  * @since 2.0.0
  */
 export function constInitial<A = never>(): Datum<A> {
@@ -120,6 +189,16 @@ export function constInitial<A = never>(): Datum<A> {
 }
 
 /**
+ * Create a constant Pending datum.
+ *
+ * @example
+ * ```ts
+ * import { constPending } from "./datum.ts";
+ *
+ * const datum = constPending();
+ * console.log(datum); // { tag: "Pending" }
+ * ```
+ *
  * @since 2.0.0
  */
 export function constPending<A = never>(): Datum<A> {
@@ -127,6 +206,16 @@ export function constPending<A = never>(): Datum<A> {
 }
 
 /**
+ * Create a Datum from a nullable value.
+ *
+ * @example
+ * ```ts
+ * import { fromNullable } from "./datum.ts";
+ *
+ * const datum1 = fromNullable("value"); // Replete("value")
+ * const datum2 = fromNullable(null); // Initial
+ * ```
+ *
  * @since 2.0.0
  */
 export function fromNullable<A>(a: A): Datum<NonNullable<A>> {
@@ -134,6 +223,17 @@ export function fromNullable<A>(a: A): Datum<NonNullable<A>> {
 }
 
 /**
+ * Create a Datum from a function that might throw.
+ *
+ * @example
+ * ```ts
+ * import { tryCatch } from "./datum.ts";
+ *
+ * const safeParse = tryCatch(JSON.parse);
+ * const result1 = safeParse('{"key": "value"}'); // Replete({key: "value"})
+ * const result2 = safeParse('invalid json'); // Initial
+ * ```
+ *
  * @since 2.0.0
  */
 export function tryCatch<AS extends unknown[], A>(
@@ -147,6 +247,16 @@ export function tryCatch<AS extends unknown[], A>(
 }
 
 /**
+ * Convert a Datum to a Loading state.
+ *
+ * @example
+ * ```ts
+ * import { toLoading, replete, initial } from "./datum.ts";
+ *
+ * const datum1 = toLoading(replete("data")); // Refresh("data")
+ * const datum2 = toLoading(initial); // Pending
+ * ```
+ *
  * @since 2.0.0
  */
 export function toLoading<A>(ta: Datum<A>): Datum<A> {
@@ -162,6 +272,17 @@ export function toLoading<A>(ta: Datum<A>): Datum<A> {
 }
 
 /**
+ * Check if a Datum is in the Initial state.
+ *
+ * @example
+ * ```ts
+ * import { isInitial, initial, pending, replete } from "./datum.ts";
+ *
+ * console.log(isInitial(initial)); // true
+ * console.log(isInitial(pending)); // false
+ * console.log(isInitial(replete("data"))); // false
+ * ```
+ *
  * @since 2.0.0
  */
 export function isInitial<A>(ta: Datum<A>): ta is Initial {
@@ -169,6 +290,17 @@ export function isInitial<A>(ta: Datum<A>): ta is Initial {
 }
 
 /**
+ * Check if a Datum is in the Pending state.
+ *
+ * @example
+ * ```ts
+ * import { isPending, initial, pending, replete } from "./datum.ts";
+ *
+ * console.log(isPending(initial)); // false
+ * console.log(isPending(pending)); // true
+ * console.log(isPending(replete("data"))); // false
+ * ```
+ *
  * @since 2.0.0
  */
 export function isPending<A>(ta: Datum<A>): ta is Pending {
@@ -176,6 +308,17 @@ export function isPending<A>(ta: Datum<A>): ta is Pending {
 }
 
 /**
+ * Check if a Datum is in the Refresh state.
+ *
+ * @example
+ * ```ts
+ * import { isRefresh, initial, refresh, replete } from "./datum.ts";
+ *
+ * console.log(isRefresh(initial)); // false
+ * console.log(isRefresh(refresh("data"))); // true
+ * console.log(isRefresh(replete("data"))); // false
+ * ```
+ *
  * @since 2.0.0
  */
 export function isRefresh<A>(ta: Datum<A>): ta is Refresh<A> {
@@ -183,6 +326,17 @@ export function isRefresh<A>(ta: Datum<A>): ta is Refresh<A> {
 }
 
 /**
+ * Check if a Datum is in the Replete state.
+ *
+ * @example
+ * ```ts
+ * import { isReplete, initial, refresh, replete } from "./datum.ts";
+ *
+ * console.log(isReplete(initial)); // false
+ * console.log(isReplete(refresh("data"))); // false
+ * console.log(isReplete(replete("data"))); // true
+ * ```
+ *
  * @since 2.0.0
  */
 export function isReplete<A>(ta: Datum<A>): ta is Replete<A> {
@@ -190,6 +344,17 @@ export function isReplete<A>(ta: Datum<A>): ta is Replete<A> {
 }
 
 /**
+ * Check if a Datum has no value (Initial or Pending).
+ *
+ * @example
+ * ```ts
+ * import { isNone, initial, pending, replete } from "./datum.ts";
+ *
+ * console.log(isNone(initial)); // true
+ * console.log(isNone(pending)); // true
+ * console.log(isNone(replete("data"))); // false
+ * ```
+ *
  * @since 2.0.0
  */
 export function isNone<A>(ta: Datum<A>): ta is None {
@@ -197,6 +362,17 @@ export function isNone<A>(ta: Datum<A>): ta is None {
 }
 
 /**
+ * Check if a Datum has a value (Refresh or Replete).
+ *
+ * @example
+ * ```ts
+ * import { isSome, initial, refresh, replete } from "./datum.ts";
+ *
+ * console.log(isSome(initial)); // false
+ * console.log(isSome(refresh("data"))); // true
+ * console.log(isSome(replete("data"))); // true
+ * ```
+ *
  * @since 2.0.0
  */
 export function isSome<A>(ta: Datum<A>): ta is Some<A> {
@@ -204,6 +380,18 @@ export function isSome<A>(ta: Datum<A>): ta is Some<A> {
 }
 
 /**
+ * Check if a Datum is loading (Pending or Refresh).
+ *
+ * @example
+ * ```ts
+ * import { isLoading, initial, pending, refresh, replete } from "./datum.ts";
+ *
+ * console.log(isLoading(initial)); // false
+ * console.log(isLoading(pending)); // true
+ * console.log(isLoading(refresh("data"))); // true
+ * console.log(isLoading(replete("data"))); // false
+ * ```
+ *
  * @since 2.0.0
  */
 export function isLoading<A>(ta: Datum<A>): ta is Loading<A> {
@@ -211,6 +399,25 @@ export function isLoading<A>(ta: Datum<A>): ta is Loading<A> {
 }
 
 /**
+ * Pattern match on a Datum to extract values.
+ *
+ * @example
+ * ```ts
+ * import { match, initial, pending, refresh, replete } from "./datum.ts";
+ *
+ * const matcher = match(
+ *   () => "Not started",
+ *   () => "Loading...",
+ *   (value) => `Fresh: ${value}`,
+ *   (value) => `Stale: ${value}`
+ * );
+ *
+ * console.log(matcher(initial)); // "Not started"
+ * console.log(matcher(pending)); // "Loading..."
+ * console.log(matcher(refresh("data"))); // "Stale: data"
+ * console.log(matcher(replete("data"))); // "Fresh: data"
+ * ```
+ *
  * @since 2.0.0
  */
 export function match<A, B>(
@@ -234,6 +441,17 @@ export function match<A, B>(
 }
 
 /**
+ * Get the value from a Datum or return a default.
+ *
+ * @example
+ * ```ts
+ * import { getOrElse, initial, replete } from "./datum.ts";
+ *
+ * const getValue = getOrElse(() => "default");
+ * console.log(getValue(initial)); // "default"
+ * console.log(getValue(replete("data"))); // "data"
+ * ```
+ *
  * @since 2.0.0
  */
 export function getOrElse<A>(onNone: () => A): (ua: Datum<A>) => A {
@@ -241,6 +459,16 @@ export function getOrElse<A>(onNone: () => A): (ua: Datum<A>) => A {
 }
 
 /**
+ * Wrap a value in a Replete Datum.
+ *
+ * @example
+ * ```ts
+ * import { wrap } from "./datum.ts";
+ *
+ * const datum = wrap(42);
+ * console.log(datum); // { tag: "Replete", value: 42 }
+ * ```
+ *
  * @since 2.0.0
  */
 export function wrap<A>(a: A): Datum<A> {
@@ -248,6 +476,20 @@ export function wrap<A>(a: A): Datum<A> {
 }
 
 /**
+ * Apply a function to the value in a Datum.
+ *
+ * @example
+ * ```ts
+ * import { map, replete, initial } from "./datum.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const datum = pipe(
+ *   replete(5),
+ *   map(n => n * 2)
+ * );
+ * console.log(datum); // { tag: "Replete", value: 10 }
+ * ```
+ *
  * @since 2.0.0
  */
 export function map<A, I>(fai: (a: A) => I): (ta: Datum<A>) => Datum<I> {
@@ -260,6 +502,22 @@ export function map<A, I>(fai: (a: A) => I): (ta: Datum<A>) => Datum<I> {
 }
 
 /**
+ * Apply a function wrapped in a Datum to a value wrapped in a Datum.
+ *
+ * @example
+ * ```ts
+ * import { apply, replete, initial } from "./datum.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const datumFn = replete((n: number) => n * 2);
+ * const datumValue = replete(5);
+ * const result = pipe(
+ *   datumValue,
+ *   apply(datumFn)
+ * );
+ * console.log(result); // { tag: "Replete", value: 10 }
+ * ```
+ *
  * @since 2.0.0
  */
 export function apply<A>(
@@ -285,6 +543,20 @@ export function apply<A>(
 }
 
 /**
+ * Chain Datum computations together.
+ *
+ * @example
+ * ```ts
+ * import { flatmap, replete, initial } from "./datum.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const datum = pipe(
+ *   replete(5),
+ *   flatmap(n => replete(n * 2))
+ * );
+ * console.log(datum); // { tag: "Replete", value: 10 }
+ * ```
+ *
  * @since 2.0.0
  */
 export function flatmap<A, I>(
@@ -299,6 +571,17 @@ export function flatmap<A, I>(
 }
 
 /**
+ * Provide an alternative Datum if the current one has no value.
+ *
+ * @example
+ * ```ts
+ * import { alt, initial, replete } from "./datum.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const result1 = pipe(initial, alt(replete("fallback"))); // Replete("fallback")
+ * const result2 = pipe(replete("data"), alt(replete("fallback"))); // Replete("data")
+ * ```
+ *
  * @since 2.0.0
  */
 export function alt<A>(tb: Datum<A>): (ta: Datum<A>) => Datum<A> {
@@ -306,6 +589,21 @@ export function alt<A>(tb: Datum<A>): (ta: Datum<A>) => Datum<A> {
 }
 
 /**
+ * Fold over a Datum to produce a single value.
+ *
+ * @example
+ * ```ts
+ * import { fold, initial, replete } from "./datum.ts";
+ *
+ * const folder = fold(
+ *   (acc: number, value: number) => acc + value,
+ *   0
+ * );
+ *
+ * console.log(folder(initial)); // 0
+ * console.log(folder(replete(5))); // 5
+ * ```
+ *
  * @since 2.0.0
  */
 export function fold<A, O>(
@@ -316,6 +614,18 @@ export function fold<A, O>(
 }
 
 /**
+ * Check if a Datum satisfies a predicate.
+ *
+ * @example
+ * ```ts
+ * import { exists, replete, initial } from "./datum.ts";
+ *
+ * const isEven = (n: number) => n % 2 === 0;
+ * console.log(exists(isEven)(replete(4))); // true
+ * console.log(exists(isEven)(replete(3))); // false
+ * console.log(exists(isEven)(initial)); // false
+ * ```
+ *
  * @since 2.0.0
  */
 export function exists<A>(predicate: Predicate<A>): (ua: Datum<A>) => boolean {
@@ -323,6 +633,18 @@ export function exists<A>(predicate: Predicate<A>): (ua: Datum<A>) => boolean {
 }
 
 /**
+ * Filter a Datum based on a predicate.
+ *
+ * @example
+ * ```ts
+ * import { filter, replete, initial } from "./datum.ts";
+ *
+ * const isEven = (n: number) => n % 2 === 0;
+ * console.log(filter(isEven)(replete(4))); // Replete(4)
+ * console.log(filter(isEven)(replete(3))); // Initial
+ * console.log(filter(isEven)(initial)); // Initial
+ * ```
+ *
  * @since 2.0.0
  */
 export function filter<A, B extends A>(
@@ -339,6 +661,18 @@ export function filter<A>(
 }
 
 /**
+ * Filter and map a Datum using an Option.
+ *
+ * @example
+ * ```ts
+ * import { filterMap, replete, initial } from "./datum.ts";
+ * import * as O from "./option.ts";
+ *
+ * const safeDivide = (n: number) => n === 0 ? O.none : O.some(10 / n);
+ * console.log(filterMap(safeDivide)(replete(5))); // Replete(2)
+ * console.log(filterMap(safeDivide)(replete(0))); // Initial
+ * ```
+ *
  * @since 2.0.0
  */
 export function filterMap<A, I>(
@@ -358,6 +692,18 @@ export function filterMap<A, I>(
 }
 
 /**
+ * Partition a Datum based on a predicate.
+ *
+ * @example
+ * ```ts
+ * import { partition, replete, initial } from "./datum.ts";
+ *
+ * const isEven = (n: number) => n % 2 === 0;
+ * const [evens, odds] = partition(isEven)(replete(4));
+ * console.log(evens); // Replete(4)
+ * console.log(odds); // Initial
+ * ```
+ *
  * @since 2.0.0
  */
 export function partition<A, B extends A>(
@@ -389,6 +735,19 @@ export function partition<A>(
 }
 
 /**
+ * Partition and map a Datum using an Either.
+ *
+ * @example
+ * ```ts
+ * import { partitionMap, replete, initial } from "./datum.ts";
+ * import * as E from "./either.ts";
+ *
+ * const classify = (n: number) => n % 2 === 0 ? E.right(n) : E.left(n);
+ * const [evens, odds] = partitionMap(classify)(replete(4));
+ * console.log(evens); // Replete(4)
+ * console.log(odds); // Initial
+ * ```
+ *
  * @since 2.0.0
  */
 export function partitionMap<A, I, J>(
@@ -412,6 +771,21 @@ export function partitionMap<A, I, J>(
 }
 
 /**
+ * Traverse over a Datum using the supplied Applicable.
+ *
+ * @example
+ * ```ts
+ * import { traverse, replete } from "./datum.ts";
+ * import * as O from "./option.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const datum = pipe(
+ *   replete(5),
+ *   traverse(O.ApplicableOption)(n => O.some(n * 2))
+ * );
+ * console.log(datum); // Some({ tag: "Replete", value: 10 })
+ * ```
+ *
  * @since 2.0.0
  */
 export function traverse<V extends Kind>(
@@ -429,6 +803,17 @@ export function traverse<V extends Kind>(
 }
 
 /**
+ * Create a Showable instance for Datum given a Showable for the inner type.
+ *
+ * @example
+ * ```ts
+ * import { getShowableDatum, replete, initial } from "./datum.ts";
+ *
+ * const showable = getShowableDatum({ show: (n: number) => n.toString() });
+ * console.log(showable.show(replete(42))); // "Replete(42)"
+ * console.log(showable.show(initial)); // "Initial"
+ * ```
+ *
  * @since 2.0.0
  */
 export function getShowableDatum<A>({ show }: Showable<A>): Showable<Datum<A>> {
@@ -443,6 +828,19 @@ export function getShowableDatum<A>({ show }: Showable<A>): Showable<Datum<A>> {
 }
 
 /**
+ * Create a Combinable instance for Datum given a Combinable for the inner type.
+ *
+ * @example
+ * ```ts
+ * import { getCombinableDatum, replete } from "./datum.ts";
+ * import * as N from "./number.ts";
+ *
+ * const combinable = getCombinableDatum(N.CombinableNumberSum);
+ * const datum1 = replete(2);
+ * const datum2 = replete(3);
+ * const result = combinable.combine(datum2)(datum1); // Replete(5)
+ * ```
+ *
  * @since 2.0.0
  */
 export function getCombinableDatum<A>(
@@ -466,6 +864,17 @@ export function getCombinableDatum<A>(
 }
 
 /**
+ * Create an Initializable instance for Datum given an Initializable for the inner type.
+ *
+ * @example
+ * ```ts
+ * import { getInitializableDatum } from "./datum.ts";
+ * import * as N from "./number.ts";
+ *
+ * const initializable = getInitializableDatum(N.InitializableNumberSum);
+ * const init = initializable.init(); // Initial
+ * ```
+ *
  * @since 2.0.0
  */
 export function getInitializableDatum<A>(
@@ -478,6 +887,19 @@ export function getInitializableDatum<A>(
 }
 
 /**
+ * Create a Comparable instance for Datum given a Comparable for the inner type.
+ *
+ * @example
+ * ```ts
+ * import { getComparableDatum, replete, initial } from "./datum.ts";
+ * import * as N from "./number.ts";
+ *
+ * const comparable = getComparableDatum(N.ComparableNumber);
+ * const datum1 = replete(5);
+ * const datum2 = replete(3);
+ * const result = comparable.compare(datum2)(datum1); // false (5 !== 3)
+ * ```
+ *
  * @since 2.0.0
  */
 export function getComparableDatum<A>(S: Comparable<A>): Comparable<Datum<A>> {
@@ -493,6 +915,24 @@ export function getComparableDatum<A>(S: Comparable<A>): Comparable<Datum<A>> {
 }
 
 /**
+ * Create a Sortable instance for Datum given a Sortable for the inner type.
+ *
+ * @example
+ * ```ts
+ * import { getSortableDatum, replete, initial } from "./datum.ts";
+ * import * as N from "./number.ts";
+ * import * as A from "./array.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const sortable = getSortableDatum(N.SortableNumber);
+ * const data = [replete(3), initial, replete(1)];
+ * const sorted = pipe(
+ *   data,
+ *   A.sort(sortable)
+ * );
+ * // [initial, replete(1), replete(3)]
+ * ```
+ *
  * @since 2.0.0
  */
 export function getSortableDatum<A>(O: Sortable<A>): Sortable<Datum<A>> {
