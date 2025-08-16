@@ -233,13 +233,13 @@ export function fromNullable<E>(
  */
 export function tryCatch<E, A, AS extends unknown[]>(
   fn: (...as: AS) => A,
-  onError: (e: unknown) => E,
+  onError: (e: unknown, as: AS) => E,
 ): (...as: AS) => Either<E, A> {
   return (...as: AS) => {
     try {
       return right(fn(...as));
     } catch (e) {
-      return left(onError(e));
+      return left(onError(e, as));
     }
   };
 }
