@@ -512,8 +512,8 @@ export function map<A, I>(fai: (a: A) => I): (ta: Datum<A>) => Datum<I> {
  * const datumFn = replete((n: number) => n * 2);
  * const datumValue = replete(5);
  * const result = pipe(
- *   datumValue,
- *   apply(datumFn)
+ *   datumFn,
+ *   apply(datumValue)
  * );
  * console.log(result); // { tag: "Replete", value: 10 }
  * ```

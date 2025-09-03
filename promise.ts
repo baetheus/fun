@@ -69,6 +69,7 @@ export type Deferred<A> = Promise<A> & {
  * // Logs 1 after a second
  * promise.then(console.log);
  * setTimeout(() => promise.resolve(1), 1000);
+ * await promise // We await here to not leak async ops
  * ```
  *
  * @since 2.0.0
@@ -95,17 +96,18 @@ export function deferred<A = never>(): Deferred<A> {
  * import { pipe } from "./fn.ts";
  *
  * const controller = new AbortController();
- * const slow = wait(1000).then(() => 1);
+ * const slow = wait(100).then(() => 1);
  * const wrapped = pipe(
  *   slow,
  *   abortable(controller.signal, msg => msg),
  * );
  *
- * setTimeout(() => controller.abort("Hi"), 500);
+ * setTimeout(() => controller.abort("Hi"), 200);
  *
- * // After 500ms result contains the following
+ * // After 200ms result contains the following
  * // { tag: "Left", left: "Hi" }
  * const result = await wrapped;
+ * await wait(200) // We wait to not leak async ops
  * ```
  *
  * @since 2.0.0
@@ -312,6 +314,7 @@ export function all<T extends AnyPromise[]>(
  *
  * // After 200 milliseconds resolves from one
  * const result = await race(one, two); // "one"
+ * await two // We wait here so async ops don't leak
  * ```
  *
  * @since 2.0.0

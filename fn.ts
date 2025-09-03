@@ -255,7 +255,11 @@ export function memoize<D, A>(ua: Fn<D, A>): Fn<D, A> {
  *   write: (s: string) => Promise<unknown>,
  * }
  *
- * const mockInOut: InOut = todo(); // InOut !!THROWS!!
+ * try {
+ *   const mockInOut: InOut = todo(); // InOut !!THROWS!!
+ * } catch (e) {
+ *   // todo() throws so this block would run
+ * }
  * ```
  *
  * @since 2.0.0

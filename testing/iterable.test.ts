@@ -7,11 +7,8 @@ import * as I from "../iterable.ts";
 import * as O from "../option.ts";
 import * as E from "../either.ts";
 import * as P from "../pair.ts";
-import * as B from "../bimappable.ts";
 import * as N from "../number.ts";
 import { pipe } from "../fn.ts";
-
-const bimap = B.bimap(P.BimappablePair);
 
 Deno.test("Iterable iterable", () => {
   const iterable = I.iterable(function* () {
@@ -125,7 +122,7 @@ Deno.test("Iterable partition", () => {
     pipe(
       I.range(3),
       I.partition((n) => n % 2 === 0),
-      bimap(I.collect, I.collect),
+      P.bimap(I.collect, I.collect),
     ),
     P.pair([0, 2], [1]),
   );
@@ -136,7 +133,7 @@ Deno.test("Iterable partition", () => {
     pipe(
       I.range(3),
       I.partition((n) => n % 2 === 0),
-      bimap(I.collect, I.collect),
+      P.bimap(I.collect, I.collect),
     ),
     P.pair([0, 2], [1]),
   );
@@ -147,7 +144,7 @@ Deno.test("Iterable partitionMap", () => {
     pipe(
       I.range(3),
       I.partitionMap(E.fromPredicate((n) => n % 2 === 0)),
-      bimap(I.collect, I.collect),
+      P.bimap(I.collect, I.collect),
     ),
     P.pair([0, 2], [1]),
   );

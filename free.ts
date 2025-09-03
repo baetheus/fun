@@ -275,8 +275,8 @@ export function flatmap<A, I>(
  * const freeFn = node((n: number) => n * 2);
  * const freeValue = node(5);
  * const result = pipe(
- *   freeValue,
- *   apply(freeFn)
+ *   freeFn,
+ *   apply(freeValue)
  * );
  *
  * console.log(result); // { tag: "Node", value: 10 }

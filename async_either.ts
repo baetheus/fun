@@ -513,11 +513,11 @@ export function getInitializableAsyncEither<A, B>(
   CA: Initializable<A>,
   CB: Initializable<B>,
 ): Initializable<AsyncEither<B, A>> {
-  const { init, combine } = E.getInitializableEither(CA, CB);
+  const ie = E.getInitializableEither(CA, CB);
   return {
-    init: () => () => resolve(init()),
+    init: () => () => resolve(ie.init()),
     combine: (second) => (first) => async () =>
-      combine(await second())(await first()),
+      ie.combine(await second())(await first()),
   };
 }
 

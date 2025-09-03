@@ -1,8 +1,9 @@
 {
   "name": "@baetheus/fun",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "exports": {
     "./ideas/dux": "./ideas/dux.ts",
+    "./ideas/parser": "./ideas/parser.ts",
     "./applicable": "./applicable.ts",
     "./array": "./array.ts",
     "./async": "./async.ts",

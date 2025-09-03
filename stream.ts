@@ -699,11 +699,10 @@ export function at(time: number): Stream<number, Timeout> {
  * import * as S from "./stream.ts";
  * import { pipe } from "./fn.ts";
  *
- * const intervalEnv = { setTimeout, clearTimeout, setInterval, clearInterval };
- * const periodicStream = S.periodic(1000); // Every 1 second
+ * const periodicStream = S.periodic(100); // Every 1 second
  *
- * const result = await pipe(periodicStream, S.collect());
- * console.log(result); // [1000, 2000, 3000, ...] (until stopped)
+ * const result = await pipe(periodicStream, S.take(3), S.collect());
+ * console.log(result); // [100, 200, 300] (until stopped)
  * ```
  *
  * @param period The time interval in milliseconds between each emitted value.
@@ -1315,7 +1314,7 @@ export function flatmap<A, I, R2 = unknown>(
  * const triggerStream = S.fromIterable([1, 2, 3]);
  * const switchedStream = pipe(
  *   triggerStream,
- *   S.switchmap(n => S.periodic(100)) // Switch to new periodic stream for each trigger
+ *   S.switchmap(n => pipe(S.periodic(100), S.take(2))) // Switch to new periodic stream for each trigger
  * );
  *
  * const switched = await pipe(switchedStream, S.collect()); // [1, 2, 3]
@@ -1827,30 +1826,6 @@ export function multicast<R>(env: R): <A>(ua: Stream<A, R>) => Stream<A> {
  * disposed the parent stream is disposed but the last event is still held.
  *
  * This is useful for caching stream events and replaying them to new subscribers.
- *
- * @example
- * ```ts
- * import * as S from "./stream.ts";
- *
- * const sourceStream = S.fromIterable([1, 2, 3, 4, 5]);
- * const heldStream = S.hold(sourceStream);
- *
- * // First consumer gets all events
- * const disposable1 = S.forEach(
- *   (value) => console.log(`Consumer 1: ${value}`),
- *   () => console.log("Consumer 1 ended")
- * )(heldStream);
- *
- * // Second consumer gets all events (including past ones)
- * const disposable2 = S.forEach(
- *   (value) => console.log(`Consumer 2: ${value}`),
- *   () => console.log("Consumer 2 ended")
- * )(heldStream);
- *
- * // Both consumers receive all events, even if they subscribe after events have been emitted
- * S.dispose(disposable1);
- * S.dispose(disposable2);
- * ```
  *
  * @since 2.2.0
  * @experimental

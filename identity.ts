@@ -87,8 +87,8 @@ export function map<A, I>(fai: (a: A) => I): (ta: Identity<A>) => Identity<I> {
  * const identityFn = wrap((n: number) => n * 2);
  * const identityValue = wrap(5);
  * const result = pipe(
- *   identityValue,
- *   apply(identityFn)
+ *   identityFn,
+ *   apply(identityValue)
  * );
  *
  * console.log(result); // 10

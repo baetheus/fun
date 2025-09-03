@@ -181,8 +181,8 @@ export function flatmap<A, I>(
  * const treeFn = tree((n: number) => n * 2);
  * const treeValue = tree(5);
  * const result = pipe(
- *   treeValue,
- *   apply(treeFn)
+ *   treeFn,
+ *   apply(treeValue)
  * );
  * console.log(result); // { value: 10, forest: [] }
  * ```
