@@ -281,24 +281,24 @@ export function withDefault<T extends AnyParserLike>(
   return pipe(maybe(parser), map((a) => N.isNil(a) ? def : a));
 }
 
-export const lower = range("a", "z");
-export const upper = range("A", "Z");
-export const nonzero = range("1", "9");
-export const digit = any(literal("0"), nonzero);
-export const alpha = any(lower, upper);
-export const alphanumeric = any(alpha, digit);
+export const lower: Parser<string> = range("a", "z");
+export const upper: Parser<string> = range("A", "Z");
+export const nonzero: Parser<string> = range("1", "9");
+export const digit: Parser<string> = any(literal("0"), nonzero);
+export const alpha: Parser<string> = any(lower, upper);
+export const alphanumeric: Parser<string> = any(alpha, digit);
 
-export const natural_number = pipe(
+export const natural_number: Parser<number> = pipe(
   sequence(nonzero, many(digit)),
   map(([lead, rest]) => parseInt(`${lead}${rest.join("")}`, 10)),
 );
 
-export const integer = pipe(
+export const integer: Parser<number> = pipe(
   sequence(maybe(literal("-")), natural_number),
   map(([sign, number]) => N.isNil(sign) ? number : -1 * number),
 );
 
-export const decimal = pipe(
+export const decimal: Parser<number> = pipe(
   sequence(integer, maybe(sequence(literal("."), many(digit)))),
   map(([w, or]) => N.isNil(or) ? w : w + parseFloat(`0.${or[1].join("")}`)),
 );

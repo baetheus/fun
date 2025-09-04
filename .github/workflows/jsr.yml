@@ -1,8 +1,7 @@
-name: JSR.io
+name: Publish to JSR.io
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   publish:
@@ -13,7 +12,13 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Setup repo
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: "v2.2.12"
 
       - name: Publish package
-        run: npx jsr publish
+        run: deno publish
