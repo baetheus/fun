@@ -1,0 +1,21 @@
+name: Push Main
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  call-format:
+    uses: ./.github/workflows/format.yml
+
+  call-test:
+    uses: ./.github/workflows/test.yml
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  call-publish:
+    needs: [call-format, call-test]
+    uses: ./.github/workflows/test.yml
+    permissions:
+      contents: read
+      id-token: write

@@ -1,0 +1,10 @@
+name: PR
+
+on: [pull_request]
+
+jobs:
+  call-format:
+    uses: ./.github/workflows/format.yml
+
+  call-test:
+    uses: ./.github/workflows/test.yml
