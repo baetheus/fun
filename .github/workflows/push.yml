@@ -10,8 +10,7 @@ jobs:
 
   call-test:
     uses: ./.github/workflows/test.yml
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    secrets: inherit
 
   call-publish:
     needs: [call-format, call-test]

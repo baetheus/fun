@@ -1,10 +1,6 @@
 name: Test
 
-on:
-  workflow_call:
-    secrets:
-      GITHUB_TOKEN:
-        required: true
+on: [workflow_call]
 
 jobs:
   test:
