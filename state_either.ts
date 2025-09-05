@@ -555,7 +555,7 @@ export function getInitializableStateEither<S, A, B>(
  *
  * @since 2.0.0
  */
-export function getFlatmappableStateRight<S, B>(
+export function getFlatmappableStateRight<B>(
   C: Combinable<B>,
 ): Flatmappable<KindStateEitherFixed<B>> {
   const right = E.getFlatmappableRight<B>(C);
