@@ -302,7 +302,7 @@ export function left<B, S = unknown>(
  * import * as Eff from "./effect.ts";
  * import * as E from "./either.ts";
  *
- * const processNumber: Eff.Effect<number, never, number> = (n: number) => 
+ * const processNumber: Eff.Effect<number, never, number> = (n: number) =>
  *   Promise.resolve([E.right(n * 2), n]);
  * const processString = Eff.premap((s: string) => parseInt(s))(processNumber);
  *
@@ -458,7 +458,7 @@ export function apply<A, B, S3, S2>(
  * import { pipe } from "./fn.ts";
  *
  * const divide = (a: number) => (b: number) =>
- *   b === 0 
+ *   b === 0
  *     ? Eff.left("Division by zero")
  *     : Eff.right(a / b);
  *
