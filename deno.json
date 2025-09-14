@@ -1,6 +1,6 @@
 {
   "name": "@baetheus/fun",
-  "version": "2.3.4",
+  "version": "2.3.5",
   "exports": {
     "./applicable": "./applicable.ts",
     "./array": "./array.ts",
@@ -15,6 +15,7 @@
     "./datum": "./datum.ts",
     "./datum_either": "./datum_either.ts",
     "./decoder": "./decoder.ts",
+    "./effect": "./effect.ts",
     "./either": "./either.ts",
     "./failable": "./failable.ts",
     "./filterable": "./filterable.ts",
@@ -23,7 +24,6 @@
     "./fn_either": "./fn_either.ts",
     "./foldable": "./foldable.ts",
     "./free": "./free.ts",
-    "./ideas/dux": "./ideas/dux.ts",
     "./identity": "./identity.ts",
     "./initializable": "./initializable.ts",
     "./iterable": "./iterable.ts",
@@ -56,7 +56,9 @@
     "./these": "./these.ts",
     "./traversable": "./traversable.ts",
     "./tree": "./tree.ts",
-    "./wrappable": "./wrappable.ts"
+    "./wrappable": "./wrappable.ts",
+    "./ideas/callbag": "./ideas/callbag.ts",
+    "./ideas/dux": "./ideas/dux.ts"
   },
   "include": [
     "LICENSE",

@@ -91,6 +91,7 @@ structures and more general algebraic structures.
 | [AsyncEither](./async_either.ts)     | ✓                   |                     |        | TaskEither                            |
 | [Decoder](./decoder.ts)              | ✓                   |                     |        |                                       |
 | [Either](./either.ts)                | ✓                   |                     |        |                                       |
+| [Effect](./effect.ts)                | ✓                   |                     |        | AsyncStateEither                      |
 | [Fn](./fn.ts)                        | ✓                   |                     |        | Reader                                |
 | [FnEither](./fn_either.ts)           | ✓                   |                     |        | ReaderEither                          |
 | [Identity](./identity.ts)            | ✓                   |                     |        | Trivial                               |
@@ -99,9 +100,11 @@ structures and more general algebraic structures.
 | [Optic](./optic.ts)                  | ✓                   |                     |        | Iso, Lens, Optional, Prism, Traversal |
 | [Option](./option.ts)                | ✓                   |                     |        | Maybe                                 |
 | [Pair](./pair.ts)                    | ✓                   |                     |        | Separated                             |
+| [Parser](./parser.ts)                | ✓                   |                     |        | Parsec                                |
 | [Predicate](./predicate.ts)          | ✓                   |                     |        |                                       |
 | [Refinement](./refinement.ts)        | ✓                   |                     |        |                                       |
 | [State](./state.ts)                  | ✓                   |                     |        |                                       |
+| [StateEither](./state_either.ts)     | ✓                   |                     |        |                                       |
 | [Stream](./stream.ts)                | ✓                   |                     |        | Observable                            |
 | [Sync](./sync.ts)                    | ✓                   |                     |        | IO                                    |
 | [SyncEither](./sync_either.ts)       | ✓                   |                     |        | IOEither                              |
