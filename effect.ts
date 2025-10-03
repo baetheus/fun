@@ -239,6 +239,30 @@ export function wrap<A, S extends unknown[] = unknown[]>(
 }
 
 /**
+ * Create a failed Effect with the given error value. The error is placed
+ * in a Left and the input state is passed through unchanged. This is an
+ * alias for left and is commonly used in contexts where you want to
+ * emphasize failure.
+ *
+ * @example
+ * ```ts
+ * import * as Eff from "./effect.ts";
+ * import * as E from "./either.ts";
+ *
+ * const errorEffect = Eff.fail("Something went wrong");
+ * const result = await errorEffect("state");
+ * // [E.left("Something went wrong"), "state"]
+ * ```
+ *
+ * @since 3.0.0-rc.2
+ */
+export function fail<B, S extends unknown[] = unknown[]>(
+  b: B,
+): Effect<S, B, never> {
+  return (...s) => P.resolve([E.left(b), ...s]);
+}
+
+/**
  * Create a successful Effect with the given value. This is an alias for wrap
  * and is commonly used in contexts where you want to emphasize success.
  *
@@ -279,7 +303,43 @@ export function right<A, S extends unknown[] = unknown[]>(
 export function left<B, S extends unknown[] = unknown[]>(
   b: B,
 ): Effect<S, B, never> {
-  return (...s) => P.resolve([E.left(b), ...s]);
+  return fail(b);
+}
+
+/**
+ * Swap the success and error values of an Effect. If the Effect contains
+ * a Right (success), it becomes a Left (error) with the same value. If it
+ * contains a Left (error), it becomes a Right (success) with the same value.
+ * The state is passed through unchanged.
+ *
+ * @example
+ * ```ts
+ * import * as Eff from "./effect.ts";
+ * import * as E from "./either.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const successEffect = Eff.right("success");
+ * const swappedSuccess = Eff.swap(successEffect);
+ *
+ * const result1 = await swappedSuccess("state");
+ * // [E.left("success"), "state"]
+ *
+ * const errorEffect = Eff.left("error");
+ * const swappedError = Eff.swap(errorEffect);
+ *
+ * const result2 = await swappedError("state");
+ * // [E.right("error"), "state"]
+ * ```
+ *
+ * @since 3.0.0-rc.2
+ */
+export function swap<S extends unknown[], A, B, O extends unknown[]>(
+  ua: Effect<S, B, A, O>,
+): Effect<S, A, B, O> {
+  return async (...s) => {
+    const [ea, ...o] = await ua.apply(ua, s);
+    return [E.swap(ea), ...o];
+  };
 }
 
 /**
@@ -391,6 +451,16 @@ export function mapSecond<B, J>(
   };
 }
 
+export function mapEither<B, A, I, J>(
+  fee: (ea: Either<B, A>) => Either<J, I>,
+): <S extends unknown[], O extends unknown[]>(
+  ua: Effect<S, B, A, O>,
+) => Effect<S, J, I, O> {
+  return (ua) => async (...s) => {
+    const [ea, ...o] = await ua.apply(ua, s);
+    return [fee(ea), ...o];
+  };
+}
 /**
  * Apply a function wrapped in an Effect to a value wrapped in an Effect.
  * Both Effects must succeed for the application to succeed. The function
@@ -596,6 +666,28 @@ export function get<S extends unknown[]>(): Effect<S, never, S, S> {
 }
 
 /**
+ * Get the current state as the error value of an Effect. This is the
+ * dual of `get` - instead of returning the state as a success value
+ * (Right), it returns the state as an error value (Left). The state
+ * is both the error value and passed through unchanged.
+ *
+ * @example
+ * ```ts
+ * import * as Eff from "./effect.ts";
+ * import * as E from "./either.ts";
+ *
+ * const getErrorState = Eff.getSecond<[string]>();
+ * const result = await getErrorState("hello");
+ * // [E.left(["hello"]), "hello"]
+ * ```
+ *
+ * @since 3.0.0-rc.2
+ */
+export function getSecond<S extends unknown[]>(): Effect<S, S, never, S> {
+  return (...s) => Promise.resolve([E.left(s), ...s]);
+}
+
+/**
  * Replace the current state with a new value. The new state becomes
  * both the success value and the output state.
  *
@@ -616,6 +708,31 @@ export function put<O extends unknown[], S extends unknown[] = unknown[]>(
   ...o: O
 ): Effect<S, never, O, O> {
   return () => Promise.resolve([E.right(o), ...o]);
+}
+
+/**
+ * Replace the current state with a new value as an error. This is the
+ * dual of `put` - instead of returning the new state as a success value
+ * (Right), it returns the new state as an error value (Left). The new
+ * state becomes both the error value and the output state.
+ *
+ * @example
+ * ```ts
+ * import * as Eff from "./effect.ts";
+ * import * as E from "./either.ts";
+ *
+ * const putErrorState = Eff.putSecond("new error state");
+ *
+ * const result = await putErrorState("old state");
+ * // [E.left(["new error state"]), "new error state"]
+ * ```
+ *
+ * @since 3.0.0-rc.2
+ */
+export function putSecond<O extends unknown[], S extends unknown[] = unknown[]>(
+  ...o: O
+): Effect<S, O, never, O> {
+  return () => Promise.resolve([E.left(o), ...o]);
 }
 
 /**
@@ -646,6 +763,35 @@ export function gets<S extends unknown[], A>(
 }
 
 /**
+ * Extract a value from the current state using a function as an error value.
+ * This is the dual of `gets` - instead of returning the extracted value as
+ * a success value (Right), it returns the extracted value as an error value
+ * (Left). The state is passed through unchanged.
+ *
+ * @example
+ * ```ts
+ * import * as Eff from "./effect.ts";
+ * import * as E from "./either.ts";
+ *
+ * const getDoubledError = Eff.getsSecond((s: number) => s * 2);
+ * const getAsyncError = Eff.getsSecond((s: number) => Promise.resolve(s * 2));
+ *
+ * const result1 = await getDoubledError(21);
+ * // [E.left(42), 21]
+ *
+ * const result2 = await getAsyncError(21);
+ * // [E.left(42), 21]
+ * ```
+ *
+ * @since 3.0.0-rc.2
+ */
+export function getsSecond<S extends unknown[], B>(
+  fsa: (...s: S) => B | Promise<B>,
+): Effect<S, B, never, S> {
+  return async (...s) => [E.left(await fsa.apply(fsa, s)), ...s];
+}
+
+/**
  * Transform the current state using a function. The transformed value
  * becomes both the success value and the new state.
  *
@@ -672,6 +818,38 @@ export function puts<S extends unknown[], O extends unknown[] = S>(
   return async (...s) => {
     const o = await fsa.apply(fsa, s);
     return [E.right(o), ...o];
+  };
+}
+
+/**
+ * Transform the current state using a function as an error value. This is
+ * the dual of `puts` - instead of returning the transformed state as a
+ * success value (Right), it returns the transformed state as an error value
+ * (Left). The transformed value becomes both the error value and the new state.
+ *
+ * @example
+ * ```ts
+ * import * as Eff from "./effect.ts";
+ * import * as E from "./either.ts";
+ *
+ * const doubleErrorState = Eff.putsSecond((n: number) => [n * 2]);
+ * const asyncPutsError = Eff.putsSecond((n: number) => Promise.resolve([n * 2]));
+ *
+ * const result1 = await doubleErrorState(21);
+ * // [E.left([42]), 42]
+ *
+ * const result2 = await asyncPutsError(21);
+ * // [E.left([42]), 42]
+ * ```
+ *
+ * @since 3.0.0-rc.2
+ */
+export function putsSecond<S extends unknown[], O extends unknown[] = S>(
+  fsa: (...s: S) => O | Promise<O>,
+): Effect<S, O, never, O> {
+  return async (...s) => {
+    const o = await fsa.apply(fsa, s);
+    return [E.left(o), ...o];
   };
 }
 

@@ -538,3 +538,68 @@ Deno.test("Effect puts with identity function", async () => {
   const result = await putsEffect("test");
   assertEquals(result, [E.right(["test"]), "test"]);
 });
+
+Deno.test("Effect fail", async () => {
+  const errorEffect = Effect.fail("Something went wrong");
+  const result = await errorEffect("state");
+  assertEquals(result, [E.left("Something went wrong"), "state"]);
+});
+
+Deno.test("Effect swap with right value", async () => {
+  const successEffect = Effect.right("success");
+  const swappedSuccess = Effect.swap(successEffect);
+
+  const result = await swappedSuccess("state");
+  assertEquals(result, [E.left("success"), "state"]);
+});
+
+Deno.test("Effect swap with left value", async () => {
+  const errorEffect = Effect.left("error");
+  const swappedError = Effect.swap(errorEffect);
+
+  const result = await swappedError("state");
+  assertEquals(result, [E.right("error"), "state"]);
+});
+
+Deno.test("Effect getSecond", async () => {
+  const getErrorState = Effect.getSecond<[string]>();
+  const result = await getErrorState("hello");
+  assertEquals(result, [E.left(["hello"]), "hello"]);
+});
+
+Deno.test("Effect putSecond", async () => {
+  const putErrorState = Effect.putSecond("new error state");
+
+  const result = await putErrorState("old state");
+  assertEquals(result, [E.left(["new error state"]), "new error state"]);
+});
+
+Deno.test("Effect getsSecond with function", async () => {
+  const getDoubledError = Effect.getsSecond((s: number) => s * 2);
+  const result = await getDoubledError(21);
+  assertEquals(result, [E.left(42), 21]);
+});
+
+Deno.test("Effect getsSecond with Promise function", async () => {
+  const getAsyncError = Effect.getsSecond((s: number) => Promise.resolve(s * 2));
+  const result = await getAsyncError(21);
+  assertEquals(result, [E.left(42), 21]);
+});
+
+Deno.test("Effect putsSecond with sync function", async () => {
+  const putsErrorEffect = Effect.putsSecond((n: number) => [n * 2]);
+  const result = await putsErrorEffect(21);
+  assertEquals(result, [E.left([42]), 42]);
+});
+
+Deno.test("Effect putsSecond with async function", async () => {
+  const putsAsyncError = Effect.putsSecond((n: number) => Promise.resolve([n * 2]));
+  const result = await putsAsyncError(21);
+  assertEquals(result, [E.left([42]), 42]);
+});
+
+Deno.test("Effect putsSecond with identity function", async () => {
+  const putsErrorEffect = Effect.putsSecond((s: string) => [s]);
+  const result = await putsErrorEffect("test");
+  assertEquals(result, [E.left(["test"]), "test"]);
+});
