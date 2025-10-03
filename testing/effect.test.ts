@@ -5,9 +5,9 @@ import * as E from "../either.ts";
 import { pipe } from "../fn.ts";
 
 Deno.test("Effect id", async () => {
-  const id = Effect.id<number>();
+  const id = Effect.id<[number]>();
   const result = await id(42);
-  assertEquals(result, [E.right(42), 42]);
+  assertEquals(result, [E.right([42]), 42]);
 });
 
 Deno.test("Effect delay", async () => {
@@ -64,7 +64,7 @@ Deno.test("Effect left", async () => {
 
 Deno.test("Effect premap", async () => {
   const effect = Effect.gets((n: number) => n * 2);
-  const premapped = Effect.premap((s: string) => parseInt(s))(effect);
+  const premapped = Effect.premap((s: string) => [parseInt(s)])(effect);
   const result = await premapped("42");
   assertEquals(result, [E.right(84), 42]);
 });
@@ -206,15 +206,15 @@ Deno.test("Effect flatmap returning left", async () => {
 });
 
 Deno.test("Effect get", async () => {
-  const get = Effect.get<string>();
+  const get = Effect.get<[string]>();
   const result = await get("hello");
-  assertEquals(result, [E.right("hello"), "hello"]);
+  assertEquals(result, [E.right(["hello"]), "hello"]);
 });
 
 Deno.test("Effect put", async () => {
   const put = Effect.put("new state");
   const result = await put("old state");
-  assertEquals(result, [E.right("new state"), "new state"]);
+  assertEquals(result, [E.right(["new state"]), "new state"]);
 });
 
 Deno.test("Effect gets with function", async () => {
@@ -234,9 +234,7 @@ Deno.test("Effect evaluate", async () => {
   const rightResult = await evaluate(Effect.wrap(42));
   assertEquals(rightResult, E.right(42));
 
-  const leftResult = await evaluate((s: string) =>
-    Promise.resolve([E.left("error"), s])
-  );
+  const leftResult = await evaluate(Effect.left("error"));
   assertEquals(leftResult, E.left("error"));
 });
 
@@ -244,14 +242,14 @@ Deno.test("Effect execute", async () => {
   const execute = Effect.execute("initial");
 
   const rightResult = await execute(Effect.wrap(42));
-  assertEquals(rightResult, "initial");
+  assertEquals(rightResult, ["initial"]);
 
   const stateChangingEffect = pipe(
-    Effect.get<string>(),
+    Effect.get<[string]>(),
     Effect.flatmap((_) => Effect.put("modified")),
   );
   const modifiedResult = await execute(stateChangingEffect);
-  assertEquals(modifiedResult, "modified");
+  assertEquals(modifiedResult, ["modified"]);
 });
 
 Deno.test("Effect tap", async () => {
@@ -284,7 +282,7 @@ Deno.test("Effect bind", async () => {
 
 Deno.test("Effect bind with left value", async () => {
   const computation = pipe(
-    Effect.wrap<number, string>(10),
+    Effect.wrap<number, [string]>(10),
     Effect.bindTo("initial"),
     Effect.bind(
       "error",
@@ -307,7 +305,7 @@ Deno.test("Effect bindTo", async () => {
 });
 
 Deno.test("Effect getFlatmappableEffect", () => {
-  const flatmappable = Effect.getFlatmappableEffect<string>();
+  const flatmappable = Effect.getFlatmappableEffect<[string]>();
 
   assertEquals(typeof flatmappable.wrap, "function");
   assertEquals(typeof flatmappable.apply, "function");
@@ -316,7 +314,7 @@ Deno.test("Effect getFlatmappableEffect", () => {
 });
 
 Deno.test("Effect getFlatmappableEffect methods work", async () => {
-  const flatmappable = Effect.getFlatmappableEffect<string>();
+  const flatmappable = Effect.getFlatmappableEffect<[string]>();
 
   // Test wrap
   const wrapped = flatmappable.wrap(42);
@@ -348,13 +346,13 @@ Deno.test("Effect getFlatmappableEffect methods work", async () => {
 
 Deno.test("Effect complex stateful computation", async () => {
   const computation = pipe(
-    Effect.get<number>(),
-    Effect.flatmap((n: number) =>
+    Effect.get<[number]>(),
+    Effect.flatmap(([n]) =>
       n > 0
         ? Effect.gets((s: number) => s + 10)
         : Effect.left("Negative number")
     ),
-    Effect.flatmap((result: number) =>
+    Effect.flatmap((result) =>
       result > 20 ? Effect.wrap(result) : Effect.left("Result too small")
     ),
   );
@@ -399,9 +397,9 @@ Deno.test("Effect error propagation in chain", async () => {
 
 Deno.test("Effect state threading", async () => {
   const computation = pipe(
-    Effect.get<number>(),
-    Effect.flatmap((n: number) => Effect.put(n + 10)),
-    Effect.flatmap(() => Effect.get<number>()),
+    Effect.get<[number]>(),
+    Effect.flatmap(([n]) => Effect.put(n + 10)),
+    Effect.flatmap(() => Effect.get<[number]>()),
     Effect.map((n) => `Final: ${n}`),
   );
 
@@ -415,8 +413,8 @@ Deno.test("Effect tryCatch with successful execution", async () => {
     (error, args) => `Error with args ${args}: ${error}`,
   );
 
-  const result = await safeFunction(21)("state");
-  assertEquals(result, [E.right(42), "state"]);
+  const result = await safeFunction(21);
+  assertEquals(result, [E.right(42), 21]);
 });
 
 Deno.test("Effect tryCatch with Promise successful execution", async () => {
@@ -425,8 +423,8 @@ Deno.test("Effect tryCatch with Promise successful execution", async () => {
     (error, args) => `Error with args ${args}: ${error}`,
   );
 
-  const result = await safeFunction(21)("state");
-  assertEquals(result, [E.right(42), "state"]);
+  const result = await safeFunction(21);
+  assertEquals(result, [E.right(42), 21]);
 });
 
 Deno.test("Effect tryCatch with error", async () => {
@@ -438,10 +436,10 @@ Deno.test("Effect tryCatch with error", async () => {
     (error, args) => `Caught error with args [${args}]: ${error}`,
   );
 
-  const result = await throwingFunction(-5)("state");
+  const result = await throwingFunction(-5);
   assertEquals(result, [
     E.left("Caught error with args [-5]: Error: Negative number"),
-    "state",
+    -5,
   ]);
 });
 
@@ -451,15 +449,15 @@ Deno.test("Effect tryCatch with Promise that rejects", async () => {
     (error, args) => `Caught promise rejection with args [${args}]: ${error}`,
   );
 
-  const result = await rejectingFunction(10)("state");
+  const result = await rejectingFunction(10);
   assertEquals(result, [
     E.left("Caught promise rejection with args [10]: Promise rejected with 10"),
-    "state",
+    10,
   ]);
 });
 
 Deno.test("Effect recover with left value", async () => {
-  const effect = Effect.left<string, number>("original error");
+  const effect = Effect.left<string, [number]>("original error");
   const recovered = pipe(
     effect,
     Effect.recover((error: string) => Effect.wrap(`Recovered from: ${error}`)),
@@ -497,8 +495,8 @@ Deno.test("Effect recover with recovery function that fails", async () => {
 });
 
 Deno.test("Effect alt with first effect succeeding", async () => {
-  const first: Effect.Effect<string, string, number> = Effect.wrap(42);
-  const second: Effect.Effect<string, string, number> = Effect.wrap(24);
+  const first = Effect.wrap(42);
+  const second = Effect.wrap(24);
   const alternative = Effect.alt(second)(first);
 
   const result = await alternative("state");
@@ -506,23 +504,17 @@ Deno.test("Effect alt with first effect succeeding", async () => {
 });
 
 Deno.test("Effect alt with first effect failing", async () => {
-  const first: Effect.Effect<string, string, number> = Effect.left(
-    "first error",
-  );
-  const second: Effect.Effect<string, string, number> = Effect.wrap(42);
+  const first = Effect.left("first error");
+  const second = Effect.wrap(42);
   const alternative = Effect.alt(second)(first);
 
-  const result = await alternative("original");
-  assertEquals(result, [E.right(42), "original"]);
+  const result = await alternative(1);
+  assertEquals(result, [E.right(42), 1]);
 });
 
 Deno.test("Effect alt with both effects failing", async () => {
-  const first: Effect.Effect<string, string, number> = Effect.left(
-    "first error",
-  );
-  const second: Effect.Effect<string, string, number> = Effect.left(
-    "second error",
-  );
+  const first = Effect.left("first error");
+  const second = Effect.left("second error");
   const alternative = Effect.alt(second)(first);
 
   const result = await alternative("original");
@@ -530,19 +522,19 @@ Deno.test("Effect alt with both effects failing", async () => {
 });
 
 Deno.test("Effect puts with sync function", async () => {
-  const putsEffect = Effect.puts((n: number) => n * 2);
+  const putsEffect = Effect.puts((n: number) => [n * 2]);
   const result = await putsEffect(21);
-  assertEquals(result, [E.right(42), 42]);
+  assertEquals(result, [E.right([42]), 42]);
 });
 
 Deno.test("Effect puts with async function", async () => {
-  const putsEffect = Effect.puts((n: number) => Promise.resolve(n * 2));
+  const putsEffect = Effect.puts((n: number) => Promise.resolve([n * 2]));
   const result = await putsEffect(21);
-  assertEquals(result, [E.right(42), 42]);
+  assertEquals(result, [E.right([42]), 42]);
 });
 
 Deno.test("Effect puts with identity function", async () => {
-  const putsEffect = Effect.puts((s: string) => s);
+  const putsEffect = Effect.puts((s: string) => [s]);
   const result = await putsEffect("test");
-  assertEquals(result, [E.right("test"), "test"]);
+  assertEquals(result, [E.right(["test"]), "test"]);
 });

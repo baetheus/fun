@@ -1,6 +1,6 @@
 {
   "name": "@baetheus/fun",
-  "version": "2.3.5",
+  "version": "3.0.0-rc.1",
   "exports": {
     "./applicable": "./applicable.ts",
     "./array": "./array.ts",

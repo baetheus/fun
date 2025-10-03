@@ -324,7 +324,7 @@ export function wrap<A, S = unknown>(value: A): Parser<S, A> {
  * @example
  * ```ts
  * import { apply, wrap, map, fromString } from "./parser.ts";
- * import { pipe } from "../fn.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const parser = pipe(
  *   wrap((x: number) => (y: string) => ({ x, y })),
@@ -348,7 +348,7 @@ export function apply<A, S = unknown>(
  * @example
  * ```ts
  * import { map, succeed, fromString } from "./parser.ts";
- * import { pipe } from "../fn.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const parser = pipe(
  *   succeed(5),
@@ -374,7 +374,7 @@ export function map<A, I, S = unknown>(
  * @example
  * ```ts
  * import { flatmap, take, succeed, fromString } from "./parser.ts";
- * import { pipe } from "../fn.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const parser = pipe(
  *   take<string>(),
@@ -400,7 +400,7 @@ export function flatmap<A, I, S = unknown>(
  * @example
  * ```ts
  * import { recover, fail, succeed, fromString } from "./parser.ts";
- * import { pipe } from "../fn.ts";
+ * import { pipe } from "./fn.ts";
  *
  * const parser = pipe(
  *   fail("test", "always fails"),
