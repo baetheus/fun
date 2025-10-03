@@ -47,9 +47,8 @@ import { pipe } from "./fn.ts";
  *
  * @since 2.3.5
  */
-export type Effect<D extends unknown[], B, A, C extends unknown[] = D> = (
-  ...d: D
-) => Promise<[Either<B, A>, ...C]>;
+export type Effect<D extends unknown[], B, A, C extends unknown[] = unknown[]> =
+  (...d: D) => Promise<[Either<B, A>, ...C]>;
 
 /**
  * Specifies Effect as a Higher Kinded Type with a fixed state type S,
@@ -234,7 +233,7 @@ export function tryCatch<S extends unknown[], B, A>(
  */
 export function wrap<A, S extends unknown[] = unknown[]>(
   a: A,
-): Effect<S, never, A> {
+): Effect<S, never, A, S> {
   return (...s) => P.resolve([E.right(a), ...s]);
 }
 
@@ -258,7 +257,7 @@ export function wrap<A, S extends unknown[] = unknown[]>(
  */
 export function fail<B, S extends unknown[] = unknown[]>(
   b: B,
-): Effect<S, B, never> {
+): Effect<S, B, never, S> {
   return (...s) => P.resolve([E.left(b), ...s]);
 }
 
@@ -280,7 +279,7 @@ export function fail<B, S extends unknown[] = unknown[]>(
  */
 export function right<A, S extends unknown[] = unknown[]>(
   a: A,
-): Effect<S, never, A> {
+): Effect<S, never, A, S> {
   return wrap(a);
 }
 
@@ -302,7 +301,7 @@ export function right<A, S extends unknown[] = unknown[]>(
  */
 export function left<B, S extends unknown[] = unknown[]>(
   b: B,
-): Effect<S, B, never> {
+): Effect<S, B, never, S> {
   return fail(b);
 }
 
@@ -336,10 +335,7 @@ export function left<B, S extends unknown[] = unknown[]>(
 export function swap<S extends unknown[], A, B, O extends unknown[]>(
   ua: Effect<S, B, A, O>,
 ): Effect<S, A, B, O> {
-  return async (...s) => {
-    const [ea, ...o] = await ua.apply(ua, s);
-    return [E.swap(ea), ...o];
-  };
+  return pipe(ua, mapEither(E.swap));
 }
 
 /**
@@ -451,6 +447,60 @@ export function mapSecond<B, J>(
   };
 }
 
+/**
+ * Apply a function to transform the Either value of an Effect. Unlike `map`
+ * and `mapSecond` which transform only success or error values respectively,
+ * `mapEither` allows you to transform the entire Either, enabling operations
+ * like swapping, conditional transformations, or mapping both sides at once.
+ * The state is passed through unchanged.
+ *
+ * @example
+ * ```ts
+ * import * as Eff from "./effect.ts";
+ * import * as E from "./either.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * // Transform success values
+ * const transformSuccess = (ea: E.Either<string, number>) =>
+ *   E.isRight(ea) ? E.right(`Success: ${ea.right}`) : ea;
+ *
+ * const effect1 = pipe(
+ *   Eff.right(42),
+ *   Eff.mapEither(transformSuccess)
+ * );
+ *
+ * const result1 = await effect1("state");
+ * // [E.right("Success: 42"), "state"]
+ *
+ * // Swap success and error
+ * const swapEither = (ea: E.Either<string, number>) =>
+ *   E.isRight(ea) ? E.left(`Error: ${ea.right}`) : E.right(`Success: ${ea.left}`);
+ *
+ * const effect2 = pipe(
+ *   Eff.right(42),
+ *   Eff.mapEither(swapEither)
+ * );
+ *
+ * const result2 = await effect2("state");
+ * // [E.left("Error: 42"), "state"]
+ *
+ * // Transform error codes to messages
+ * const handleErrors = (ea: E.Either<number, string>) =>
+ *   E.isRight(ea) ? ea : E.left(
+ *     ea.left === 404 ? "Not Found" : `Error ${ea.left}`
+ *   );
+ *
+ * const effect3 = pipe(
+ *   Eff.left(404),
+ *   Eff.mapEither(handleErrors)
+ * );
+ *
+ * const result3 = await effect3("state");
+ * // [E.left("Not Found"), "state"]
+ * ```
+ *
+ * @since 3.0.0-rc.2
+ */
 export function mapEither<B, A, I, J>(
   fee: (ea: Either<B, A>) => Either<J, I>,
 ): <S extends unknown[], O extends unknown[]>(
@@ -461,6 +511,7 @@ export function mapEither<B, A, I, J>(
     return [fee(ea), ...o];
   };
 }
+
 /**
  * Apply a function wrapped in an Effect to a value wrapped in an Effect.
  * Both Effects must succeed for the application to succeed. The function

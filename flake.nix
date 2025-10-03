@@ -7,33 +7,44 @@
   };
 
   outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = import nixpkgs { inherit system; };
+    flake-utils.lib.eachDefaultSystem (system: let
+      pkgs = import nixpkgs { inherit system; };
+      mkScript = pkgs.writeShellScriptBin;
 
-        fun = with pkgs; derivation {
-          inherit system;
-          name = "fun";
-          src = ./.;
-          cp = "${coreutils}/bin/cp";
-          mkdir = "${coreutils}/bin/mkdir";
-          builder = "${dash}/bin/dash";
-          args = [ "-c" "$mkdir $out; $cp $src/*.ts $out;" ];
-        };
+      shell = with pkgs; mkShell {
+        packages = [
+          # Insert packages here
+          deno
 
-        shell = with pkgs; mkShell {
-          buildInputs = [ deno jq lcov ];
-        };
+          # Insert shell aliases here
+          (mkScript "coverage" ''
+#!/usr/bin/env sh
 
-      in
-      {
-        # Packages
-        packages.fun = fun;
-        packages.default = fun;
+if [ -z "$\{COVERAGE_DIR}" ]; then
+    export COVERAGE_DIR="coverage"
+fi
 
-        # Shells
-        devShell = shell;
-      }
-    );
+exiting() {
+  echo "Ctrl-C trapped, clearing coverage";
+  rm -rf ./$COVERAGE_DIR;
+  exit 0;
+}
+trap exiting SIGINT
+
+rm -rf $COVERAGE_DIR
+deno fmt
+deno test --doc --parallel --trace-leaks --coverage=$COVERAGE_DIR
+deno coverage $COVERAGE_DIR
+rm -rf ./$COVERAGE_DIR
+          '')
+        ];
+
+        shellHook = ''
+export COVERAGE_DIR="coverage"
+        '';
+      };
+    in {
+      devShells.default = shell;
+    });
 }
 

@@ -607,3 +607,140 @@ Deno.test("Effect putsSecond with identity function", async () => {
   const result = await putsErrorEffect("test");
   assertEquals(result, [E.left(["test"]), "test"]);
 });
+
+Deno.test("Effect mapEither with success value transformation", async () => {
+  const transformSuccess = (ea: E.Either<string, number>) => {
+    if (E.isRight(ea)) {
+      return E.right(`Success: ${ea.right}`);
+    } else {
+      return ea; // Keep errors unchanged
+    }
+  };
+
+  const effect = Effect.mapEither(transformSuccess)(Effect.right(42));
+  const result = await effect("state");
+  assertEquals(result, [E.right("Success: 42"), "state"]);
+});
+
+Deno.test("Effect mapEither with error value transformation", async () => {
+  const transformError = (ea: E.Either<string, number>) => {
+    if (E.isLeft(ea)) {
+      return E.left(`Error: ${ea.left}`);
+    } else {
+      return ea; // Keep successes unchanged
+    }
+  };
+
+  const effect = Effect.mapEither(transformError)(
+    Effect.left("original error"),
+  );
+  const result = await effect("state");
+  assertEquals(result, [E.left("Error: original error"), "state"]);
+});
+
+Deno.test("Effect mapEither with both success and error transformation", async () => {
+  const transformBoth = (ea: E.Either<string, number>) => {
+    if (E.isRight(ea)) {
+      return E.left(`Converted success to error: ${ea.right}`);
+    } else {
+      return E.right(`Converted error to success: ${ea.left}`);
+    }
+  };
+
+  const successEffect = Effect.mapEither(transformBoth)(Effect.right(42));
+  const successResult = await successEffect("state");
+  assertEquals(successResult, [
+    E.left("Converted success to error: 42"),
+    "state",
+  ]);
+
+  const errorEffect = Effect.mapEither(transformBoth)(Effect.left("error"));
+  const errorResult = await errorEffect("state");
+  assertEquals(errorResult, [
+    E.right("Converted error to success: error"),
+    "state",
+  ]);
+});
+
+Deno.test("Effect mapEither with state preservation", async () => {
+  const transformResult = (ea: E.Either<string, number>) => {
+    if (E.isRight(ea)) {
+      return E.right(ea.right * 2);
+    } else {
+      return E.left(ea.left.toUpperCase());
+    }
+  };
+
+  // Test with different state types
+  const numberEffect = Effect.mapEither(transformResult)(Effect.right(21));
+  const numberResult = await numberEffect(42);
+  assertEquals(numberResult, [E.right(42), 42]);
+
+  const stringEffect = Effect.mapEither(transformResult)(Effect.left("error"));
+  const stringResult = await stringEffect("test state");
+  assertEquals(stringResult, [E.left("ERROR"), "test state"]);
+});
+
+Deno.test("Effect mapEither with sync transformation function", async () => {
+  const syncTransform = (ea: E.Either<string, number>) => {
+    if (E.isRight(ea)) {
+      return E.right(`Sync: ${ea.right}`);
+    } else {
+      return E.left(`Sync error: ${ea.left}`);
+    }
+  };
+
+  const effect = Effect.mapEither(syncTransform)(Effect.right(42));
+  const result = await effect("state");
+  assertEquals(result, [E.right("Sync: 42"), "state"]);
+});
+
+Deno.test("Effect mapEither with complex transformation logic", async () => {
+  // Transform error codes to descriptive messages, keep successes as-is
+  const handleErrors = (ea: E.Either<number, string>) => {
+    if (E.isRight(ea)) {
+      return ea; // Keep successful results unchanged
+    } else {
+      const code = ea.left;
+      switch (code) {
+        case 404:
+          return E.left("Resource not found");
+        case 500:
+          return E.left("Internal server error");
+        default:
+          return E.left(`Unknown error: ${code}`);
+      }
+    }
+  };
+
+  const notFoundEffect = Effect.mapEither(handleErrors)(Effect.left(404));
+  const notFoundResult = await notFoundEffect("state");
+  assertEquals(notFoundResult, [E.left("Resource not found"), "state"]);
+
+  const successEffect = Effect.mapEither(handleErrors)(
+    Effect.right("Success!"),
+  );
+  const successResult = await successEffect("state");
+  assertEquals(successResult, [E.right("Success!"), "state"]);
+
+  const unknownErrorEffect = Effect.mapEither(handleErrors)(Effect.left(418));
+  const unknownResult = await unknownErrorEffect("state");
+  assertEquals(unknownResult, [E.left("Unknown error: 418"), "state"]);
+});
+
+Deno.test("Effect mapEither composition with other operations", async () => {
+  const effect = pipe(
+    Effect.right(10),
+    Effect.mapEither((ea: E.Either<string, number>) => {
+      if (E.isRight(ea)) {
+        return E.right(ea.right * 2);
+      } else {
+        return E.left(`Transformed: ${ea.left}`);
+      }
+    }),
+    Effect.map((result) => result * 3),
+  );
+
+  const result = await effect("state");
+  assertEquals(result, [E.right(60), "state"]);
+});
