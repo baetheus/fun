@@ -581,7 +581,9 @@ Deno.test("Effect getsSecond with function", async () => {
 });
 
 Deno.test("Effect getsSecond with Promise function", async () => {
-  const getAsyncError = Effect.getsSecond((s: number) => Promise.resolve(s * 2));
+  const getAsyncError = Effect.getsSecond((s: number) =>
+    Promise.resolve(s * 2)
+  );
   const result = await getAsyncError(21);
   assertEquals(result, [E.left(42), 21]);
 });
@@ -593,7 +595,9 @@ Deno.test("Effect putsSecond with sync function", async () => {
 });
 
 Deno.test("Effect putsSecond with async function", async () => {
-  const putsAsyncError = Effect.putsSecond((n: number) => Promise.resolve([n * 2]));
+  const putsAsyncError = Effect.putsSecond((n: number) =>
+    Promise.resolve([n * 2])
+  );
   const result = await putsAsyncError(21);
   assertEquals(result, [E.left([42]), 42]);
 });
