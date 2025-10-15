@@ -744,3 +744,39 @@ Deno.test("Effect mapEither composition with other operations", async () => {
   const result = await effect("state");
   assertEquals(result, [E.right(60), "state"]);
 });
+
+Deno.test("Effect getsEither with Right output", async () => {
+  const validatePositive = Effect.getsEither((n: number) =>
+    n > 0 ? E.right(n * 2) : E.left("Number must be positive")
+  );
+
+  const result = await validatePositive(21);
+  assertEquals(result, [E.right(42), 21]);
+});
+
+Deno.test("Effect getsEither with Left output", async () => {
+  const validatePositive = Effect.getsEither((n: number) =>
+    n > 0 ? E.right(n * 2) : E.left("Number must be positive")
+  );
+
+  const result = await validatePositive(-5);
+  assertEquals(result, [E.left("Number must be positive"), -5]);
+});
+
+Deno.test("Effect getsEither with Promise<Right> output", async () => {
+  const asyncValidate = Effect.getsEither((n: number) =>
+    Promise.resolve(n > 0 ? E.right(n * 2) : E.left("Must be positive"))
+  );
+
+  const result = await asyncValidate(21);
+  assertEquals(result, [E.right(42), 21]);
+});
+
+Deno.test("Effect getsEither with Promise<Left> output", async () => {
+  const asyncValidate = Effect.getsEither((n: number) =>
+    Promise.resolve(n > 0 ? E.right(n * 2) : E.left("Must be positive"))
+  );
+
+  const result = await asyncValidate(-5);
+  assertEquals(result, [E.left("Must be positive"), -5]);
+});

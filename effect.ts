@@ -843,6 +843,51 @@ export function getsSecond<S extends unknown[], B>(
 }
 
 /**
+ * Extract an Either value from the current state using a function. Unlike
+ * `gets` which always returns a Right (success), or `getsSecond` which always
+ * returns a Left (error), `getsEither` allows the function to return either
+ * a Left or a Right based on the state. The state is passed through unchanged.
+ *
+ * This is useful when you need to perform validation or conditional logic on
+ * the state that can result in either success or failure.
+ *
+ * @example
+ * ```ts
+ * import * as Eff from "./effect.ts";
+ * import * as E from "./either.ts";
+ *
+ * // Synchronous Either
+ * const validatePositive = Eff.getsEither((n: number) =>
+ *   n > 0 ? E.right(n * 2) : E.left("Number must be positive")
+ * );
+ *
+ * const result1 = await validatePositive(21);
+ * // [E.right(42), 21]
+ *
+ * const result2 = await validatePositive(-5);
+ * // [E.left("Number must be positive"), -5]
+ *
+ * // Asynchronous Either
+ * const asyncValidate = Eff.getsEither((n: number) =>
+ *   Promise.resolve(n > 0 ? E.right(n * 2) : E.left("Must be positive"))
+ * );
+ *
+ * const result3 = await asyncValidate(21);
+ * // [E.right(42), 21]
+ *
+ * const result4 = await asyncValidate(-5);
+ * // [E.left("Must be positive"), -5]
+ * ```
+ *
+ * @since 3.0.0-rc.4
+ */
+export function getsEither<S extends unknown[], A, B>(
+  fsab: (...s: S) => Either<B, A> | Promise<Either<B, A>>,
+): Effect<S, B, A, S> {
+  return async (...s) => [await fsab.apply(fsab, s), ...s];
+}
+
+/**
  * Transform the current state using a function. The transformed value
  * becomes both the success value and the new state.
  *
