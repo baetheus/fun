@@ -1,3 +1,7 @@
+/**
+ * A talkback is the method for backpressure in our interpretation of the
+ * callbag specification. Specifically, we
+ */
 export type Talkback = (count: number) => void;
 
 export type Talk<A> = {
@@ -23,8 +27,6 @@ export type TypeOf<S> = S extends Stream<infer A, infer _> ? A : never;
 
 export type EnvOf<S> = S extends Stream<infer _, infer E> ? E : never;
 
-export const Disposed = Symbol("fun/stream/disposed");
-
 export function disposable(dispose: (reason?: unknown) => void): Disposable {
   return { [Symbol.dispose]: dispose };
 }
@@ -33,26 +35,14 @@ export function disposable(dispose: (reason?: unknown) => void): Disposable {
  * @todo: Consider how "safe" a sink needs to work.
  */
 export function sink<A>(snk: Sink<A>): Sink<A> {
-  return snk;
-  // return function safeSink(tlkbk) {
-  //   let open = true;
-  //   const talk = snk(tlkbk);
-  //   return {
-  //     event: (value) => {
-  //       if (open) {
-  //         return talk.event(value);
-  //       }
-  //       throw new Error("Talk event called after close.");
-  //     },
-  //     end: (reason) => {
-  //       if (open) {
-  //         open = false;
-  //         return talk.end(reason);
-  //       }
-  //       throw new Error("Talk end called after close.");
-  //     },
-  //   };
-  // };
+  return function safeSink(tlkbk) {
+    let open = true;
+    const talk = snk(tlkbk);
+    return {
+      event: (value) => open && talk.event(value),
+      end: (reason) => open && !(open = false) && talk.end(reason),
+    };
+  };
 }
 
 export function stream<A, R = unknown>(strm: Stream<A, R>): Stream<A, R> {
@@ -245,17 +235,20 @@ export function loop<A, B, S>(
 ): <E>(ua: Stream<A, E>) => Stream<B, E> {
   return (ua) => (snk, env) => {
     let state = seed;
-    return ua((tlkbk) => {
-      const talk = snk(tlkbk);
-      return {
-        event: (a) => {
-          const [next, b] = stepper(state, a);
-          state = next;
-          talk.event(b);
-        },
-        end: talk.end,
-      };
-    }, env);
+    return ua(
+      sink((tlkbk) => {
+        const talk = snk(tlkbk);
+        return {
+          event: (a) => {
+            const [next, b] = stepper(state, a);
+            state = next;
+            talk.event(b);
+          },
+          end: talk.end,
+        };
+      }),
+      env,
+    );
   };
 }
 

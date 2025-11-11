@@ -1,6 +1,6 @@
 {
   "name": "@baetheus/fun",
-  "version": "3.0.0-rc.4",
+  "version": "3.0.0-rc.5",
   "exports": {
     "./applicable": "./applicable.ts",
     "./array": "./array.ts",
@@ -17,6 +17,7 @@
     "./decoder": "./decoder.ts",
     "./effect": "./effect.ts",
     "./either": "./either.ts",
+    "./err": "./err.ts",
     "./failable": "./failable.ts",
     "./filterable": "./filterable.ts",
     "./flatmappable": "./flatmappable.ts",
