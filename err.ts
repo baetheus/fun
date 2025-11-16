@@ -100,5 +100,3 @@ export function match<T extends AnyErr, B>(
 ): (ta: T) => B {
   return (ta) => (fns[ta.name as keyof ToRecord<T, B>])(ta.message, ta.context);
 }
-
-
