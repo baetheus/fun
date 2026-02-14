@@ -49,6 +49,17 @@ export type Err<T extends string, A> = {
 export type AnyErr = Err<string, any>;
 
 /**
+ * A type alias for an Err factory returned by the err function. This is useful
+ * to combat deno slow-types errors on publish.
+ *
+ * @since 3.0.0-rc.6
+ */
+export type ErrFactory<T extends string> = <A>(
+  message: string,
+  context?: A,
+) => Err<T, A>;
+
+/**
  * Create a constructor function for a specific error type.
  *
  * @example
@@ -67,7 +78,7 @@ export type AnyErr = Err<string, any>;
  */
 export function err<T extends string>(
   name: T,
-): <A>(message: string, context?: A) => Err<T, A> {
+): ErrFactory<T> {
   return (message, context) => ({
     tag: "Error",
     name,
