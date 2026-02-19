@@ -560,6 +560,58 @@ export function apply<A, B, S3 extends unknown[], S2 extends unknown[]>(
 }
 
 /**
+ * Apply a function wrapped in an Effect to a value wrapped in an Effect.
+ * Both Effects must succeed for the application to succeed. The function
+ * Effect is executed first, then the value Effect. This function is limited to
+ * state values that are invariant and immutable in order to achieve paralell
+ * execution of the function and value parameters.
+ *
+ * @example
+ * ```ts
+ * import * as Eff from "./effect.ts";
+ * import * as E from "./either.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const add = (a: number) => (b: number) => a + b;
+ * const addEffect = Eff.right(add(5));
+ * const valueEffect = Eff.right(10);
+ *
+ * const result = await pipe(
+ *   addEffect,
+ *   Eff.apply(valueEffect)
+ * )("state");
+ * // [Either.right(15), "state"]
+ *
+ * const errorResult = await pipe(
+ *   Eff.left("function error"),
+ *   Eff.apply(valueEffect)
+ * )("state");
+ * // [Either.left("function error"), "state"]
+ * ```
+ *
+ * @since 2.3.5
+ */
+export function applyPar<A, B, S extends unknown[]>(
+  ua: Effect<S, B, A, S>,
+): <I, J>(
+  ufai: Effect<S, J, (a: A) => I | Promise<I>, S>,
+) => Effect<S, B | J, I, S> {
+  return (ufai) => async (...s) => {
+    const [[efai], [ea]] = await Promise.all(
+      ufai.apply(ufai, s),
+      ua.apply(ua, s),
+    );
+    if (Either.isLeft(efai)) {
+      return [efai, ...s];
+    }
+    if (Either.isLeft(ea)) {
+      return [ea, ...s];
+    }
+    return [Either.right(await efai.right(ea.right)), ...s];
+  };
+}
+
+/**
  * Chain Effects by applying a function that returns an Effect to the
  * success value of an Effect. This allows for sequential composition
  * of Effects with dependency on previous results.
@@ -1154,5 +1206,5 @@ export function bindTo<N extends string>(
 export function getFlatmappableEffect<S extends unknown[]>(): Flatmappable<
   KindEffectState<S>
 > {
-  return { wrap, apply, map, flatmap };
+  return { wrap, apply: applyPar, map, flatmap };
 }
