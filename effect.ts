@@ -15,10 +15,9 @@
 
 import type { Kind, Out } from "./kind.ts";
 import type { Flatmappable } from "./flatmappable.ts";
-import type { Either } from "./either.ts";
 
-import * as P from "./promise.ts";
-import * as E from "./either.ts";
+import * as Promise from "./promise.ts";
+import * as Either from "./either.ts";
 import { pipe } from "./fn.ts";
 
 /**
@@ -38,9 +37,9 @@ import { pipe } from "./fn.ts";
  *
  * const loginUser: LoginEffect = async (state) => {
  *   if (state.loggedIn) {
- *     return [E.right({ id: 1, name: "Alice" }), { loggedIn: true }];
+ *     return [Either.right({ id: 1, name: "Alice" }), { loggedIn: true }];
  *   } else {
- *     return [E.left("User not logged in"), { loggedIn: false }];
+ *     return [Either.left("User not logged in"), { loggedIn: false }];
  *   }
  * };
  * ```
@@ -48,7 +47,7 @@ import { pipe } from "./fn.ts";
  * @since 2.3.5
  */
 export type Effect<D extends unknown[], B, A, C extends unknown[] = unknown[]> =
-  (...d: D) => Promise<[Either<B, A>, ...C]>;
+  (...d: D) => Promise<[Either.Either<B, A>, ...C]>;
 
 /**
  * Specifies Effect as a Higher Kinded Type with a fixed state type S,
@@ -72,13 +71,13 @@ export interface KindEffectState<S extends unknown[]> extends Kind {
  *
  * const identityEffect = Eff.id<[number]>();
  * const result = await identityEffect(42);
- * // [E.right([42]), 42]
+ * // [Either.right([42]), 42]
  * ```
  *
  * @since 2.3.5
  */
 export function id<S extends unknown[]>(): Effect<S, S, S> {
-  return (...s) => Promise.resolve([E.right(s), ...s]);
+  return (...s) => Promise.resolve([Either.right(s), ...s]);
 }
 
 /**
@@ -100,7 +99,7 @@ export function id<S extends unknown[]>(): Effect<S, S, S> {
  * const result = await delayedEffect(0);
  * const elapsed = Date.now() - start;
  * // elapsed >= 1000
- * // result = [E.right("Hello World"), 0]
+ * // result = [Either.right("Hello World"), 0]
  * ```
  *
  * @since 2.3.5
@@ -109,7 +108,7 @@ export function delay(
   ms: number,
 ): <D extends unknown[], A, B>(ua: Effect<D, A, B>) => Effect<D, A, B> {
   return (ua) => async (...s) => {
-    await P.wait(ms);
+    await Promise.wait(ms);
     return ua.apply(ua, s);
   };
 }
@@ -122,22 +121,22 @@ export function delay(
  * import * as Eff from "./effect.ts";
  * import * as E from "./either.ts";
  *
- * const successEffect = Eff.fromEither(E.right(42));
- * const errorEffect = Eff.fromEither(E.left("Something went wrong"));
+ * const successEffect = Eff.fromEither(Either.right(42));
+ * const errorEffect = Eff.fromEither(Either.left("Something went wrong"));
  *
  * const result1 = await successEffect("initial state");
- * // [E.right(42), "initial state"]
+ * // [Either.right(42), "initial state"]
  *
  * const result2 = await errorEffect("initial state");
- * // [E.left("Something went wrong"), "initial state"]
+ * // [Either.left("Something went wrong"), "initial state"]
  * ```
  *
  * @since 2.3.5
  */
 export function fromEither<A, B, S extends unknown[] = unknown[]>(
-  ea: Either<B, A>,
+  ea: Either.Either<B, A>,
 ): Effect<S, B, A> {
-  return (...s) => P.resolve([ea, ...s]);
+  return (...s) => Promise.resolve([ea, ...s]);
 }
 
 /**
@@ -154,23 +153,23 @@ export function fromEither<A, B, S extends unknown[] = unknown[]>(
  * const valueEffect = Eff.fromPromise(42);
  *
  * const result1 = await successEffect("state");
- * // [E.right("success"), "state"]
+ * // [Either.right("success"), "state"]
  *
  * const result2 = await errorEffect("state");
- * // [E.left(Error("failed")), "state"]
+ * // [Either.left(Error("failed")), "state"]
  *
  * const result3 = await valueEffect("state");
- * // [E.right(42), "state"]
+ * // [Either.right(42), "state"]
  * ```
  *
  * @since 2.3.5
  */
 export function fromPromise<A, S extends unknown[] = unknown[]>(
   pa: A | Promise<A>,
-): Effect<S, unknown, A> {
-  return P.tryCatch(
-    async (...s: S) => [E.right(await pa), ...s],
-    (b, s) => [E.left(b), ...s],
+): Effect<S, unknown, A, S> {
+  return Promise.tryCatch(
+    async (...s: S) => [Either.right(await pa), ...s],
+    (b, s) => [Either.left(b), ...s],
   );
 }
 
@@ -193,10 +192,10 @@ export function fromPromise<A, S extends unknown[] = unknown[]>(
  * );
  *
  * const result1 = await safeDivide(10, 2);
- * // [E.right(5), 10, 2]
+ * // [Either.right(5), 10, 2]
  *
  * const result2 = await safeDivide(10, 0);
- * // [E.left("Failed to divide 10 by 0: Error: Division by zero"), 10, 0]
+ * // [Either.left("Failed to divide 10 by 0: Error: Division by zero"), 10, 0]
  * ```
  *
  * @since 2.3.5
@@ -204,13 +203,13 @@ export function fromPromise<A, S extends unknown[] = unknown[]>(
 export function tryCatch<S extends unknown[], B, A>(
   fsa: (...s: S) => A | Promise<A>,
   onThrow: (err: unknown, args: S) => B,
-): Effect<S, B, A> {
+): Effect<S, B, A, S> {
   return async (...s) => {
     try {
       const a = await fsa.apply(fsa, s);
-      return [E.right(a as A), ...s];
+      return [Either.right(a as A), ...s];
     } catch (b) {
-      return [E.left(onThrow(b, s)), ...s];
+      return [Either.left(onThrow(b, s)), ...s];
     }
   };
 }
@@ -226,7 +225,7 @@ export function tryCatch<S extends unknown[], B, A>(
  *
  * const wrappedValue = Eff.wrap("Hello World");
  * const result = await wrappedValue("state");
- * // [E.right("Hello World"), "state"]
+ * // [Either.right("Hello World"), "state"]
  * ```
  *
  * @since 2.3.5
@@ -234,7 +233,7 @@ export function tryCatch<S extends unknown[], B, A>(
 export function wrap<A, S extends unknown[] = unknown[]>(
   a: A,
 ): Effect<S, never, A, S> {
-  return (...s) => P.resolve([E.right(a), ...s]);
+  return (...s) => Promise.resolve([Either.right(a), ...s]);
 }
 
 /**
@@ -250,7 +249,7 @@ export function wrap<A, S extends unknown[] = unknown[]>(
  *
  * const errorEffect = Eff.fail("Something went wrong");
  * const result = await errorEffect("state");
- * // [E.left("Something went wrong"), "state"]
+ * // [Either.left("Something went wrong"), "state"]
  * ```
  *
  * @since 3.0.0-rc.2
@@ -258,7 +257,7 @@ export function wrap<A, S extends unknown[] = unknown[]>(
 export function fail<B, S extends unknown[] = unknown[]>(
   b: B,
 ): Effect<S, B, never, S> {
-  return (...s) => P.resolve([E.left(b), ...s]);
+  return (...s) => Promise.resolve([Either.left(b), ...s]);
 }
 
 /**
@@ -272,7 +271,7 @@ export function fail<B, S extends unknown[] = unknown[]>(
  *
  * const successEffect = Eff.right(42);
  * const result = await successEffect("state");
- * // [E.right(42), "state"]
+ * // [Either.right(42), "state"]
  * ```
  *
  * @since 2.3.5
@@ -294,7 +293,7 @@ export function right<A, S extends unknown[] = unknown[]>(
  *
  * const errorEffect = Eff.left("Something went wrong");
  * const result = await errorEffect("state");
- * // [E.left("Something went wrong"), "state"]
+ * // [Either.left("Something went wrong"), "state"]
  * ```
  *
  * @since 2.3.5
@@ -321,13 +320,13 @@ export function left<B, S extends unknown[] = unknown[]>(
  * const swappedSuccess = Eff.swap(successEffect);
  *
  * const result1 = await swappedSuccess("state");
- * // [E.left("success"), "state"]
+ * // [Either.left("success"), "state"]
  *
  * const errorEffect = Eff.left("error");
  * const swappedError = Eff.swap(errorEffect);
  *
  * const result2 = await swappedError("state");
- * // [E.right("error"), "state"]
+ * // [Either.right("error"), "state"]
  * ```
  *
  * @since 3.0.0-rc.2
@@ -335,7 +334,7 @@ export function left<B, S extends unknown[] = unknown[]>(
 export function swap<S extends unknown[], A, B, O extends unknown[]>(
   ua: Effect<S, B, A, O>,
 ): Effect<S, A, B, O> {
-  return pipe(ua, mapEither(E.swap));
+  return pipe(ua, mapEither(Either.swap));
 }
 
 /**
@@ -352,10 +351,10 @@ export function swap<S extends unknown[], A, B, O extends unknown[]>(
  * const processString = Eff.premap((s: string) => [parseInt(s)])(processNumber);
  *
  * const result1 = await processString("21");
- * // [E.right(42), 21]
+ * // [Either.right(42), 21]
  *
  * const result2 = await processString("abc");
- * // [E.right(NaN), NaN]
+ * // [Either.right(NaN), NaN]
  * ```
  *
  * @since 2.3.5
@@ -383,13 +382,13 @@ export function premap<L extends unknown[], D extends unknown[]>(
  * );
  *
  * const result = await doubleEffect("state");
- * // [E.right(42), "state"]
+ * // [Either.right(42), "state"]
  *
  * const errorResult = await pipe(
  *   Eff.left("error"),
  *   Eff.map((n: number) => n * 2)
  * )("state");
- * // [E.left("error"), "state"]
+ * // [Either.left("error"), "state"]
  * ```
  *
  * @since 2.3.5
@@ -401,7 +400,7 @@ export function map<A, I>(
 ) => Effect<S1, B, I, S2> {
   return (ua) => async (...s1) => {
     const [ea, ...s2] = await ua.apply(ua, s1);
-    return [E.isLeft(ea) ? ea : E.right(await fai(ea.right)), ...s2];
+    return [Either.isLeft(ea) ? ea : Either.right(await fai(ea.right)), ...s2];
   };
 }
 
@@ -422,13 +421,13 @@ export function map<A, I>(
  * );
  *
  * const result = await enrichError("state");
- * // [E.left("ERROR: Database connection failed"), "state"]
+ * // [Either.left("ERROR: Database connection failed"), "state"]
  *
  * const successResult = await pipe(
  *   Eff.right(42),
  *   Eff.mapSecond((error: string) => `ERROR: ${error}`)
  * )("state");
- * // [E.right(42), "state"]
+ * // [Either.right(42), "state"]
  * ```
  *
  * @since 2.3.5
@@ -440,10 +439,10 @@ export function mapSecond<B, J>(
 ) => Effect<S1, J, A, S2> {
   return (ua) => async (...s1) => {
     const [ea, ...s2] = await ua.apply(ua, s1);
-    if (E.isRight(ea)) {
+    if (Either.isRight(ea)) {
       return [ea, ...s2];
     }
-    return [E.left(await fbj(ea.left)), ...s2];
+    return [Either.left(await fbj(ea.left)), ...s2];
   };
 }
 
@@ -461,8 +460,8 @@ export function mapSecond<B, J>(
  * import { pipe } from "./fn.ts";
  *
  * // Transform success values
- * const transformSuccess = (ea: E.Either<string, number>) =>
- *   E.isRight(ea) ? E.right(`Success: ${ea.right}`) : ea;
+ * const transformSuccess = (ea: Either.Either<string, number>) =>
+ *   Either.isRight(ea) ? Either.right(`Success: ${ea.right}`) : ea;
  *
  * const effect1 = pipe(
  *   Eff.right(42),
@@ -470,11 +469,11 @@ export function mapSecond<B, J>(
  * );
  *
  * const result1 = await effect1("state");
- * // [E.right("Success: 42"), "state"]
+ * // [Either.right("Success: 42"), "state"]
  *
  * // Swap success and error
- * const swapEither = (ea: E.Either<string, number>) =>
- *   E.isRight(ea) ? E.left(`Error: ${ea.right}`) : E.right(`Success: ${ea.left}`);
+ * const swapEither = (ea: Either.Either<string, number>) =>
+ *   Either.isRight(ea) ? Either.left(`Error: ${ea.right}`) : Either.right(`Success: ${ea.left}`);
  *
  * const effect2 = pipe(
  *   Eff.right(42),
@@ -482,11 +481,11 @@ export function mapSecond<B, J>(
  * );
  *
  * const result2 = await effect2("state");
- * // [E.left("Error: 42"), "state"]
+ * // [Either.left("Error: 42"), "state"]
  *
  * // Transform error codes to messages
- * const handleErrors = (ea: E.Either<number, string>) =>
- *   E.isRight(ea) ? ea : E.left(
+ * const handleErrors = (ea: Either.Either<number, string>) =>
+ *   Either.isRight(ea) ? ea : Either.left(
  *     ea.left === 404 ? "Not Found" : `Error ${ea.left}`
  *   );
  *
@@ -496,13 +495,13 @@ export function mapSecond<B, J>(
  * );
  *
  * const result3 = await effect3("state");
- * // [E.left("Not Found"), "state"]
+ * // [Either.left("Not Found"), "state"]
  * ```
  *
  * @since 3.0.0-rc.2
  */
 export function mapEither<B, A, I, J>(
-  fee: (ea: Either<B, A>) => Either<J, I>,
+  fee: (ea: Either.Either<B, A>) => Either.Either<J, I>,
 ): <S extends unknown[], O extends unknown[]>(
   ua: Effect<S, B, A, O>,
 ) => Effect<S, J, I, O> {
@@ -531,13 +530,13 @@ export function mapEither<B, A, I, J>(
  *   addEffect,
  *   Eff.apply(valueEffect)
  * )("state");
- * // [E.right(15), "state"]
+ * // [Either.right(15), "state"]
  *
  * const errorResult = await pipe(
  *   Eff.left("function error"),
  *   Eff.apply(valueEffect)
  * )("state");
- * // [E.left("function error"), "state"]
+ * // [Either.left("function error"), "state"]
  * ```
  *
  * @since 2.3.5
@@ -549,14 +548,14 @@ export function apply<A, B, S3 extends unknown[], S2 extends unknown[]>(
 ) => Effect<S1, B | J, I, S2 | S3> {
   return (ufai) => async (...s1) => {
     const [efai, ...s2] = await ufai.apply(ufai, s1);
-    if (E.isLeft(efai)) {
+    if (Either.isLeft(efai)) {
       return [efai, ...s2];
     }
     const [ea, ...s3] = await ua.apply(ua, s2);
-    if (E.isLeft(ea)) {
+    if (Either.isLeft(ea)) {
       return [ea, ...s3];
     }
-    return [E.right(await efai.right(ea.right)), ...s3];
+    return [Either.right(await efai.right(ea.right)), ...s3];
   };
 }
 
@@ -582,7 +581,7 @@ export function apply<A, B, S3 extends unknown[], S2 extends unknown[]>(
  * );
  *
  * const result1 = await computation("state");
- * // [E.right(2), "state"]
+ * // [Either.right(2), "state"]
  *
  * const errorComputation = pipe(
  *   Eff.right(0),
@@ -590,7 +589,7 @@ export function apply<A, B, S3 extends unknown[], S2 extends unknown[]>(
  * );
  *
  * const result2 = await errorComputation("state");
- * // [E.left("Division by zero"), "state"]
+ * // [Either.left("Division by zero"), "state"]
  * ```
  *
  * @since 2.3.5
@@ -602,7 +601,7 @@ export function flatmap<A, B, I, S2 extends unknown[], S3 extends unknown[]>(
 ) => Effect<S1, B | J, I, S2 | S3> {
   return (ua) => async (...s1) => {
     const [ea, ...s2] = await ua.apply(ua, s1);
-    if (E.isLeft(ea)) {
+    if (Either.isLeft(ea)) {
       return [ea, ...s2];
     }
     const ui = faui(ea.right);
@@ -629,7 +628,7 @@ export function flatmap<A, B, I, S2 extends unknown[], S3 extends unknown[]>(
  * );
  *
  * const result1 = await recoveredEffect("state");
- * // [E.right("Recovered: Something went wrong"), "state"]
+ * // [Either.right("Recovered: Something went wrong"), "state"]
  *
  * const successEffect = pipe(
  *   Eff.right("Success!"),
@@ -637,7 +636,7 @@ export function flatmap<A, B, I, S2 extends unknown[], S3 extends unknown[]>(
  * );
  *
  * const result2 = await successEffect("state");
- * // [E.right("Success!"), "state"]
+ * // [Either.right("Success!"), "state"]
  * ```
  *
  * @since 2.3.5
@@ -649,7 +648,7 @@ export function recover<B, I, J, S2 extends unknown[], S3 extends unknown[]>(
 ) => Effect<S1, J, I | A, S2 | S3> {
   return (ua) => async (...s1) => {
     const [ea, ...s2] = await ua.apply(ua, s1);
-    if (E.isRight(ea)) {
+    if (Either.isRight(ea)) {
       return [ea, ...s2];
     }
     const ui = fbua(ea.left);
@@ -673,13 +672,13 @@ export function recover<B, I, J, S2 extends unknown[], S3 extends unknown[]>(
  * const withFallback = Eff.alt(fallbackEffect)(primaryEffect);
  *
  * const result1 = await withFallback(1);
- * // [E.right("Fallback success"), 1]
+ * // [Either.right("Fallback success"), 1]
  *
  * const successfulPrimary = Eff.right("Primary success");
  * const withFallback2 = Eff.alt(fallbackEffect)(successfulPrimary);
  *
  * const result2 = await withFallback2("state");
- * // [E.right("Primary success"), "state"]
+ * // [Either.right("Primary success"), "state"]
  * ```
  *
  * @since 2.3.5
@@ -689,7 +688,7 @@ export function alt<S extends unknown[], B, A, O extends unknown[]>(
 ): <I, J>(first: Effect<S, J, I, O>) => Effect<S, B | J, A | I, O> {
   return (first) => async (...s) => {
     const [ea, ...s2] = await first.apply(first, s);
-    if (E.isRight(ea)) {
+    if (Either.isRight(ea)) {
       return [ea, ...s2];
     }
     return second.apply(second, s);
@@ -707,13 +706,13 @@ export function alt<S extends unknown[], B, A, O extends unknown[]>(
  *
  * const getState = Eff.get<[string]>();
  * const result = await getState("hello");
- * // [E.right(["hello"]), "hello"]
+ * // [Either.right(["hello"]), "hello"]
  * ```
  *
  * @since 2.3.5
  */
 export function get<S extends unknown[]>(): Effect<S, never, S, S> {
-  return (...s) => Promise.resolve([E.right(s), ...s]);
+  return (...s) => Promise.resolve([Either.right(s), ...s]);
 }
 
 /**
@@ -729,13 +728,13 @@ export function get<S extends unknown[]>(): Effect<S, never, S, S> {
  *
  * const getErrorState = Eff.getSecond<[string]>();
  * const result = await getErrorState("hello");
- * // [E.left(["hello"]), "hello"]
+ * // [Either.left(["hello"]), "hello"]
  * ```
  *
  * @since 3.0.0-rc.2
  */
 export function getSecond<S extends unknown[]>(): Effect<S, S, never, S> {
-  return (...s) => Promise.resolve([E.left(s), ...s]);
+  return (...s) => Promise.resolve([Either.left(s), ...s]);
 }
 
 /**
@@ -750,7 +749,7 @@ export function getSecond<S extends unknown[]>(): Effect<S, S, never, S> {
  * const putEffect = Eff.put("new state");
  *
  * const result = await putEffect("old state");
- * // [E.right(["new state"]), "new state"]
+ * // [Either.right(["new state"]), "new state"]
  * ```
  *
  * @since 2.3.5
@@ -758,7 +757,7 @@ export function getSecond<S extends unknown[]>(): Effect<S, S, never, S> {
 export function put<O extends unknown[], S extends unknown[] = unknown[]>(
   ...o: O
 ): Effect<S, never, O, O> {
-  return () => Promise.resolve([E.right(o), ...o]);
+  return () => Promise.resolve([Either.right(o), ...o]);
 }
 
 /**
@@ -775,7 +774,7 @@ export function put<O extends unknown[], S extends unknown[] = unknown[]>(
  * const putErrorState = Eff.putSecond("new error state");
  *
  * const result = await putErrorState("old state");
- * // [E.left(["new error state"]), "new error state"]
+ * // [Either.left(["new error state"]), "new error state"]
  * ```
  *
  * @since 3.0.0-rc.2
@@ -783,7 +782,7 @@ export function put<O extends unknown[], S extends unknown[] = unknown[]>(
 export function putSecond<O extends unknown[], S extends unknown[] = unknown[]>(
   ...o: O
 ): Effect<S, O, never, O> {
-  return () => Promise.resolve([E.left(o), ...o]);
+  return () => Promise.resolve([Either.left(o), ...o]);
 }
 
 /**
@@ -799,10 +798,10 @@ export function putSecond<O extends unknown[], S extends unknown[] = unknown[]>(
  * const getAsync = Eff.gets((s: number) => Promise.resolve(s * 2));
  *
  * const result1 = await getDoubled(21);
- * // [E.right(42), 21]
+ * // [Either.right(42), 21]
  *
  * const result2 = await getAsync(21);
- * // [E.right(42), 21]
+ * // [Either.right(42), 21]
  * ```
  *
  * @since 2.3.5
@@ -810,7 +809,7 @@ export function putSecond<O extends unknown[], S extends unknown[] = unknown[]>(
 export function gets<S extends unknown[], A>(
   fsa: (...s: S) => A | Promise<A>,
 ): Effect<S, never, A, S> {
-  return async (...s) => [E.right(await fsa.apply(fsa, s)), ...s];
+  return async (...s) => [Either.right(await fsa.apply(fsa, s)), ...s];
 }
 
 /**
@@ -828,10 +827,10 @@ export function gets<S extends unknown[], A>(
  * const getAsyncError = Eff.getsSecond((s: number) => Promise.resolve(s * 2));
  *
  * const result1 = await getDoubledError(21);
- * // [E.left(42), 21]
+ * // [Either.left(42), 21]
  *
  * const result2 = await getAsyncError(21);
- * // [E.left(42), 21]
+ * // [Either.left(42), 21]
  * ```
  *
  * @since 3.0.0-rc.2
@@ -839,7 +838,7 @@ export function gets<S extends unknown[], A>(
 export function getsSecond<S extends unknown[], B>(
   fsa: (...s: S) => B | Promise<B>,
 ): Effect<S, B, never, S> {
-  return async (...s) => [E.left(await fsa.apply(fsa, s)), ...s];
+  return async (...s) => [Either.left(await fsa.apply(fsa, s)), ...s];
 }
 
 /**
@@ -858,31 +857,31 @@ export function getsSecond<S extends unknown[], B>(
  *
  * // Synchronous Either
  * const validatePositive = Eff.getsEither((n: number) =>
- *   n > 0 ? E.right(n * 2) : E.left("Number must be positive")
+ *   n > 0 ? Either.right(n * 2) : Either.left("Number must be positive")
  * );
  *
  * const result1 = await validatePositive(21);
- * // [E.right(42), 21]
+ * // [Either.right(42), 21]
  *
  * const result2 = await validatePositive(-5);
- * // [E.left("Number must be positive"), -5]
+ * // [Either.left("Number must be positive"), -5]
  *
  * // Asynchronous Either
  * const asyncValidate = Eff.getsEither((n: number) =>
- *   Promise.resolve(n > 0 ? E.right(n * 2) : E.left("Must be positive"))
+ *   Promise.resolve(n > 0 ? Either.right(n * 2) : Either.left("Must be positive"))
  * );
  *
  * const result3 = await asyncValidate(21);
- * // [E.right(42), 21]
+ * // [Either.right(42), 21]
  *
  * const result4 = await asyncValidate(-5);
- * // [E.left("Must be positive"), -5]
+ * // [Either.left("Must be positive"), -5]
  * ```
  *
  * @since 3.0.0-rc.4
  */
 export function getsEither<S extends unknown[], A, B>(
-  fsab: (...s: S) => Either<B, A> | Promise<Either<B, A>>,
+  fsab: (...s: S) => Either.Either<B, A> | Promise<Either.Either<B, A>>,
 ): Effect<S, B, A, S> {
   return async (...s) => [await fsab.apply(fsab, s), ...s];
 }
@@ -900,10 +899,10 @@ export function getsEither<S extends unknown[], A, B>(
  * const asyncPuts = Eff.puts((n: number) => Promise.resolve([n * 2]));
  *
  * const result1 = await doubleState(21);
- * // [E.right([42]), 42]
+ * // [Either.right([42]), 42]
  *
  * const result2 = await asyncPuts(21);
- * // [E.right([42]), 42]
+ * // [Either.right([42]), 42]
  * ```
  *
  * @since 2.3.5
@@ -913,7 +912,7 @@ export function puts<S extends unknown[], O extends unknown[] = S>(
 ): Effect<S, never, O, O> {
   return async (...s) => {
     const o = await fsa.apply(fsa, s);
-    return [E.right(o), ...o];
+    return [Either.right(o), ...o];
   };
 }
 
@@ -932,10 +931,10 @@ export function puts<S extends unknown[], O extends unknown[] = S>(
  * const asyncPutsError = Eff.putsSecond((n: number) => Promise.resolve([n * 2]));
  *
  * const result1 = await doubleErrorState(21);
- * // [E.left([42]), 42]
+ * // [Either.left([42]), 42]
  *
  * const result2 = await asyncPutsError(21);
- * // [E.left([42]), 42]
+ * // [Either.left([42]), 42]
  * ```
  *
  * @since 3.0.0-rc.2
@@ -945,7 +944,7 @@ export function putsSecond<S extends unknown[], O extends unknown[] = S>(
 ): Effect<S, O, never, O> {
   return async (...s) => {
     const o = await fsa.apply(fsa, s);
-    return [E.left(o), ...o];
+    return [Either.left(o), ...o];
   };
 }
 
@@ -965,11 +964,11 @@ export function putsSecond<S extends unknown[], O extends unknown[] = S>(
  * );
  *
  * const result = await Eff.evaluate(21)(computation);
- * // E.right(42)
+ * // Either.right(42)
  *
  * const errorComputation = Eff.left("Error occurred");
  * const errorResult = await Eff.evaluate("state")(errorComputation);
- * // E.left("Error occurred")
+ * // Either.left("Error occurred")
  * ```
  *
  * @since 2.3.5
@@ -978,7 +977,7 @@ export function evaluate<S extends unknown[]>(
   ...s: S
 ): <A, B, O extends unknown[]>(
   ua: Effect<S, B, A, O>,
-) => Promise<Either<B, A>> {
+) => Promise<Either.Either<B, A>> {
   return async (ua) => (await ua.apply(ua, s))[0];
 }
 
@@ -1033,7 +1032,7 @@ export function execute<S extends unknown[]>(
  *
  * const result = await computation("state");
  * // Logs: "Processing: 42"
- * // Returns: [E.right(84), "state"]
+ * // Returns: [Either.right(84), "state"]
  * ```
  *
  * @since 2.3.5
@@ -1069,7 +1068,7 @@ export function tap<A>(
  * );
  *
  * const result = await computation("state");
- * // [E.right({ x: 5, y: 10, z: 15, total: 30 }), "state"]
+ * // [Either.right({ x: 5, y: 10, z: 15, total: 30 }), "state"]
  * ```
  *
  * @since 2.3.5
@@ -1118,7 +1117,7 @@ export function bind<
  * );
  *
  * const result = await computation("state");
- * // [E.right({ result: 42 }), "state"]
+ * // [Either.right({ result: 42 }), "state"]
  * ```
  *
  * @since 2.3.5
@@ -1147,7 +1146,7 @@ export function bindTo<N extends string>(
  * // that work with Flatmappable structures
  * const wrappedValue = flatmappableEffect.wrap(42);
  * const result = await wrappedValue("state");
- * // [E.right(42), "state"]
+ * // [Either.right(42), "state"]
  * ```
  *
  * @since 2.3.5
