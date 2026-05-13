@@ -208,6 +208,38 @@ export function map<A, I>(
 }
 
 /**
+ * Apply a function to each value and key in a ReadonlyRecord, where
+ * each application returns a new ReadonlyRecord, then flatten all
+ * resulting records into a single ReadonlyRecord. If multiple records
+ * contain the same key, later values will overwrite earlier ones.
+ *
+ * @example
+ * ```ts
+ * import * as R from "./record.ts";
+ * import { pipe } from "./fn.ts";
+ *
+ * const result = pipe(
+ *   { a: 1, b: 2 },
+ *   R.flatmap((n, key) => ({ [key]: n, [`${key}_doubled`]: n * 2 })),
+ * ); // { a: 1, a_doubled: 2, b: 2, b_doubled: 4 }
+ * ```
+ *
+ * @since 2.0.0
+ */
+export function flatmap<A, I>(
+  fati: (a: A, i: string) => ReadonlyRecord<I>,
+): (ua: ReadonlyRecord<A>) => ReadonlyRecord<I> {
+  return (ua) =>
+    pipe(
+      ua,
+      fold(
+        (acc, a, i) => Object.assign(acc, fati(a, i)),
+        {} as Record<string, I>,
+      ),
+    );
+}
+
+/**
  * Collect all of the A values in a ReadonlyRecord<A> into a single
  * O value by the process of reduction. The order of key/value pairs
  * in this reduction are stable and determined by ecmascript standard

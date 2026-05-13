@@ -67,6 +67,39 @@ Deno.test("Record map", () => {
   assertEquals(indexedMap({ a: 0, b: 2 }), { a: 1, b: 3 });
 });
 
+Deno.test("Record flatmap", () => {
+  // Basic flatmap - expand each entry into multiple entries
+  const expand = R.flatmap((n: number, key: string) => ({
+    [key]: n,
+    [`${key}_doubled`]: n * 2,
+  }));
+  assertEquals(expand({}), {});
+  assertEquals(expand({ a: 1 }), { a: 1, a_doubled: 2 });
+  assertEquals(expand({ a: 1, b: 2 }), {
+    a: 1,
+    a_doubled: 2,
+    b: 2,
+    b_doubled: 4,
+  });
+
+  // Flatmap that filters by returning empty record
+  const filterOdd = R.flatmap((n: number, key: string) =>
+    n % 2 === 1 ? { [key]: n } : {}
+  );
+  assertEquals(filterOdd({}), {});
+  assertEquals(filterOdd({ a: 1, b: 2, c: 3 }), { a: 1, c: 3 });
+
+  // Flatmap with key transformation
+  const prefixKeys = R.flatmap((n: number, key: string) => ({
+    [`prefix_${key}`]: n,
+  }));
+  assertEquals(prefixKeys({ a: 1, b: 2 }), { prefix_a: 1, prefix_b: 2 });
+
+  // Later keys overwrite earlier ones when there are collisions
+  const collision = R.flatmap((_n: number) => ({ same: 1 }));
+  assertEquals(collision({ a: 1, b: 2 }), { same: 1 });
+});
+
 Deno.test("Record fold", () => {
   assertEquals(
     pipe({ a: 1, b: 2 }, R.fold((a: number, b: number) => a + b, 0)),
