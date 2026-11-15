@@ -660,6 +660,24 @@ Deno.test("integer - parses negative integer", () => {
   }
 });
 
+Deno.test("integer - parses zero", () => {
+  const stream = fromString("0");
+  const [result, _] = integer(stream);
+  assertEquals(isRight(result), true);
+  if (isRight(result)) {
+    assertEquals(result.right, 0);
+  }
+});
+
+Deno.test("integer - parses numbers containing zero", () => {
+  const stream = fromString("10");
+  const [result, _] = integer(stream);
+  assertEquals(isRight(result), true);
+  if (isRight(result)) {
+    assertEquals(result.right, 10);
+  }
+});
+
 Deno.test("integer - fails on non-integer", () => {
   const stream = fromString("abc");
   const [result, _] = integer(stream);
@@ -691,6 +709,39 @@ Deno.test("decimal - parses negative decimal", () => {
   if (isRight(result)) {
     assertEquals(result.right, -123.456);
   }
+});
+
+Deno.test("decimal - parses zero", () => {
+  const stream = fromString("0");
+  const [result, _] = decimal(stream);
+  assertEquals(isRight(result), true);
+  if (isRight(result)) {
+    assertEquals(result.right, 0);
+  }
+});
+
+Deno.test("decimal - parses decimal with zero whole part", () => {
+  const stream = fromString("0.5");
+  const [result, _] = decimal(stream);
+  assertEquals(isRight(result), true);
+  if (isRight(result)) {
+    assertEquals(result.right, 0.5);
+  }
+});
+
+Deno.test("decimal - parses negative decimal with zero whole part", () => {
+  const stream = fromString("-0.5");
+  const [result, _] = decimal(stream);
+  assertEquals(isRight(result), true);
+  if (isRight(result)) {
+    assertEquals(result.right, -0.5);
+  }
+});
+
+Deno.test("decimal - fails on non-decimal", () => {
+  const stream = fromString("abc");
+  const [result, _] = decimal(stream);
+  assertEquals(isLeft(result), true);
 });
 
 Deno.test("bracket - extracts value between brackets", () => {
