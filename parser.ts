@@ -807,7 +807,7 @@ export const nonzero: Parser<string, string> = range("1", "9");
  *
  * @since 2.3.4
  */
-export const digit: Parser<string, string> = any(literal("0"), nonzero);
+export const digit: Parser<string, string> = range("0", "9");
 
 /**
  * Parse any alphabetic character (a-z or A-Z).
@@ -874,8 +874,11 @@ export const natural_number: Parser<string, number> = pipe(
  * @since 2.3.4
  */
 export const integer: Parser<string, number> = pipe(
-  sequence(maybe(literal("-")), natural_number),
-  map(([sign, number]) => isNil(sign) ? number : -1 * number),
+  sequence(maybe(literal("-")), some(digit)),
+  map(([sign, digits]) => {
+    const number = parseInt(digits.join(""), 10);
+    return isNil(sign) ? number : -1 * number;
+  }),
 );
 
 /**
@@ -897,12 +900,12 @@ export const integer: Parser<string, number> = pipe(
 export const decimal: Parser<string, number> = pipe(
   sequence(
     withDefault(literals("+", "-"), "+"),
-    natural_number,
+    some(digit),
     withDefault(literal("."), "."),
     many(digit),
   ),
   map(([sign, whole, decimal, remainder]) =>
-    parseFloat(`${sign}${whole}${decimal}${remainder.join("")}`)
+    parseFloat(`${sign}${whole.join("")}${decimal}${remainder.join("")}`)
   ),
 );
 

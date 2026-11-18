@@ -660,6 +660,16 @@ Deno.test("integer - parses negative integer", () => {
   }
 });
 
+Deno.test("integer - parses zero", () => {
+  for (const [input, expected] of [["0", 0], ["-0", -0], ["10", 10]] as const) {
+    const [result, _] = integer(fromString(input));
+    assertEquals(isRight(result), true);
+    if (isRight(result)) {
+      assertEquals(result.right, expected);
+    }
+  }
+});
+
 Deno.test("integer - fails on non-integer", () => {
   const stream = fromString("abc");
   const [result, _] = integer(stream);
@@ -690,6 +700,24 @@ Deno.test("decimal - parses negative decimal", () => {
   assertEquals(isRight(result), true);
   if (isRight(result)) {
     assertEquals(result.right, -123.456);
+  }
+});
+
+Deno.test("decimal - parses zero and zero-led decimals", () => {
+  for (
+    const [input, expected] of [
+      ["0", 0],
+      ["0.5", 0.5],
+      ["-0.5", -0.5],
+      ["+0.25", 0.25],
+      ["10.25", 10.25],
+    ] as const
+  ) {
+    const [result, _] = decimal(fromString(input));
+    assertEquals(isRight(result), true);
+    if (isRight(result)) {
+      assertEquals(result.right, expected);
+    }
   }
 });
 
